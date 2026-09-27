@@ -3,9 +3,9 @@
   "channel": "stable",
   "version": "6.1",
   "indicator": "1.05",
-  "url": "https://goldflowintelligencev61complete.vercel.app/",
+  "url": "https://goldflowintelligencev61complete-2bc9p9m9i-hazim5011-4996.vercel.app/",
   "releasedAt": "2026-09-27T01:55:30Z",
   "autoUpdate": true,
   "pollSeconds": 30,
-  "notes": "V6.1 Complete \u2014 Indicator 1.05, stable UI, 24x7-ready frontend."
+  "notes": "V6.1 Complete — pinned to original immutable deployment."
 }
