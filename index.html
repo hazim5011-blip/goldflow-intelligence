@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061018">
+<title>GoldFlow Intelligence</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061018;color:#edf6fb;font-family:system-ui,-apple-system,Segoe UI,Arial}
+#app{position:fixed;inset:0;width:100%;height:100%;border:0;background:#061018}
+#status{position:fixed;z-index:20;right:12px;bottom:12px;max-width:min(86vw,420px);padding:9px 12px;border:1px solid #294e67;border-radius:12px;background:#081821ed;box-shadow:0 8px 28px #0008;font-size:12px;line-height:1.35;opacity:0;transform:translateY(8px);pointer-events:none;transition:.25s}
+#status.on{opacity:1;transform:none}
+#status.good{border-color:#255543;color:#9ce5c7}
+#status.warn{border-color:#645726;color:#f2c75b}
+#status.bad{border-color:#6a2d38;color:#ffacba}
+#boot{position:fixed;inset:0;display:grid;place-items:center;background:#061018;z-index:10}
+#boot div{text-align:center}
+#boot b{font-size:20px}
+#boot small{display:block;color:#8096a6;margin-top:7px}
+</style>
+</head>
+<body>
+<div id="boot"><div><b>GoldFlow Intelligence</b><small>Checking latest release…</small></div></div>
+<iframe id="app" title="GoldFlow Intelligence latest release" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+<div id="status"></div>
+<script>
+const MANIFEST="/release.json";
+const POLL_MS=30000;
+let current=null;
+const app=document.getElementById("app");
+const boot=document.getElementById("boot");
+const status=document.getElementById("status");
+let statusTimer=null;
+
+function note(msg,type="good",ms=3500){
+  clearTimeout(statusTimer);
+  status.textContent=msg;
+  status.className="on "+type;
+  statusTimer=setTimeout(()=>status.className="",ms);
+}
+function cleanUrl(url){
+  const u=new URL(url,location.href);
+  u.hash="";
+  return u.href;
+}
+async function getRelease(){
+  const r=await fetch(MANIFEST+"?t="+Date.now(),{cache:"no-store"});
+  if(!r.ok) throw new Error("Manifest HTTP "+r.status);
+  const x=await r.json();
+  if(!x.version || !x.url) throw new Error("Invalid release manifest");
+  x.url=cleanUrl(x.url);
+  return x;
+}
+function switchRelease(next,first=false){
+  const changed=!current || current.version!==next.version || current.url!==next.url;
+  if(!changed) return;
+  const prev=current;
+  current=next;
+  app.src=next.url;
+  localStorage.setItem("goldflow_latest_release",JSON.stringify(next));
+  if(first) note("Latest release: V"+next.version,"good",3000);
+  else note("Auto updating "+(prev?"V"+prev.version:"")+" → V"+next.version+"…","warn",5000);
+}
+async function sync(first=false){
+  try{
+    const next=await getRelease();
+    switchRelease(next,first);
+  }catch(e){
+    const cached=localStorage.getItem("goldflow_latest_release");
+    if(!current && cached){
+      try{switchRelease(JSON.parse(cached),true)}catch(_){}
+    }
+    note("Update check failed. Current release continues running.","bad",5000);
+  }
+}
+app.addEventListener("load",()=>{
+  boot.style.display="none";
+  if(current) document.title="GoldFlow Intelligence V"+current.version;
+});
+sync(true);
+setInterval(()=>sync(false),POLL_MS);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)sync(false)});
+</script>
+</body>
+</html>
