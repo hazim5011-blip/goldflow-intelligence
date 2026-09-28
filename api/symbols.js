@@ -2,7 +2,7 @@ import {bridgeConfigured,brokerGet,apiError,classifySymbol} from "./_broker.js";
 
 export default async function handler(req,res){
   if(req.method==="OPTIONS") return res.status(204).end();
-  res.setHeader("Cache-Control","s-maxage=15, stale-while-revalidate=45");
+  res.setHeader("Cache-Control","s-maxage=300, stale-while-revalidate=86400");
   if(!bridgeConfigured()) return res.status(200).json({ok:false,configured:false,symbols:[],error:"BROKER_BRIDGE_URL_NOT_CONFIGURED"});
   const q=String(req.query?.q||"").trim();
   try{
@@ -33,5 +33,5 @@ export default async function handler(req,res){
     const priority={METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7};
     symbols.sort((a,b)=>(priority[a.category]-priority[b.category])||a.name.localeCompare(b.name));
     return res.status(200).json({ok:true,configured:true,count:symbols.length,symbols});
-  }catch(e){ return apiError(res,e,200,{symbols:[]}); }
+  }catch(e){ res.setHeader("Cache-Control","no-store"); return apiError(res,e,200,{symbols:[]}); }
 }
