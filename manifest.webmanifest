@@ -1,0 +1,9 @@
+{
+  "name": "GoldFlow Intelligence V7.1",
+  "short_name": "GoldFlow V7.1",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#061018",
+  "theme_color": "#061018",
+  "description": "24H broker-first gold and FX market monitor."
+}

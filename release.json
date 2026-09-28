@@ -1,1 +1,7 @@
-{"version":"7.0.0","channel":"production","mode":"BROKER_FIRST_NO_GCF","message":"V7 removes Gold Futures/Yahoo pair-price fallback and uses TradingView live display plus MT5 broker calculations.","updated":"2026-09-28"}
+{
+  "version": "7.1.0",
+  "channel": "production",
+  "mode": "24H_LIVE_BROKER_FIRST_NO_GCF",
+  "message": "24H website mode with 15-second health refresh, auto reconnect, TradingView refresh and PWA shell. MT5 Bridge remains required for full indicator calculations.",
+  "updated": "2026-09-28"
+}

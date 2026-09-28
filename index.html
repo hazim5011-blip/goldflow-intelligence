@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence V7</title>
+<meta name="theme-color" content="#061018">\n<link rel="manifest" href="/manifest.webmanifest">
+<title>GoldFlow Intelligence V7.1 24H LIVE</title>
 <style>
 :root{--bg:#061018;--p:#0d1b26;--p2:#102431;--line:#25404e;--t:#eef7fb;--m:#8298a8;--g:#38d5a5;--r:#ff637c;--y:#f1c75b;--b:#62b6ff}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(#061018,#091722);color:var(--t);font:14px system-ui,-apple-system,Segoe UI,Arial}.w{max-width:1400px;margin:auto;padding:12px}.top{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0 14px;border-bottom:1px solid var(--line)}.brand{display:flex;gap:10px;align-items:center}.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#ffdc7d,#ad7412);color:#211400;font-weight:900}.brand h1{font-size:20px;margin:0}.sub{font-size:10px;color:var(--m)}.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 9px;font-size:10px}.ok{color:var(--g);border-color:#265c4b}.warn{color:var(--y);border-color:#665827}.bad{color:var(--r);border-color:#6d3140}.pairs{display:flex;gap:7px;overflow:auto;padding:12px 0}.pair{background:#09141c;color:#9db0bd;border:1px solid var(--line);border-radius:10px;padding:10px 12px;white-space:nowrap}.pair.on{background:#17384d;color:#fff;border-color:#3c6b82}.notice{padding:11px;border-radius:11px;border:1px solid #31576d;background:#0a1d29;color:#acd9f4;margin:8px 0}.notice.good{border-color:#2d5f4b;background:#0c211b;color:#a4e6cc}.grid{display:grid;gap:10px}.g2{grid-template-columns:1.1fr .9fr}.g4{grid-template-columns:repeat(4,1fr)}.card{background:linear-gradient(180deg,var(--p2),var(--p));border:1px solid var(--line);border-radius:15px;padding:13px}.head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px}.head h3{margin:0;font-size:14px}.muted{color:var(--m)}.big{font-size:30px;font-weight:900}.tv{height:430px;border-radius:12px;overflow:hidden;background:#07131c}.quote{height:175px;border-radius:12px;overflow:hidden;background:#07131c}.kpi small{color:var(--m)}.kpi b{display:block;font-size:24px;margin-top:4px}.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.mini div{background:#07131b;border:1px solid #203846;border-radius:9px;padding:9px}.mini small{color:var(--m);display:block}.mini b{display:block;margin-top:4px}.section{margin-top:10px}.zones{display:grid;grid-template-columns:1fr 1fr;gap:8px}.zone{background:#07131b;border:1px solid #203846;border-radius:9px;padding:10px}.footer{text-align:center;color:#617b8b;font-size:10px;padding:20px}.hidden{display:none}
@@ -13,11 +13,11 @@
 </head>
 <body><div class="w">
 <div class="top">
-<div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7</h1><div class="sub">BROKER-FIRST • LIVE TRADINGVIEW • NO FUTURES FALLBACK</div></div></div>
-<div class="chips"><span id="tvChip" class="chip ok">TV LIVE</span><span id="bridgeChip" class="chip warn">BRIDGE CHECK</span><span id="macroChip" class="chip warn">MACRO CHECK</span></div>
+<div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.1</h1><div class="sub">24H LIVE • BROKER-FIRST • NO GC=F/YAHOO PAIR PRICE</div></div></div>
+<div class="chips"><span id="netChip" class="chip ok">ONLINE</span><span id="tvChip" class="chip ok">TV LIVE</span><span id="bridgeChip" class="chip warn">BRIDGE CHECK</span><span id="macroChip" class="chip warn">MACRO CHECK</span></div>
 </div>
 <div id="pairs" class="pairs"></div>
-<div class="notice good"><b>PRICE SOURCE POLICY:</b> XAUUSD tidak lagi menggunakan Gold Futures/Yahoo. Semua pair live dipaparkan menggunakan simbol TradingView yang sepadan. Indicator/SND/SNR/Entry/SL/TP hanya menggunakan candle MT5 broker apabila Bridge online.</div>
+<div class="notice good"><b>24H LIVE MODE:</b> Website kekal tersedia 24 jam melalui Vercel. XAUUSD247 menggunakan THINKMARKETS:XAUUSD247 untuk paparan 24/7. Pair lain ikut waktu pasaran masing-masing. Tiada GC=F/Yahoo digunakan sebagai harga pair live. Indicator/SND/SNR/Entry/SL/TP hanya menggunakan candle MT5 broker apabila Bridge online.</div>\n<div class="section grid g4"><div class="card kpi"><small>WEBSITE</small><b id="siteStatus">24H ONLINE</b><span class="muted">Vercel production</span></div><div class="card kpi"><small>MARKET MODE</small><b id="marketMode">—</b><span class="muted">pair selected</span></div><div class="card kpi"><small>AUTO REFRESH</small><b>15 SEC</b><span class="muted">API + reconnect</span></div><div class="card kpi"><small>LAST SYNC</small><b id="lastSync">—</b><span class="muted">Malaysia time</span></div></div>
 <div class="grid g2">
 <div class="card"><div class="head"><h3>LIVE CHART</h3><span id="symbolTag" class="chip"></span></div><div id="tvChart" class="tv"></div></div>
 <div class="card"><div class="head"><h3>LIVE REFERENCE</h3><span id="stateTag" class="chip warn">CHECKING</span></div><div id="tvQuote" class="quote"></div><div class="section mini"><div><small>BROKER BID</small><b id="bid">SEE TV</b></div><div><small>BROKER ASK</small><b id="ask">SEE TV</b></div><div><small>SPREAD</small><b id="spread">—</b></div><div><small>ENGINE</small><b id="engine">WAIT BRIDGE</b></div></div><div id="sourceNote" class="notice">Loading source status…</div></div>
@@ -36,23 +36,59 @@
 </div>
 <div class="section grid g2">
 <div class="card"><div class="head"><h3>INDICATOR / SND / SNR</h3><span id="engineTag" class="chip warn">WAIT BRIDGE</span></div><div class="zones"><div class="zone"><small class="muted">DEMAND / SUPPORT</small><div class="big" id="demand">N/A</div></div><div class="zone"><small class="muted">SUPPLY / RESISTANCE</small><div class="big" id="supply">N/A</div></div></div><div class="section mini"><div><small>BIAS</small><b id="bias">WAIT</b></div><div><small>ENTRY</small><b id="entry">N/A</b></div><div><small>SL</small><b id="sl">N/A</b></div><div><small>TP</small><b id="tp">N/A</b></div></div></div>
-<div class="card"><div class="head"><h3>DATA HEALTH</h3><span class="muted">auto refresh 30s</span></div><div class="mini"><div><small>DISPLAY</small><b id="hDisplay">TradingView</b></div><div><small>ENGINE FEED</small><b id="hFeed">Checking</b></div><div><small>PAIR</small><b id="hPair">—</b></div><div><small>LAST UPDATE</small><b id="hTime">—</b></div></div><div id="healthMsg" class="notice">—</div></div>
+<div class="card"><div class="head"><h3>DATA HEALTH</h3><span class="muted">auto refresh 15s</span></div><div class="mini"><div><small>DISPLAY</small><b id="hDisplay">TradingView</b></div><div><small>ENGINE FEED</small><b id="hFeed">Checking</b></div><div><small>PAIR</small><b id="hPair">—</b></div><div><small>LAST UPDATE</small><b id="hTime">—</b></div></div><div id="healthMsg" class="notice">—</div></div>
 </div>
-<div class="footer">GoldFlow Intelligence V7 • TradingView for live visual reference • MT5 Broker Bridge for calculations • research/education only</div>
+<div class="footer">GoldFlow Intelligence V7.1 • 24H Vercel hosting • TradingView live visual reference • MT5 Broker Bridge for calculations • research/education only</div>
 </div>
 <script>
 var PAIRS=["XAUUSD247","XAUUSD","EURUSD","GBPUSD","AUDUSD","NZDUSD","USDJPY","USDCHF","USDCAD"];
 var TV={XAUUSD247:"THINKMARKETS:XAUUSD247",XAUUSD:"OANDA:XAUUSD",EURUSD:"OANDA:EURUSD",GBPUSD:"OANDA:GBPUSD",AUDUSD:"OANDA:AUDUSD",NZDUSD:"OANDA:NZDUSD",USDJPY:"OANDA:USDJPY",USDCHF:"OANDA:USDCHF",USDCAD:"OANDA:USDCAD"};
-var pair=localStorage.getItem("gf_v7_pair")||"XAUUSD";
+var pair=localStorage.getItem("gf_v7_pair")||"XAUUSD247";
 function q(id){return document.getElementById(id)}
 function fmt(v,d){return v===null||v===undefined||isNaN(Number(v))?"N/A":Number(v).toFixed(d===undefined?2:d)}
 function setChip(id,txt,cls){var e=q(id);e.textContent=txt;e.className="chip "+cls}
 function renderPairs(){q("pairs").innerHTML=PAIRS.map(function(p){return '<button class="pair '+(p===pair?'on':'')+'" data-p="'+p+'">'+p+'</button>'}).join("");document.querySelectorAll(".pair").forEach(function(b){b.onclick=function(){pair=b.dataset.p;localStorage.setItem("gf_v7_pair",pair);renderPairs();renderTV();load()}})}
 function widget(box,src,cfg){var el=q(box);el.innerHTML='<div class="tradingview-widget-container" style="height:100%;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div></div>';var s=document.createElement("script");s.src=src;s.async=true;s.text=JSON.stringify(cfg);el.firstElementChild.appendChild(s)}
 function renderTV(){var sym=TV[pair];q("symbolTag").textContent=sym;widget("tvQuote","https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js",{symbol:sym,width:"100%",locale:"en",colorTheme:"dark",isTransparent:true});widget("tvChart","https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js",{autosize:true,symbol:sym,interval:"15",timezone:"Asia/Kuala_Lumpur",theme:"dark",style:"1",locale:"en",backgroundColor:"#07131c",allow_symbol_change:false,hide_side_toolbar:true,withdateranges:true,support_host:"https://www.tradingview.com"})}
-async function getJson(url){var r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+async function getJson(url,retry){retry=retry===undefined?1:retry;var c=new AbortController();var t=setTimeout(function(){c.abort()},8000);try{var r=await fetch(url,{cache:"no-store",signal:c.signal});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json()}catch(e){if(retry>0&&navigator.onLine){await new Promise(function(x){setTimeout(x,1200)});return getJson(url,retry-1)}throw e}finally{clearTimeout(t)}}
 function clearEngine(){q("demand").textContent="N/A";q("supply").textContent="N/A";q("bias").textContent="WAIT";q("entry").textContent="N/A";q("sl").textContent="N/A";q("tp").textContent="N/A";q("engine").textContent="WAIT BRIDGE";setChip("engineTag","WAIT BRIDGE","warn")}
-async function load(){q("hPair").textContent=pair;q("hTime").textContent=new Date().toLocaleTimeString("en-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit"});try{var all=await Promise.all([getJson("/api/status?pair="+encodeURIComponent(pair)),getJson("/api/macro?pair="+encodeURIComponent(pair))]);var s=all[0],m=all[1];if(s.bridgeOnline){setChip("bridgeChip","MT5 LIVE","ok");setChip("stateTag","BROKER LIVE","ok");q("bid").textContent=fmt(s.bid,pair==="USDJPY"?3:pair.indexOf("XAU")===0?2:5);q("ask").textContent=fmt(s.ask,pair==="USDJPY"?3:pair.indexOf("XAU")===0?2:5);q("spread").textContent=fmt(s.spread,pair.indexOf("XAU")===0?2:5);q("engine").textContent=s.engine||"READY";q("hFeed").textContent="MT5 BROKER";q("sourceNote").innerHTML="<b>Broker feed active.</b> Indicator calculations can use the same broker price.";q("healthMsg").textContent="Live display + calculation source aligned to broker bridge.";if(s.zone){q("demand").textContent=s.zone.demand||"N/A";q("supply").textContent=s.zone.supply||"N/A";q("bias").textContent=s.zone.bias||"WAIT";q("entry").textContent=s.zone.entry||"N/A";q("sl").textContent=s.zone.sl||"N/A";q("tp").textContent=s.zone.tp||"N/A";setChip("engineTag","ENGINE READY","ok")}}else{setChip("bridgeChip","BRIDGE OFF","bad");setChip("stateTag","TV LIVE / ENGINE WAIT","warn");q("bid").textContent="SEE TV";q("ask").textContent="SEE TV";q("spread").textContent="—";q("hFeed").textContent="BRIDGE REQUIRED";q("sourceNote").innerHTML="<b>"+TV[pair]+"</b> is the live display source. No Yahoo/Gold Futures pair-price fallback is used.";q("healthMsg").textContent="MT5 Bridge belum online. Live chart tetap berjalan; signal calculations sengaja tidak difabrikasi.";clearEngine()}q("dxy").textContent=fmt(m.dxy,2);q("us2").textContent=m.us2y?fmt(m.us2y.value,2)+"%":"N/A";q("us2d").textContent=m.us2y?m.us2y.date:"";q("us10").textContent=m.us10y?fmt(m.us10y.value,2)+"%":"N/A";q("us10d").textContent=m.us10y?m.us10y.date:"";q("real10").textContent=m.real10y?fmt(m.real10y.value,2)+"%":"N/A";q("real10d").textContent=m.real10y?m.real10y.date:"";q("eurBox").classList.toggle("hidden",pair!=="EURUSD");if(pair==="EURUSD"){q("eur2").textContent=m.eur2y?fmt(m.eur2y.value,2)+"%":"N/A";q("eur10").textContent=m.eur10y?fmt(m.eur10y.value,2)+"%":"N/A";q("sp2").textContent=m.spread2y===null?"N/A":fmt(m.spread2y,3)+"pp";q("sp10").textContent=m.spread10y===null?"N/A":fmt(m.spread10y,3)+"pp"}setChip("macroChip",m.partial?"MACRO PARTIAL":"MACRO OK",m.partial?"warn":"ok")}catch(e){setChip("macroChip","API ERROR","bad");q("healthMsg").textContent=String(e.message||e)}}
-renderPairs();renderTV();load();setInterval(load,30000);
+var loading=false,lastTVRefresh=Date.now();
+function modeForPair(){return pair==="XAUUSD247"?"24/7 GOLD":"WEEKDAY MARKET"}
+function updateNet(){setChip("netChip",navigator.onLine?"ONLINE":"OFFLINE",navigator.onLine?"ok":"bad")}
+function nowMYT(){return new Date().toLocaleTimeString("en-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit",second:"2-digit"})}
+async function load(){
+ if(loading)return;loading=true;
+ q("hPair").textContent=pair;q("hTime").textContent=nowMYT();q("marketMode").textContent=modeForPair();updateNet();
+ try{
+  var all=await Promise.all([getJson("/api/status?pair="+encodeURIComponent(pair)),getJson("/api/macro?pair="+encodeURIComponent(pair)),getJson("/api/health")]);
+  var s=all[0],m=all[1],h=all[2];
+  q("siteStatus").textContent=h.ok?"24H ONLINE":"CHECK";q("lastSync").textContent=nowMYT();
+  if(s.bridgeOnline){
+   setChip("bridgeChip","MT5 LIVE","ok");setChip("stateTag","BROKER LIVE","ok");
+   q("bid").textContent=fmt(s.bid,pair==="USDJPY"?3:pair.indexOf("XAU")===0?2:5);q("ask").textContent=fmt(s.ask,pair==="USDJPY"?3:pair.indexOf("XAU")===0?2:5);q("spread").textContent=fmt(s.spread,pair.indexOf("XAU")===0?2:5);q("engine").textContent=s.engine||"READY";q("hFeed").textContent="MT5 BROKER";
+   q("sourceNote").innerHTML="<b>Broker feed active.</b> Indicator calculations use the broker feed.";
+   q("healthMsg").textContent="Website 24H + MT5 calculation source online.";
+   if(s.zone){q("demand").textContent=s.zone.demand||"N/A";q("supply").textContent=s.zone.supply||"N/A";q("bias").textContent=s.zone.bias||"WAIT";q("entry").textContent=s.zone.entry||"N/A";q("sl").textContent=s.zone.sl||"N/A";q("tp").textContent=s.zone.tp||"N/A";setChip("engineTag","ENGINE READY","ok")}
+  }else{
+   setChip("bridgeChip","BRIDGE OFF","bad");setChip("stateTag","TV LIVE / ENGINE WAIT","warn");q("bid").textContent="SEE TV";q("ask").textContent="SEE TV";q("spread").textContent="—";q("hFeed").textContent="BRIDGE REQUIRED";
+   q("sourceNote").innerHTML="<b>"+TV[pair]+"</b> is the live display source. No Yahoo/Gold Futures pair-price fallback is used.";
+   q("healthMsg").textContent=pair==="XAUUSD247"?"Website + XAUUSD247 TradingView reference boleh digunakan 24/7. Full Indicator Engine perlukan MT5 Bridge online.":"Website kekal 24H. Pair ini ikut waktu pasaran; full Indicator Engine perlukan MT5 Bridge online.";
+   clearEngine();
+  }
+  q("dxy").textContent=fmt(m.dxy,2);q("us2").textContent=m.us2y?fmt(m.us2y.value,2)+"%":"N/A";q("us2d").textContent=m.us2y?m.us2y.date:"";q("us10").textContent=m.us10y?fmt(m.us10y.value,2)+"%":"N/A";q("us10d").textContent=m.us10y?m.us10y.date:"";q("real10").textContent=m.real10y?fmt(m.real10y.value,2)+"%":"N/A";q("real10d").textContent=m.real10y?m.real10y.date:"";
+  q("eurBox").classList.toggle("hidden",pair!=="EURUSD");if(pair==="EURUSD"){q("eur2").textContent=m.eur2y?fmt(m.eur2y.value,2)+"%":"N/A";q("eur10").textContent=m.eur10y?fmt(m.eur10y.value,2)+"%":"N/A";q("sp2").textContent=m.spread2y===null?"N/A":fmt(m.spread2y,3)+"pp";q("sp10").textContent=m.spread10y===null?"N/A":fmt(m.spread10y,3)+"pp"}
+  setChip("macroChip",m.partial?"MACRO PARTIAL":"MACRO OK",m.partial?"warn":"ok");
+ }catch(e){
+  setChip("macroChip","RETRYING","warn");q("healthMsg").textContent=navigator.onLine?"Data source timeout. Auto retry dalam 15 saat.":"Internet device offline. Website akan sambung semula automatik.";
+ }finally{loading=false}
+}
+function refreshTVIfNeeded(force){if(force||Date.now()-lastTVRefresh>600000){renderTV();lastTVRefresh=Date.now()}}
+window.addEventListener("online",function(){updateNet();refreshTVIfNeeded(true);load()});
+window.addEventListener("offline",updateNet);
+document.addEventListener("visibilitychange",function(){if(!document.hidden){refreshTVIfNeeded(true);load()}});
+setInterval(function(){q("hTime").textContent=nowMYT()},1000);
+setInterval(function(){load();refreshTVIfNeeded(false)},15000);
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}
+
 </script>
 </body></html>

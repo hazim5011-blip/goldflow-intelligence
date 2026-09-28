@@ -1,1 +1,1 @@
-export default function handler(req,res){res.setHeader("Cache-Control","no-store");res.status(200).json({ok:true,service:"GoldFlow Intelligence V7",version:"7.0.0",mode:"BROKER_FIRST_NO_GCF",ts:Date.now()})}
+export default function handler(req,res){res.setHeader("Cache-Control","no-store");res.status(200).json({ok:true,service:"GoldFlow Intelligence V7.1 24H Live",version:"7.1.0",mode:"BROKER_FIRST_NO_GCF",hosting:"VERCEL_24H",refreshSeconds:15,ts:Date.now()})}

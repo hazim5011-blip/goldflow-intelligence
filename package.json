@@ -1,1 +1,9 @@
-{"name":"goldflow-intelligence-v7","version":"7.0.0","private":true,"type":"module","engines":{"node":">=20"}}
+{
+  "name": "goldflow-intelligence-v7-1-24h-live",
+  "version": "7.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
+}
