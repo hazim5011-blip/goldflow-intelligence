@@ -15,11 +15,14 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
   document.querySelectorAll(".page").forEach(function(x){x.classList.remove("on")});
   b.classList.add("on");$(b.dataset.page).classList.add("on");
-  if(b.dataset.page==="chartPage")setTimeout(drawChart,50);\n  if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
+  if(b.dataset.page==="chartPage")setTimeout(drawChart,50);
+  if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
 }});
 
-$("tfSelect").value=selectedTF;\n$("indicatorSelect").value=selectedIndicator;
-$("tfSelect").onchange=function(){selectedTF=this.value;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};\n$("indicatorSelect").onchange=function(){selectedIndicator=this.value;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
+$("tfSelect").value=selectedTF;
+$("indicatorSelect").value=selectedIndicator;
+$("tfSelect").onchange=function(){selectedTF=this.value;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
+$("indicatorSelect").onchange=function(){selectedIndicator=this.value;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
 $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
@@ -27,7 +30,7 @@ $("symbolSelect").onchange=function(){selectSymbol(this.value)};
 
 function selectSymbol(s){
   if(!s)return;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
-  $("symbolSelect").value=s;renderSymbolCards();loadAnalysis();
+  $("symbolSelect").value=s;renderSymbolCards();loadAnalysis();renderTradingView();
 }
 function categoryRank(x){return {METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7}[x]||9}
 function applySymbolFilter(){
@@ -106,7 +109,8 @@ async function loadAnalysis(){
       $("connectionNotice").className="notice bad";$("connectionNotice").textContent=r.error||"Indicator engine not ready.";clearChart();return;
     }
     var ind=r.indicator||{},sig=ind.latestSignal||{},st=ind.stats||{},pd=ind.premiumDiscount||null;
-    var engName=selectedIndicator==="103"?"1.03":selectedIndicator==="pvt"?"PVT 1.02":"1.05";\n    chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip","good","● "+engName+" ENGINE");chip("marketChip",String(r.marketState).indexOf("STALE")>=0?"warn":"good",r.marketState||"MT5 LIVE");
+    var engName=selectedIndicator==="103"?"1.03":selectedIndicator==="pvt"?"PVT 1.02":"1.05";
+    chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip","good","● "+engName+" ENGINE");chip("marketChip",String(r.marketState).indexOf("STALE")>=0?"warn":"good",r.marketState||"MT5 LIVE");
     $("connectionNotice").className="notice good";$("connectionNotice").innerHTML="<b>"+selectedSymbol+"</b> • "+r.symbol+" • "+engName+" • "+r.triggerTF+" → "+r.setupTF+" → "+r.biasTF+" • direct Vantage MT5 candles";
     $("price").textContent=px(r.price);$("spread").textContent=finite(r.tick&&r.tick.spread)?"Spread "+px(r.tick.spread):"";
     $("source").textContent=(r.broker||"Vantage")+" • "+r.symbol+" • MT5_BRIDGE";
