@@ -6,6 +6,8 @@
   "url": "https://goldflowintelligencev61complete.vercel.app/",
   "releasedAt": "2026-09-27T01:55:30Z",
   "autoUpdate": true,
+  "fullAuto": true,
+  "updateMode": "shell-swap",
   "pollSeconds": 30,
-  "notes": "V6.1 Complete — pinned to original immutable deployment."
+  "notes": "V6.1 Complete — full auto update enabled from the evergreen master shell."
 }
