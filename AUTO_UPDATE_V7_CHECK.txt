@@ -1,0 +1,1 @@
+GoldFlow V7 auto-update connectivity check.
