@@ -1,5 +1,7 @@
 import {bridgeConfigured,brokerGet,apiError} from "./_broker.js";
-import {runIndicator} from "./_indicator105.js";
+import {runIndicator as run105} from "./_indicator105.js";
+import {runIndicator as run103} from "./_indicator103.js";
+import {runPVT} from "./_indicatorPVT102.js";
 
 const PROFILE={
   M1:["M1","M5","M15"],
@@ -17,6 +19,7 @@ export default async function handler(req,res){
   if(!bridgeConfigured()) return res.status(200).json({ok:false,ready:false,bridgeConfigured:false,error:"BROKER_BRIDGE_URL_NOT_CONFIGURED"});
   const symbol=String(req.query?.symbol||"").trim();
   const triggerTF=String(req.query?.tf||"M5").toUpperCase();
+  const indicatorMode=String(req.query?.indicator||"105").toLowerCase();
   if(!symbol) return res.status(400).json({ok:false,error:"symbol required"});
   if(!PROFILE[triggerTF]) return res.status(400).json({ok:false,error:"unsupported tf"});
   const [tTF,sTF,bTF]=PROFILE[triggerTF];
@@ -41,16 +44,20 @@ export default async function handler(req,res){
         brokerGet("/bars",{symbol,tf:bTF,limit:lb},30000)
       ]);
     }
-    const indicator=runIndicator({
-      triggerBars:t.bars,setupBars:s.bars,biasBars:b.bars,
-      triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:t.symbol||symbol,point:t.point||0
-    });
+    let indicator;
+    if(indicatorMode==="pvt" || indicatorMode==="pvt102"){
+      indicator=runPVT({triggerBars:t.bars,triggerTF:tTF,symbol:t.symbol||symbol,point:t.point||0});
+    }else if(indicatorMode==="103" || indicatorMode==="1.03"){
+      indicator=run103({triggerBars:t.bars,setupBars:s.bars,biasBars:b.bars,triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:t.symbol||symbol,point:t.point||0});
+    }else{
+      indicator=run105({triggerBars:t.bars,setupBars:s.bars,biasBars:b.bars,triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:t.symbol||symbol,point:t.point||0});
+    }
     const now=Math.floor(Date.now()/1000);
     const last=t.bars?.at(-1)?.t||null;
     const ageMin=last?Math.max(0,(now-last)/60):null;
     return res.status(200).json({
       ok:true,ready:indicator.ready,bridgeConfigured:true,source:"MT5_BRIDGE",
-      requested:symbol,symbol:t.symbol||symbol,broker:t.broker||"Vantage",
+      requested:symbol,symbol:t.symbol||symbol,broker:t.broker||"Vantage",indicatorMode,
       triggerTF:tTF,setupTF:sTF,biasTF:bTF,
       tick:{bid:t.bid??null,ask:t.ask??null,spread:t.spread??null},
       price:t.bid??t.bars?.at(-1)?.c??null,digits:t.digits??null,point:t.point??null,
