@@ -1,0 +1,1 @@
+ChatGPT -> GitHub write access verified on 2026-09-28. Vercel Git auto-deploy test marker.
