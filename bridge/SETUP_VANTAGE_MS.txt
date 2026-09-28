@@ -1,0 +1,14 @@
+GOLDFLOW VANTAGE MT5 BRIDGE v2
+
+1. Buka Vantage MT5 dan login.
+2. Pastikan XAUUSD247/XAUUSD dan pair forex ada dalam Market Watch.
+3. Run INSTALL_AND_START.bat.
+4. Run TEST_LOCAL.bat dan pastikan ok=true, connected=true.
+5. Untuk test internet, run Cloudflare quick tunnel dan salin URL https://xxxxx.trycloudflare.com.
+6. Di Vercel project goldflow_intelligence_v6_1_complete, set:
+   BROKER_BRIDGE_URL = URL tunnel
+   BROKER_BRIDGE_KEY = key yang sama dalam .env
+7. Redeploy project itu.
+8. GoldFlow akan bertukar daripada BRIDGE OFF/PUBLIC_FALLBACK kepada MT5_BRIDGE bila sambungan berjaya.
+
+Nota: Quick tunnel hanya untuk test. Untuk 24/7, gunakan permanent HTTPS tunnel.
