@@ -30,36 +30,20 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
-
           p = Path("index.html")
           s = p.read_text(encoding="utf-8")
-
           new_html = """<div class="card"><div class="head"><h3>REBUILT HISTORY</h3><span class="source">WIN = TP + TRAIL + BE • LOSE = SL only</span></div><div class="stats"><div class="stat">TOTAL<b id="stT">0</b></div><div class="stat">WIN<b id="stWIN" class="g">0</b></div><div class="stat">LOSE<b id="stLOSE" class="r">0</b></div><div class="stat">WIN RATE<b id="stWR">—</b></div></div><div id="histRows"></div></div>"""
-          s, n = re.subn(
-              r'<div class="card"><div class="head"><h3>REBUILT HISTORY</h3>.*?<div id="histRows"></div></div>',
-              new_html, s, count=1, flags=re.S
-          )
+          s, n = re.subn(r'<div class="card"><div class="head"><h3>REBUILT HISTORY</h3>.*?<div id="histRows"></div></div>', new_html, s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit("History block replacement count="+str(n))
-
-          new_fn = """function renderHistory(ind){const s=ind.stats||{};const win=(Number(s.tp)||0)+(Number(s.tr)||0)+(Number(s.be)||0),lose=Number(s.sl)||0,resolved=win+lose,wr=resolved>0?win/resolved*100:null;$("stT").textContent=s.total||resolved;$("stWIN").textContent=win;$("stLOSE").textContent=lose;$("stWR").textContent=has(wr)?fmt(wr,1)+"%":"—";$("histRows").innerHTML=(ind.history||[]).slice().reverse().map(x=>{const raw=String(x.status||"").toUpperCase();const outcome=raw==="SL"?"LOSE":(["TP","TRAIL","TR","BE"].includes(raw)?"WIN":raw);const detail=outcome!==raw&&raw?' <span class="muted">('+raw+')</span>':"";return '<div class="hist"><div>'+new Date(x.time*1000).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})+'</div><div class="'+cls(x.direction)+'"><b>'+x.code+'</b><br>'+fmt(x.score,0)+'%</div><div>Entry '+price(x.entry)+'<br><span class="muted">SL '+price(x.invalidation)+' • TP1 '+price(x.tp1)+' • TP2 '+price(x.tp2)+'</span></div><div><b class="'+(outcome==="WIN"?"g":outcome==="LOSE"?"r":"y")+'">'+outcome+'</b>'+detail+'</div><div>'+(x.reasons||[]).join(" + ")+'</div></div>'}).join("")||'<div class="muted">Belum ada signal history.</div>'}
-function renderNews"""
-          s, n = re.subn(
-              r'function renderHistory\(ind\)\{.*?\}\nfunction renderNews',
-              lambda m: new_fn, s, count=1, flags=re.S
-          )
+          new_fn = """function renderHistory(ind){const s=ind.stats||{};const win=(Number(s.tp)||0)+(Number(s.tr)||0)+(Number(s.be)||0),lose=Number(s.sl)||0,resolved=win+lose,wr=resolved>0?win/resolved*100:null;$("stT").textContent=s.total||resolved;$("stWIN").textContent=win;$("stLOSE").textContent=lose;$("stWR").textContent=has(wr)?fmt(wr,1)+"%":"—";$("histRows").innerHTML=(ind.history||[]).slice().reverse().map(x=>{const raw=String(x.status||"").toUpperCase();const outcome=raw==="SL"?"LOSE":(["TP","TRAIL","TR","BE"].includes(raw)?"WIN":raw);const detail=outcome!==raw&&raw?' <span class="muted">('+raw+')</span>':"";return '<div class="hist"><div>'+new Date(x.time*1000).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})+'</div><div class="'+cls(x.direction)+'"><b>'+x.code+'</b><br>'+fmt(x.score,0)+'%</div><div>Entry '+price(x.entry)+'<br><span class="muted">SL '+price(x.invalidation)+' • TP1 '+price(x.tp1)+' • TP2 '+price(x.tp2)+'</span></div><div><b class="'+(outcome==="WIN"?"g":outcome==="LOSE"?"r":"y")+'">'+outcome+'</b>'+detail+'</div><div>'+(x.reasons||[]).join(" + ")+'</div></div>'}).join("")||'<div class="muted">Belum ada signal history.</div>'}"""
+          s, n = re.subn(r'function renderHistory\(ind\)\{.*?\}\nfunction renderNews', lambda m: new_fn + "\nfunction renderNews", s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit("renderHistory replacement count="+str(n))
-
-          api_new = """const API_BASE="https://goldflowintelligencev61complete.vercel.app";
-async function j(u,signal){if(u.startsWith("/api/"))u=API_BASE+u;const r=await fetch(u,{cache:"no-store",signal});if(!r.ok)throw Error("HTTP "+r.status);return r.json()}"""
-          s, n = re.subn(
-              r'async function j\(u,signal\)\{.*?return r\.json\(\)\}',
-              lambda m: api_new, s, count=1
-          )
+          api_new = """const API_BASE="https://goldflowintelligencev61complete.vercel.app";async function j(u,signal){if(u.startsWith("/api/"))u=API_BASE+u;const r=await fetch(u,{cache:"no-store",signal});if(!r.ok)throw Error("HTTP "+r.status);return r.json()}"""
+          s, n = re.subn(r'async function j\(u,signal\)\{.*?return r\.json\(\)\}', lambda m: api_new, s, count=1)
           if n != 1:
               raise SystemExit("API helper replacement count="+str(n))
-
           p.write_text(s, encoding="utf-8")
           print("V6.1 WIN/LOSE patch OK")
           PY
