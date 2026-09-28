@@ -1,7 +1,10 @@
 {
-  "version": "7.1.0",
+  "product": "GoldFlow Intelligence",
   "channel": "production",
-  "mode": "24H_LIVE_BROKER_FIRST_NO_GCF",
-  "message": "24H website mode with 15-second health refresh, auto reconnect, TradingView refresh and PWA shell. MT5 Bridge remains required for full indicator calculations.",
+  "version": "7.2.0",
+  "indicator": "1.05",
+  "mode": "VANTAGE_MT5_DYNAMIC_MULTI_ASSET",
+  "autoUpdate": true,
+  "message": "Dynamic Vantage MT5 symbols, selectable signal timeframe, broker chart, SND/SNR, BOS/CHoCH, TP/TR/BE win logic and SL-only loss.",
   "updated": "2026-09-28"
 }
