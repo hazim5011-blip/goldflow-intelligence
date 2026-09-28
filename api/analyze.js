@@ -13,7 +13,7 @@ const PROFILE={
 
 export default async function handler(req,res){
   if(req.method==="OPTIONS") return res.status(204).end();
-  res.setHeader("Cache-Control","s-maxage=5, stale-while-revalidate=10");
+  res.setHeader("Cache-Control","s-maxage=10, stale-while-revalidate=86400");
   if(!bridgeConfigured()) return res.status(200).json({ok:false,ready:false,bridgeConfigured:false,error:"BROKER_BRIDGE_URL_NOT_CONFIGURED"});
   const symbol=String(req.query?.symbol||"").trim();
   const triggerTF=String(req.query?.tf||"M5").toUpperCase();
@@ -59,5 +59,5 @@ export default async function handler(req,res){
       indicator,
       chartBars:(t.bars||[]).slice(-500)
     });
-  }catch(e){return apiError(res,e,200,{ready:false,symbol,triggerTF,bridgeConfigured:true});}
+  }catch(e){res.setHeader("Cache-Control","no-store");return apiError(res,e,200,{ready:false,symbol,triggerTF,bridgeConfigured:true});}
 }
