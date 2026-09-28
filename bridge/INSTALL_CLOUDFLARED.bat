@@ -1,9 +1,33 @@
 @echo off
-where cloudflared >nul 2>nul
-if %errorlevel%==0 (
-  cloudflared --version
+setlocal
+cd /d %~dp0
+
+echo ============================================
+echo GoldFlow - Install cloudflared (Winget bypass)
+echo ============================================
+
+if exist cloudflared.exe (
+  echo cloudflared.exe already exists.
+  cloudflared.exe --version
   pause
   exit /b 0
 )
-winget install --id Cloudflare.cloudflared --accept-package-agreements --accept-source-agreements
+
+echo Downloading official 64-bit cloudflared.exe from Cloudflare GitHub...
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$ErrorActionPreference='Stop'; $u='https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe'; Invoke-WebRequest -Uri $u -OutFile 'cloudflared.exe' -UseBasicParsing"
+
+if not exist cloudflared.exe (
+  echo.
+  echo ERROR: Download failed.
+  echo Please check internet / antivirus and try again.
+  pause
+  exit /b 1
+)
+
+echo.
+echo Download complete.
+cloudflared.exe --version
+echo.
+echo NEXT: Double-click START_QUICK_TUNNEL.bat
 pause
