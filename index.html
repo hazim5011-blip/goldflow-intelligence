@@ -8,63 +8,205 @@
 <style>
 :root{color-scheme:dark}
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:#061018;color:#edf6fb;font-family:system-ui,-apple-system,Segoe UI,Arial}
-body{display:grid;place-items:center}
-.box{text-align:center;padding:28px}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061018;color:#edf6fb;font-family:system-ui,-apple-system,Segoe UI,Arial}
+#stage{position:fixed;inset:0;background:#061018}
+.release-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#061018}
+#boot{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:#061018}
+#boot.hide{display:none}
+.bootbox{text-align:center;padding:28px}
 .logo{width:64px;height:64px;border-radius:18px;margin:0 auto 18px;display:grid;place-items:center;background:linear-gradient(135deg,#ffdc7d,#b77b17);color:#201400;font-weight:950;font-size:20px}
 h1{margin:0;font-size:26px}
 p{margin:10px 0;color:#8096a6}
-.badge{display:inline-block;margin-top:16px;padding:9px 13px;border:1px solid #255543;border-radius:999px;color:#9ce5c7;background:#0b211a}
-.err{display:none;margin-top:18px;color:#ffacba}
-button{margin-top:12px;border:1px solid #356079;background:#173449;color:white;padding:10px 16px;border-radius:10px;font-weight:700}
+#toast{position:fixed;z-index:50;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translate(-50%,18px);max-width:min(92vw,520px);padding:10px 14px;border:1px solid #294e67;border-radius:999px;background:#081821f2;box-shadow:0 8px 30px #0008;font-size:12px;opacity:0;pointer-events:none;transition:.25s;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast.good{border-color:#255543;color:#9ce5c7}
+#toast.warn{border-color:#645726;color:#f2c75b}
+#toast.bad{border-color:#6a2d38;color:#ffacba}
+#recovery{position:fixed;z-index:60;right:12px;bottom:max(12px,env(safe-area-inset-bottom));display:none}
+#recovery button{border:1px solid #356079;background:#173449;color:#fff;padding:9px 12px;border-radius:10px;font-weight:700}
 </style>
 </head>
 <body>
-<main class="box">
-  <div class="logo">GF</div>
-  <h1>GoldFlow Intelligence</h1>
-  <p id="msg">Checking latest release…</p>
-  <div id="badge" class="badge">AUTO UPDATE ON</div>
-  <div id="err" class="err">
-    <div>Unable to open the latest release.</div>
-    <button onclick="boot()">Try again</button>
+<div id="stage"></div>
+
+<div id="boot">
+  <div class="bootbox">
+    <div class="logo">GF</div>
+    <h1>GoldFlow Intelligence</h1>
+    <p id="bootMsg">Checking latest release…</p>
   </div>
-</main>
+</div>
+
+<div id="toast"></div>
+<div id="recovery"><button id="retryBtn">Retry latest version</button></div>
+
 <script>
 const MANIFEST="/release.json";
+const DEFAULT_POLL_MS=30000;
+const LOAD_TIMEOUT_MS=15000;
 
-async function readRelease(){
-  const r = await fetch(MANIFEST + "?t=" + Date.now(), {cache:"no-store"});
-  if(!r.ok) throw new Error("Manifest HTTP " + r.status);
-  const x = await r.json();
-  if(!x.version || !x.url) throw new Error("Invalid release manifest");
-  return x;
+const stage=document.getElementById("stage");
+const boot=document.getElementById("boot");
+const bootMsg=document.getElementById("bootMsg");
+const toast=document.getElementById("toast");
+const recovery=document.getElementById("recovery");
+const retryBtn=document.getElementById("retryBtn");
+
+let current=null;
+let activeFrame=null;
+let timer=null;
+let toastTimer=null;
+let switching=false;
+
+function showToast(msg,type="good",ms=4500){
+  clearTimeout(toastTimer);
+  toast.textContent=msg;
+  toast.className="on "+type;
+  toastTimer=setTimeout(()=>toast.className="",ms);
 }
-async function boot(){
-  document.getElementById("err").style.display="none";
-  document.getElementById("msg").textContent="Checking latest release…";
+
+async function getRelease(){
+  const r=await fetch(MANIFEST+"?t="+Date.now(),{
+    cache:"no-store",
+    headers:{"Cache-Control":"no-cache"}
+  });
+  if(!r.ok) throw new Error("Manifest HTTP "+r.status);
+  const rel=await r.json();
+  if(!rel.version || !rel.url) throw new Error("Invalid release manifest");
+  rel.url=new URL(rel.url,location.href).href;
+  return rel;
+}
+
+function sameRelease(a,b){
+  return !!a && !!b &&
+    a.version===b.version &&
+    a.url===b.url &&
+    (a.releasedAt||"")===(b.releasedAt||"");
+}
+
+function createFrame(url){
+  const f=document.createElement("iframe");
+  f.className="release-frame";
+  f.src=url;
+  f.allow="clipboard-read; clipboard-write; fullscreen";
+  f.referrerPolicy="strict-origin-when-cross-origin";
+  f.setAttribute("allowfullscreen","");
+  return f;
+}
+
+function cacheRelease(rel){
+  try{localStorage.setItem("goldflow_latest_release",JSON.stringify(rel))}catch(_){}
+}
+
+function readCached(){
   try{
-    const rel = await readRelease();
-    localStorage.setItem("goldflow_latest_release", JSON.stringify(rel));
-    document.getElementById("badge").textContent="LATEST RELEASE: V" + rel.version;
-    document.getElementById("msg").textContent="Opening latest version…";
-    setTimeout(()=>location.replace(rel.url), 350);
-  }catch(e){
-    const cached = localStorage.getItem("goldflow_latest_release");
-    if(cached){
-      try{
-        const rel = JSON.parse(cached);
-        document.getElementById("badge").textContent="CACHED RELEASE: V" + rel.version;
-        document.getElementById("msg").textContent="Opening saved release…";
-        setTimeout(()=>location.replace(rel.url), 350);
-        return;
-      }catch(_){}
+    const x=JSON.parse(localStorage.getItem("goldflow_latest_release")||"null");
+    return x && x.version && x.url ? x : null;
+  }catch(_){return null}
+}
+
+function scheduleNext(rel){
+  clearTimeout(timer);
+  const sec=Math.max(15,Number(rel?.pollSeconds)||DEFAULT_POLL_MS/1000);
+  timer=setTimeout(()=>sync(false),sec*1000);
+}
+
+async function activateRelease(rel,first=false){
+  if(switching) return;
+  switching=true;
+
+  const old=current;
+  const next=createFrame(rel.url);
+  next.style.visibility="hidden";
+  next.style.opacity="0";
+  stage.appendChild(next);
+
+  let settled=false;
+  const timeout=setTimeout(()=>{
+    if(settled) return;
+    settled=true;
+    next.remove();
+    switching=false;
+    recovery.style.display="block";
+    showToast("Latest release did not finish loading. Current version remains active.","bad",7000);
+    scheduleNext(current||rel);
+  },LOAD_TIMEOUT_MS);
+
+  next.addEventListener("load",()=>{
+    if(settled) return;
+    settled=true;
+    clearTimeout(timeout);
+
+    next.style.visibility="visible";
+    next.style.opacity="1";
+
+    if(activeFrame && activeFrame!==next){
+      activeFrame.remove();
     }
-    document.getElementById("msg").textContent="Update check failed.";
-    document.getElementById("err").style.display="block";
+    activeFrame=next;
+    current=rel;
+    cacheRelease(rel);
+    recovery.style.display="none";
+    boot.classList.add("hide");
+    document.title="GoldFlow Intelligence V"+rel.version;
+
+    if(first){
+      showToast("GoldFlow Intelligence V"+rel.version+" • Full Auto Update ON","good",5000);
+    }else if(!sameRelease(old,rel)){
+      showToast("Auto updated "+(old?"V"+old.version+" → ":"")+"V"+rel.version,"warn",6500);
+    }
+
+    switching=false;
+    scheduleNext(rel);
+  },{once:true});
+}
+
+async function sync(first=false){
+  try{
+    const rel=await getRelease();
+
+    if(!current){
+      await activateRelease(rel,true);
+      return;
+    }
+
+    if(!sameRelease(current,rel)){
+      showToast("New release V"+rel.version+" detected. Updating…","warn",7000);
+      await activateRelease(rel,false);
+      return;
+    }
+
+    scheduleNext(rel);
+  }catch(err){
+    if(!current){
+      const cached=readCached();
+      if(cached){
+        bootMsg.textContent="Opening saved release…";
+        await activateRelease(cached,true);
+        return;
+      }
+      bootMsg.textContent="Update check failed. Retrying…";
+      recovery.style.display="block";
+    }else{
+      showToast("Update check unavailable. Current release continues running.","bad",5000);
+    }
+    clearTimeout(timer);
+    timer=setTimeout(()=>sync(false),30000);
   }
 }
-boot();
+
+retryBtn.addEventListener("click",()=>{
+  recovery.style.display="none";
+  sync(false);
+});
+
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden) sync(false);
+});
+
+window.addEventListener("online",()=>sync(false));
+
+sync(true);
 </script>
 </body>
 </html>
