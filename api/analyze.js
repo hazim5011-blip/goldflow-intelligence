@@ -22,9 +22,9 @@ export default async function handler(req,res){
   const [tTF,sTF,bTF]=PROFILE[triggerTF];
   try{
     const [t,s,b]=await Promise.all([
-      brokerGet("/bars",{symbol,tf:tTF,limit:1600},12000),
-      brokerGet("/bars",{symbol,tf:sTF,limit:1200},12000),
-      brokerGet("/bars",{symbol,tf:bTF,limit:900},12000)
+      brokerGet("/bars",{symbol,tf:tTF,limit:1000},25000),
+      brokerGet("/bars",{symbol,tf:sTF,limit:800},25000),
+      brokerGet("/bars",{symbol,tf:bTF,limit:600},25000)
     ]);
     const indicator=runIndicator({
       triggerBars:t.bars,setupBars:s.bars,biasBars:b.bars,
