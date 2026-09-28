@@ -26,11 +26,21 @@ export default async function handler(req,res){
   };
   const [lt,ls,lb]=LIMITS[triggerTF]||[700,550,420];
   try{
-    const [t,s,b]=await Promise.all([
-      brokerGet("/bars",{symbol,tf:tTF,limit:lt},30000),
-      brokerGet("/bars",{symbol,tf:sTF,limit:ls},30000),
-      brokerGet("/bars",{symbol,tf:bTF,limit:lb},30000)
-    ]);
+    let t,s,b;
+    try{
+      const batch=await brokerGet("/multi-bars",{symbol,tfs:[tTF,sTF,bTF].join(","),limits:[lt,ls,lb].join(",")},55000);
+      t={bars:batch.frames?.[tTF]||[],symbol:batch.symbol,broker:batch.broker,bid:batch.bid,ask:batch.ask,spread:batch.spread,digits:batch.digits,point:batch.point,serverTime:batch.serverTime};
+      s={bars:batch.frames?.[sTF]||[]};
+      b={bars:batch.frames?.[bTF]||[]};
+    }catch(batchErr){
+      const msg=String(batchErr?.message||batchErr);
+      if(!/404|Not Found|detail/i.test(msg) && !/multi-bars/i.test(msg)) throw batchErr;
+      [t,s,b]=await Promise.all([
+        brokerGet("/bars",{symbol,tf:tTF,limit:lt},30000),
+        brokerGet("/bars",{symbol,tf:sTF,limit:ls},30000),
+        brokerGet("/bars",{symbol,tf:bTF,limit:lb},30000)
+      ]);
+    }
     const indicator=runIndicator({
       triggerBars:t.bars,setupBars:s.bars,biasBars:b.bars,
       triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:t.symbol||symbol,point:t.point||0
