@@ -1,4 +1,4 @@
-var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5";
+var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5", selectedIndicator=localStorage.getItem("gf_indicator")||"105";
 var lastAnalysis=null, chart=null, candleSeries=null, loading=false;
 function $(id){return document.getElementById(id)}
 function finite(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}
@@ -15,11 +15,11 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
   document.querySelectorAll(".page").forEach(function(x){x.classList.remove("on")});
   b.classList.add("on");$(b.dataset.page).classList.add("on");
-  if(b.dataset.page==="chartPage")setTimeout(drawChart,50);
+  if(b.dataset.page==="chartPage")setTimeout(drawChart,50);\n  if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
 }});
 
-$("tfSelect").value=selectedTF;
-$("tfSelect").onchange=function(){selectedTF=this.value;localStorage.setItem("gf_tf",selectedTF);loadAnalysis()};
+$("tfSelect").value=selectedTF;\n$("indicatorSelect").value=selectedIndicator;
+$("tfSelect").onchange=function(){selectedTF=this.value;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};\n$("indicatorSelect").onchange=function(){selectedIndicator=this.value;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
 $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
@@ -99,15 +99,15 @@ function resetDashboard(){
 async function loadAnalysis(){
   if(!selectedSymbol||loading)return;loading=true;resetDashboard();
   try{
-    var r=await getJson("/api/analyze?symbol="+encodeURIComponent(selectedSymbol)+"&tf="+encodeURIComponent(selectedTF)+"&t="+Date.now());
+    var r=await getJson("/api/analyze?symbol="+encodeURIComponent(selectedSymbol)+"&tf="+encodeURIComponent(selectedTF)+"&indicator="+encodeURIComponent(selectedIndicator));
     lastAnalysis=r;
     if(!r.ok||!r.ready){
       chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","WAIT");
       $("connectionNotice").className="notice bad";$("connectionNotice").textContent=r.error||"Indicator engine not ready.";clearChart();return;
     }
     var ind=r.indicator||{},sig=ind.latestSignal||{},st=ind.stats||{},pd=ind.premiumDiscount||null;
-    chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip","good","● 1.05 ENGINE");chip("marketChip",String(r.marketState).indexOf("STALE")>=0?"warn":"good",r.marketState||"MT5 LIVE");
-    $("connectionNotice").className="notice good";$("connectionNotice").innerHTML="<b>"+selectedSymbol+"</b> • "+r.symbol+" • "+r.triggerTF+" → "+r.setupTF+" → "+r.biasTF+" • direct Vantage MT5 candles";
+    var engName=selectedIndicator==="103"?"1.03":selectedIndicator==="pvt"?"PVT 1.02":"1.05";\n    chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip","good","● "+engName+" ENGINE");chip("marketChip",String(r.marketState).indexOf("STALE")>=0?"warn":"good",r.marketState||"MT5 LIVE");
+    $("connectionNotice").className="notice good";$("connectionNotice").innerHTML="<b>"+selectedSymbol+"</b> • "+r.symbol+" • "+engName+" • "+r.triggerTF+" → "+r.setupTF+" → "+r.biasTF+" • direct Vantage MT5 candles";
     $("price").textContent=px(r.price);$("spread").textContent=finite(r.tick&&r.tick.spread)?"Spread "+px(r.tick.spread):"";
     $("source").textContent=(r.broker||"Vantage")+" • "+r.symbol+" • MT5_BRIDGE";
     $("signal").textContent=sig.code||"WAIT";$("signal").className=clsDir(sig.direction);
@@ -161,6 +161,24 @@ function drawChart(){
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
-  setInterval(checkBridge,10000);setInterval(function(){if(selectedSymbol)loadAnalysis()},15000);
+  setInterval(checkBridge,30000);setInterval(function(){if(selectedSymbol)loadAnalysis()},30000);
 }
 init();
+
+function tvSymbol(s){
+  var r=rootSymbol(s).toUpperCase();
+  if(r==="XAUUSD247")return "THINKMARKETS:XAUUSD247";
+  if(r==="XAUUSD")return "OANDA:XAUUSD";
+  if(r==="XAGUSD")return "OANDA:XAGUSD";
+  if(/^(BTC|ETH|SOL|XRP|LTC|BCH)USD$/.test(r))return "COINBASE:"+r;
+  if(/^[A-Z]{6}$/.test(r))return "FX:"+r;
+  return r;
+}
+function tvInterval(tf){
+  return ({M1:"1",M5:"5",M15:"15",M30:"30",H1:"60",H4:"240",D1:"D"})[tf]||"5";
+}
+function renderTradingView(){
+  var el=$("tvWrap"); if(!el||!selectedSymbol)return;
+  var sym=tvSymbol(selectedSymbol),intv=tvInterval(selectedTF);
+  el.innerHTML='<iframe allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen src="https://s.tradingview.com/widgetembed/?frameElementId=tv_goldflow&symbol='+encodeURIComponent(sym)+'&interval='+encodeURIComponent(intv)+'&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=%230f2740&studies=[]&theme=dark&style=1&timezone=Asia%2FKuala_Lumpur&withdateranges=1&hideideas=1"></iframe>';
+}
