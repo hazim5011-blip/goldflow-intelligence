@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence V7.2</title>
+<title>GoldFlow Intelligence V7.3</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -12,7 +12,7 @@
 <body>
 <div class="wrap">
 <header class="top">
-  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.2</h1><small>VANTAGE MT5 • MULTI-ASSET • INDICATOR 1.05</small></div></div>
+  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.3</h1><small>HYBRID • MULTI-ASSET • 3 INDICATORS</small></div></div>
   <div class="statusRow"><span id="bridgeChip" class="chip warn">BRIDGE…</span><span id="engineChip" class="chip warn">ENGINE…</span><span id="marketChip" class="chip warn">MARKET…</span></div>
 </header>
 
@@ -20,6 +20,7 @@
   <div class="field grow"><label>Search Symbol</label><input id="symbolSearch" placeholder="XAUUSD, BTCUSD, EURUSD…"></div>
   <div class="field"><label>Category</label><select id="category"><option>ALL</option></select></div>
   <div class="field symbolField"><label>Vantage Symbol</label><select id="symbolSelect"></select></div>
+  <div class="field"><label>Indicator</label><select id="indicatorSelect"><option value="105">MTF Research v1.05</option><option value="103">MTF Research v1.03</option><option value="pvt">PVT v1.02</option></select></div>
   <div class="field"><label>Signal TF</label><select id="tfSelect"><option>M1</option><option selected>M5</option><option>M15</option><option>M30</option><option>H1</option><option>H4</option><option>D1</option></select></div>
   <button id="refreshBtn" class="primary">Refresh</button>
 </section>
@@ -29,6 +30,7 @@
 <nav class="tabs">
   <button class="tab on" data-page="dashboard">Dashboard</button>
   <button class="tab" data-page="chartPage">Broker Chart</button>
+  <button class="tab" data-page="tvPage">TradingView</button>
   <button class="tab" data-page="historyPage">History</button>
   <button class="tab" data-page="symbolsPage">All Symbols</button>
 </nav>
@@ -70,6 +72,10 @@
 
 <section id="chartPage" class="page">
   <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><span id="chartTag" class="tag">—</span></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div></div>
+</section>
+
+<section id="tvPage" class="page">
+  <div class="card"><div class="head"><h3>TRADINGVIEW LIVE REFERENCE</h3><span class="tag y">REFERENCE ONLY</span></div><div class="notice">TradingView digunakan sebagai carta rujukan live. Data widget TradingView tidak digunakan untuk mengira 3 indicator GoldFlow.</div><div id="tvWrap" class="tvwrap"></div></div>
 </section>
 
 <section id="historyPage" class="page">
