@@ -1,16 +1,25 @@
-# GoldFlow Intelligence V7
+# GoldFlow Intelligence V7.2
 
-Broker-first production build.
+Production website: https://goldflow-intelligence.vercel.app/
 
-- XAUUSD live display: OANDA:XAUUSD through TradingView.
-- XAUUSD247 live display: THINKMARKETS:XAUUSD247 through TradingView.
-- FX live display: matching OANDA TradingView symbols.
-- No GC=F / Gold Futures fallback is used for XAUUSD.
-- No Yahoo pair-price fallback is used for live trade pairs.
-- Indicator/SND/SNR/Entry/SL/TP wait for MT5 Broker Bridge so calculations use the broker's own candles.
-- Macro sources remain independent: U.S. Treasury / ECB and DXY reference.
+## Architecture
 
-Vercel environment variables for full engine:
+Vantage MT5 -> GoldFlow Vantage Bridge -> Cloudflare HTTPS Tunnel -> Vercel API -> Indicator 1.05 dynamic multi-asset engine -> Web UI.
+
+## V7.2
+
+- Dynamic symbol catalog from the connected Vantage MT5 server.
+- Categories: Forex, Metals, Crypto, Indices, Energy, Stocks, Other.
+- User-selectable signal TF: M1, M5, M15, M30, H1, H4, D1.
+- Automatic MTF setup/bias mapping.
+- Broker-native candles and chart.
+- Indicator 1.05-style market structure, BOS/CHoCH, supply/demand/order-block zones, signal scoring and history.
+- History: WIN = TP + trailing + BE. LOSE = SL only.
+- No GC=F/Yahoo execution-price substitution in the V7.2 engine.
+
+## Required Vercel environment variables
+
 - BROKER_BRIDGE_URL
 - BROKER_BRIDGE_KEY
-- MARKETDATA_TOKEN (optional GLD options)
+
+Never commit the real bridge key to GitHub.
