@@ -2,211 +2,57 @@
 <html lang="ms">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence</title>
+<title>GoldFlow Intelligence V7</title>
 <style>
-:root{color-scheme:dark}
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061018;color:#edf6fb;font-family:system-ui,-apple-system,Segoe UI,Arial}
-#stage{position:fixed;inset:0;background:#061018}
-.release-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#061018}
-#boot{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:#061018}
-#boot.hide{display:none}
-.bootbox{text-align:center;padding:28px}
-.logo{width:64px;height:64px;border-radius:18px;margin:0 auto 18px;display:grid;place-items:center;background:linear-gradient(135deg,#ffdc7d,#b77b17);color:#201400;font-weight:950;font-size:20px}
-h1{margin:0;font-size:26px}
-p{margin:10px 0;color:#8096a6}
-#toast{position:fixed;z-index:50;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translate(-50%,18px);max-width:min(92vw,520px);padding:10px 14px;border:1px solid #294e67;border-radius:999px;background:#081821f2;box-shadow:0 8px 30px #0008;font-size:12px;opacity:0;pointer-events:none;transition:.25s;text-align:center}
-#toast.on{opacity:1;transform:translate(-50%,0)}
-#toast.good{border-color:#255543;color:#9ce5c7}
-#toast.warn{border-color:#645726;color:#f2c75b}
-#toast.bad{border-color:#6a2d38;color:#ffacba}
-#recovery{position:fixed;z-index:60;right:12px;bottom:max(12px,env(safe-area-inset-bottom));display:none}
-#recovery button{border:1px solid #356079;background:#173449;color:#fff;padding:9px 12px;border-radius:10px;font-weight:700}
+:root{--bg:#061018;--p:#0d1b26;--p2:#102431;--line:#25404e;--t:#eef7fb;--m:#8298a8;--g:#38d5a5;--r:#ff637c;--y:#f1c75b;--b:#62b6ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(#061018,#091722);color:var(--t);font:14px system-ui,-apple-system,Segoe UI,Arial}.w{max-width:1400px;margin:auto;padding:12px}.top{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0 14px;border-bottom:1px solid var(--line)}.brand{display:flex;gap:10px;align-items:center}.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#ffdc7d,#ad7412);color:#211400;font-weight:900}.brand h1{font-size:20px;margin:0}.sub{font-size:10px;color:var(--m)}.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 9px;font-size:10px}.ok{color:var(--g);border-color:#265c4b}.warn{color:var(--y);border-color:#665827}.bad{color:var(--r);border-color:#6d3140}.pairs{display:flex;gap:7px;overflow:auto;padding:12px 0}.pair{background:#09141c;color:#9db0bd;border:1px solid var(--line);border-radius:10px;padding:10px 12px;white-space:nowrap}.pair.on{background:#17384d;color:#fff;border-color:#3c6b82}.notice{padding:11px;border-radius:11px;border:1px solid #31576d;background:#0a1d29;color:#acd9f4;margin:8px 0}.notice.good{border-color:#2d5f4b;background:#0c211b;color:#a4e6cc}.grid{display:grid;gap:10px}.g2{grid-template-columns:1.1fr .9fr}.g4{grid-template-columns:repeat(4,1fr)}.card{background:linear-gradient(180deg,var(--p2),var(--p));border:1px solid var(--line);border-radius:15px;padding:13px}.head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px}.head h3{margin:0;font-size:14px}.muted{color:var(--m)}.big{font-size:30px;font-weight:900}.tv{height:430px;border-radius:12px;overflow:hidden;background:#07131c}.quote{height:175px;border-radius:12px;overflow:hidden;background:#07131c}.kpi small{color:var(--m)}.kpi b{display:block;font-size:24px;margin-top:4px}.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.mini div{background:#07131b;border:1px solid #203846;border-radius:9px;padding:9px}.mini small{color:var(--m);display:block}.mini b{display:block;margin-top:4px}.section{margin-top:10px}.zones{display:grid;grid-template-columns:1fr 1fr;gap:8px}.zone{background:#07131b;border:1px solid #203846;border-radius:9px;padding:10px}.footer{text-align:center;color:#617b8b;font-size:10px;padding:20px}.hidden{display:none}
+@media(max-width:800px){.g2,.g4{grid-template-columns:1fr}.mini{grid-template-columns:1fr 1fr}.top{align-items:flex-start}.brand h1{font-size:17px}.chips{max-width:50%}.tv{height:390px}.zones{grid-template-columns:1fr}}
 </style>
 </head>
-<body>
-<div id="stage"></div>
-
-<div id="boot">
-  <div class="bootbox">
-    <div class="logo">GF</div>
-    <h1>GoldFlow Intelligence</h1>
-    <p id="bootMsg">Checking latest release…</p>
-  </div>
+<body><div class="w">
+<div class="top">
+<div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7</h1><div class="sub">BROKER-FIRST • LIVE TRADINGVIEW • NO FUTURES FALLBACK</div></div></div>
+<div class="chips"><span id="tvChip" class="chip ok">TV LIVE</span><span id="bridgeChip" class="chip warn">BRIDGE CHECK</span><span id="macroChip" class="chip warn">MACRO CHECK</span></div>
 </div>
-
-<div id="toast"></div>
-<div id="recovery"><button id="retryBtn">Retry latest version</button></div>
-
+<div id="pairs" class="pairs"></div>
+<div class="notice good"><b>PRICE SOURCE POLICY:</b> XAUUSD tidak lagi menggunakan Gold Futures/Yahoo. Semua pair live dipaparkan menggunakan simbol TradingView yang sepadan. Indicator/SND/SNR/Entry/SL/TP hanya menggunakan candle MT5 broker apabila Bridge online.</div>
+<div class="grid g2">
+<div class="card"><div class="head"><h3>LIVE CHART</h3><span id="symbolTag" class="chip"></span></div><div id="tvChart" class="tv"></div></div>
+<div class="card"><div class="head"><h3>LIVE REFERENCE</h3><span id="stateTag" class="chip warn">CHECKING</span></div><div id="tvQuote" class="quote"></div><div class="section mini"><div><small>BROKER BID</small><b id="bid">SEE TV</b></div><div><small>BROKER ASK</small><b id="ask">SEE TV</b></div><div><small>SPREAD</small><b id="spread">—</b></div><div><small>ENGINE</small><b id="engine">WAIT BRIDGE</b></div></div><div id="sourceNote" class="notice">Loading source status…</div></div>
+</div>
+<div class="section grid g4">
+<div class="card kpi"><small>DXY</small><b id="dxy">—</b><span id="dxyNote" class="muted">macro reference</span></div>
+<div class="card kpi"><small>US 2Y</small><b id="us2">—</b><span id="us2d" class="muted"></span></div>
+<div class="card kpi"><small>US 10Y</small><b id="us10">—</b><span id="us10d" class="muted"></span></div>
+<div class="card kpi"><small>US 10Y REAL</small><b id="real10">—</b><span id="real10d" class="muted"></span></div>
+</div>
+<div id="eurBox" class="section grid g4 hidden">
+<div class="card kpi"><small>EURO 2Y</small><b id="eur2">—</b></div>
+<div class="card kpi"><small>EURO 10Y</small><b id="eur10">—</b></div>
+<div class="card kpi"><small>EUR-US 2Y SPREAD</small><b id="sp2">—</b></div>
+<div class="card kpi"><small>EUR-US 10Y SPREAD</small><b id="sp10">—</b></div>
+</div>
+<div class="section grid g2">
+<div class="card"><div class="head"><h3>INDICATOR / SND / SNR</h3><span id="engineTag" class="chip warn">WAIT BRIDGE</span></div><div class="zones"><div class="zone"><small class="muted">DEMAND / SUPPORT</small><div class="big" id="demand">N/A</div></div><div class="zone"><small class="muted">SUPPLY / RESISTANCE</small><div class="big" id="supply">N/A</div></div></div><div class="section mini"><div><small>BIAS</small><b id="bias">WAIT</b></div><div><small>ENTRY</small><b id="entry">N/A</b></div><div><small>SL</small><b id="sl">N/A</b></div><div><small>TP</small><b id="tp">N/A</b></div></div></div>
+<div class="card"><div class="head"><h3>DATA HEALTH</h3><span class="muted">auto refresh 30s</span></div><div class="mini"><div><small>DISPLAY</small><b id="hDisplay">TradingView</b></div><div><small>ENGINE FEED</small><b id="hFeed">Checking</b></div><div><small>PAIR</small><b id="hPair">—</b></div><div><small>LAST UPDATE</small><b id="hTime">—</b></div></div><div id="healthMsg" class="notice">—</div></div>
+</div>
+<div class="footer">GoldFlow Intelligence V7 • TradingView for live visual reference • MT5 Broker Bridge for calculations • research/education only</div>
+</div>
 <script>
-const MANIFEST="/release.json";
-const DEFAULT_POLL_MS=30000;
-const LOAD_TIMEOUT_MS=15000;
-
-const stage=document.getElementById("stage");
-const boot=document.getElementById("boot");
-const bootMsg=document.getElementById("bootMsg");
-const toast=document.getElementById("toast");
-const recovery=document.getElementById("recovery");
-const retryBtn=document.getElementById("retryBtn");
-
-let current=null;
-let activeFrame=null;
-let timer=null;
-let toastTimer=null;
-let switching=false;
-
-function showToast(msg,type="good",ms=4500){
-  clearTimeout(toastTimer);
-  toast.textContent=msg;
-  toast.className="on "+type;
-  toastTimer=setTimeout(()=>toast.className="",ms);
-}
-
-async function getRelease(){
-  const r=await fetch(MANIFEST+"?t="+Date.now(),{
-    cache:"no-store",
-    headers:{"Cache-Control":"no-cache"}
-  });
-  if(!r.ok) throw new Error("Manifest HTTP "+r.status);
-  const rel=await r.json();
-  if(!rel.version || !rel.url) throw new Error("Invalid release manifest");
-  rel.url=new URL(rel.url,location.href).href;
-  return rel;
-}
-
-function sameRelease(a,b){
-  return !!a && !!b &&
-    a.version===b.version &&
-    a.url===b.url &&
-    (a.releasedAt||"")===(b.releasedAt||"");
-}
-
-function createFrame(url){
-  const f=document.createElement("iframe");
-  f.className="release-frame";
-  f.src=url;
-  f.allow="clipboard-read; clipboard-write; fullscreen";
-  f.referrerPolicy="strict-origin-when-cross-origin";
-  f.setAttribute("allowfullscreen","");
-  return f;
-}
-
-function cacheRelease(rel){
-  try{localStorage.setItem("goldflow_latest_release",JSON.stringify(rel))}catch(_){}
-}
-
-function readCached(){
-  try{
-    const x=JSON.parse(localStorage.getItem("goldflow_latest_release")||"null");
-    return x && x.version && x.url ? x : null;
-  }catch(_){return null}
-}
-
-function scheduleNext(rel){
-  clearTimeout(timer);
-  const sec=Math.max(15,Number(rel?.pollSeconds)||DEFAULT_POLL_MS/1000);
-  timer=setTimeout(()=>sync(false),sec*1000);
-}
-
-async function activateRelease(rel,first=false){
-  if(switching) return;
-  switching=true;
-
-  const old=current;
-  const next=createFrame(rel.url);
-  next.style.visibility="hidden";
-  next.style.opacity="0";
-  stage.appendChild(next);
-
-  let settled=false;
-  const timeout=setTimeout(()=>{
-    if(settled) return;
-    settled=true;
-    next.remove();
-    switching=false;
-    recovery.style.display="block";
-    showToast("Latest release did not finish loading. Current version remains active.","bad",7000);
-    scheduleNext(current||rel);
-  },LOAD_TIMEOUT_MS);
-
-  next.addEventListener("load",()=>{
-    if(settled) return;
-    settled=true;
-    clearTimeout(timeout);
-
-    next.style.visibility="visible";
-    next.style.opacity="1";
-
-    if(activeFrame && activeFrame!==next){
-      activeFrame.remove();
-    }
-    activeFrame=next;
-    current=rel;
-    cacheRelease(rel);
-    recovery.style.display="none";
-    boot.classList.add("hide");
-    document.title="GoldFlow Intelligence V"+rel.version;
-
-    if(first){
-      showToast("GoldFlow Intelligence V"+rel.version+" • Full Auto Update ON","good",5000);
-    }else if(!sameRelease(old,rel)){
-      showToast("Auto updated "+(old?"V"+old.version+" → ":"")+"V"+rel.version,"warn",6500);
-    }
-
-    switching=false;
-    scheduleNext(rel);
-  },{once:true});
-}
-
-async function sync(first=false){
-  try{
-    const rel=await getRelease();
-
-    if(!current){
-      await activateRelease(rel,true);
-      return;
-    }
-
-    if(!sameRelease(current,rel)){
-      showToast("New release V"+rel.version+" detected. Updating…","warn",7000);
-      await activateRelease(rel,false);
-      return;
-    }
-
-    scheduleNext(rel);
-  }catch(err){
-    if(!current){
-      const cached=readCached();
-      if(cached){
-        bootMsg.textContent="Opening saved release…";
-        await activateRelease(cached,true);
-        return;
-      }
-      bootMsg.textContent="Update check failed. Retrying…";
-      recovery.style.display="block";
-    }else{
-      showToast("Update check unavailable. Current release continues running.","bad",5000);
-    }
-    clearTimeout(timer);
-    timer=setTimeout(()=>sync(false),30000);
-  }
-}
-
-retryBtn.addEventListener("click",()=>{
-  recovery.style.display="none";
-  sync(false);
-});
-
-document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden) sync(false);
-});
-
-window.addEventListener("online",()=>sync(false));
-
-sync(true);
+var PAIRS=["XAUUSD247","XAUUSD","EURUSD","GBPUSD","AUDUSD","NZDUSD","USDJPY","USDCHF","USDCAD"];
+var TV={XAUUSD247:"THINKMARKETS:XAUUSD247",XAUUSD:"OANDA:XAUUSD",EURUSD:"OANDA:EURUSD",GBPUSD:"OANDA:GBPUSD",AUDUSD:"OANDA:AUDUSD",NZDUSD:"OANDA:NZDUSD",USDJPY:"OANDA:USDJPY",USDCHF:"OANDA:USDCHF",USDCAD:"OANDA:USDCAD"};
+var pair=localStorage.getItem("gf_v7_pair")||"XAUUSD";
+function q(id){return document.getElementById(id)}
+function fmt(v,d){return v===null||v===undefined||isNaN(Number(v))?"N/A":Number(v).toFixed(d===undefined?2:d)}
+function setChip(id,txt,cls){var e=q(id);e.textContent=txt;e.className="chip "+cls}
+function renderPairs(){q("pairs").innerHTML=PAIRS.map(function(p){return '<button class="pair '+(p===pair?'on':'')+'" data-p="'+p+'">'+p+'</button>'}).join("");document.querySelectorAll(".pair").forEach(function(b){b.onclick=function(){pair=b.dataset.p;localStorage.setItem("gf_v7_pair",pair);renderPairs();renderTV();load()}})}
+function widget(box,src,cfg){var el=q(box);el.innerHTML='<div class="tradingview-widget-container" style="height:100%;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div></div>';var s=document.createElement("script");s.src=src;s.async=true;s.text=JSON.stringify(cfg);el.firstElementChild.appendChild(s)}
+function renderTV(){var sym=TV[pair];q("symbolTag").textContent=sym;widget("tvQuote","https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js",{symbol:sym,width:"100%",locale:"en",colorTheme:"dark",isTransparent:true});widget("tvChart","https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js",{autosize:true,symbol:sym,interval:"15",timezone:"Asia/Kuala_Lumpur",theme:"dark",style:"1",locale:"en",backgroundColor:"#07131c",allow_symbol_change:false,hide_side_toolbar:true,withdateranges:true,support_host:"https://www.tradingview.com"})}
+async function getJson(url){var r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+function clearEngine(){q("demand").textContent="N/A";q("supply").textContent="N/A";q("bias").textContent="WAIT";q("entry").textContent="N/A";q("sl").textContent="N/A";q("tp").textContent="N/A";q("engine").textContent="WAIT BRIDGE";setChip("engineTag","WAIT BRIDGE","warn")}
+async function load(){q("hPair").textContent=pair;q("hTime").textContent=new Date().toLocaleTimeString("en-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit"});try{var all=await Promise.all([getJson("/api/status?pair="+encodeURIComponent(pair)),getJson("/api/macro?pair="+encodeURIComponent(pair))]);var s=all[0],m=all[1];if(s.bridgeOnline){setChip("bridgeChip","MT5 LIVE","ok");setChip("stateTag","BROKER LIVE","ok");q("bid").textContent=fmt(s.bid,pair==="USDJPY"?3:pair.indexOf("XAU")===0?2:5);q("ask").textContent=fmt(s.ask,pair==="USDJPY"?3:pair.indexOf("XAU")===0?2:5);q("spread").textContent=fmt(s.spread,pair.indexOf("XAU")===0?2:5);q("engine").textContent=s.engine||"READY";q("hFeed").textContent="MT5 BROKER";q("sourceNote").innerHTML="<b>Broker feed active.</b> Indicator calculations can use the same broker price.";q("healthMsg").textContent="Live display + calculation source aligned to broker bridge.";if(s.zone){q("demand").textContent=s.zone.demand||"N/A";q("supply").textContent=s.zone.supply||"N/A";q("bias").textContent=s.zone.bias||"WAIT";q("entry").textContent=s.zone.entry||"N/A";q("sl").textContent=s.zone.sl||"N/A";q("tp").textContent=s.zone.tp||"N/A";setChip("engineTag","ENGINE READY","ok")}}else{setChip("bridgeChip","BRIDGE OFF","bad");setChip("stateTag","TV LIVE / ENGINE WAIT","warn");q("bid").textContent="SEE TV";q("ask").textContent="SEE TV";q("spread").textContent="—";q("hFeed").textContent="BRIDGE REQUIRED";q("sourceNote").innerHTML="<b>"+TV[pair]+"</b> is the live display source. No Yahoo/Gold Futures pair-price fallback is used.";q("healthMsg").textContent="MT5 Bridge belum online. Live chart tetap berjalan; signal calculations sengaja tidak difabrikasi.";clearEngine()}q("dxy").textContent=fmt(m.dxy,2);q("us2").textContent=m.us2y?fmt(m.us2y.value,2)+"%":"N/A";q("us2d").textContent=m.us2y?m.us2y.date:"";q("us10").textContent=m.us10y?fmt(m.us10y.value,2)+"%":"N/A";q("us10d").textContent=m.us10y?m.us10y.date:"";q("real10").textContent=m.real10y?fmt(m.real10y.value,2)+"%":"N/A";q("real10d").textContent=m.real10y?m.real10y.date:"";q("eurBox").classList.toggle("hidden",pair!=="EURUSD");if(pair==="EURUSD"){q("eur2").textContent=m.eur2y?fmt(m.eur2y.value,2)+"%":"N/A";q("eur10").textContent=m.eur10y?fmt(m.eur10y.value,2)+"%":"N/A";q("sp2").textContent=m.spread2y===null?"N/A":fmt(m.spread2y,3)+"pp";q("sp10").textContent=m.spread10y===null?"N/A":fmt(m.spread10y,3)+"pp"}setChip("macroChip",m.partial?"MACRO PARTIAL":"MACRO OK",m.partial?"warn":"ok")}catch(e){setChip("macroChip","API ERROR","bad");q("healthMsg").textContent=String(e.message||e)}}
+renderPairs();renderTV();load();setInterval(load,30000);
 </script>
-</body>
-</html>
+</body></html>

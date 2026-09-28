@@ -1,13 +1,1 @@
-{
-  "product": "GoldFlow Intelligence",
-  "channel": "stable",
-  "version": "6.1",
-  "indicator": "1.05",
-  "url": "https://goldflowintelligencev61complete.vercel.app/",
-  "releasedAt": "2026-09-27T01:55:30Z",
-  "autoUpdate": true,
-  "fullAuto": true,
-  "updateMode": "shell-swap",
-  "pollSeconds": 30,
-  "notes": "V6.1 Complete — full auto update enabled from the evergreen master shell."
-}
+{"version":"7.0.0","channel":"production","mode":"BROKER_FIRST_NO_GCF","message":"V7 removes Gold Futures/Yahoo pair-price fallback and uses TradingView live display plus MT5 broker calculations.","updated":"2026-09-28"}

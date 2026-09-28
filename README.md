@@ -1,40 +1,16 @@
-# GoldFlow Intelligence — Full Auto Update
+# GoldFlow Intelligence V7
 
-Permanent user URL:
+Broker-first production build.
 
-https://goldflow-intelligence.vercel.app/
+- XAUUSD live display: OANDA:XAUUSD through TradingView.
+- XAUUSD247 live display: THINKMARKETS:XAUUSD247 through TradingView.
+- FX live display: matching OANDA TradingView symbols.
+- No GC=F / Gold Futures fallback is used for XAUUSD.
+- No Yahoo pair-price fallback is used for live trade pairs.
+- Indicator/SND/SNR/Entry/SL/TP wait for MT5 Broker Bridge so calculations use the broker's own candles.
+- Macro sources remain independent: U.S. Treasury / ECB and DXY reference.
 
-## How the full-auto channel works
-
-1. Users always open the permanent master URL above.
-2. The master shell loads the stable release from `release.json`.
-3. The shell keeps running in the browser and checks `release.json` every 30 seconds.
-4. When `version`, `url`, or `releasedAt` changes, the new release is loaded automatically.
-5. The current release stays active if the manifest check fails, and the shell retries automatically.
-6. Returning to the tab or reconnecting to the internet triggers an immediate update check.
-7. `release.json` is served with no-store/no-cache headers.
-
-## Current stable release
-
-- Version: V6.1
-- Indicator: 1.05
-- Release URL: https://goldflowintelligencev61complete.vercel.app/
-- Update mode: `shell-swap`
-- Full auto: enabled
-- Poll interval: 30 seconds
-
-## Publishing the next version
-
-Deploy and verify the new release first. Then update these fields in `release.json`:
-
-- `version`
-- `url`
-- `releasedAt`
-- `indicator` when applicable
-- `notes`
-
-Vercel automatically deploys the master project from the `main` branch. Users do not need to download or reinstall anything.
-
-## Important
-
-Share only the permanent master URL with users. Direct version URLs such as V6.1 are release targets and do not provide the master shell's continuous update watcher when opened directly.
+Vercel environment variables for full engine:
+- BROKER_BRIDGE_URL
+- BROKER_BRIDGE_KEY
+- MARKETDATA_TOKEN (optional GLD options)
