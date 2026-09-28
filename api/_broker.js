@@ -3,29 +3,43 @@ const KEY=(process.env.BROKER_BRIDGE_KEY||"").trim();
 
 export function bridgeConfigured(){ return !!BASE; }
 
-export async function brokerGet(path,params={},timeoutMs=9000){
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+export async function brokerGet(path,params={},timeoutMs=15000,attempts=3){
   if(!BASE) throw new Error("BROKER_BRIDGE_URL_NOT_CONFIGURED");
   const u=new URL(BASE+path);
   for(const [k,v] of Object.entries(params)){
     if(v!==undefined && v!==null && v!=="") u.searchParams.set(k,String(v));
   }
-  const c=new AbortController();
-  const t=setTimeout(()=>c.abort(),timeoutMs);
-  try{
-    const h={};
-    if(KEY) h["X-Bridge-Key"]=KEY;
-    const r=await fetch(u,{headers:h,signal:c.signal,cache:"no-store"});
-    const txt=await r.text();
-    let data;
-    try{data=JSON.parse(txt)}catch{data={raw:txt}}
-    if(!r.ok){
-      const detail=data?.detail||data?.error||txt||("HTTP "+r.status);
-      throw new Error(String(detail));
+  let lastErr;
+  for(let attempt=1;attempt<=Math.max(1,attempts);attempt++){
+    const c=new AbortController();
+    const t=setTimeout(()=>c.abort(),timeoutMs);
+    try{
+      const h={"Accept":"application/json"};
+      if(KEY) h["X-Bridge-Key"]=KEY;
+      const r=await fetch(u,{headers:h,signal:c.signal,cache:"no-store"});
+      const txt=await r.text();
+      let data;
+      try{data=JSON.parse(txt)}catch{data={raw:txt}}
+      if(!r.ok){
+        const detail=data?.detail||data?.error||txt||("HTTP "+r.status);
+        const e=new Error(String(detail));
+        e.status=r.status;
+        throw e;
+      }
+      return data;
+    }catch(e){
+      lastErr=e;
+      const status=Number(e?.status||0);
+      const retryable=!status || status===408 || status===425 || status===429 || status>=500;
+      if(!retryable || attempt>=attempts) throw e;
+      await sleep(attempt===1?350:attempt===2?900:1600);
+    }finally{
+      clearTimeout(t);
     }
-    return data;
-  } finally {
-    clearTimeout(t);
   }
+  throw lastErr||new Error("Bridge request failed");
 }
 
 export function apiError(res,error,status=200,extra={}){
