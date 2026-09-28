@@ -20,11 +20,16 @@ export default async function handler(req,res){
   if(!symbol) return res.status(400).json({ok:false,error:"symbol required"});
   if(!PROFILE[triggerTF]) return res.status(400).json({ok:false,error:"unsupported tf"});
   const [tTF,sTF,bTF]=PROFILE[triggerTF];
+  const LIMITS={
+    M1:[1000,800,600],M5:[1000,800,600],M15:[900,700,550],
+    M30:[800,650,500],H1:[700,550,420],H4:[500,400,300],D1:[400,320,250]
+  };
+  const [lt,ls,lb]=LIMITS[triggerTF]||[700,550,420];
   try{
     const [t,s,b]=await Promise.all([
-      brokerGet("/bars",{symbol,tf:tTF,limit:1000},25000),
-      brokerGet("/bars",{symbol,tf:sTF,limit:800},25000),
-      brokerGet("/bars",{symbol,tf:bTF,limit:600},25000)
+      brokerGet("/bars",{symbol,tf:tTF,limit:lt},30000),
+      brokerGet("/bars",{symbol,tf:sTF,limit:ls},30000),
+      brokerGet("/bars",{symbol,tf:bTF,limit:lb},30000)
     ]);
     const indicator=runIndicator({
       triggerBars:t.bars,setupBars:s.bars,biasBars:b.bars,
