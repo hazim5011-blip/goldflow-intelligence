@@ -166,6 +166,36 @@ def bars(symbol:str=Query(...),tf:str=Query("M5"),limit:int=Query(500,ge=20,le=5
             "spread":float(tick.ask-tick.bid) if tick else None,
             "serverTime":int(tick.time) if tick else int(time.time()),"bars":out}
 
+@app.get("/multi-bars")
+def multi_bars(symbol:str=Query(...),tfs:str=Query("M5,M15,H1"),limits:str=Query("1000,800,600"),x_bridge_key:Optional[str]=Header(default=None)):
+    auth(x_bridge_key); ensure_mt5()
+    sym=resolve_symbol(symbol)
+    tf_list=[x.strip().upper() for x in tfs.split(",") if x.strip()]
+    lim_list=[x.strip() for x in limits.split(",") if x.strip()]
+    if not tf_list: raise HTTPException(status_code=400,detail="No timeframes")
+    out={}
+    for idx,tf in enumerate(tf_list):
+        if tf not in TF: raise HTTPException(status_code=400,detail=f"Unsupported timeframe {tf}")
+        try:
+            lim=int(lim_list[idx]) if idx<len(lim_list) else 500
+        except Exception:
+            lim=500
+        lim=max(20,min(5000,lim))
+        rates=mt5.copy_rates_from_pos(sym,TF[tf],0,lim)
+        if rates is None or len(rates)<10:
+            time.sleep(0.8)
+            rates=mt5.copy_rates_from_pos(sym,TF[tf],0,lim)
+        if rates is None or len(rates)<10:
+            raise HTTPException(status_code=503,detail=f"No rates for {sym} {tf}: {mt5.last_error()}")
+        out[tf]=[{"t":int(r["time"]),"o":float(r["open"]),"h":float(r["high"]),"l":float(r["low"]),"c":float(r["close"]),"v":float(r["tick_volume"])} for r in rates]
+    tick=mt5.symbol_info_tick(sym); info=mt5.symbol_info(sym)
+    return {"ok":True,"broker":BROKER_NAME,"requested":symbol,"symbol":sym,
+            "digits":int(getattr(info,"digits",0) or 0) if info else None,
+            "point":float(getattr(info,"point",0.0) or 0.0) if info else None,
+            "bid":float(tick.bid) if tick else None,"ask":float(tick.ask) if tick else None,
+            "spread":float(tick.ask-tick.bid) if tick else None,
+            "serverTime":int(tick.time) if tick else int(time.time()),"frames":out}
+
 @app.get("/snapshot")
 def snapshot(symbols:str="XAUUSD247,XAUUSD,EURUSD,GBPUSD,AUDUSD,NZDUSD,USDJPY,USDCHF,USDCAD",x_bridge_key:Optional[str]=Header(default=None)):
     auth(x_bridge_key); ensure_mt5(); data={}
