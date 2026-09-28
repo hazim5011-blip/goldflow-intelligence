@@ -1,94 +1,244 @@
 <!doctype html>
 <html lang="ms">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#061018">\n<link rel="manifest" href="/manifest.webmanifest">
-<title>GoldFlow Intelligence V7.1 24H LIVE</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#061018">
+<title>GoldFlow Intelligence V6.1</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
-:root{--bg:#061018;--p:#0d1b26;--p2:#102431;--line:#25404e;--t:#eef7fb;--m:#8298a8;--g:#38d5a5;--r:#ff637c;--y:#f1c75b;--b:#62b6ff}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(#061018,#091722);color:var(--t);font:14px system-ui,-apple-system,Segoe UI,Arial}.w{max-width:1400px;margin:auto;padding:12px}.top{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0 14px;border-bottom:1px solid var(--line)}.brand{display:flex;gap:10px;align-items:center}.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#ffdc7d,#ad7412);color:#211400;font-weight:900}.brand h1{font-size:20px;margin:0}.sub{font-size:10px;color:var(--m)}.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.chip{border:1px solid var(--line);border-radius:999px;padding:6px 9px;font-size:10px}.ok{color:var(--g);border-color:#265c4b}.warn{color:var(--y);border-color:#665827}.bad{color:var(--r);border-color:#6d3140}.pairs{display:flex;gap:7px;overflow:auto;padding:12px 0}.pair{background:#09141c;color:#9db0bd;border:1px solid var(--line);border-radius:10px;padding:10px 12px;white-space:nowrap}.pair.on{background:#17384d;color:#fff;border-color:#3c6b82}.notice{padding:11px;border-radius:11px;border:1px solid #31576d;background:#0a1d29;color:#acd9f4;margin:8px 0}.notice.good{border-color:#2d5f4b;background:#0c211b;color:#a4e6cc}.grid{display:grid;gap:10px}.g2{grid-template-columns:1.1fr .9fr}.g4{grid-template-columns:repeat(4,1fr)}.card{background:linear-gradient(180deg,var(--p2),var(--p));border:1px solid var(--line);border-radius:15px;padding:13px}.head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px}.head h3{margin:0;font-size:14px}.muted{color:var(--m)}.big{font-size:30px;font-weight:900}.tv{height:430px;border-radius:12px;overflow:hidden;background:#07131c}.quote{height:175px;border-radius:12px;overflow:hidden;background:#07131c}.kpi small{color:var(--m)}.kpi b{display:block;font-size:24px;margin-top:4px}.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.mini div{background:#07131b;border:1px solid #203846;border-radius:9px;padding:9px}.mini small{color:var(--m);display:block}.mini b{display:block;margin-top:4px}.section{margin-top:10px}.zones{display:grid;grid-template-columns:1fr 1fr;gap:8px}.zone{background:#07131b;border:1px solid #203846;border-radius:9px;padding:10px}.footer{text-align:center;color:#617b8b;font-size:10px;padding:20px}.hidden{display:none}
-@media(max-width:800px){.g2,.g4{grid-template-columns:1fr}.mini{grid-template-columns:1fr 1fr}.top{align-items:flex-start}.brand h1{font-size:17px}.chips{max-width:50%}.tv{height:390px}.zones{grid-template-columns:1fr}}
-</style>
-</head>
-<body><div class="w">
-<div class="top">
-<div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.1</h1><div class="sub">24H LIVE • BROKER-FIRST • NO GC=F/YAHOO PAIR PRICE</div></div></div>
-<div class="chips"><span id="netChip" class="chip ok">ONLINE</span><span id="tvChip" class="chip ok">TV LIVE</span><span id="bridgeChip" class="chip warn">BRIDGE CHECK</span><span id="macroChip" class="chip warn">MACRO CHECK</span></div>
+:root{--bg:#061018;--p:#0c1822;--p2:#10202c;--line:#213743;--text:#edf6fb;--muted:#8096a6;--g:#31d6a4;--r:#ff6079;--y:#f2c75b;--b:#5ab0ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(#061018,#08131c 55%,#061018);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,Arial}.wrap{max-width:1450px;margin:auto;padding:10px}.top{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#061018ee;backdrop-filter:blur(12px);z-index:30}.brand{display:flex;gap:9px;align-items:center}.logo{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#ffdc7d,#b77b17);color:#201400;font-weight:950}.brand h1{margin:0;font-size:18px}.muted{color:var(--muted)}.g{color:var(--g)}.r{color:var(--r)}.y{color:var(--y)}.b{color:var(--b)}
+.chips{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.chip,.tag{border:1px solid var(--line);border-radius:999px;padding:5px 8px;font-size:10px}.live{color:var(--g);border-color:#245a49;background:#0b211b}.bad{color:var(--r);border-color:#68303a;background:#291218}.warn{color:var(--y);border-color:#645726;background:#231f0d}
+.pairbar,.profilebar{display:flex;gap:6px;overflow:auto;padding:9px 0}.pair,.profile{border:1px solid var(--line);background:#09141b;color:#9eb0bc;border-radius:10px;padding:9px 11px;white-space:nowrap}.pair.on,.profile.on{background:#173449;color:#fff;border-color:#356079}
+.tabs{display:flex;gap:5px;overflow:auto;margin-bottom:9px}.tab{border:0;background:transparent;color:#8095a5;padding:8px 10px;white-space:nowrap;border-bottom:2px solid transparent}.tab.on{color:#fff;border-color:#5ab0ff}.page{display:none}.page.on{display:block}
+.card{background:linear-gradient(180deg,var(--p2),var(--p));border:1px solid var(--line);border-radius:14px;padding:12px}.sec{margin-top:10px}.grid{display:grid;gap:10px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g5{grid-template-columns:repeat(5,1fr)}.head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.head h3{margin:0;font-size:14px}.big{font-size:34px;font-weight:950}.kpi small{color:var(--muted)}.kpi strong{display:block;font-size:24px;margin:3px 0}.notice{padding:10px 11px;border:1px solid #4a4024;background:#1a170d;color:#dfd097;border-radius:10px;font-size:11px;line-height:1.45}.good{border-color:#255543;background:#0b211a;color:#9ce5c7}.danger{border-color:#6a2d38;background:#291117;color:#ffacba}.info{border-color:#294e67;background:#0a1b27;color:#a9d9f8}
+.chart{height:480px;border-radius:12px;overflow:hidden;background:#07131c}.tvbox{height:190px;overflow:hidden;border-radius:12px}.bar{height:10px;border-radius:99px;overflow:hidden;display:flex;background:#1b2d38;margin:9px 0}.bar .buy{background:var(--g)}.bar .sell{background:var(--r)}
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.flow div,.mini div,.ready div{background:#08131a;border:1px solid #1e3340;border-radius:8px;padding:8px}.flow small,.mini small,.ready small{color:var(--muted);display:block}.flow b,.mini b,.ready b{display:block;margin-top:4px}
+.mini{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.ready{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.zone{padding:8px 0;border-bottom:1px solid #1a2d38}.zone:last-child{border:0}.zline{font:11px ui-monospace,SFMono-Regular,Menlo,monospace}.reason{padding:8px 0;border-bottom:1px solid #1a2d38}.newsitem{display:grid;grid-template-columns:115px 1fr 85px 85px;gap:7px;padding:7px 0;border-bottom:1px solid #1a2d38}.source{font-size:10px;color:#627b8e}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.stat{text-align:center;background:#08131a;border:1px solid #1e3340;border-radius:8px;padding:8px}.stat b{display:block;font-size:18px}.hist{display:grid;grid-template-columns:110px 65px 1fr 70px 1fr;gap:6px;padding:8px 0;border-bottom:1px solid #1a2d38;font-size:10px}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;font-size:10px}th,td{padding:7px 5px;border-bottom:1px solid #1a2d38;text-align:left;white-space:nowrap}th{color:var(--muted)}.hidden{display:none!important}.footer{text-align:center;color:#60798a;font-size:10px;padding:20px}
+@media(max-width:800px){.g2,.g3,.g5{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.mini{grid-template-columns:1fr 1fr}.ready{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(2,1fr)}.newsitem{grid-template-columns:1fr 1fr}.newsitem div:nth-child(2){grid-column:1/3}.hist{grid-template-columns:1fr 1fr}.hist div:nth-child(3),.hist div:nth-child(5){grid-column:1/3}.chart{height:390px}.brand h1{font-size:16px}.chips{max-width:48%}}
+</style></head>
+<body><div class="wrap">
+<div class="top"><div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V6.1</h1><div class="muted" style="font-size:10px">INDICATOR 1.05 • STABLE UI • 24×7 READY</div></div></div><div class="chips"><span id="bridgeChip" class="chip">BRIDGE…</span><span id="engineChip" class="chip">ENGINE…</span><span id="macroChip" class="chip">MACRO…</span><span id="optChip" class="chip">OPTIONS…</span></div></div>
+<div id="pairs" class="pairbar"></div><div id="profiles" class="profilebar"></div>
+<div class="tabs"><button class="tab on" data-p="dash">Dashboard</button><button class="tab" data-p="research">Indicator Chart</button><button class="tab" data-p="history">History</button><button class="tab" data-p="newsPage">News</button></div>
+
+<section id="dash" class="page on">
+<div id="notice" class="notice info">Loading…</div>
+<div class="sec card">
+  <div class="head"><h3>DATA HEALTH</h3><span id="healthPair" class="source">—</span></div>
+  <div class="ready">
+    <div><small>TV REFERENCE</small><b id="hTv">READY</b></div>
+    <div><small>INDICATOR FEED</small><b id="hEngine">—</b></div>
+    <div><small>MARKET STATE</small><b id="hMarket">—</b></div>
+    <div><small>LAST CANDLE</small><b id="hAge">—</b></div>
+  </div>
 </div>
-<div id="pairs" class="pairs"></div>
-<div class="notice good"><b>24H LIVE MODE:</b> Website kekal tersedia 24 jam melalui Vercel. XAUUSD247 menggunakan THINKMARKETS:XAUUSD247 untuk paparan 24/7. Pair lain ikut waktu pasaran masing-masing. Tiada GC=F/Yahoo digunakan sebagai harga pair live. Indicator/SND/SNR/Entry/SL/TP hanya menggunakan candle MT5 broker apabila Bridge online.</div>\n<div class="section grid g4"><div class="card kpi"><small>WEBSITE</small><b id="siteStatus">24H ONLINE</b><span class="muted">Vercel production</span></div><div class="card kpi"><small>MARKET MODE</small><b id="marketMode">—</b><span class="muted">pair selected</span></div><div class="card kpi"><small>AUTO REFRESH</small><b>15 SEC</b><span class="muted">API + reconnect</span></div><div class="card kpi"><small>LAST SYNC</small><b id="lastSync">—</b><span class="muted">Malaysia time</span></div></div>
-<div class="grid g2">
-<div class="card"><div class="head"><h3>LIVE CHART</h3><span id="symbolTag" class="chip"></span></div><div id="tvChart" class="tv"></div></div>
-<div class="card"><div class="head"><h3>LIVE REFERENCE</h3><span id="stateTag" class="chip warn">CHECKING</span></div><div id="tvQuote" class="quote"></div><div class="section mini"><div><small>BROKER BID</small><b id="bid">SEE TV</b></div><div><small>BROKER ASK</small><b id="ask">SEE TV</b></div><div><small>SPREAD</small><b id="spread">—</b></div><div><small>ENGINE</small><b id="engine">WAIT BRIDGE</b></div></div><div id="sourceNote" class="notice">Loading source status…</div></div>
+<div class="sec grid g5">
+<div class="card kpi"><small>LIVE / ENGINE PRICE</small><strong id="price">—</strong><span id="spread">—</span><div id="source" class="source"></div></div>
+<div class="card kpi"><small>DXY</small><strong id="dxy">—</strong><span id="dxyCh">—</span></div>
+<div class="card kpi"><small>US 2Y</small><strong id="us2">—</strong><span id="us2d">—</span></div>
+<div class="card kpi"><small>US 10Y</small><strong id="us10">—</strong><span id="us10d">—</span></div>
+<div class="card kpi"><small>US 10Y REAL</small><strong id="us10r">—</strong><span id="us10rd">—</span></div>
 </div>
-<div class="section grid g4">
-<div class="card kpi"><small>DXY</small><b id="dxy">—</b><span id="dxyNote" class="muted">macro reference</span></div>
-<div class="card kpi"><small>US 2Y</small><b id="us2">—</b><span id="us2d" class="muted"></span></div>
-<div class="card kpi"><small>US 10Y</small><b id="us10">—</b><span id="us10d" class="muted"></span></div>
-<div class="card kpi"><small>US 10Y REAL</small><b id="real10">—</b><span id="real10d" class="muted"></span></div>
+
+<div class="sec grid g3" id="pairMacro">
+  <div class="card kpi"><small>PAIR MACRO 1</small><strong id="pm1">—</strong><span id="pm1s">—</span></div>
+  <div class="card kpi"><small>PAIR MACRO 2</small><strong id="pm2">—</strong><span id="pm2s">—</span></div>
+  <div class="card kpi"><small>PAIR MACRO 3</small><strong id="pm3">—</strong><span id="pm3s">—</span></div>
 </div>
-<div id="eurBox" class="section grid g4 hidden">
-<div class="card kpi"><small>EURO 2Y</small><b id="eur2">—</b></div>
-<div class="card kpi"><small>EURO 10Y</small><b id="eur10">—</b></div>
-<div class="card kpi"><small>EUR-US 2Y SPREAD</small><b id="sp2">—</b></div>
-<div class="card kpi"><small>EUR-US 10Y SPREAD</small><b id="sp10">—</b></div>
+
+<div class="sec grid g2">
+<div class="card"><div class="head"><h3>MTF FLOW — INDICATOR 1.05</h3><span id="profileTag" class="tag"></span></div><div class="flow"><div><small>BIAS</small><b id="biasState">—</b><span id="biasStrength" class="muted"></span></div><div><small>SETUP</small><b id="setupState">—</b><span id="setupStrength" class="muted"></span></div><div><small>TRIGGER</small><b id="triggerState">—</b><span id="triggerMeta" class="muted"></span></div></div><div class="bar"><div id="buyBar" class="buy" style="width:50%"></div><div id="sellBar" class="sell" style="width:50%"></div></div></div>
+<div class="card"><div class="head"><h3>LATEST CLOSED-CANDLE SIGNAL</h3><span id="signalScore" class="tag">—</span></div><div id="signal" class="big y">WAIT</div><div class="mini"><div><small>ENTRY</small><b id="entry">—</b></div><div><small>INVALID</small><b id="sl">—</b></div><div><small>TP1</small><b id="tp1">—</b></div><div><small>TP2</small><b id="tp2">—</b></div><div><small>STATUS</small><b id="sigStatus">—</b></div></div><div id="sigReason" class="muted" style="margin-top:8px"></div></div>
 </div>
-<div class="section grid g2">
-<div class="card"><div class="head"><h3>INDICATOR / SND / SNR</h3><span id="engineTag" class="chip warn">WAIT BRIDGE</span></div><div class="zones"><div class="zone"><small class="muted">DEMAND / SUPPORT</small><div class="big" id="demand">N/A</div></div><div class="zone"><small class="muted">SUPPLY / RESISTANCE</small><div class="big" id="supply">N/A</div></div></div><div class="section mini"><div><small>BIAS</small><b id="bias">WAIT</b></div><div><small>ENTRY</small><b id="entry">N/A</b></div><div><small>SL</small><b id="sl">N/A</b></div><div><small>TP</small><b id="tp">N/A</b></div></div></div>
-<div class="card"><div class="head"><h3>DATA HEALTH</h3><span class="muted">auto refresh 15s</span></div><div class="mini"><div><small>DISPLAY</small><b id="hDisplay">TradingView</b></div><div><small>ENGINE FEED</small><b id="hFeed">Checking</b></div><div><small>PAIR</small><b id="hPair">—</b></div><div><small>LAST UPDATE</small><b id="hTime">—</b></div></div><div id="healthMsg" class="notice">—</div></div>
+
+<div class="sec grid g2">
+<div class="card"><div class="head"><h3>ACTIVE SND / ORDER BLOCK / SWAP</h3><span class="source">v1.05 zone engine</span></div><div id="zones"></div></div>
+<div class="card"><div class="head"><h3>MARKET STATE</h3><span class="source">Closed-candle research</span></div><div class="ready"><div><small>RSI14</small><b id="rsi">—</b></div><div><small>ATR</small><b id="atr">—</b></div><div><small>PREMIUM/DISCOUNT</small><b id="pd">—</b></div><div><small>WATCH</small><b id="watch">—</b></div></div><div id="reasons"></div></div>
 </div>
-<div class="footer">GoldFlow Intelligence V7.1 • 24H Vercel hosting • TradingView live visual reference • MT5 Broker Bridge for calculations • research/education only</div>
+
+<div class="sec card"><div class="head"><h3>TRADINGVIEW LIVE REFERENCE</h3><span id="tvTag" class="tag b"></span></div><div id="tvQuote" class="tvbox"></div><div class="source">Reference display only. Indicator Engine uses MT5 candle feed when bridge is online.</div></div>
+
+<div id="optionsSec" class="sec card hidden">
+  <div class="head"><h3>GOLD OPTIONS FLOW — GLD PROXY</h3><span id="pcRatio" class="tag">P/C —</span></div>
+  <div id="optionsMsg" class="notice info">Loading GLD options…</div>
+  <div class="grid g2" style="margin-top:8px">
+    <div><div class="head"><h3>CALL WALL</h3><span class="tag r">Resistance proxy</span></div><div id="calls" class="scroll"></div></div>
+    <div><div class="head"><h3>PUT WALL</h3><span class="tag g">Support proxy</span></div><div id="puts" class="scroll"></div></div>
+  </div>
+</div>
+</section>
+
+<section id="research" class="page">
+<div class="card">
+  <div class="head"><h3>INDICATOR 1.05 WEB CHART</h3><span class="source">Broker/public candles + zone lines + B/S markers</span></div>
+  <div id="chart" class="chart"></div>
+  <div id="chartInfo" class="notice info" style="margin-top:8px">—</div>
+</div>
+<div class="card sec">
+  <div class="head"><h3>TRADINGVIEW LIVE FALLBACK</h3><span id="tvChartTag" class="tag b">—</span></div>
+  <div id="tvAdvanced" class="chart"></div>
+  <div class="source" style="margin-top:7px">Jika MT5 bridge belum aktif, chart ini masih memberi paparan live reference. Indicator 1.05 tidak membaca iframe ini.</div>
+</div>
+</section>
+
+<section id="history" class="page">
+<div class="card"><div class="head"><h3>REBUILT HISTORY</h3><span class="source">WIN = TP + TRAIL + BE • LOSE = SL only</span></div><div class="stats"><div class="stat">TOTAL<b id="stT">0</b></div><div class="stat">WIN<b id="stWIN" class="g">0</b></div><div class="stat">LOSE<b id="stLOSE" class="r">0</b></div><div class="stat">WIN RATE<b id="stWR">—</b></div></div><div id="histRows"></div></div>
+</section>
+
+<section id="newsPage" class="page"><div class="card"><div class="head"><h3>HIGH-IMPACT NEWS</h3><span class="source">MYT</span></div><div id="news"></div></div></section>
+<div class="footer">24×7 display via TradingView • 24×7 Indicator Engine requires MT5 ThinkMarkets bridge to stay online • V6 research build.</div>
 </div>
 <script>
-var PAIRS=["XAUUSD247","XAUUSD","EURUSD","GBPUSD","AUDUSD","NZDUSD","USDJPY","USDCHF","USDCAD"];
-var TV={XAUUSD247:"THINKMARKETS:XAUUSD247",XAUUSD:"OANDA:XAUUSD",EURUSD:"OANDA:EURUSD",GBPUSD:"OANDA:GBPUSD",AUDUSD:"OANDA:AUDUSD",NZDUSD:"OANDA:NZDUSD",USDJPY:"OANDA:USDJPY",USDCHF:"OANDA:USDCHF",USDCAD:"OANDA:USDCAD"};
-var pair=localStorage.getItem("gf_v7_pair")||"XAUUSD247";
-function q(id){return document.getElementById(id)}
-function fmt(v,d){return v===null||v===undefined||isNaN(Number(v))?"N/A":Number(v).toFixed(d===undefined?2:d)}
-function setChip(id,txt,cls){var e=q(id);e.textContent=txt;e.className="chip "+cls}
-function renderPairs(){q("pairs").innerHTML=PAIRS.map(function(p){return '<button class="pair '+(p===pair?'on':'')+'" data-p="'+p+'">'+p+'</button>'}).join("");document.querySelectorAll(".pair").forEach(function(b){b.onclick=function(){pair=b.dataset.p;localStorage.setItem("gf_v7_pair",pair);renderPairs();renderTV();load()}})}
-function widget(box,src,cfg){var el=q(box);el.innerHTML='<div class="tradingview-widget-container" style="height:100%;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div></div>';var s=document.createElement("script");s.src=src;s.async=true;s.text=JSON.stringify(cfg);el.firstElementChild.appendChild(s)}
-function renderTV(){var sym=TV[pair];q("symbolTag").textContent=sym;widget("tvQuote","https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js",{symbol:sym,width:"100%",locale:"en",colorTheme:"dark",isTransparent:true});widget("tvChart","https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js",{autosize:true,symbol:sym,interval:"15",timezone:"Asia/Kuala_Lumpur",theme:"dark",style:"1",locale:"en",backgroundColor:"#07131c",allow_symbol_change:false,hide_side_toolbar:true,withdateranges:true,support_host:"https://www.tradingview.com"})}
-async function getJson(url,retry){retry=retry===undefined?1:retry;var c=new AbortController();var t=setTimeout(function(){c.abort()},8000);try{var r=await fetch(url,{cache:"no-store",signal:c.signal});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json()}catch(e){if(retry>0&&navigator.onLine){await new Promise(function(x){setTimeout(x,1200)});return getJson(url,retry-1)}throw e}finally{clearTimeout(t)}}
-function clearEngine(){q("demand").textContent="N/A";q("supply").textContent="N/A";q("bias").textContent="WAIT";q("entry").textContent="N/A";q("sl").textContent="N/A";q("tp").textContent="N/A";q("engine").textContent="WAIT BRIDGE";setChip("engineTag","WAIT BRIDGE","warn")}
-var loading=false,lastTVRefresh=Date.now();
-function modeForPair(){return pair==="XAUUSD247"?"24/7 GOLD":"WEEKDAY MARKET"}
-function updateNet(){setChip("netChip",navigator.onLine?"ONLINE":"OFFLINE",navigator.onLine?"ok":"bad")}
-function nowMYT(){return new Date().toLocaleTimeString("en-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit",second:"2-digit"})}
-async function load(){
- if(loading)return;loading=true;
- q("hPair").textContent=pair;q("hTime").textContent=nowMYT();q("marketMode").textContent=modeForPair();updateNet();
- try{
-  var all=await Promise.all([getJson("/api/status?pair="+encodeURIComponent(pair)),getJson("/api/macro?pair="+encodeURIComponent(pair)),getJson("/api/health")]);
-  var s=all[0],m=all[1],h=all[2];
-  q("siteStatus").textContent=h.ok?"24H ONLINE":"CHECK";q("lastSync").textContent=nowMYT();
-  if(s.bridgeOnline){
-   setChip("bridgeChip","MT5 LIVE","ok");setChip("stateTag","BROKER LIVE","ok");
-   q("bid").textContent=fmt(s.bid,pair==="USDJPY"?3:pair.indexOf("XAU")===0?2:5);q("ask").textContent=fmt(s.ask,pair==="USDJPY"?3:pair.indexOf("XAU")===0?2:5);q("spread").textContent=fmt(s.spread,pair.indexOf("XAU")===0?2:5);q("engine").textContent=s.engine||"READY";q("hFeed").textContent="MT5 BROKER";
-   q("sourceNote").innerHTML="<b>Broker feed active.</b> Indicator calculations use the broker feed.";
-   q("healthMsg").textContent="Website 24H + MT5 calculation source online.";
-   if(s.zone){q("demand").textContent=s.zone.demand||"N/A";q("supply").textContent=s.zone.supply||"N/A";q("bias").textContent=s.zone.bias||"WAIT";q("entry").textContent=s.zone.entry||"N/A";q("sl").textContent=s.zone.sl||"N/A";q("tp").textContent=s.zone.tp||"N/A";setChip("engineTag","ENGINE READY","ok")}
-  }else{
-   setChip("bridgeChip","BRIDGE OFF","bad");setChip("stateTag","TV LIVE / ENGINE WAIT","warn");q("bid").textContent="SEE TV";q("ask").textContent="SEE TV";q("spread").textContent="—";q("hFeed").textContent="BRIDGE REQUIRED";
-   q("sourceNote").innerHTML="<b>"+TV[pair]+"</b> is the live display source. No Yahoo/Gold Futures pair-price fallback is used.";
-   q("healthMsg").textContent=pair==="XAUUSD247"?"Website + XAUUSD247 TradingView reference boleh digunakan 24/7. Full Indicator Engine perlukan MT5 Bridge online.":"Website kekal 24H. Pair ini ikut waktu pasaran; full Indicator Engine perlukan MT5 Bridge online.";
-   clearEngine();
-  }
-  q("dxy").textContent=fmt(m.dxy,2);q("us2").textContent=m.us2y?fmt(m.us2y.value,2)+"%":"N/A";q("us2d").textContent=m.us2y?m.us2y.date:"";q("us10").textContent=m.us10y?fmt(m.us10y.value,2)+"%":"N/A";q("us10d").textContent=m.us10y?m.us10y.date:"";q("real10").textContent=m.real10y?fmt(m.real10y.value,2)+"%":"N/A";q("real10d").textContent=m.real10y?m.real10y.date:"";
-  q("eurBox").classList.toggle("hidden",pair!=="EURUSD");if(pair==="EURUSD"){q("eur2").textContent=m.eur2y?fmt(m.eur2y.value,2)+"%":"N/A";q("eur10").textContent=m.eur10y?fmt(m.eur10y.value,2)+"%":"N/A";q("sp2").textContent=m.spread2y===null?"N/A":fmt(m.spread2y,3)+"pp";q("sp10").textContent=m.spread10y===null?"N/A":fmt(m.spread10y,3)+"pp"}
-  setChip("macroChip",m.partial?"MACRO PARTIAL":"MACRO OK",m.partial?"warn":"ok");
- }catch(e){
-  setChip("macroChip","RETRYING","warn");q("healthMsg").textContent=navigator.onLine?"Data source timeout. Auto retry dalam 15 saat.":"Internet device offline. Website akan sambung semula automatik.";
- }finally{loading=false}
-}
-function refreshTVIfNeeded(force){if(force||Date.now()-lastTVRefresh>600000){renderTV();lastTVRefresh=Date.now()}}
-window.addEventListener("online",function(){updateNet();refreshTVIfNeeded(true);load()});
-window.addEventListener("offline",updateNet);
-document.addEventListener("visibilitychange",function(){if(!document.hidden){refreshTVIfNeeded(true);load()}});
-setInterval(function(){q("hTime").textContent=nowMYT()},1000);
-setInterval(function(){load();refreshTVIfNeeded(false)},15000);
-if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}
+const PAIRS=["XAUUSD247","XAUUSD","EURUSD","GBPUSD","AUDUSD","NZDUSD","USDJPY","USDCHF","USDCAD"];
+const PROFILES=["M1_M5_M15","M5_M15_H1","M15_M30_H4","M30_H1_H4","H1_H4_D1"];
+const TV={XAUUSD247:"THINKMARKETS:XAUUSD247",XAUUSD:"OANDA:XAUUSD",EURUSD:"OANDA:EURUSD",GBPUSD:"OANDA:GBPUSD",AUDUSD:"OANDA:AUDUSD",NZDUSD:"OANDA:NZDUSD",USDJPY:"OANDA:USDJPY",USDCHF:"OANDA:USDCHF",USDCAD:"OANDA:USDCAD"};
+let pair=localStorage.getItem("gf6_pair")||"XAUUSD247",profile=localStorage.getItem("gf6_profile")||"M5_M15_H1",R=null,M=null,chart=null,candles=null,zoneLines=[],loadSeq=0,aborter=null;
+const $=id=>document.getElementById(id),has=v=>v!==null&&v!==undefined&&Number.isFinite(Number(v)),fmt=(v,d=2)=>has(v)?Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"N/A";
+const dec=()=>pair==="USDJPY"?3:pair.startsWith("XAU")?2:5,price=v=>fmt(v,dec()),cls=d=>d>0?"g":d<0?"r":"y";
+function chip(id,state,txt){const e=$(id);e.textContent=txt;e.className=`chip ${state==="ok"?"live":state==="bad"?"bad":"warn"}`}
+const API_BASE="https://goldflowintelligencev61complete.vercel.app";async function j(u,signal){if(u.startsWith("/api/"))u=API_BASE+u;const r=await fetch(u,{cache:"no-store",signal});if(!r.ok)throw Error("HTTP "+r.status);return r.json()}
+function renderSelectors(){$("pairs").innerHTML=PAIRS.map(x=>`<button class="pair ${x===pair?"on":""}" data-x="${x}">${x}</button>`).join("");$("profiles").innerHTML=PROFILES.map(x=>`<button class="profile ${x===profile?"on":""}" data-x="${x}">${x.replaceAll("_"," → ")}</button>`).join("");document.querySelectorAll(".pair").forEach(b=>b.onclick=()=>{pair=b.dataset.x;localStorage.setItem("gf6_pair",pair);renderSelectors();renderTV();load()});document.querySelectorAll(".profile").forEach(b=>b.onclick=()=>{profile=b.dataset.x;localStorage.setItem("gf6_profile",profile);renderSelectors();load()})}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));document.querySelectorAll(".page").forEach(x=>x.classList.remove("on"));b.classList.add("on");$(b.dataset.p).classList.add("on");if(b.dataset.p==="research")setTimeout(drawChart,50)});
+function renderTV(){const sym=TV[pair];$("tvTag").textContent=sym;$("tvChartTag").textContent=sym;$("tvQuote").innerHTML='<div class="tradingview-widget-container" style="height:100%;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div></div>';const s=document.createElement("script");s.src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js";s.async=true;s.text=JSON.stringify({symbol:sym,width:"100%",locale:"en",colorTheme:"dark",isTransparent:true});$("tvQuote").firstElementChild.appendChild(s);renderTVAdvanced()}
+function renderTVAdvanced(){const sym=TV[pair],c=$("tvAdvanced");if(!c)return;c.innerHTML='<div class="tradingview-widget-container" style="height:100%;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div></div>';const s=document.createElement("script");s.src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";s.async=true;s.text=JSON.stringify({autosize:true,symbol:sym,interval:"15",timezone:"Asia/Kuala_Lumpur",theme:"dark",style:"1",locale:"en",backgroundColor:"#07131c",allow_symbol_change:false,hide_side_toolbar:true,withdateranges:true,support_host:"https://www.tradingview.com"});c.firstElementChild.appendChild(s)}
+function stateText(s){return s>0?"BULLISH":s<0?"BEARISH":"RANGE"}
+function renderZones(ind){const all=[...(ind.activeZones?.buy||[]).map(z=>({...z,side:"BUY"})),...(ind.activeZones?.sell||[]).map(z=>({...z,side:"SELL"}))];$("zones").innerHTML=all.length?all.map(z=>`<div class="zone"><b class="${z.side==="BUY"?"g":"r"}">${z.side}${z.swapped?" SWAP":""} • ${z.sourceEvent} • RETEST ${z.currentRetests}</b><div class="zline">${price(z.low)} — ${price(z.high)}</div><div class="source">Base score ${fmt(z.baseScore,0)}%</div></div>`).join(""):'<div class="muted">Tiada active zone.</div>'}
+function renderHistory(ind){const s=ind.stats||{};const win=(Number(s.tp)||0)+(Number(s.tr)||0)+(Number(s.be)||0),lose=Number(s.sl)||0,resolved=win+lose,wr=resolved>0?win/resolved*100:null;$("stT").textContent=s.total||resolved;$("stWIN").textContent=win;$("stLOSE").textContent=lose;$("stWR").textContent=has(wr)?fmt(wr,1)+"%":"—";$("histRows").innerHTML=(ind.history||[]).slice().reverse().map(x=>{const raw=String(x.status||"").toUpperCase();const outcome=raw==="SL"?"LOSE":(["TP","TRAIL","TR","BE"].includes(raw)?"WIN":raw);const detail=outcome!==raw&&raw?' <span class="muted">('+raw+')</span>':"";return '<div class="hist"><div>'+new Date(x.time*1000).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})+'</div><div class="'+cls(x.direction)+'"><b>'+x.code+'</b><br>'+fmt(x.score,0)+'%</div><div>Entry '+price(x.entry)+'<br><span class="muted">SL '+price(x.invalidation)+' • TP1 '+price(x.tp1)+' • TP2 '+price(x.tp2)+'</span></div><div><b class="'+(outcome==="WIN"?"g":outcome==="LOSE"?"r":"y")+'">'+outcome+'</b>'+detail+'</div><div>'+(x.reasons||[]).join(" + ")+'</div></div>'}).join("")||'<div class="muted">Belum ada signal history.</div>'}
+function renderNews(ma){$("news").innerHTML=(ma?.events||[]).map(e=>`<div class="newsitem"><div>${new Date(e.date).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div><div><b>${e.title}</b><div class="muted">${e.ccy} • ${e.impact}</div></div><div>F ${e.forecast??"—"}</div><div>P ${e.previous??"—"}</div></div>`).join("")||'<div class="muted">Tiada high-impact event ditemui.</div>'}
+function clearChart(){if(chart){chart.remove();chart=null;candles=null;zoneLines=[]}}
+function drawChart(){clearChart();if(!R?.ready||!R.chartBars?.length){$("chart").innerHTML="";$("chartInfo").textContent=R?.error||"Bridge/data belum ready.";return}chart=LightweightCharts.createChart($("chart"),{layout:{background:{color:"#07131c"},textColor:"#aab9c3"},grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true,secondsVisible:false}});candles=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});candles.setData(R.chartBars.map(b=>({time:b.t,open:b.o,high:b.h,low:b.l,close:b.c})));const ind=R.indicator;for(const z of [...(ind.activeZones?.buy||[]),...(ind.activeZones?.sell||[])]){const col=z.currentDirection>0?"#31d6a4":"#ff6079";zoneLines.push(candles.createPriceLine({price:z.low,color:col,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:z.currentDirection>0?"BUY ZONE L":"SELL ZONE L"}));zoneLines.push(candles.createPriceLine({price:z.high,color:col,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:z.currentDirection>0?"BUY ZONE H":"SELL ZONE H"}))}const markers=(ind.history||[]).slice(-80).map(x=>({time:x.time,position:x.direction>0?"belowBar":"aboveBar",color:x.direction>0?"#f2c75b":"#ff6079",shape:x.direction>0?"arrowUp":"arrowDown",text:`${x.code} ${Math.round(x.score)}%`}));if(candles.setMarkers)candles.setMarkers(markers);chart.timeScale().fitContent();$("chartInfo").textContent=`${R.symbol} • ${R.profile.replaceAll("_"," → ")} • source ${R.source} • zones ${(ind.activeZones?.buy?.length||0)+(ind.activeZones?.sell?.length||0)} • history ${ind.stats?.total||0}`}
 
-</script>
-</body></html>
+function oiTable(a){
+  if(!a?.length)return'<div class="muted">No options data.</div>';
+  const mx=Math.max(...a.map(x=>x.oi||0),1);
+  return `<table><thead><tr><th>#</th><th>GLD Strike</th><th>OI</th><th>Vol</th><th>Strength</th></tr></thead><tbody>${a.map((x,i)=>`<tr><td>${i+1}</td><td>${fmt(x.strike,2)}</td><td>${fmt(x.oi,0)}</td><td>${fmt(x.volume,0)}</td><td>${Math.round((x.oi||0)/mx*100)}%</td></tr>`).join("")}</tbody></table>`;
+}
+async function loadOptions(signal){
+  const gold=pair.startsWith("XAU");
+  $("optionsSec").classList.toggle("hidden",!gold);
+  if(!gold){chip("optChip","ok","FX N/A");return}
+  try{
+    const x=await j("/api/options",signal);
+    if(!x.ok){
+      chip("optChip","warn",x.needsKey?"OPTIONS KEY":"OPTIONS ERROR");
+      $("optionsMsg").className="notice info";
+      $("optionsMsg").innerHTML=x.needsKey
+        ?"<b>GLD options belum aktif.</b> Tambah MARKETDATA_TOKEN di Vercel Environment Variables. Market/indicator lain tetap berjalan."
+        :(x.error||"Options unavailable");
+      $("calls").innerHTML=$("puts").innerHTML='<div class="muted">No data.</div>';
+      $("pcRatio").textContent="P/C —";return;
+    }
+    chip("optChip","ok","● OPTIONS LIVE");
+    $("pcRatio").textContent=`P/C ${fmt(x.putCallOI,2)}`;
+    $("optionsMsg").className="notice info";
+    $("optionsMsg").innerHTML=`GLD ${fmt(x.underlying,2)} • Top Call ${fmt(x.topCall?.strike,2)} • Top Put ${fmt(x.topPut?.strike,2)} • Proxy only, bukan harga XAUUSD/XAUUSD247.`;
+    $("calls").innerHTML=oiTable(x.calls);$("puts").innerHTML=oiTable(x.puts);
+  }catch(e){
+    if(e.name==="AbortError")return;
+    chip("optChip","bad","OPTIONS ERROR");$("optionsMsg").textContent=String(e.message||e);
+  }
+}
+function resetForLoad(){
+  $("notice").className="notice info";$("notice").textContent=`Loading ${pair} • ${profile.replaceAll("_"," → ")}…`;
+  $("healthPair").textContent=`${pair} • ${profile.replaceAll("_"," → ")}`;
+  $("hEngine").textContent="LOADING";$("hMarket").textContent="—";$("hAge").textContent="—";
+  $("price").textContent="—";$("spread").textContent="";$("source").textContent="";
+  $("signal").textContent="WAIT";$("signal").className="big y";$("signalScore").textContent="—";
+}
+function renderPairMacro(ma,m){
+  if(pair==="EURUSD"){
+    $("pm1").textContent=ma.yields?.eur2y?.current?fmt(ma.yields.eur2y.current.value,2)+"%":"N/A";
+    $("pm1s").textContent="Euro 2Y";
+    $("pm2").textContent=ma.yields?.eur10y?.current?fmt(ma.yields.eur10y.current.value,2)+"%":"N/A";
+    $("pm2s").textContent="Euro 10Y";
+    $("pm3").textContent=has(ma.yields?.spread2y?.current)?fmt(ma.yields.spread2y.current,3)+"pp":"N/A";
+    $("pm3s").textContent=`2Y spread • 10Y ${has(ma.yields?.spread10y?.current)?fmt(ma.yields.spread10y.current,3)+"pp":"N/A"}`;
+  }else if((pair.startsWith("XAU")||pair==="USDCAD")&&m.oil){
+    $("pm1").textContent=has(m.oil.wti?.price)?fmt(m.oil.wti.price,2):"N/A";$("pm1s").textContent="WTI";
+    $("pm2").textContent=has(m.oil.brent?.price)?fmt(m.oil.brent.price,2):"N/A";$("pm2s").textContent="Brent";
+    $("pm3").textContent=has(m.dxy?.price)?fmt(m.dxy.price,2):"N/A";$("pm3s").textContent="DXY";
+  }else{
+    $("pm1").textContent=has(m.dxy?.price)?fmt(m.dxy.price,2):"N/A";$("pm1s").textContent="DXY";
+    $("pm2").textContent=ma.yields?.us2y?.current?fmt(ma.yields.us2y.current.value,2)+"%":"N/A";$("pm2s").textContent="US 2Y";
+    $("pm3").textContent=ma.yields?.us10y?.current?fmt(ma.yields.us10y.current.value,2)+"%":"N/A";$("pm3s").textContent="US 10Y";
+  }
+}
+async function load(){
+  const seq=++loadSeq;
+  if(aborter)aborter.abort();
+  aborter=new AbortController();
+  const selectedPair=pair,selectedProfile=profile;
+  resetForLoad();
+  loadOptions(aborter.signal);
+  try{
+    const [r,m,ma]=await Promise.all([
+      j(`/api/research?pair=${selectedPair}&profile=${selectedProfile}`,aborter.signal),
+      j(`/api/market?pair=${selectedPair}`,aborter.signal),
+      j(`/api/macro?pair=${selectedPair}`,aborter.signal)
+    ]);
+    if(seq!==loadSeq||selectedPair!==pair||selectedProfile!==profile)return;
+    R=r;M=m;
+    chip("macroChip",ma.partial?"warn":"ok",ma.partial?"MACRO PARTIAL":"● MACRO OK");
+    renderNews(ma);renderPairMacro(ma,m);
+    $("dxy").textContent=fmt(m.dxy?.price,2);$("dxyCh").textContent=has(m.dxy?.pct)?fmt(m.dxy.pct,2)+"%":"N/A";
+    $("us2").textContent=ma.yields?.us2y?.current?fmt(ma.yields.us2y.current.value,2)+"%":"N/A";$("us2d").textContent=ma.yields?.us2y?.current?.date||"";
+    $("us10").textContent=ma.yields?.us10y?.current?fmt(ma.yields.us10y.current.value,2)+"%":"N/A";$("us10d").textContent=ma.yields?.us10y?.current?.date||"";
+    $("us10r").textContent=ma.yields?.us10yReal?.current?fmt(ma.yields.us10yReal.current.value,2)+"%":"N/A";$("us10rd").textContent=ma.yields?.us10yReal?.current?.date||"";
+
+    $("hTv").textContent=TV[pair];
+    if(!r.ready){
+      chip("bridgeChip",r.bridgeConfigured?"warn":"bad",r.bridgeConfigured?"BRIDGE DATA":"BRIDGE OFF");
+      chip("engineChip","warn","ENGINE WAIT");
+      $("hEngine").textContent=r.bridgeConfigured?"BRIDGE CONFIGURED":"NO BRIDGE";
+      $("hMarket").textContent=pair==="XAUUSD247"?"TV LIVE / ENGINE OFF":(m.marketState||"N/A");
+      $("hAge").textContent="—";
+      $("notice").className="notice danger";
+      $("notice").innerHTML=pair==="XAUUSD247"
+        ?"<b>XAUUSD247 live reference masih tersedia di TradingView.</b> Indicator 1.05, SND/SNR dan Entry/SL/TP memerlukan candle ThinkMarkets daripada MT5 Bridge."
+        :(r.error||"Indicator engine not ready");
+      $("price").textContent=pair==="XAUUSD247"?"SEE TV":"N/A";
+      $("source").textContent=pair==="XAUUSD247"?"THINKMARKETS:XAUUSD247 TradingView reference • MT5 bridge required for calculations":"Data belum cukup";
+      ["biasState","setupState","triggerState"].forEach(id=>$(id).textContent="N/A");
+      $("signal").textContent="WAIT SOURCE";$("signalScore").textContent="BRIDGE REQUIRED";
+      $("zones").innerHTML='<div class="muted">SND/SNR sebenar akan muncul selepas MT5 Bridge online. TradingView chart tetap tersedia di tab Indicator Chart.</div>';
+      clearChart();renderTVAdvanced();return;
+    }
+
+    const stale=String(r.marketState||"").includes("STALE");
+    chip("bridgeChip",r.source==="MT5_BRIDGE"?"ok":"warn",r.source==="MT5_BRIDGE"?"● MT5 LIVE":"PUBLIC DATA");
+    chip("engineChip",stale?"warn":"ok",stale?"ENGINE STALE":"● 1.05 ENGINE");
+    $("hEngine").textContent=r.source==="MT5_BRIDGE"?"MT5 BRIDGE":"PUBLIC FALLBACK";
+    $("hMarket").textContent=r.marketState||"N/A";
+    $("hAge").textContent=has(r.ageMin)?(r.ageMin<60?`${Math.round(r.ageMin)} min`:`${(r.ageMin/60).toFixed(1)} h`):"—";
+
+    const ind=r.indicator;
+    $("notice").className=`notice ${stale?"info":"good"}`;
+    $("notice").innerHTML=`<b>${pair}</b> • ${r.profile.replaceAll("_"," → ")} • ${r.source==="MT5_BRIDGE"?"MT5 broker candles":"public fallback"}${stale?" • market/feed currently stale":""}`;
+    $("price").textContent=price(r.price);$("spread").textContent=has(r.tick?.spread)?`Spread ${price(r.tick.spread)}`:"";
+    $("source").textContent=`${r.symbol} • ${r.source} • ${r.marketState||""}`;
+    $("profileTag").textContent=r.profile.replaceAll("_"," → ");
+    $("biasState").textContent=stateText(ind.biasState.trend);$("biasState").className=cls(ind.biasState.trend);$("biasStrength").textContent=`${fmt(ind.biasState.strength,0)}% • ${ind.biasState.lastEvent}`;
+    $("setupState").textContent=stateText(ind.setupState.trend);$("setupState").className=cls(ind.setupState.trend);$("setupStrength").textContent=`${fmt(ind.setupState.strength,0)}% • ${ind.setupState.lastEvent}`;
+    $("triggerState").textContent=ind.market.ema20>ind.market.ema50?"BULLISH":ind.market.ema20<ind.market.ema50?"BEARISH":"RANGE";$("triggerMeta").textContent=`EMA20 ${price(ind.market.ema20)} • EMA50 ${price(ind.market.ema50)}`;
+    let buy=50;if(ind.biasState.trend>0)buy+=15;if(ind.setupState.trend>0)buy+=15;if(ind.market.ema20>ind.market.ema50)buy+=10;if(ind.biasState.trend<0)buy-=15;if(ind.setupState.trend<0)buy-=15;if(ind.market.ema20<ind.market.ema50)buy-=10;buy=Math.max(0,Math.min(100,buy));$("buyBar").style.width=buy+"%";$("sellBar").style.width=(100-buy)+"%";
+    const sg=ind.latestSignal;
+    if(sg){
+      $("signal").textContent=stale?"HISTORY":(sg.code.startsWith("B")?"BUY":"SELL");$("signal").className=`big ${stale?"y":sg.direction>0?"g":"r"}`;
+      $("signalScore").textContent=`${fmt(sg.score,0)}% • ${sg.code}`;$("entry").textContent=price(sg.entry);$("sl").textContent=price(sg.invalidation);$("tp1").textContent=price(sg.tp1);$("tp2").textContent=price(sg.tp2);$("sigStatus").textContent=stale?"MARKET CLOSED / LAST SIGNAL":sg.status;$("sigReason").textContent=(sg.reasons||[]).join(" + ");
+    }else{
+      $("signal").textContent="WAIT";$("signal").className="big y";$("signalScore").textContent="NO TRIGGER";["entry","sl","tp1","tp2"].forEach(id=>$(id).textContent="N/A");$("sigStatus").textContent=stale?"MARKET CLOSED":"WAIT";$("sigReason").textContent=ind.watch?.reason||"WAIT ACTIVE ZONE + CONFIRMATION";
+    }
+    renderZones(ind);$("rsi").textContent=fmt(ind.market.rsi,1);$("atr").textContent=price(ind.market.atr);$("pd").textContent=ind.premiumDiscount?.position||"N/A";$("watch").textContent=ind.watch?`${ind.watch.direction>0?"BUY":"SELL"} ${fmt(ind.watch.distanceATR,2)} ATR`:"NONE";
+    $("reasons").innerHTML=(sg?.reasons||[ind.watch?.reason||"WAIT"]).map((x,i)=>`<div class="reason"><b>${i+1}. ${x}</b></div>`).join("");
+    renderHistory(ind);
+    try{drawChart()}catch(chartErr){$("chartInfo").className="notice danger";$("chartInfo").textContent=`Chart renderer error: ${chartErr.message}. Engine data tetap tersedia.`}
+  }catch(e){
+    if(e.name==="AbortError")return;
+    if(seq!==loadSeq)return;
+    chip("engineChip","bad","ENGINE ERROR");$("hEngine").textContent="ERROR";
+    $("notice").className="notice danger";$("notice").textContent=String(e.message||e);
+  }
+}
+renderSelectors();renderTV();load();setInterval(load,30000);
+</script></body></html>
