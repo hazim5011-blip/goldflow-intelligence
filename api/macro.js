@@ -1,11 +1,11 @@
 const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
 const finite=v=>Number.isFinite(Number(v));
-const num=v=>{const n=Number(String(v??"").replace(/,/g,"").replace(/\\s/g,""));return Number.isFinite(n)?n:null};
+const num=v=>{if(v==null||String(v).trim()==="")return null;const n=Number(String(v).replace(/,/g,"").replace(/\s/g,""));return Number.isFinite(n)?n:null};
 const fmt=(v,d=2)=>finite(v)?Number(v).toFixed(d):null;
 const pct=(a,b)=>finite(a)&&finite(b)&&Number(b)!==0?100*(Number(a)-Number(b))/Number(b):null;
 const score=(v,lo,hi)=>finite(v)?clamp(100*(Number(v)-lo)/(hi-lo)):50;
 const rx=(s,f="i")=>new RegExp(s,f);
-function clean(s){return String(s||"").replace(rx("<[^>]+>","g")," ").replace(/&nbsp;|&#160;/gi," ").replace(/&amp;/gi,"&").replace(/\\s+/g," ").trim()}
+function clean(s){return String(s||"").replace(rx("<[^>]+>","g")," ").replace(/&nbsp;|&#160;/gi," ").replace(/&amp;/gi,"&").replace(/\s+/g," ").trim()}
 async function fetchText(url,ms=6500){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal,cache:"no-store",headers:{"User-Agent":"GoldFlow-Intelligence/7.5"}});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}finally{clearTimeout(t)}}
 async function fetchJson(url,ms=6500){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal,cache:"no-store",headers:{"User-Agent":"GoldFlow-Intelligence/7.5"}});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json()}finally{clearTimeout(t)}}
 function last(a,n=0){return a&&a.length>n?a[a.length-1-n]:null}
@@ -15,32 +15,32 @@ function monthDate(y,p){const m=Number(String(p).replace("M",""));return y&&m>=1
 async function bls(id){
   const j=await fetchJson("https://api.bls.gov/publicAPI/v2/timeseries/data/"+encodeURIComponent(id));
   const s=j&&j.Results&&j.Results.series&&j.Results.series[0];if(!s)throw new Error("BLS "+id+" no data");
-  return (s.data||[]).filter(x=>/^M\\d{2}$/.test(x.period)).map(x=>({date:monthDate(x.year,x.period),value:num(x.value)})).filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date));
+  return (s.data||[]).filter(x=>/^M\d{2}$/.test(x.period)).map(x=>({date:monthDate(x.year,x.period),value:num(x.value)})).filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date));
 }
 async function beaGDP(){
   const t=clean(await fetchText("https://www.bea.gov/data/gdp/gross-domestic-product"));
-  const ms=[...t.matchAll(rx("Q([1-4])\\\\s+(20\\\\d{2})[^%]{0,90}([+-]?\\\\d+(?:\\\\.\\\\d+)?)%","ig"))];
+  const ms=[...t.matchAll(rx("Q([1-4])\\s+(20\\d{2})[^%]{0,90}([+-]?\\d+(?:\\.\\d+)?)%","ig"))];
   if(!ms.length)throw new Error("BEA GDP parse");
   const m=ms[0],q=Number(m[1]),v=Number(m[3]);return {value:v,date:m[2]+"-"+String(q*3).padStart(2,"0")+"-30",change:ms[1]?v-Number(ms[1][3]):null,url:"https://www.bea.gov/data/gdp/gross-domestic-product"}
 }
 async function beaPCE(){
   const t=clean(await fetchText("https://www.bea.gov/data/personal-consumption-expenditures-price-index-excluding-food-and-energy"));
   const names="January|February|March|April|May|June|July|August|September|October|November|December";
-  const ms=[...t.matchAll(rx("("+names+")\\\\s+(20\\\\d{2})\\\\s+([+-]?\\\\d+(?:\\\\.\\\\d+)?)%","ig"))];
+  const ms=[...t.matchAll(rx("("+names+")\\s+(20\\d{2})\\s+([+-]?\\d+(?:\\.\\d+)?)%","ig"))];
   if(!ms.length)throw new Error("BEA PCE parse");
   const map={January:"01",February:"02",March:"03",April:"04",May:"05",June:"06",July:"07",August:"08",September:"09",October:"10",November:"11",December:"12"};
   const m=ms[0],v=Number(m[3]);return {value:v,date:m[2]+"-"+map[m[1]]+"-01",change:ms[1]?v-Number(ms[1][3]):null,url:"https://www.bea.gov/data/personal-consumption-expenditures-price-index-excluding-food-and-energy"}
 }
 async function fedIP(){
   const t=clean(await fetchText("https://www.federalreserve.gov/releases/g17/current/default.htm"));
-  const m=t.match(rx("industrial production[^.]{0,300}?([0-9]+(?:\\\\.[0-9]+)?) percent (above|below) its year-earlier level","i"));
+  const m=t.match(rx("industrial production[^.]{0,300}?([0-9]+(?:\\.[0-9]+)?) percent (above|below) its year-earlier level","i"));
   if(!m)throw new Error("Fed G17 parse");
-  const d=t.match(rx("Release Date:\\s*([A-Za-z]+\\s+[0-9]{1,2},\\s*20[0-9]{2})","i"));
+  const d=t.match(rx("Release Date:\s*([A-Za-z]+\s+[0-9]{1,2},\s*20[0-9]{2})","i"));
   let v=Number(m[1]);if(String(m[2]).toLowerCase()==="below")v=-v;
   return {value:v,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/g17/current/default.htm"}
 }
 function xmlVal(e,k){const m=e.match(rx("<d:"+k+"[^>]*>([^<]+)</d:"+k+">","i"));return m?m[1]:null}
-function parseTreasury(x,key){return [...String(x).matchAll(rx("<entry>([\\\\s\\\\S]*?)</entry>","ig"))].map(m=>m[1]).map(e=>({date:(xmlVal(e,"NEW_DATE")||"").slice(0,10),value:num(xmlVal(e,key))})).filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date))}
+function parseTreasury(x,key){return [...String(x).matchAll(rx("<entry>([\\s\\S]*?)</entry>","ig"))].map(m=>m[1]).map(e=>({date:(xmlVal(e,"NEW_DATE")||"").slice(0,10),value:num(xmlVal(e,key))})).filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date))}
 async function treasury(data,key){
   const d=new Date(),out=[];
   for(let b=0;b<2;b++){const x=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()-b,1)),mo=String(x.getUTCFullYear())+String(x.getUTCMonth()+1).padStart(2,"0");try{out.push(...parseTreasury(await fetchText("https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data="+data+"&field_tdr_date_value_month="+mo),key))}catch{}}
@@ -48,23 +48,23 @@ async function treasury(data,key){
 }
 async function h41(){
   const t=clean(await fetchText("https://www.federalreserve.gov/releases/h41/Current/"));
-  const a=t.match(rx("Total assets[^0-9]{0,40}([0-9,]{6,})[^0-9+-]{0,30}([+-]\\s*[0-9,]+)","i"));
-  const g=t.match(rx("U\\.S\\. Treasury, General Account[^0-9]{0,40}([0-9,]{3,})[^0-9+-]{0,30}([+-]\\s*[0-9,]+)","i"));
-  const d=t.match(rx("Release Date:\\s*([A-Za-z]+\\s+[0-9]{1,2},\\s*20[0-9]{2})","i"));
+  const a=t.match(rx("Total assets(?:\\s*\\(0\\))?\\s+([0-9,]{6,})\\s+([+-]\\s*[0-9,]+)","i"));
+  const g=t.match(rx("U\.S\. Treasury, General Account[^0-9]{0,40}([0-9,]{3,})[^0-9+-]{0,30}([+-]\s*[0-9,]+)","i"));
+  const d=t.match(rx("Release Date:\s*([A-Za-z]+\s+[0-9]{1,2},\s*20[0-9]{2})","i"));
   if(!a||!g)throw new Error("Fed H41 parse");
   return {assets:num(a[1]),assetsCh:num(a[2]),tga:num(g[1]),tgaCh:num(g[2]),date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h41/Current/"}
 }
 async function nyfed(){
   const t=clean(await fetchText("https://www.newyorkfed.org/markets/data-hub"));
-  const trg=t.match(rx("Target Rate/Range \\(%\\)[^0-9]{0,120}([0-9]+(?:\\.[0-9]+)?)\\s*-\\s*([0-9]+(?:\\.[0-9]+)?)","i"));
-  const rr=t.match(rx("Reverse Repo Operations[\\s\\S]{0,900}?Treasury\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
-  const sf=t.match(rx("Secured Overnight Financing Rate[\\s\\S]{0,700}?([0-9]+(?:\\.[0-9]+)?)\\s+[0-9,]+","i"));
+  const trg=t.match(rx("Target Rate/Range \(%\)[^0-9]{0,120}([0-9]+(?:\.[0-9]+)?)\s*-\s*([0-9]+(?:\.[0-9]+)?)","i"));
+  const rr=t.match(rx("Reverse Repo Operations[\s\S]{0,900}?Treasury\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)","i"));
+  const sf=t.match(rx("Secured Overnight Financing Rate[\s\S]{0,700}?([0-9]+(?:\.[0-9]+)?)\s+[0-9,]+","i"));
   return {low:trg?num(trg[1]):null,high:trg?num(trg[2]):null,rrp:rr?num(rr[2]):null,sofr:sf?num(sf[1]):null,url:"https://www.newyorkfed.org/markets/data-hub"}
 }
 async function h10(){
   const t=clean(await fetchText("https://www.federalreserve.gov/releases/h10/current/"));
-  const m=t.match(rx("1\\) BROAD\\s+JAN06=100\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
-  const d=t.match(rx("Release Date:\\s*([A-Za-z]+\\s+[0-9]{1,2},\\s*20[0-9]{2})","i"));
+  const m=t.match(rx("1\) BROAD\s+JAN06=100\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)","i"));
+  const d=t.match(rx("Release Date:\s*([A-Za-z]+\s+[0-9]{1,2},\s*20[0-9]{2})","i"));
   if(!m)throw new Error("Fed H10 parse");
   return {value:num(m[5]),change:num(m[5])-num(m[1]),date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h10/current/"}
 }
