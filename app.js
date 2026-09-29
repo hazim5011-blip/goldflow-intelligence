@@ -10,6 +10,16 @@ function stateText(d){return Number(d)>0?"BULLISH":Number(d)<0?"BEARISH":"RANGE"
 function chip(id,type,text){var e=$(id);e.className="chip "+type;e.textContent=text}
 async function getJson(url){var r=await fetch(url,{cache:"no-store"});var j=await r.json();if(!r.ok)throw new Error(j.error||("HTTP "+r.status));return j}
 function rootSymbol(s){return String(s||"").replace(/[.#].*$/,"")}
+function indicatorName(v){
+  return ({
+    "105":"MTF 1.05",
+    "103":"MTF 1.03",
+    "pvt":"PVT 1.02",
+    "pattern132":"Pattern Tutor 1.32",
+    "snd107":"SND/SNR 1.07",
+    "owl101":"OWL 1.01"
+  })[v]||String(v||"ENGINE").toUpperCase();
+}
 
 document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
@@ -109,7 +119,7 @@ async function loadAnalysis(){
       $("connectionNotice").className="notice bad";$("connectionNotice").textContent=r.error||"Indicator engine not ready.";clearChart();return;
     }
     var ind=r.indicator||{},sig=ind.latestSignal||{},st=ind.stats||{},pd=ind.premiumDiscount||null;
-    var engName=selectedIndicator==="103"?"1.03":selectedIndicator==="pvt"?"PVT 1.02":"1.05";
+    var engName=indicatorName(selectedIndicator);
     chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip","good","● "+engName+" ENGINE");chip("marketChip",String(r.marketState).indexOf("STALE")>=0?"warn":"good",r.marketState||"MT5 LIVE");
     $("connectionNotice").className="notice good";$("connectionNotice").innerHTML="<b>"+selectedSymbol+"</b> • "+r.symbol+" • "+engName+" • "+r.triggerTF+" → "+r.setupTF+" → "+r.biasTF+" • direct Vantage MT5 candles";
     $("price").textContent=px(r.price);$("spread").textContent=finite(r.tick&&r.tick.spread)?"Spread "+px(r.tick.spread):"";
@@ -126,6 +136,11 @@ async function loadAnalysis(){
     $("reasons").textContent=(sig.reasons||[]).join(" + ")||sig.reason||"Wait for closed-candle confirmation.";
     if(pd){$("pdHigh").textContent=px(pd.high);$("pdEq").textContent=px(pd.equilibrium);$("pdLow").textContent=px(pd.low);$("pdPos").textContent=pd.position}else{$("pdHigh").textContent=$("pdEq").textContent=$("pdLow").textContent=$("pdPos").textContent="—"}
     if(ind.watch&&ind.watch.zone){$("watch").textContent=ind.watch.reason+" • "+px(ind.watch.zone.low)+" - "+px(ind.watch.zone.high)}else $("watch").textContent="No active zone nearby.";
+    if($("statsNote")){
+      $("statsNote").textContent=(selectedIndicator==="pattern132"||selectedIndicator==="snd107")
+        ?"VALID = native indicator confirmation • TP/SL outcome not defined by source"
+        :"WIN = TP + TRAIL + BE • LOSE = SL only";
+    }
     renderZones(ind.activeZones||{});renderStats(st);renderHistory(ind.history||[]);
     $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(selectedSymbol));
     $("chartTitle").textContent=(r.symbol||selectedSymbol)+" • VANTAGE MT5";$("chartTag").textContent=r.triggerTF;
