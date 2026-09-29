@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence V7.3</title>
+<title>GoldFlow Intelligence V7.4</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -12,7 +12,7 @@
 <body>
 <div class="wrap">
 <header class="top">
-  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.3</h1><small>HYBRID • MULTI-ASSET • 3 INDICATORS</small></div></div>
+  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.4</h1><small>HYBRID • MULTI-ASSET • 6 INDICATORS</small></div></div>
   <div class="statusRow"><span id="bridgeChip" class="chip warn">BRIDGE…</span><span id="engineChip" class="chip warn">ENGINE…</span><span id="marketChip" class="chip warn">MARKET…</span></div>
 </header>
 
@@ -20,7 +20,14 @@
   <div class="field grow"><label>Search Symbol</label><input id="symbolSearch" placeholder="XAUUSD, BTCUSD, EURUSD…"></div>
   <div class="field"><label>Category</label><select id="category"><option>ALL</option></select></div>
   <div class="field symbolField"><label>Vantage Symbol</label><select id="symbolSelect"></select></div>
-  <div class="field"><label>Indicator</label><select id="indicatorSelect"><option value="105">MTF Research v1.05</option><option value="103">MTF Research v1.03</option><option value="pvt">PVT v1.02</option></select></div>
+  <div class="field"><label>Indicator</label><select id="indicatorSelect">
+    <option value="105">MTF Research v1.05</option>
+    <option value="103">MTF Research v1.03</option>
+    <option value="pvt">PVT v1.02</option>
+    <option value="pattern132">Pattern Zone Tutor v1.32</option>
+    <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
+    <option value="owl101">OWL Style Research v1.01</option>
+  </select></div>
   <div class="field"><label>Signal TF</label><select id="tfSelect"><option>M1</option><option selected>M5</option><option>M15</option><option>M30</option><option>H1</option><option>H4</option><option>D1</option></select></div>
   <button id="refreshBtn" class="primary">Refresh</button>
 </section>
@@ -65,7 +72,7 @@
   </div>
 
   <div class="card sec">
-    <div class="head"><h3>OUTCOME STATS</h3><span class="sub">WIN = TP + TRAIL + BE • LOSE = SL only</span></div>
+    <div class="head"><h3>OUTCOME STATS</h3><span id="statsNote" class="sub">WIN = TP + TRAIL + BE • LOSE = SL only</span></div>
     <div class="stats"><div><small>TOTAL</small><b id="stTotal">0</b></div><div><small>WIN</small><b id="stWin" class="g">0</b></div><div><small>LOSE</small><b id="stLose" class="r">0</b></div><div><small>PENDING</small><b id="stPending">0</b></div><div><small>WIN RATE</small><b id="stWR">—</b></div></div>
   </div>
 </section>
@@ -75,7 +82,7 @@
 </section>
 
 <section id="tvPage" class="page">
-  <div class="card"><div class="head"><h3>TRADINGVIEW LIVE REFERENCE</h3><span class="tag y">REFERENCE ONLY</span></div><div class="notice">TradingView digunakan sebagai carta rujukan live. Data widget TradingView tidak digunakan untuk mengira 3 indicator GoldFlow.</div><div id="tvWrap" class="tvwrap"></div></div>
+  <div class="card"><div class="head"><h3>TRADINGVIEW LIVE REFERENCE</h3><span class="tag y">REFERENCE ONLY</span></div><div class="notice">TradingView digunakan sebagai carta rujukan live. Data widget TradingView tidak digunakan untuk mengira 6 indicator GoldFlow.</div><div id="tvWrap" class="tvwrap"></div></div>
 </section>
 
 <section id="historyPage" class="page">
