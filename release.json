@@ -1,10 +1,17 @@
 {
   "product": "GoldFlow Intelligence",
   "channel": "production",
-  "version": "7.3.0",
-  "mode": "HYBRID_VANTAGE_TRADINGVIEW_3_INDICATORS",
-  "indicators": ["MTF Research v1.05","MTF Research v1.03","PVT v1.02"],
+  "version": "7.4.0",
+  "mode": "HYBRID_VANTAGE_TRADINGVIEW_6_INDICATORS",
+  "indicators": [
+    "MTF Research v1.05",
+    "MTF Research v1.03",
+    "PVT v1.02",
+    "Pattern Zone Tutor v1.32",
+    "SND/SNR/SBR/RBS v1.07 STRICT TF",
+    "OWL Style Research v1.01"
+  ],
   "autoUpdate": true,
-  "message": "3 selectable indicator engines on any available broker symbol/TF, TradingView live reference tab, lower-load broker refresh.",
-  "updated": "2026-09-28"
+  "message": "Six selectable multi-asset indicator engines with broker-native Vantage candles and TradingView reference.",
+  "updated": "2026-09-30"
 }
