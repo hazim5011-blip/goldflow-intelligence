@@ -189,7 +189,11 @@ export default async function handler(req,res){
   const wal=last(S.WALCL),wal4=last(S.WALCL,4),walCh=wal&&wal4?pct(wal.value,wal4.value):null;
   const ry=last(S.DFII10),ry20=delta(S.DFII10,20);
   const usd=last(S.DTWEXBGS),usd60=last(S.DTWEXBGS,60),usdCh=usd&&usd60?pct(usd.value,usd60.value):null;
-  const net=netLiquidityAt(S),d35=new Date();d35.setUTCDate(d35.getUTCDate()-35),netPrev=netLiquidityAt(S,d35.toISOString().slice(0,10)),netCh=pct(net,netPrev);
+  const net=netLiquidityAt(S);
+  const d35=new Date();
+  d35.setUTCDate(d35.getUTCDate()-35);
+  const netPrev=netLiquidityAt(S,d35.toISOString().slice(0,10));
+  const netCh=pct(net,netPrev);
 
   const cards=[
     makeCard("A191RL1Q225SBEA",gdp?.value,finite(gdp?.value)?fmtNum(gdp.value,1)+"%":null,gdp&&gdpPrev?gdp.value-gdpPrev.value:null,"vs prior quarter",gdp&&gdpPrev?(gdp.value<gdpPrev.value?"SUPPORTIVE":"PRESSURE"):"MIXED","Quarterly real GDP annualized growth.",{rows:S.A191RL1Q225SBEA,transport:transport.A191RL1Q225SBEA}),
