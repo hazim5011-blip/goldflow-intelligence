@@ -19,9 +19,11 @@ async function bls(id){
 }
 async function beaGDP(){
   const t=clean(await fetchText("https://www.bea.gov/data/gdp/gross-domestic-product"));
-  const ms=[...t.matchAll(rx("Q([1-4])\\s+(20\\d{2})[^%]{0,90}([+-]?\\d+(?:\\.\\d+)?)%","ig"))];
+  let ms=[...t.matchAll(rx("Q([1-4])\\s+(20\\d{2})\\s*\\([^)]{1,20}\\)\\s*[|:]?\\s*([+-]?\\d+(?:\\.\\d+)?)%","ig"))];
+  if(!ms.length)ms=[...t.matchAll(rx("Q([1-4])\\s+(20\\d{2})[^%]{0,50}([+-]?\\d+(?:\\.\\d+)?)%","ig"))];
   if(!ms.length)throw new Error("BEA GDP parse");
-  const m=ms[0],q=Number(m[1]),v=Number(m[3]);return {value:v,date:m[2]+"-"+String(q*3).padStart(2,"0")+"-30",change:ms[1]?v-Number(ms[1][3]):null,url:"https://www.bea.gov/data/gdp/gross-domestic-product"}
+  const m=ms[0],q=Number(m[1]),v=Number(m[3]);
+  return {value:v,date:m[2]+"-"+String(q*3).padStart(2,"0")+"-30",change:ms[1]?v-Number(ms[1][3]):null,url:"https://www.bea.gov/data/gdp/gross-domestic-product"};
 }
 async function beaPCE(){
   const t=clean(await fetchText("https://www.bea.gov/data/personal-consumption-expenditures-price-index-excluding-food-and-energy"));
@@ -33,11 +35,11 @@ async function beaPCE(){
 }
 async function fedIP(){
   const t=clean(await fetchText("https://www.federalreserve.gov/releases/g17/current/default.htm"));
-  const m=t.match(rx("industrial production[^.]{0,300}?([0-9]+(?:\\.[0-9]+)?) percent (above|below) its year-earlier level","i"));
+  const m=t.match(rx("([0-9]+(?:\\.[0-9]+)?)\\s+percent\\s+(above|below)\\s+its\\s+year-earlier\\s+level","i"));
   if(!m)throw new Error("Fed G17 parse");
-  const d=t.match(rx("Release Date:\s*([A-Za-z]+\s+[0-9]{1,2},\s*20[0-9]{2})","i"));
+  const d=t.match(rx("Release Date:\\s*([A-Za-z]+\\s+[0-9]{1,2},\\s*20[0-9]{2})","i"));
   let v=Number(m[1]);if(String(m[2]).toLowerCase()==="below")v=-v;
-  return {value:v,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/g17/current/default.htm"}
+  return {value:v,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/g17/current/default.htm"};
 }
 function xmlVal(e,k){const m=e.match(rx("<d:"+k+"[^>]*>([^<]+)</d:"+k+">","i"));return m?m[1]:null}
 function parseTreasury(x,key){return [...String(x).matchAll(rx("<entry>([\\s\\S]*?)</entry>","ig"))].map(m=>m[1]).map(e=>({date:(xmlVal(e,"NEW_DATE")||"").slice(0,10),value:num(xmlVal(e,key))})).filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date))}
@@ -48,25 +50,26 @@ async function treasury(data,key){
 }
 async function h41(){
   const t=clean(await fetchText("https://www.federalreserve.gov/releases/h41/Current/"));
-  const a=t.match(rx("Total assets(?:\\s*\\(0\\))?\\s+([0-9,]{6,})\\s+([+-]\\s*[0-9,]+)","i"));
-  const g=t.match(rx("U\.S\. Treasury, General Account[^0-9]{0,40}([0-9,]{3,})[^0-9+-]{0,30}([+-]\s*[0-9,]+)","i"));
-  const d=t.match(rx("Release Date:\s*([A-Za-z]+\s+[0-9]{1,2},\s*20[0-9]{2})","i"));
-  if(!a||!g)throw new Error("Fed H41 parse");
-  return {assets:num(a[1]),assetsCh:num(a[2]),tga:num(g[1]),tgaCh:num(g[2]),date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h41/Current/"}
+  const am=[...t.matchAll(rx("Total\\s+assets[\\s\\S]{0,120}?([0-9][0-9,]{5,})","ig"))];
+  const gm=[...t.matchAll(rx("U\\.S\\.\\s+Treasury,\\s+General\\s+Account[\\s\\S]{0,120}?([0-9][0-9,]{3,})","ig"))];
+  const d=t.match(rx("Release Date:\\s*([A-Za-z]+\\s+[0-9]{1,2},\\s*20[0-9]{2})","i"));
+  if(!am.length||!gm.length)throw new Error("Fed H41 parse");
+  return {assets:num(am[0][1]),assetsCh:null,tga:num(gm[0][1]),tgaCh:null,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h41/Current/"};
 }
 async function nyfed(){
   const t=clean(await fetchText("https://www.newyorkfed.org/markets/data-hub"));
-  const trg=t.match(rx("Target Rate/Range \(%\)[^0-9]{0,120}([0-9]+(?:\.[0-9]+)?)\s*-\s*([0-9]+(?:\.[0-9]+)?)","i"));
-  const rr=t.match(rx("Reverse Repo Operations[\s\S]{0,900}?Treasury\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)","i"));
-  const sf=t.match(rx("Secured Overnight Financing Rate[\s\S]{0,700}?([0-9]+(?:\.[0-9]+)?)\s+[0-9,]+","i"));
-  return {low:trg?num(trg[1]):null,high:trg?num(trg[2]):null,rrp:rr?num(rr[2]):null,sofr:sf?num(sf[1]):null,url:"https://www.newyorkfed.org/markets/data-hub"}
+  const trg=t.match(rx("Effective\\s+Federal\\s+Funds\\s+Rate[\\s\\S]{0,900}?Target\\s*Rate/Range\\s*\\(%\\)[\\s\\S]{0,140}?([0-9]+(?:\\.[0-9]+)?)\\s*-\\s*([0-9]+(?:\\.[0-9]+)?)","i"))
+    ||t.match(rx("Target\\s*Rate/Range\\s*\\(%\\)[\\s\\S]{0,140}?([0-9]+(?:\\.[0-9]+)?)\\s*-\\s*([0-9]+(?:\\.[0-9]+)?)","i"));
+  const rr=t.match(rx("Reverse\\s+Repo\\s+Operations[\\s\\S]{0,900}?Treasury\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
+  const sf=t.match(rx("Secured\\s+Overnight\\s+Financing\\s+Rate[\\s\\S]{0,700}?([0-9]+(?:\\.[0-9]+)?)\\s+[0-9,]+","i"));
+  return {low:trg?num(trg[1]):null,high:trg?num(trg[2]):null,rrp:rr?num(rr[2]):null,sofr:sf?num(sf[1]):null,url:"https://www.newyorkfed.org/markets/data-hub"};
 }
 async function h10(){
   const t=clean(await fetchText("https://www.federalreserve.gov/releases/h10/current/"));
-  const m=t.match(rx("1\) BROAD\s+JAN06=100\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)","i"));
-  const d=t.match(rx("Release Date:\s*([A-Za-z]+\s+[0-9]{1,2},\s*20[0-9]{2})","i"));
+  const m=t.match(rx("1\\)\\s+BROAD\\s+JAN06=100\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
+  const d=t.match(rx("Release Date:\\s*([A-Za-z]+\\s+[0-9]{1,2},\\s*20[0-9]{2})","i"));
   if(!m)throw new Error("Fed H10 parse");
-  return {value:num(m[5]),change:num(m[5])-num(m[1]),date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h10/current/"}
+  return {value:num(m[5]),change:num(m[5])-num(m[1]),date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h10/current/"};
 }
 function mk(id,name,value,display,date,source,url,change,label,impact,detail,official=true){return{id,name,value,display,date,source,seriesUrl:url,change,changeLabel:label,goldImpact:impact,detail,frequency:"Official release",stale:!date,status:official?"OFFICIAL":"DERIVED",transport:"Direct source"}}
 function imp(v,pos=true,th=0){if(!finite(v))return"MIXED";return Number(v)>th?(pos?"SUPPORTIVE":"PRESSURE"):Number(v)<-th?(pos?"PRESSURE":"SUPPORTIVE"):"MIXED"}
