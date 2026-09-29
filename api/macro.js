@@ -84,7 +84,8 @@ function nBackAt(rows,date,n){
 }
 function makeCard(id,value,display,change,changeLabel,goldImpact,detail,extra={}){
   const rows=extra.rows||[],obs=last(rows),meta=CATALOG[id]||{};
-  const staleLimit=extra.staleDays||meta.staleDays||30;\n  const stale=obs?daysOld(obs.date)>staleLimit:true;
+  const staleLimit=extra.staleDays||meta.staleDays||30;
+  const stale=obs?daysOld(obs.date)>staleLimit:true;
   return {
     id,name:extra.name||meta.name||id,value,display,change,changeLabel,goldImpact,detail,
     date:extra.date||obs?.date||null,source:extra.source||meta.source||"FRED",frequency:extra.frequency||meta.frequency||"",
