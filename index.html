@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence V7.4</title>
+<title>GoldFlow Intelligence V7.5</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -12,7 +12,7 @@
 <body>
 <div class="wrap">
 <header class="top">
-  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.4</h1><small>HYBRID • MULTI-ASSET • 6 INDICATORS</small></div></div>
+  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.5</h1><small>HYBRID • MULTI-ASSET • 6 INDICATORS • OFFICIAL MACRO</small></div></div>
   <div class="statusRow"><span id="bridgeChip" class="chip warn">BRIDGE…</span><span id="engineChip" class="chip warn">ENGINE…</span><span id="marketChip" class="chip warn">MARKET…</span></div>
 </header>
 
@@ -40,6 +40,7 @@
   <button class="tab" data-page="tvPage">TradingView</button>
   <button class="tab" data-page="historyPage">History</button>
   <button class="tab" data-page="symbolsPage">All Symbols</button>
+  <button class="tab" data-page="macroPage">Macro Regime</button>
 </nav>
 
 <main>
@@ -91,6 +92,52 @@
 
 <section id="symbolsPage" class="page">
   <div class="card"><div class="head"><h3>VANTAGE SERVER SYMBOLS</h3><span id="symbolCount" class="tag">0</span></div><div id="symbolCards" class="symbolGrid"></div></div>
+</section>
+<section id="macroPage" class="page">
+  <div class="card macroHero">
+    <div class="head"><div><small class="eyebrow">OFFICIAL DATA PULSE</small><h3>U.S. Macro Regime</h3></div><div class="macroHeadRight"><span id="macroQuality" class="tag">LOADING</span><button id="macroRefresh" class="primary mini">Refresh Macro</button></div></div>
+    <div id="macroNotice" class="notice info">Loading official U.S. macro data from FRED and originating agencies…</div>
+    <div id="macroCards" class="macroCards"></div>
+  </div>
+
+  <div class="grid g2 sec">
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">DERIVED MODEL</small><h3>Regime Engine</h3></div><span id="macroRegimeTag" class="tag y">—</span></div>
+      <div class="regimeBig"><strong id="macroRegime">—</strong><span id="macroConfidence">—</span></div>
+      <div id="macroRegimeNote" class="reason">—</div>
+      <div class="macroScoreGrid">
+        <div><small>Growth Pulse</small><b id="scoreGrowth">—</b><div class="scoreBar"><i id="barGrowth"></i></div></div>
+        <div><small>Inflation Heat</small><b id="scoreInflation">—</b><div class="scoreBar"><i id="barInflation"></i></div></div>
+        <div><small>Policy Pressure</small><b id="scorePolicy">—</b><div class="scoreBar"><i id="barPolicy"></i></div></div>
+        <div><small>Liquidity Pulse</small><b id="scoreLiquidity">—</b><div class="scoreBar"><i id="barLiquidity"></i></div></div>
+        <div><small>Real Yield Pressure</small><b id="scoreRealYield">—</b><div class="scoreBar"><i id="barRealYield"></i></div></div>
+        <div><small>USD Momentum</small><b id="scoreDollar">—</b><div class="scoreBar"><i id="barDollar"></i></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">DERIVED GOLD CONTEXT</small><h3>Gold Macro Bias</h3></div><span id="goldMacroTag" class="tag">—</span></div>
+      <div class="goldMacroScore"><strong id="goldMacroScore">—</strong><span>/100</span></div>
+      <div id="goldMacroText" class="reason">—</div>
+      <div class="macroDisclaimer">This is macro context, not a trading signal. Intraday price can move against macro bias because of positioning, news, liquidity, technicals and real-time yields/USD.</div>
+    </div>
+  </div>
+
+  <div class="grid g2 sec">
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">REGIME PLAYBOOK</small><h3>Cross-Asset Context</h3></div><span class="tag">DERIVED</span></div>
+      <div id="macroPlaybook" class="playbook"></div>
+    </div>
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">12-MONTH CONTEXT</small><h3>Regime Timeline</h3></div><span class="sub">revised official history</span></div>
+      <div id="macroTimeline" class="timeline"></div>
+      <div class="macroDisclaimer">Historical regime labels are reconstructed from the latest revised official series. They are not point-in-time ALFRED backtests.</div>
+    </div>
+  </div>
+
+  <div class="card sec">
+    <div class="head"><div><small class="eyebrow">METHODOLOGY</small><h3>Official vs Derived</h3></div><span id="macroFetched" class="sub">—</span></div>
+    <div id="macroMethod" class="methodGrid"></div>
+  </div>
 </section>
 </main>
 
