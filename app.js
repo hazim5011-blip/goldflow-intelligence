@@ -1,5 +1,5 @@
 var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5", selectedIndicator=localStorage.getItem("gf_indicator")||"105";
-var lastAnalysis=null, chart=null, candleSeries=null, loading=false;
+var lastAnalysis=null, chart=null, candleSeries=null, loading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
 function $(id){return document.getElementById(id)}
 function finite(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}
 function fmt(v,d){if(!finite(v))return "—";return Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}
@@ -27,6 +27,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   b.classList.add("on");$(b.dataset.page).classList.add("on");
   if(b.dataset.page==="chartPage")setTimeout(drawChart,50);
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
+  if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
 }});
 
 $("tfSelect").value=selectedTF;
@@ -37,6 +38,7 @@ $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
 $("symbolSelect").onchange=function(){selectSymbol(this.value)};
+if($("macroRefresh"))$("macroRefresh").onclick=function(){loadMacro(true)};
 
 function selectSymbol(s){
   if(!s)return;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
@@ -201,3 +203,97 @@ function renderTradingView(){
   var sym=tvSymbol(selectedSymbol),intv=tvInterval(selectedTF);
   el.innerHTML='<iframe allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen src="https://s.tradingview.com/widgetembed/?frameElementId=tv_goldflow&symbol='+encodeURIComponent(sym)+'&interval='+encodeURIComponent(intv)+'&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=%230f2740&studies=[]&theme=dark&style=1&timezone=Asia%2FKuala_Lumpur&withdateranges=1&hideideas=1"></iframe>';
 }
+
+function macroImpactClass(v){
+  return v==="SUPPORTIVE"?"g":v==="PRESSURE"?"r":"y";
+}
+function macroChangeText(c){
+  if(!finite(c))return "—";
+  var n=Number(c),sign=n>0?"+":"";
+  return sign+fmt(n,2);
+}
+function macroStatusTag(card){
+  return card.stale?'<span class="y">EXPECTED LAG</span>':'<span class="g">OFFICIAL</span>';
+}
+function renderMacroCards(cards){
+  var el=$("macroCards");if(!el)return;
+  el.innerHTML=(cards||[]).map(function(x){
+    var impact=x.goldImpact||"MIXED";
+    return '<div class="macroCard '+(x.stale?"stale":"")+'">'+
+      '<div class="mcTop"><div><div class="mcName">'+x.name+'</div><div class="sub">'+x.id+'</div></div><span class="mcDot"></span></div>'+
+      '<div class="mcValue">'+(x.display||"—")+'</div>'+
+      '<div class="mcChange '+(finite(x.change)?(Number(x.change)>0?"g":Number(x.change)<0?"r":""):"")+'">'+macroChangeText(x.change)+' • '+(x.changeLabel||"")+'</div>'+
+      '<div class="mcDetail">'+(x.detail||"")+'</div>'+
+      '<div class="mcFoot"><span>'+macroStatusTag(x)+' • '+(x.date||"—")+' • '+(x.frequency||"")+'</span>'+
+      '<a class="macroLink" href="'+(x.seriesUrl||"#")+'" target="_blank" rel="noopener">'+(x.source||"FRED")+'</a>'+
+      '<span class="mcImpact '+macroImpactClass(impact)+'">GOLD '+impact+'</span></div>'+
+    '</div>';
+  }).join("");
+}
+function setMacroScore(id,v){
+  var e=$(id),b=$("bar"+id.replace("score",""));
+  if(e)e.textContent=finite(v)?Math.round(Number(v)):"—";
+  if(b)b.style.width=finite(v)?Math.max(0,Math.min(100,Number(v)))+"%":"0%";
+}
+function renderMacroPlaybook(p){
+  var el=$("macroPlaybook");if(!el)return;
+  var rows=[["Gold",p.gold],["USD",p.usd],["US Treasury",p.treasury],["Equities",p.equities],["Oil",p.oil]];
+  el.innerHTML=rows.map(function(r){
+    var x=r[1]||{label:"MIXED",detail:"—"};
+    return '<div class="pbRow"><div class="pbAsset">'+r[0]+'</div><div class="pbLabel '+macroImpactClass(x.label)+'">'+x.label+'</div><div class="pbText">'+x.detail+'</div></div>';
+  }).join("");
+}
+function renderMacroTimeline(rows){
+  var el=$("macroTimeline");if(!el)return;
+  el.innerHTML=(rows||[]).map(function(x){
+    var r=String(x.regime||"").toLowerCase();
+    var h=Math.max(18,Math.min(100,Number(x.growth||50)));
+    return '<div class="tlItem '+r+'"><div class="tlBar"><span style="height:'+h+'%"></span></div><div class="tlMonth">'+String(x.month||"").slice(2)+'</div><div class="tlRegime">'+x.regime+'</div><div class="sub">G '+x.growth+' • I '+x.inflation+'</div></div>';
+  }).join("");
+}
+function renderMacroMethod(m){
+  var el=$("macroMethod");if(!el)return;
+  var rows=[
+    ["OFFICIAL DATA",m.official],
+    ["DERIVED MODEL",m.derived],
+    ["HISTORY LIMITATION",m.revisions],
+    ["NET LIQUIDITY FORMULA",m.netLiquidity]
+  ];
+  el.innerHTML=rows.map(function(x){return '<div class="methodBox"><b>'+x[0]+'</b>'+String(x[1]||"—")+'</div>'}).join("");
+}
+async function loadMacro(force){
+  if(macroLoading||(!force&&macroLoaded))return;
+  macroLoading=true;
+  if($("macroNotice")){$("macroNotice").className="notice info";$("macroNotice").textContent="Loading official U.S. macro data…";}
+  try{
+    var j=await getJson("/api/macro"+(force?"?t="+Date.now():""));
+    if(!j.ok)throw new Error(j.error||"Macro data unavailable");
+    lastMacro=j;macroLoaded=true;
+    renderMacroCards(j.cards||[]);
+    $("macroQuality").textContent=(j.quality?.available||0)+"/"+(j.quality?.total||0)+" SERIES";
+    $("macroQuality").className="tag "+((j.quality?.available||0)===(j.quality?.total||0)?"g":"y");
+    $("macroNotice").className="notice good";
+    $("macroNotice").innerHTML="<b>Official data loaded.</b> Values come from FRED and originating U.S. agencies. Regime, pulse scores and Gold Macro Bias are GoldFlow-derived labels.";
+    $("macroRegime").textContent=j.regime?.name||"—";
+    $("macroRegimeTag").textContent="DERIVED";
+    $("macroConfidence").textContent=finite(j.regime?.confidence)?"Model confidence "+Math.round(j.regime.confidence)+"%":"—";
+    $("macroRegimeNote").textContent=j.regime?.note||"—";
+    setMacroScore("scoreGrowth",j.scores?.growth);
+    setMacroScore("scoreInflation",j.scores?.inflation);
+    setMacroScore("scorePolicy",j.scores?.policy);
+    setMacroScore("scoreLiquidity",j.scores?.liquidity);
+    setMacroScore("scoreRealYield",j.scores?.realYield);
+    setMacroScore("scoreDollar",j.scores?.dollar);
+    $("goldMacroScore").textContent=finite(j.gold?.score)?Math.round(j.gold.score):"—";
+    $("goldMacroTag").textContent=j.gold?.bias||"—";
+    $("goldMacroTag").className="tag "+macroImpactClass(j.gold?.bias);
+    $("goldMacroText").textContent=j.gold?.note||"—";
+    renderMacroPlaybook(j.playbook||{});
+    renderMacroTimeline(j.timeline||[]);
+    renderMacroMethod(j.methodology||{});
+    $("macroFetched").textContent=j.fetchedAt?("Fetched "+new Date(j.fetchedAt).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"})):"—";
+  }catch(e){
+    if($("macroNotice")){$("macroNotice").className="notice bad";$("macroNotice").textContent=e.message;}
+  }finally{macroLoading=false}
+}
+setInterval(function(){if(macroLoaded)loadMacro(true)},900000);
