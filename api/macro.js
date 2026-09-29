@@ -84,7 +84,7 @@ function nBackAt(rows,date,n){
 }
 function makeCard(id,value,display,change,changeLabel,goldImpact,detail,extra={}){
   const rows=extra.rows||[],obs=last(rows),meta=CATALOG[id]||{};
-  const stale=obs?daysOld(obs.date)>meta.staleDays:true;
+  const staleLimit=extra.staleDays||meta.staleDays||30;\n  const stale=obs?daysOld(obs.date)>staleLimit:true;
   return {
     id,name:extra.name||meta.name||id,value,display,change,changeLabel,goldImpact,detail,
     date:extra.date||obs?.date||null,source:extra.source||meta.source||"FRED",frequency:extra.frequency||meta.frequency||"",
@@ -209,7 +209,7 @@ export default async function handler(req,res){
   const regime=regimeOf(scores.growth,scores.inflation);
   const goldSupport=clamp(.25*scores.inflation+.25*(100-scores.realYieldScore)+.20*liq+.15*(100-scores.growth)+.15*(100-scores.dollar));
   const goldBias=impactLabel(goldSupport);
-  const confidence=clamp(100-(errors.length/IDS.length)*50-Math.abs(scores.growth-50)*.08-Math.abs(scores.inflation-50)*.05,35,95);
+  const confidence=clamp(55+Math.abs(scores.growth-50)*.35+Math.abs(scores.inflation-50)*.35-(errors.length/IDS.length)*50,35,95);
 
   const timeline=monthEnds(12).map(date=>{
     const s=componentScores(S,date),l=liquidityScore(S,date),r=regimeOf(s.growth,s.inflation);
