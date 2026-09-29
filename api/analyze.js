@@ -2,6 +2,9 @@ import {bridgeConfigured,brokerGet,apiError} from "./_broker.js";
 import {runIndicator as run105} from "./_indicator105.js";
 import {runIndicator as run103} from "./_indicator103.js";
 import {runPVT} from "./_indicatorPVT102.js";
+import {runIndicator as runOWL101} from "./_indicatorOWL101.js";
+import {runPattern132} from "./_indicatorPattern132.js";
+import {runSND107} from "./_indicatorSND107.js";
 
 const PROFILE={
   M1:["M1","M5","M15"],
@@ -13,58 +16,102 @@ const PROFILE={
   D1:["D1","W1","MN1"]
 };
 
+const NEXT={M1:"M5",M5:"M15",M15:"M30",M30:"H1",H1:"H4",H4:"D1",D1:"W1",W1:"MN1",MN1:"MN1"};
+const BAR_LIMIT={M1:1400,M5:1100,M15:950,M30:850,H1:750,H4:550,D1:420,W1:320,MN1:220};
+
+function patternProfile(tf){
+  if(tf==="M1"||tf==="M5") return [tf,"M15","H1"];
+  if(tf==="M15") return [tf,"H1","H4"];
+  if(tf==="M30"||tf==="H1") return [tf,"H4","D1"];
+  if(tf==="H4") return [tf,"D1","W1"];
+  if(tf==="D1") return [tf,"W1","MN1"];
+  return PROFILE[tf]||[tf,NEXT[tf]||"H1",NEXT[NEXT[tf]]||"H4"];
+}
+function sndProfile(sourceTF){
+  let bias="M15";
+  if(sourceTF==="M15"||sourceTF==="M30") bias="H1";
+  else if(sourceTF==="H1") bias="H4";
+  else if(sourceTF==="H4") bias="D1";
+  else if(sourceTF==="D1") bias="W1";
+  return ["M1",sourceTF,bias];
+}
+function resolveProfile(tf,mode){
+  if(mode==="pattern132"||mode==="pattern"||mode==="1.32") return patternProfile(tf);
+  if(mode==="snd107"||mode==="snd"||mode==="1.07") return sndProfile(tf);
+  return PROFILE[tf];
+}
+
+async function fetchFrames(symbol,frames){
+  const unique=[...new Set(frames.filter(Boolean))];
+  const limits=unique.map(tf=>BAR_LIMIT[tf]||500);
+  try{
+    const batch=await brokerGet("/multi-bars",{symbol,tfs:unique.join(","),limits:limits.join(",")},55000);
+    return {
+      meta:{symbol:batch.symbol,broker:batch.broker,bid:batch.bid,ask:batch.ask,spread:batch.spread,digits:batch.digits,point:batch.point,serverTime:batch.serverTime},
+      frames:batch.frames||{}
+    };
+  }catch(batchErr){
+    const msg=String(batchErr?.message||batchErr);
+    if(!/404|Not Found|detail|multi-bars/i.test(msg)) throw batchErr;
+    const rows=await Promise.all(unique.map(tf=>brokerGet("/bars",{symbol,tf,limit:BAR_LIMIT[tf]||500},30000)));
+    const map={};for(let i=0;i<unique.length;i++)map[unique[i]]=rows[i].bars||[];
+    const first=rows[0]||{};
+    return {meta:{symbol:first.symbol,broker:first.broker,bid:first.bid,ask:first.ask,spread:first.spread,digits:first.digits,point:first.point,serverTime:first.serverTime},frames:map};
+  }
+}
+
 export default async function handler(req,res){
   if(req.method==="OPTIONS") return res.status(204).end();
   res.setHeader("Cache-Control","s-maxage=10, stale-while-revalidate=86400");
   if(!bridgeConfigured()) return res.status(200).json({ok:false,ready:false,bridgeConfigured:false,error:"BROKER_BRIDGE_URL_NOT_CONFIGURED"});
+
   const symbol=String(req.query?.symbol||"").trim();
-  const triggerTF=String(req.query?.tf||"M5").toUpperCase();
+  const selectedTF=String(req.query?.tf||"M5").toUpperCase();
   const indicatorMode=String(req.query?.indicator||"105").toLowerCase();
   if(!symbol) return res.status(400).json({ok:false,error:"symbol required"});
-  if(!PROFILE[triggerTF]) return res.status(400).json({ok:false,error:"unsupported tf"});
-  const [tTF,sTF,bTF]=PROFILE[triggerTF];
-  const LIMITS={
-    M1:[1000,800,600],M5:[1000,800,600],M15:[900,700,550],
-    M30:[800,650,500],H1:[700,550,420],H4:[500,400,300],D1:[400,320,250]
-  };
-  const [lt,ls,lb]=LIMITS[triggerTF]||[700,550,420];
+  if(!PROFILE[selectedTF]) return res.status(400).json({ok:false,error:"unsupported tf"});
+
+  const [tTF,sTF,bTF]=resolveProfile(selectedTF,indicatorMode);
+  const extra=(indicatorMode==="snd107"||indicatorMode==="snd"||indicatorMode==="1.07")?["M5","M15"]:[];
   try{
-    let t,s,b;
-    try{
-      const batch=await brokerGet("/multi-bars",{symbol,tfs:[tTF,sTF,bTF].join(","),limits:[lt,ls,lb].join(",")},55000);
-      t={bars:batch.frames?.[tTF]||[],symbol:batch.symbol,broker:batch.broker,bid:batch.bid,ask:batch.ask,spread:batch.spread,digits:batch.digits,point:batch.point,serverTime:batch.serverTime};
-      s={bars:batch.frames?.[sTF]||[]};
-      b={bars:batch.frames?.[bTF]||[]};
-    }catch(batchErr){
-      const msg=String(batchErr?.message||batchErr);
-      if(!/404|Not Found|detail/i.test(msg) && !/multi-bars/i.test(msg)) throw batchErr;
-      [t,s,b]=await Promise.all([
-        brokerGet("/bars",{symbol,tf:tTF,limit:lt},30000),
-        brokerGet("/bars",{symbol,tf:sTF,limit:ls},30000),
-        brokerGet("/bars",{symbol,tf:bTF,limit:lb},30000)
-      ]);
-    }
+    const data=await fetchFrames(symbol,[tTF,sTF,bTF,...extra]);
+    const bars=tf=>data.frames?.[tf]||[];
+    const meta=data.meta||{};
     let indicator;
-    if(indicatorMode==="pvt" || indicatorMode==="pvt102"){
-      indicator=runPVT({triggerBars:t.bars,triggerTF:tTF,symbol:t.symbol||symbol,point:t.point||0});
-    }else if(indicatorMode==="103" || indicatorMode==="1.03"){
-      indicator=run103({triggerBars:t.bars,setupBars:s.bars,biasBars:b.bars,triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:t.symbol||symbol,point:t.point||0});
+
+    if(indicatorMode==="pvt"||indicatorMode==="pvt102"){
+      indicator=runPVT({triggerBars:bars(tTF),triggerTF:tTF,symbol:meta.symbol||symbol,point:meta.point||0});
+    }else if(indicatorMode==="103"||indicatorMode==="1.03"){
+      indicator=run103({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
+    }else if(indicatorMode==="owl101"||indicatorMode==="owl"||indicatorMode==="1.01"){
+      indicator=runOWL101({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
+    }else if(indicatorMode==="pattern132"||indicatorMode==="pattern"||indicatorMode==="1.32"){
+      indicator=runPattern132({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
+    }else if(indicatorMode==="snd107"||indicatorMode==="snd"||indicatorMode==="1.07"){
+      indicator=runSND107({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),m5Bars:bars("M5"),m15Bars:bars("M15"),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
     }else{
-      indicator=run105({triggerBars:t.bars,setupBars:s.bars,biasBars:b.bars,triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:t.symbol||symbol,point:t.point||0});
+      indicator=run105({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
     }
+
     const now=Math.floor(Date.now()/1000);
-    const last=t.bars?.at(-1)?.t||null;
+    const primaryBars=bars(tTF);
+    const last=primaryBars?.at(-1)?.t||null;
     const ageMin=last?Math.max(0,(now-last)/60):null;
+    const tfMin={M1:1,M5:5,M15:15,M30:30,H1:60,H4:240,D1:1440,W1:10080,MN1:43200};
+
     return res.status(200).json({
       ok:true,ready:indicator.ready,bridgeConfigured:true,source:"MT5_BRIDGE",
-      requested:symbol,symbol:t.symbol||symbol,broker:t.broker||"Vantage",indicatorMode,
+      requested:symbol,symbol:meta.symbol||symbol,broker:meta.broker||"Vantage",indicatorMode,selectedTF,
       triggerTF:tTF,setupTF:sTF,biasTF:bTF,
-      tick:{bid:t.bid??null,ask:t.ask??null,spread:t.spread??null},
-      price:t.bid??t.bars?.at(-1)?.c??null,digits:t.digits??null,point:t.point??null,
-      serverTime:t.serverTime??null,lastBarTime:last,ageMin,
-      marketState:ageMin!=null&&ageMin>Math.max(3,({M1:1,M5:5,M15:15,M30:30,H1:60,H4:240,D1:1440}[tTF]||5)*3)?"MT5_STALE":"MT5_LIVE",
+      tick:{bid:meta.bid??null,ask:meta.ask??null,spread:meta.spread??null},
+      price:meta.bid??primaryBars?.at(-1)?.c??null,digits:meta.digits??null,point:meta.point??null,
+      serverTime:meta.serverTime??null,lastBarTime:last,ageMin,
+      marketState:ageMin!=null&&ageMin>Math.max(3,(tfMin[tTF]||5)*3)?"MT5_STALE":"MT5_LIVE",
       indicator,
-      chartBars:(t.bars||[]).slice(-500)
+      chartBars:(primaryBars||[]).slice(-500)
     });
-  }catch(e){res.setHeader("Cache-Control","no-store");return apiError(res,e,200,{ready:false,symbol,triggerTF,bridgeConfigured:true});}
+  }catch(e){
+    res.setHeader("Cache-Control","no-store");
+    return apiError(res,e,200,{ready:false,symbol,triggerTF:tTF,selectedTF,bridgeConfigured:true});
+  }
 }
