@@ -10,7 +10,7 @@ export default async function handler(req,res){
     const rows=filterHistory(ctx.rows,{direction:String(req.query?.direction||"ALL").toUpperCase(),
       from:String(req.query?.from||""),to:String(req.query?.to||"")}).slice(-limit).reverse();
     const {brokerBars,...publicContext}=ctx;
-    return res.status(200).json({ok:true,version:"8.0.0-staging",...publicContext,rows,stats:aggregate(rows),
+    return res.status(200).json({ok:true,version:"8.0.0",...publicContext,rows,stats:aggregate(rows),
       availableSignals:ctx.rows.length,forwardLedger:{configured:forwardConfigured(),count:null,status:!forwardConfigured()?"NOT_CONFIGURED":publicReadEnabled()?"ARCHIVE_CONNECTED_PUBLISHER_STATUS_UNVERIFIED":"PRIVATE_ARCHIVE_CONNECTED",
         note:"Forward records must be separately published by an authenticated publisher at candle close. Historical simulations are never relabelled as forward proof."},
       disclaimer:DISCLAIMER});

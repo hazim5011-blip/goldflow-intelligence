@@ -8,7 +8,7 @@ export default async function handler(req,res){
     const period=["day","week","month","year"].includes(String(req.query?.period||"month"))?String(req.query.period):"month";
     const filtered=filterHistory(ctx.rows,{direction:String(req.query?.direction||"ALL").toUpperCase(),
       from:String(req.query?.from||""),to:String(req.query?.to||""),recordMode:"HISTORICAL_SIM"});
-    return res.status(200).json({ok:true,version:"8.0.0-staging",symbol:ctx.symbolResolved,indicator:ctx.indicator,tf:ctx.tf,
+    return res.status(200).json({ok:true,version:"8.0.0",symbol:ctx.symbolResolved,indicator:ctx.indicator,tf:ctx.tf,
       recordMode:"HISTORICAL_SIM",dataWindow:ctx.dataWindow,summary:aggregate(filtered),
       period,groups:groupHistory(filtered,period),comparison:compareMonths(filtered),
       metricDefinition:{strictWinRate:"positive / (positive + negative); BE_ZERO excluded",legacyWinRate:"(positive + BE_ZERO) / (positive + negative + BE_ZERO)",
