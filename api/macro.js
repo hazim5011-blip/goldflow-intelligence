@@ -1,5 +1,5 @@
 const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
-const finite=v=>Number.isFinite(Number(v));
+const finite=v=>v!==null&&v!==undefined&&String(v).trim()!==""&&Number.isFinite(Number(v));
 const num=v=>{if(v==null||String(v).trim()==="")return null;const n=Number(String(v).replace(/,/g,"").replace(/\s/g,""));return Number.isFinite(n)?n:null};
 const fmt=(v,d=2)=>finite(v)?Number(v).toFixed(d):null;
 const pct=(a,b)=>finite(a)&&finite(b)&&Number(b)!==0?100*(Number(a)-Number(b))/Number(b):null;
@@ -57,11 +57,12 @@ async function h41(){
   return {assets:num(am[0][1]),assetsCh:null,tga:num(gm[0][1]),tgaCh:null,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h41/Current/"};
 }
 async function nyfed(){
-  const [dataText,effrText]=await Promise.all([
+  const [dataText,effrText,policyText]=await Promise.all([
     fetchText("https://www.newyorkfed.org/markets/data-hub"),
-    fetchText("https://www.newyorkfed.org/markets/reference-rates/effr")
+    fetchText("https://www.newyorkfed.org/markets/reference-rates/effr"),
+    fetchText("https://www.federalreserve.gov/monetarypolicy/openmarket.htm")
   ]);
-  const t=clean(dataText), e=clean(effrText);
+  const t=clean(dataText), e=clean(effrText), p=clean(policyText);
 
   const rowRe=rx("([0-9]{1,2})/([0-9]{1,2})\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9,]+)\\s+([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","ig");
   const rows=[...e.matchAll(rowRe)];
@@ -75,15 +76,21 @@ async function nyfed(){
       for(const y of [now.getUTCFullYear(),now.getUTCFullYear()-1]){
         const dt=new Date(Date.UTC(y,m-1,d));
         const diff=now.getTime()-dt.getTime();
-        if(diff>=-86400000 && diff<bestDiff){
-          bestDiff=diff;best={r,dt};
-        }
+        if(diff>=-86400000 && diff<bestDiff){bestDiff=diff;best={r,dt};}
       }
     }
     if(best){
       low=num(best.r[9]); high=num(best.r[10]);
       targetDate=best.dt.toISOString().slice(0,10);
     }
+  }
+
+  // Official Fed policy page fallback: the first current policy range on the page.
+  if(!finite(high)){
+    const ranges=[...p.matchAll(rx("([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","g"))]
+      .map(m=>({low:num(m[1]),high:num(m[2])}))
+      .filter(x=>finite(x.low)&&finite(x.high)&&x.high>=x.low&&x.high<=10&&(x.high-x.low)<=1);
+    if(ranges.length){low=ranges[0].low;high=ranges[0].high;}
   }
 
   const rr=t.match(rx("Reverse\\s+Repo\\s+Operations[\\s\\S]{0,900}?Treasury\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
@@ -93,7 +100,7 @@ async function nyfed(){
     low,high,targetDate,
     rrp:rr?num(rr[2]):null,
     sofr:sf?num(sf[1]):null,
-    targetUrl:"https://www.newyorkfed.org/markets/reference-rates/effr",
+    targetUrl:finite(high)?"https://www.federalreserve.gov/monetarypolicy/openmarket.htm":"https://www.newyorkfed.org/markets/reference-rates/effr",
     url:"https://www.newyorkfed.org/markets/data-hub"
   };
 }
