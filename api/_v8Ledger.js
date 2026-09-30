@@ -31,7 +31,7 @@ export function normalizePublishedPayload(body,now=new Date()){
      t<=prev||(t+TF_SECONDS[tf])*1000>now.getTime()+90000)throw Error("INVALID_OR_FUTURE_CANDLE");
   prev=t;return {t,o,h,l,c:z,v:v==null?null:v};
  });
- if(Math.abs((archived.at(-1).t+TF_SECONDS[tf])*1000-close)>2*TF_SECONDS[tf]*1000)throw Error("LAST_CANDLE_NOT_SIGNAL_CLOSE");
+ if(Math.abs((archived.at(-1).t+TF_SECONDS[tf])*1000-close)>90000)throw Error("LAST_CANDLE_NOT_SIGNAL_CLOSE");
  const reasons=Array.isArray(body.reasons)?body.reasons.slice(0,24).map(x=>String(x).slice(0,160)):[];
  const score=xnum(body.score),safeScore=score!=null&&score>=0&&score<=100?score:null;
  const spec=body.spec&&typeof body.spec==="object"?body.spec:{};
@@ -70,7 +70,9 @@ export async function readForward(date,id){
  const pathname="goldflow-forward/v1/"+date+"/"+id+"/published.json";
  const r=await get(pathname,{access:"private"});
  if(!r||r.statusCode!==200||!r.stream)return null;
- let out="";for await(const chunk of r.stream){out+=new TextDecoder().decode(chunk);if(out.length>300000)throw Error("ARCHIVE_TOO_LARGE")}
+ let out="",decoder=new TextDecoder();
+ for await(const chunk of r.stream){out+=decoder.decode(chunk,{stream:true});if(out.length>300000)throw Error("ARCHIVE_TOO_LARGE")}
+ out+=decoder.decode();
  const parsed=JSON.parse(out);
  if(parsed.recordMode!=="FORWARD_LOGGED"||parsed.signalId!==id||parsed.receivedAtUTC.slice(0,10)!==date)throw Error("ARCHIVE_INTEGRITY_ERROR");
  const {recordHash,...body}=parsed;
