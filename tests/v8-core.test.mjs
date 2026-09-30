@@ -8,7 +8,7 @@ import {
   replayOutcome,pipConvention,metadataFromCatalog,buildHistory,aggregate,groupHistory,compareMonths,
   periodKey,filterHistory,evidenceForRecord,explainRecord
 } from "../api/_v8Core.js";
-import {normalizePublishedPayload,forwardPath,forwardConfigured,validateSecret} from "../api/_v8Ledger.js";
+import {normalizePublishedPayload,forwardPath,normalizeOutcomePayload,outcomePath,forwardConfigured,validateSecret} from "../api/_v8Ledger.js";
 
 const mk=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 const base={time:1000,closeTime:1300,direction:1,entry:100,invalidation:90,tp1:110,score:90,reasons:["MOMENTUM"]};
@@ -109,6 +109,21 @@ test("Authenticated forward ledger rejects late, inconsistent or future candles"
   assert.throws(()=>normalizePublishedPayload({...body,signalCandleCloseUTC:"2026-09-30T23:55:00Z"},now),/CONTEMPORANEOUS/);
   assert.throws(()=>normalizePublishedPayload({...body,closedCandles:[...candles.slice(0,24),{...candles[24],t:last+1800}]},now),/CANDLE/);
   assert.throws(()=>normalizePublishedPayload({...body,originalSL:110},now),/TRADE_PLAN/);
+});
+test("Forward outcome is a separate immutable-linked event",()=>{
+  const now=new Date("2026-10-01T00:10:15Z"),last=Math.floor(Date.parse("2026-10-01T00:05:00Z")/1000);
+  const candles=Array.from({length:25},(_,i)=>mk(last-(24-i)*300,100,102,98,101));
+  const published=normalizePublishedPayload({symbolResolved:"XAUUSD.p",indicatorId:"105",tf:"M5",direction:1,
+    entry:100,originalSL:90,tp1:110,signalCandleCloseUTC:"2026-10-01T00:10:00Z",closedCandles:candles,score:85,
+    spec:{point:.01,pipSize:.1}},now);
+  const later=new Date("2026-10-01T00:25:10Z");
+  const event=normalizeOutcomePayload({date:"2026-10-01",signalId:published.signalId,outcome:"TP1",
+    exitPrice:110,exitTimeUTC:"2026-10-01T00:25:00Z",exitRule:"TP1_TOUCH"},published,later);
+  assert.equal(event.outcome,"TP1");assert.equal(event.priceMove,10);assert.equal(event.signedPoints,1000);
+  assert.equal(event.signedPips,100);assert.match(event.eventHash,/^[a-f0-9]{64}$/);
+  assert.match(outcomePath(event),/\/outcome\.json$/);
+  assert.throws(()=>normalizeOutcomePayload({date:"2026-10-01",signalId:published.signalId,outcome:"WIN",
+    exitPrice:110,exitTimeUTC:"2026-10-01T00:25:00Z"},published,later),/FINAL_OUTCOME/);
 });
 test("All 22 locale packs parse and partial packs fallback to English",()=>{
   const here=path.dirname(fileURLToPath(import.meta.url)),loc=path.join(here,"../locales");
