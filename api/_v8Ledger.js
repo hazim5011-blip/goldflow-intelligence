@@ -63,19 +63,69 @@ export async function storePublished(record){
  return put(forwardPath(record),JSON.stringify(record),{access:"private",allowOverwrite:false,
    contentType:"application/json",cacheControlMaxAge:60});
 }
-export async function readForward(date,id){
- if(!publicReadEnabled())throw Error("FORWARD_PUBLIC_READ_NOT_ENABLED");
- if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^[a-f0-9]{32}$/.test(id))throw Error("INVALID_FORWARD_LOOKUP");
+async function readPrivateJson(pathname,maxBytes=300000){
  const {get}=await import("@vercel/blob");
- const pathname="goldflow-forward/v1/"+date+"/"+id+"/published.json";
  const r=await get(pathname,{access:"private"});
  if(!r||r.statusCode!==200||!r.stream)return null;
  let out="",decoder=new TextDecoder();
- for await(const chunk of r.stream){out+=decoder.decode(chunk,{stream:true});if(out.length>300000)throw Error("ARCHIVE_TOO_LARGE")}
- out+=decoder.decode();
- const parsed=JSON.parse(out);
+ for await(const chunk of r.stream){out+=decoder.decode(chunk,{stream:true});if(out.length>maxBytes)throw Error("ARCHIVE_TOO_LARGE")}
+ out+=decoder.decode();return JSON.parse(out);
+}
+function validateLookup(date,id){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^[a-f0-9]{32}$/.test(id))throw Error("INVALID_FORWARD_LOOKUP");
+}
+export async function readForwardPrivate(date,id){
+ validateLookup(date,id);
+ const parsed=await readPrivateJson("goldflow-forward/v1/"+date+"/"+id+"/published.json");
+ if(!parsed)return null;
  if(parsed.recordMode!=="FORWARD_LOGGED"||parsed.signalId!==id||parsed.receivedAtUTC.slice(0,10)!==date)throw Error("ARCHIVE_INTEGRITY_ERROR");
  const {recordHash,...body}=parsed;
  if(sha256(JSON.stringify({...body,recordHash:undefined}))!==recordHash)throw Error("RECORD_HASH_MISMATCH");
  return parsed;
+}
+export async function readForward(date,id){
+ if(!publicReadEnabled())throw Error("FORWARD_PUBLIC_READ_NOT_ENABLED");
+ return readForwardPrivate(date,id);
+}
+const FINAL_OUTCOMES=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","BE_ZERO","SL"]);
+export function normalizeOutcomePayload(body,published,now=new Date()){
+ if(!published||published.recordMode!=="FORWARD_LOGGED")throw Error("PUBLISHED_RECORD_REQUIRED");
+ const signalId=String(body?.signalId||""),date=String(body?.date||"");
+ if(signalId!==published.signalId||date!==published.receivedAtUTC.slice(0,10))throw Error("OUTCOME_RECORD_MISMATCH");
+ const outcome=String(body?.outcome||"").toUpperCase();
+ if(!FINAL_OUTCOMES.has(outcome))throw Error("INVALID_FINAL_OUTCOME");
+ const exitPrice=xnum(body?.exitPrice),exitTime=Date.parse(String(body?.exitTimeUTC||""));
+ const signalClose=Date.parse(published.signalCandleCloseUTC);
+ if(exitPrice==null||!Number.isFinite(exitTime)||exitTime<signalClose||exitTime>now.getTime()+90000)throw Error("INVALID_EXIT_EVENT");
+ const direction=Number(published.direction),entry=xnum(published.entry),risk=Math.abs(entry-xnum(published.originalSL));
+ const priceMove=direction*(exitPrice-entry),rMultiple=risk>0?priceMove/risk:null;
+ const event={schema:"goldflow.forward.outcome.v1",recordMode:"FORWARD_LOGGED",signalId,date,
+   outcome,exitPrice,exitTimeUTC:new Date(exitTime).toISOString(),
+   exitRule:String(body?.exitRule||"").slice(0,120)||"PUBLISHER_FINAL_OUTCOME",
+   priceMove, signedPoints:xnum(published.spec?.point)>0?priceMove/Number(published.spec.point):null,
+   signedPips:xnum(published.spec?.pipSize)>0?priceMove/Number(published.spec.pipSize):null,
+   rMultiple,receivedAtUTC:now.toISOString(),
+   verification:"AUTHENTICATED_OUTCOME_EVENT_LINKED_TO_IMMUTABLE_PUBLICATION; NOT BROKER_FILL_CERTIFICATION"};
+ event.eventHash=sha256(JSON.stringify({...event,eventHash:undefined}));
+ return event;
+}
+export function outcomePath(event){return "goldflow-forward/v1/"+event.date+"/"+event.signalId+"/outcome.json";}
+export async function storeOutcome(event){
+ if(!forwardConfigured())throw Error("FORWARD_STORAGE_NOT_CONFIGURED");
+ const {put}=await import("@vercel/blob");
+ return put(outcomePath(event),JSON.stringify(event),{access:"private",allowOverwrite:false,
+   contentType:"application/json",cacheControlMaxAge:60});
+}
+export async function readForwardOutcomePrivate(date,id){
+ validateLookup(date,id);
+ const event=await readPrivateJson("goldflow-forward/v1/"+date+"/"+id+"/outcome.json");
+ if(!event)return null;
+ if(event.recordMode!=="FORWARD_LOGGED"||event.signalId!==id||event.date!==date)throw Error("OUTCOME_ARCHIVE_INTEGRITY_ERROR");
+ const {eventHash,...body}=event;
+ if(sha256(JSON.stringify({...body,eventHash:undefined}))!==eventHash)throw Error("OUTCOME_HASH_MISMATCH");
+ return event;
+}
+export async function readForwardOutcome(date,id){
+ if(!publicReadEnabled())throw Error("FORWARD_PUBLIC_READ_NOT_ENABLED");
+ return readForwardOutcomePrivate(date,id);
 }
