@@ -37,7 +37,7 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, OPTIONS"
+          "value": "GET, POST, OPTIONS"
         }
       ]
     }
@@ -46,5 +46,35 @@
     "deploymentEnabled": {
       "staging/v8-history-performance": false
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/history",
+      "destination": "/api/v8?route=history"
+    },
+    {
+      "source": "/api/performance",
+      "destination": "/api/v8?route=performance"
+    },
+    {
+      "source": "/api/evidence",
+      "destination": "/api/v8?route=evidence"
+    },
+    {
+      "source": "/api/news-context",
+      "destination": "/api/v8?route=news"
+    },
+    {
+      "source": "/api/forward-ingest",
+      "destination": "/api/v8?route=forward-ingest"
+    },
+    {
+      "source": "/api/forward-outcome",
+      "destination": "/api/v8?route=forward-outcome"
+    },
+    {
+      "source": "/api/forward-proof",
+      "destination": "/api/v8?route=forward-proof"
+    }
+  ]
 }
