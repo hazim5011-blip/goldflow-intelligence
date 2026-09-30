@@ -137,7 +137,7 @@ test("All 22 locale packs parse and partial packs fallback to English",()=>{
 test("V8 page references each new accessible section exactly once",()=>{
   const here=path.dirname(fileURLToPath(import.meta.url));
   const html=readFileSync(path.join(here,"../index.html"),"utf8");
-  for(const id of ["v8History","v8Performance","v8Evidence","v8News","gfLocale","gfSpeakGlobal","gfReplay","v8EvidenceChart"]){
+  for(const id of ["v8History","v8Performance","v8Evidence","v8News","gfLocale","gfSpeakGlobal","gfReplay","v8EvidencePng","v8EvidenceChart"]){
     assert.equal([...html.matchAll(new RegExp('id="'+id+'"',"g"))].length,1,id);
   }
 });
