@@ -41,5 +41,10 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "staging/v8-history-performance": false
+    }
+  }
 }
