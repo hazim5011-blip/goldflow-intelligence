@@ -1,9 +1,9 @@
 {
-  "name": "GoldFlow Intelligence V8 Preview",
+  "name": "GoldFlow Intelligence V8",
   "short_name": "GoldFlow V8",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#061018",
   "theme_color": "#061018",
-  "description": "Vantage MT5 broker-first multi-asset research, audited historical simulations and official macro context."
+  "description": "GoldFlow Intelligence V8 production: Vantage MT5 broker-first multi-asset research, History Pro, performance analytics, evidence, official macro context and multilingual accessibility."
 }
