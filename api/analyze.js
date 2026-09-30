@@ -108,7 +108,9 @@ export default async function handler(req,res){
       serverTime:meta.serverTime??null,lastBarTime:last,ageMin,
       marketState:ageMin!=null&&ageMin>Math.max(3,(tfMin[tTF]||5)*3)?"MT5_STALE":"MT5_LIVE",
       indicator,
-      chartBars:(primaryBars||[]).slice(-500)
+      chartBars:(primaryBars||[]).slice(-500),
+      // V8 internal history route requests the complete fetched trigger window for OHLC replay.
+      historyBars:String(req.query?.history||"") === "1" ? (primaryBars||[]).slice(-1400) : undefined
     });
   }catch(e){
     res.setHeader("Cache-Control","no-store");
