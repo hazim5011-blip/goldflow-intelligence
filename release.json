@@ -38,7 +38,7 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "GoldFlow Intelligence V8.0.0 production release. Preserves all six indicator engines and adds History Pro, Performance Analytics, Evidence, News Study, TradingView Hybrid, Explain/Read Aloud, multilingual support and forward-evidence foundation.",
+  "message": "GoldFlow Intelligence V8.0.0 production release. Preserves all six indicator engines and adds History Pro, Performance Analytics, Evidence, News Study, TradingView Hybrid, Explain/Read Aloud, multilingual support and forward-evidence foundation. Production redeploy requested after Vercel plan upgrade.",
   "updated": "2026-10-01",
   "features": [
     "History Pro closed-candle reconstruction",
@@ -49,5 +49,6 @@
     "AI Explain / Read Aloud",
     "22 locale packs with RTL support",
     "Vantage MT5 broker metadata provenance"
-  ]
+  ],
+  "deploymentRetry": "2026-10-01"
 }
