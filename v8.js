@@ -1,6 +1,6 @@
 "use strict";
 (function(){
-  var state={history:null,performance:null,evidence:null,news:null,locale:"en",en:{},dict:{},voices:[],speech:null,tvReady:false,evidenceChart:null,lastFocus:"history"};
+  var state={history:null,performance:null,evidence:null,news:null,locale:"en",en:{},dict:{},voices:[],speech:null,lastSpeechText:"",tvReady:false,evidenceChart:null,lastFocus:"history"};
   var SUPPORTED=["ms","en","id","zh-CN","zh-TW","ar","hi","es","fr","de","pt","ru","ja","ko","tr","th","vi","fil","ur","bn","ta","it"];
   var NAMES={"ms":"Bahasa Melayu","en":"English","id":"Bahasa Indonesia","zh-CN":"简体中文","zh-TW":"繁體中文","ar":"العربية","hi":"हिन्दी","es":"Español","fr":"Français","de":"Deutsch","pt":"Português","ru":"Русский","ja":"日本語","ko":"한국어","tr":"Türkçe","th":"ไทย","vi":"Tiếng Việt","fil":"Filipino","ur":"اردو","bn":"বাংলা","ta":"தமிழ்","it":"Italiano"};
   var $=function(id){return document.getElementById(id)};
@@ -47,7 +47,8 @@
   function speechStop(){if("speechSynthesis" in window)window.speechSynthesis.cancel();state.speech=null}
   function speechPlay(txt){
     if(!("speechSynthesis" in window)||typeof SpeechSynthesisUtterance==="undefined"){window.alert(t("voiceUnavailable"));return}
-    speechStop();var u=new SpeechSynthesisUtterance(String(txt||""));u.lang=state.locale;
+    var spoken=String(txt||"");if(!spoken)return;state.lastSpeechText=spoken;
+    speechStop();var u=new SpeechSynthesisUtterance(spoken);u.lang=state.locale;
     u.rate=Number($("gfSpeechRate")?.value||1);
     var vs=window.speechSynthesis.getVoices()||[];
     var exact=vs.find(function(v){return v.lang.toLowerCase()===state.locale.toLowerCase()});
@@ -212,16 +213,23 @@
     $("v8NewsRegime").innerHTML=stat("REGIME",macro.regime?.name||"N/A","DERIVED • "+(macro.regime?.confidence??"N/A")+"% input coverage")+
       stat("GOLD CONTEXT",macro.gold?.bias||"N/A","DERIVED • no guarantee")+
       stat(t("updated"),dt(macro.fetchedAtUTC),"FRED/BEA/BLS/Fed/Treasury • source verified");
-    $("v8NewsList").innerHTML=(data.latestOfficialEvents||[]).map(function(ev){
-      return '<details class="v8NewsItem"><summary><b>'+safe(ev.title)+'</b><strong>'+safe(ev.display||"N/A")+'</strong><small>'+safe(ev.dataPeriod||"N/A")+" • "+safe(ev.source)+" • "+safe(ev.status)+'</small></summary><div class="v8NewsBody">'+
-        '<div class="v8NewsMeta">'+stat(t("actual"),ev.display||"N/A")+stat(t("forecast"),"N/A",t("consensusUnavailable"))+
-        stat(t("previous"),"N/A","Source not verified")+stat(t("releaseTime"),"N/A",t("releaseDateNotPeriod"))+'</div>'+
+    var releases=data.verifiedReleases||data.latestOfficialEvents||[],observations=data.latestOfficialObservations||[];
+    function newsCard(ev,isRelease){
+      return '<details class="v8NewsItem"><summary><b>'+safe(ev.title)+'</b><strong>'+safe(ev.display||"N/A")+'</strong><small>'+safe(ev.dataPeriod||"N/A")+" • "+safe(ev.source)+" • "+safe(isRelease?t("verifiedRelease"):t("macroObservation"))+'</small></summary><div class="v8NewsBody">'+
+        '<div class="v8NewsMeta">'+stat(t("actual"),ev.display||"N/A")+stat(t("forecast"),finite(ev.forecast)?number(ev.forecast,2):"N/A",finite(ev.forecast)?"":t("consensusUnavailable"))+
+        stat(t("previous"),finite(ev.previous)?number(ev.previous,2):"N/A",finite(ev.previous)?"":t("sourceNotVerified"))+
+        stat(t("releaseTime"),isRelease?dt(ev.releasedAtUTC):"N/A",isRelease?"":t("releaseDateNotPeriod"))+'</div>'+
         '<p><b>'+t("scenarioHigher")+':</b> '+safe(ev.interpretation?.ifHigher||"")+'</p>'+
         '<p><b>'+t("scenarioLower")+':</b> '+safe(ev.interpretation?.ifLower||"")+'</p>'+
         '<p class="v8Footnote">'+safe(ev.interpretation?.fact||"")+' '+t("notTradeSignal")+'</p>'+
         (ev.sourceUrl?'<a href="'+safe(ev.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+t("officialSource")+'</a>':"")+
       '</div></details>';
-    }).join("")||"<p>"+t("noOfficialData")+"</p>";
+    }
+    var html="";
+    if(releases.length)html+='<div class="v8Footnote">'+safe(t("verifiedReleaseNote"))+'</div>'+releases.map(function(ev){return newsCard(ev,true)}).join("");
+    else html+='<div class="v8Footnote">'+safe(t("noVerifiedReleases"))+'</div>';
+    if(observations.length)html+='<div class="v8Footnote">'+safe(t("macroObservationNote"))+'</div>'+observations.map(function(ev){return newsCard(ev,false)}).join("");
+    $("v8NewsList").innerHTML=html||"<p>"+t("noOfficialData")+"</p>";
   }
   function loadTVTools(){
     var sym=(window.tvSymbol&&window.selectedSymbol)?window.tvSymbol(window.selectedSymbol):"OANDA:XAUUSD";
@@ -246,6 +254,7 @@
     $("gfLocale").onchange=function(){applyLocale(this.value)};
     $("gfSpeakGlobal").onclick=function(){var r=state.evidence?.signal||state.history?.rows?.[0];speechPlay(r?explainText(r):t("researchOnly")+" "+t("disclaimer"))};
     $("gfStop").onclick=speechStop;
+    $("gfReplay").onclick=function(){if(state.lastSpeechText)speechPlay(state.lastSpeechText)};
     $("gfPause").onclick=function(){if(!("speechSynthesis" in window))return;if(speechSynthesis.paused)speechSynthesis.resume();else if(speechSynthesis.speaking)speechSynthesis.pause()};
     $("v8HistoryRefresh").onclick=function(){loadHistory(true)};
     $("v8PerformanceRefresh").onclick=loadPerformance;
