@@ -167,7 +167,8 @@
     try{
       var data=await json(evidenceURL(id));state.evidence=data;renderEvidence(data);
       $("v8EvidenceRead").disabled=false;$("v8EvidenceJson").disabled=false;$("v8EvidenceCsv").disabled=false;
-    }catch(e){state.evidence=null;$("v8EvidenceSummary").textContent=e.message;["v8EvidenceRead","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true})}
+      $("v8EvidencePng").disabled=!(state.evidenceChart&&typeof state.evidenceChart.takeScreenshot==="function");
+    }catch(e){state.evidence=null;$("v8EvidenceSummary").textContent=e.message;["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true})}
   }
   function renderEvidence(data){
     if(!data)return;
@@ -182,6 +183,15 @@
       '<p class="v8Footnote">SHA-256 '+safe(data.evidenceHash)+" • "+safe(data.hashScope)+'</p>'+
       '<p class="v8Footnote">'+safe(data.disclaimer||"")+'</p>';
     drawProof(data);
+  }
+  function downloadEvidencePng(){
+    if(!state.evidenceChart||typeof state.evidenceChart.takeScreenshot!=="function")return;
+    try{
+      var canvas=state.evidenceChart.takeScreenshot(),a=document.createElement("a");
+      a.href=canvas.toDataURL("image/png");
+      a.download="goldflow-v8-"+(state.evidence?.signalId||"evidence")+"-marked-chart.png";
+      a.click();
+    }catch(e){window.alert("Marked chart export is unavailable in this browser.")}
   }
   function drawProof(data){
     var el=$("v8EvidenceChart");if(!el)return;el.innerHTML="";
@@ -260,6 +270,7 @@
     $("v8PerformanceRefresh").onclick=loadPerformance;
     $("v8EvidenceLoad").onclick=function(){loadEvidence()};
     $("v8EvidenceRead").onclick=function(){if(state.evidence)speechPlay(explainText(state.evidence.signal))};
+    $("v8EvidencePng").onclick=downloadEvidencePng;
     $("v8EvidenceJson").onclick=function(){if(state.evidence)downloadJSON(state.evidence,"goldflow-v8-"+state.evidence.signalId+".json")};
     $("v8EvidenceCsv").onclick=function(){if(state.evidence)window.location.href=evidenceURL(state.evidence.signalId,"csv")};
     $("v8NewsRefresh").onclick=function(){loadNews(true)};
