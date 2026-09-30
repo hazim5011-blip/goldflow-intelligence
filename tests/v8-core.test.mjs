@@ -110,6 +110,20 @@ test("Authenticated forward ledger rejects late, inconsistent or future candles"
   assert.throws(()=>normalizePublishedPayload({...body,closedCandles:[...candles.slice(0,24),{...candles[24],t:last+1800}]},now),/CANDLE/);
   assert.throws(()=>normalizePublishedPayload({...body,originalSL:110},now),/TRADE_PLAN/);
 });
+test("Pattern and SND can be forward-logged as validation-only without invented outcomes",()=>{
+  const now=new Date("2026-10-01T00:10:15Z"),last=Math.floor(Date.parse("2026-10-01T00:05:00Z")/1000);
+  const candles=Array.from({length:25},(_,i)=>mk(last-(24-i)*300,100,102,98,101));
+  for(const indicatorId of ["pattern132","snd107"]){
+    const published=normalizePublishedPayload({symbolResolved:"XAUUSD.p",indicatorId,tf:"M5",direction:1,
+      entry:100,originalSL:90,tp1:null,signalCandleCloseUTC:"2026-10-01T00:10:00Z",
+      closedCandles:candles,score:85,spec:{point:.01,pipSize:.1}},now);
+    assert.equal(published.tp1,null);
+    assert.equal(published.indicatorId,indicatorId);
+    assert.throws(()=>normalizeOutcomePayload({date:"2026-10-01",signalId:published.signalId,outcome:"TP1",
+      exitPrice:110,exitTimeUTC:"2026-10-01T00:25:00Z"},published,new Date("2026-10-01T00:25:10Z")),
+      /VALIDATION_ONLY_ENGINE_HAS_NO_OUTCOME_MODEL/);
+  }
+});
 test("Forward outcome is a separate immutable-linked event",()=>{
   const now=new Date("2026-10-01T00:10:15Z"),last=Math.floor(Date.parse("2026-10-01T00:05:00Z")/1000);
   const candles=Array.from({length:25},(_,i)=>mk(last-(24-i)*300,100,102,98,101));
