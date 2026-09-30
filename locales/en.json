@@ -73,6 +73,9 @@
     "historicalWarning": "Historical simulation from currently available broker candles, not an executed trade, historical publication proof, or guaranteed return.",
     "voiceUnavailable": "Speech is not supported in this browser; the explanation remains available as text.",
     "voiceFallback": "Requested voice not installed. Browser alternative:",
-    "disclaimer": "All signals, simulations, explanations and news studies are educational market research. The user is responsible for trading decisions and risks. No guaranteed performance."
+    "disclaimer": "All signals, simulations, explanations and news studies are educational market research. The user is responsible for trading decisions and risks. No guaranteed performance.",
+    "tpTrailingBePositive": "TP, trailing and positive BE",
+    "notAvailable": "Not available",
+    "signalId": "Signal ID"
   }
 }
