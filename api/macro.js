@@ -57,52 +57,77 @@ async function h41(){
   return {assets:num(am[0][1]),assetsCh:null,tga:num(gm[0][1]),tgaCh:null,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h41/Current/"};
 }
 async function nyfed(){
-  const [dataText,effrText,policyText]=await Promise.all([
-    fetchText("https://www.newyorkfed.org/markets/data-hub"),
+  const observations=await Promise.allSettled([
     fetchText("https://www.newyorkfed.org/markets/reference-rates/effr"),
     fetchText("https://www.federalreserve.gov/monetarypolicy/openmarket.htm")
   ]);
-  const t=clean(dataText), e=clean(effrText), p=clean(policyText);
-
-  const rowRe=rx("([0-9]{1,2})/([0-9]{1,2})\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9,]+)\\s+([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","ig");
-  const rows=[...e.matchAll(rowRe)];
-  let low=null,high=null,targetDate=null;
-
-  if(rows.length){
-    const now=new Date();
-    let best=null,bestDiff=Infinity;
-    for(const r of rows){
-      const m=Number(r[1]),d=Number(r[2]);
-      for(const y of [now.getUTCFullYear(),now.getUTCFullYear()-1]){
-        const dt=new Date(Date.UTC(y,m-1,d));
-        const diff=now.getTime()-dt.getTime();
-        if(diff>=-86400000 && diff<bestDiff){bestDiff=diff;best={r,dt};}
-      }
-    }
-    if(best){
-      low=num(best.r[9]); high=num(best.r[10]);
-      targetDate=best.dt.toISOString().slice(0,10);
-    }
+  const e=clean(observations[0].status==="fulfilled"?observations[0].value:"");
+  const p=clean(observations[1].status==="fulfilled"?observations[1].value:"");
+  if(!e&&!p)throw Error("No official policy sources available");
+  let low=null,high=null,targetDate=null,targetUrl=null;
+  const year=new Date().getUTCFullYear();
+  const months={January:"01",February:"02",March:"03",April:"04",May:"05",June:"06",July:"07",August:"08",September:"09",October:"10",November:"11",December:"12"};
+  const yrSection=p.match(rx("(?:"+year+")\\s+Date\\s+Increase\\s+Decrease\\s+Level\\s*\\(%\\)\\s+([\\s\\S]{0,450})","i"));
+  if(yrSection){
+    const m=yrSection[1].match(rx("(January|February|March|April|May|June|July|August|September|October|November|December)\\s+(\\d{1,2})\\s+\\d+\\s+\\d+\\s+(\\d+(?:\\.\\d+)?)\\s*-\\s*(\\d+(?:\\.\\d+)?)","i"));
+    if(m){low=num(m[3]);high=num(m[4]);targetDate=year+"-"+months[m[1]]+"-"+m[2].padStart(2,"0");targetUrl="https://www.federalreserve.gov/monetarypolicy/openmarket.htm";}
   }
-
-  // Official Fed policy page fallback: the first current policy range on the page.
   if(!finite(high)){
-    const ranges=[...p.matchAll(rx("([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","g"))]
-      .map(m=>({low:num(m[1]),high:num(m[2])}))
-      .filter(x=>finite(x.low)&&finite(x.high)&&x.high>=x.low&&x.high<=10&&(x.high-x.low)<=1);
-    if(ranges.length){low=ranges[0].low;high=ranges[0].high;}
+    const ranges=[...p.matchAll(rx("([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","g"))].map(m=>({low:num(m[1]),high:num(m[2])}))
+      .filter(x=>finite(x.low)&&finite(x.high)&&x.high>=x.low&&x.high<=10&&x.high-x.low<=1);
+    if(ranges.length){low=ranges[0].low;high=ranges[0].high;targetUrl="https://www.federalreserve.gov/monetarypolicy/openmarket.htm";}
   }
-
-  const rr=t.match(rx("Reverse\\s+Repo\\s+Operations[\\s\\S]{0,900}?Treasury\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
-  const sf=t.match(rx("Secured\\s+Overnight\\s+Financing\\s+Rate[\\s\\S]{0,700}?([0-9]+(?:\\.[0-9]+)?)\\s+[0-9,]+","i"));
-
-  return {
-    low,high,targetDate,
-    rrp:rr?num(rr[2]):null,
-    sofr:sf?num(sf[1]):null,
-    targetUrl:finite(high)?"https://www.federalreserve.gov/monetarypolicy/openmarket.htm":"https://www.newyorkfed.org/markets/reference-rates/effr",
-    url:"https://www.newyorkfed.org/markets/data-hub"
-  };
+  if(!finite(high)){
+    const rows=[...e.matchAll(rx("([0-9]{1,2})/([0-9]{1,2})\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9,]+)\\s+([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","ig"))];
+    const now=new Date();let best=null,small=Infinity;
+    for(const r of rows){for(const y of [now.getUTCFullYear(),now.getUTCFullYear()-1]){
+      const dt=new Date(Date.UTC(y,Number(r[1])-1,Number(r[2]))),age=now-dt;
+      if(age>=-86400000&&age<small){small=age;best={r,dt};}
+    }}
+    if(best){low=num(best.r[9]);high=num(best.r[10]);targetDate=best.dt.toISOString().slice(0,10);targetUrl="https://www.newyorkfed.org/markets/reference-rates/effr";}
+  }
+  if(!finite(high)||high<low||high>10)throw Error("Fed target range could not be validated");
+  return {low,high,targetDate,targetUrl,url:targetUrl};
+}
+async function onRrp(){
+  const start=new Date(Date.now()-75*86400000).toISOString().slice(0,10);
+  const results=await Promise.allSettled([
+    fetchJson("https://markets.newyorkfed.org/api/rp/all/all/results/lastTwoWeeks.json",6500),
+    fetchText("https://fred.stlouisfed.org/graph/fredgraph.csv?id=RRPONTSYD&cosd="+start,6500)
+  ]);
+  let primary=null,secondary=null;
+  if(results[0].status==="fulfilled"){
+    const ops=results[0].value?.repo?.operations||[];
+    const eligible=ops.filter(o=>/reverse\s*repo/i.test(String(o.operationType||""))&&
+      /overnight/i.test(String(o.term||""))&&
+      /^\d{4}-\d{2}-\d{2}$/.test(String(o.operationDate||"")));
+    if(eligible.length){
+      const dt=eligible.map(o=>o.operationDate).sort().at(-1);
+      const matched=eligible.filter(o=>o.operationDate===dt);
+      let acceptedUsd=0,valid=0;
+      for(const op of matched){
+        const treasury=(op.details||[]).find(d=>/treasury/i.test(String(d.securityType||"")));
+        const x=num(treasury?.amtAccepted??op.totalAmtAccepted);
+        if(finite(x)&&x>=0){acceptedUsd+=x;valid++;}
+      }
+      if(valid===matched.length&&valid>0)primary={value:acceptedUsd/1e9,date:dt,source:"New York Fed Markets API",unit:"USD billions",url:"https://www.newyorkfed.org/markets/desk-operations/reverse-repo"};
+    }
+  }
+  if(results[1].status==="fulfilled"){
+    const rows=results[1].value.trim().split(/\r?\n/).slice(1).map(line=>{
+      const [date,v]=line.split(",");
+      return {date,value:num(v)};
+    }).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x.date))&&finite(x.value));
+    if(rows.length)secondary={...rows.at(-1),source:"NY Fed via FRED RRPONTSYD",unit:"USD billions",url:"https://fred.stlouisfed.org/series/RRPONTSYD"};
+  }
+  if(primary&&secondary&&primary.date===secondary.date&&Math.abs(primary.value-secondary.value)>0.05){
+    // Conflicting observations must not silently feed the liquidity model.
+    throw Error("ON RRP cross-source mismatch at "+primary.date);
+  }
+  const chosen=primary||secondary;
+  if(!chosen)throw Error("ON RRP unavailable from NY Fed operations and FRED");
+  if((Date.now()-Date.parse(chosen.date+"T00:00:00Z"))>10*86400000)throw Error("ON RRP observation stale "+chosen.date);
+  return chosen;
 }
 async function h10(){
   const t=clean(await fetchText("https://www.federalreserve.gov/releases/h10/current/"));
@@ -111,7 +136,15 @@ async function h10(){
   if(!m)throw new Error("Fed H10 parse");
   return {value:num(m[5]),change:num(m[5])-num(m[1]),date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h10/current/"};
 }
-function mk(id,name,value,display,date,source,url,change,label,impact,detail,official=true){return{id,name,value,display,date,source,seriesUrl:url,change,changeLabel:label,goldImpact:impact,detail,frequency:"Official release",stale:!date,status:official?"OFFICIAL":"DERIVED",transport:"Direct source"}}
+function mk(id,name,value,display,date,source,url,change,label,impact,detail,official=true){
+ const maxAge={GDP:140,IP:75,PAYEMS:80,UNRATE:80,CPI:80,COREPCE:110,FEDUPPER:365,WALCL:20,NETLIQ:20,TGA:20,ONRRP:10,US2Y:12,US10Y:12,REAL10Y:12,USDBROAD:12,BREAKEVEN10:12};
+ const available=finite(value)&&display!==null;
+ const age=date?(Date.now()-Date.parse(date+"T00:00:00Z"))/86400000:null;
+ const stale=available && (date==null||(finite(age)&&age>(maxAge[id]||90)));
+ return {id,name,value:available?value:null,display:available?display:null,date,source,seriesUrl:url,change,changeLabel:label,goldImpact:available?impact:"MIXED",detail,
+ frequency:({GDP:"Quarterly",IP:"Monthly",PAYEMS:"Monthly",UNRATE:"Monthly",CPI:"Monthly",COREPCE:"Monthly",FEDUPPER:"Policy decision",WALCL:"Weekly",NETLIQ:"Mixed weekly/daily",TGA:"Weekly",ONRRP:"Daily",US2Y:"Daily",US10Y:"Daily",REAL10Y:"Daily",USDBROAD:"Daily",BREAKEVEN10:"Daily"})[id]||"Derived",
+ stale, status:!available?"UNAVAILABLE":!official?"DERIVED":stale?"STALE":"OFFICIAL",transport:"Direct source"};
+}
 function imp(v,pos=true,th=0){if(!finite(v))return"MIXED";return Number(v)>th?(pos?"SUPPORTIVE":"PRESSURE"):Number(v)<-th?(pos?"PRESSURE":"SUPPORTIVE"):"MIXED"}
 function regime(g,i){return g>=50?(i>=50?"REFLATION":"GOLDILOCKS"):(i>=50?"STAGFLATION":"SLOWDOWN")}
 function lab(s){return s>=60?"SUPPORTIVE":s<=40?"PRESSURE":"MIXED"}
@@ -119,23 +152,25 @@ function lab(s){return s>=60?"SUPPORTIVE":s<=40?"PRESSURE":"MIXED"}
 export default async function handler(req,res){
   if(req.method==="OPTIONS")return res.status(204).end();
   res.setHeader("Cache-Control","s-maxage=300, stale-while-revalidate=1800");
-  const jobs=await Promise.allSettled([beaGDP(),beaPCE(),fedIP(),bls("CES0000000001"),bls("LNS14000000"),bls("CUSR0000SA0"),treasury("daily_treasury_yield_curve","BC_2YEAR"),treasury("daily_treasury_yield_curve","BC_10YEAR"),treasury("daily_treasury_real_yield_curve","TC_10YEAR"),h41(),nyfed(),h10()]);
+  const jobs=await Promise.allSettled([beaGDP(),beaPCE(),fedIP(),bls("CES0000000001"),bls("LNS14000000"),bls("CUUR0000SA0"),treasury("daily_treasury_yield_curve","BC_2YEAR"),treasury("daily_treasury_yield_curve","BC_10YEAR"),treasury("daily_treasury_real_yield_curve","TC_10YEAR"),h41(),nyfed(),h10(),onRrp()]);
   const v=i=>jobs[i].status==="fulfilled"?jobs[i].value:null,errors=jobs.map((x,i)=>x.status==="rejected"?"source"+i+": "+String(x.reason?.message||x.reason):null).filter(Boolean);
-  const gdp=v(0),pce=v(1),ip=v(2),pay=v(3)||[],ur=v(4)||[],cp=v(5)||[],u2=v(6)||[],u10=v(7)||[],r10=v(8)||[],fed=v(9),ny=v(10)||{},usd=v(11);
+  const gdp=v(0),pce=v(1),ip=v(2),pay=v(3)||[],ur=v(4)||[],cp=v(5)||[],u2=v(6)||[],u10=v(7)||[],r10=v(8)||[],fed=v(9),ny=v(10)||{},usd=v(11),onrrp=v(12);
   const payroll=delta(pay),payPrev=last(pay,1)&&last(pay,2)?last(pay,1).value-last(pay,2).value:null,unrate=last(ur)?.value,un3=delta(ur,3),cpi=yoy(cp),cpi3=last(cp,3)&&last(cp,15)?pct(last(cp,3).value,last(cp,15).value):null;
   const y2=last(u2),y10=last(u10),real=last(r10),breakeven=finite(y10?.value)&&finite(real?.value)?y10.value-real.value:null;
-  const net=finite(fed?.assets)&&finite(fed?.tga)&&finite(ny.rrp)?fed.assets-fed.tga-ny.rrp*1000:null,netCh=finite(fed?.assetsCh)&&finite(fed?.tgaCh)?fed.assetsCh-fed.tgaCh:null;
+  const net=finite(fed?.assets)&&finite(fed?.tga)&&finite(onrrp?.value)?fed.assets-fed.tga-onrrp.value*1000:null,netCh=finite(fed?.assetsCh)&&finite(fed?.tgaCh)?fed.assetsCh-fed.tgaCh:null;
   const cards=[
     mk("GDP","Real GDP",gdp?.value,finite(gdp?.value)?fmt(gdp.value,1)+"% SAAR":null,gdp?.date,"BEA",gdp?.url,gdp?.change,"vs prior quarter",imp(gdp?.change,false,.1),"Quarterly real GDP growth."),
     mk("IP","Industrial Production",ip?.value,finite(ip?.value)?fmt(ip.value,2)+"% YoY":null,ip?.date,"Federal Reserve G.17",ip?.url,null,"year-over-year",imp(ip?.value,false,.2),"Official industrial production."),
     mk("PAYEMS","Nonfarm Payroll Change",payroll,finite(payroll)?(payroll>=0?"+":"")+fmt(payroll,0)+"K":null,last(pay)?.date,"BLS","https://www.bls.gov/ces/",finite(payroll)&&finite(payPrev)?payroll-payPrev:null,"vs prior monthly change",finite(payroll)?(payroll<100?"SUPPORTIVE":payroll>200?"PRESSURE":"MIXED"):"MIXED","Total nonfarm payroll monthly change."),
     mk("UNRATE","Unemployment",unrate,finite(unrate)?fmt(unrate,1)+"%":null,last(ur)?.date,"BLS","https://www.bls.gov/cps/",un3,"3-month change",imp(un3,true,.05),"Official unemployment rate."),
-    mk("CPI","CPI Inflation",cpi,finite(cpi)?fmt(cpi,2)+"% YoY":null,last(cp)?.date,"BLS","https://www.bls.gov/cpi/",finite(cpi)&&finite(cpi3)?cpi-cpi3:null,"3-month YoY trend","MIXED","Headline CPI year-over-year."),
+    mk("CPI","CPI Inflation",cpi,finite(cpi)?fmt(cpi,2)+"% YoY":null,last(cp)?.date,"BLS","https://www.bls.gov/cpi/",finite(cpi)&&finite(cpi3)?cpi-cpi3:null,"3-month YoY trend","MIXED","Official headline CPI-U unadjusted 12-month change (CUUR0000SA0)."),
     mk("COREPCE","Core PCE",pce?.value,finite(pce?.value)?fmt(pce.value,2)+"% YoY":null,pce?.date,"BEA",pce?.url,pce?.change,"vs prior month YoY","MIXED","Core PCE year-over-year."),
     mk("BREAKEVEN10","10Y Breakeven",breakeven,finite(breakeven)?fmt(breakeven,2)+"%":null,y10?.date,"U.S. Treasury derived","https://home.treasury.gov/resource-center/data-chart-center/interest-rates",null,"nominal 10Y - real 10Y",finite(breakeven)?(breakeven>2.4?"SUPPORTIVE":breakeven<1.8?"PRESSURE":"MIXED"):"MIXED","Derived from official Treasury yields.",false),
     mk("FEDUPPER","Fed Target Upper",ny.high,finite(ny.high)?fmt(ny.high,2)+"%":null,ny.targetDate||null,"New York Fed",ny.targetUrl||ny.url,null,"current target range",finite(ny.high)?(ny.high>=4?"PRESSURE":ny.high<=3?"SUPPORTIVE":"MIXED"):"MIXED","Federal funds target upper bound."),
     mk("WALCL","Fed Balance Sheet",fed?.assets,finite(fed?.assets)?"$"+fmt(fed.assets/1e6,2)+"T":null,fed?.date,"Federal Reserve H.4.1",fed?.url,fed?.assetsCh,"weekly change, USD mn",imp(fed?.assetsCh,true,0),"Federal Reserve total assets."),
-    mk("NETLIQ","Net Liquidity Proxy",net,finite(net)?"$"+fmt(net/1e6,2)+"T":null,fed?.date,"Derived Fed/NY Fed",fed?.url,netCh,"weekly proxy change, USD mn",imp(netCh,true,0),"Fed assets - TGA - ON RRP.",false),
+    mk("NETLIQ","Net Liquidity Proxy",net,finite(net)?"$"+fmt(net/1e6,2)+"T":null,fed?.date,"Derived Fed/NY Fed",onrrp?.url||fed?.url,netCh,"weekly proxy change, USD mn",imp(netCh,true,0),"Fed assets - TGA - ON RRP; mixed weekly/daily observation frequencies.",false),
+    mk("TGA","Treasury General Account",fed?.tga,finite(fed?.tga)?"$"+fmt(fed.tga/1e3,1)+"B":null,fed?.date,"Federal Reserve H.4.1",fed?.url,fed?.tgaCh,"weekly change, USD mn",imp(fed?.tgaCh,false,0),"U.S. Treasury General Account, Fed H.4.1."),
+    mk("ONRRP","ON Reverse Repo",onrrp?.value,finite(onrrp?.value)?"$"+fmt(onrrp.value,3)+"B":null,onrrp?.date,onrrp?.source||"New York Fed",onrrp?.url||"https://fred.stlouisfed.org/series/RRPONTSYD",null,"latest accepted amount", "MIXED","Overnight Treasury reverse repo operations, USD billions."),
     mk("US2Y","US 2Y Yield",y2?.value,finite(y2?.value)?fmt(y2.value,2)+"%":null,y2?.date,"U.S. Treasury","https://home.treasury.gov/resource-center/data-chart-center/interest-rates",delta(u2,5),"5-observation change",imp(delta(u2,5),false,.02),"Official 2-year Treasury yield."),
     mk("US10Y","US 10Y Yield",y10?.value,finite(y10?.value)?fmt(y10.value,2)+"%":null,y10?.date,"U.S. Treasury","https://home.treasury.gov/resource-center/data-chart-center/interest-rates",delta(u10,5),"5-observation change",imp(delta(u10,5),false,.02),"Official 10-year Treasury yield."),
     mk("REAL10Y","US 10Y Real Yield",real?.value,finite(real?.value)?fmt(real.value,2)+"%":null,real?.date,"U.S. Treasury","https://home.treasury.gov/resource-center/data-chart-center/interest-rates",delta(r10,5),"5-observation change",imp(delta(r10,5),false,.02),"Official 10-year real yield."),
