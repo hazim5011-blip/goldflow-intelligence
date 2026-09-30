@@ -91,7 +91,8 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
     const priceUnit=spec.currencyProfit||(/XAU|XAG/i.test(resolved)?"USD quote":"SYMBOL QUOTE");
     const completed=VALID_OUTCOMES.has(outcome.outcome);
     const evidenceBase={recordMode:"HISTORICAL_SIM",symbolRequested:ctx.requested||resolved,symbolResolved:resolved,
-      indicatorId:mode,indicatorVersion:ctx.indicatorVersion||mode,tf,direction:d,
+      indicatorId:mode,indicatorVersion:ctx.indicatorVersion||mode,tf,
+      triggerTF:ctx.triggerTF||tf,setupTF:ctx.setupTF||null,biasTF:ctx.biasTF||null,direction:d,
       signalCandleCloseUTC:n(x.closeTime)!=null?iso(x.closeTime):open!=null?iso(open+(TF_SECONDS[tf]||300)):null,
       entry,originalSL:sl,tp1:n(x.tp1),tp2:n(x.tp2),tp3:n(x.tp3),score:n(x.score)};
     const signalId=hmaclessHash(evidenceBase).slice(0,32);
