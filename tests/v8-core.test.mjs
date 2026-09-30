@@ -60,6 +60,15 @@ test("0.01 lot is gross USD estimate only when broker metadata supports it",()=>
     assert.equal(meta.grossEstimateAvailable,false);
   }
 });
+test("History records preserve broker and multi-timeframe provenance",()=>{
+  const spec=metadataFromCatalog({name:"XAUUSD.p",category:"METALS",digits:2,point:.01,
+    currencyProfit:"USD",contractSize:100,volumeMin:.01,volumeStep:.01},"XAUUSD","XAUUSD.p");
+  const row=buildHistory([base],[mk(1000,99,101,97,100),mk(1300,101,111,100,110),mk(1600,109,110,108,109)],
+    {requested:"XAUUSD",resolved:"XAUUSD.p",tf:"M5",triggerTF:"M5",setupTF:"M15",biasTF:"H1",
+      brokerServer:"VantageInternational-Live",indicator:"103",spec})[0];
+  assert.equal(row.triggerTF,"M5");assert.equal(row.setupTF,"M15");assert.equal(row.biasTF,"H1");
+  assert.equal(row.brokerServer,"VantageInternational-Live");
+});
 test("Strict and legacy win rates separate BE0, pending and ambiguous",()=>{
   const q=(id,o,m,r)=>({signalId:id,symbolResolved:"XAUUSD.p",outcome:o,priceMove:m,rMultiple:r,grossPLUSD:m,
     signedPips:m==null?null:m*10,signedPoints:m==null?null:m*100,completed:true});
@@ -113,7 +122,20 @@ test("All 22 locale packs parse and partial packs fallback to English",()=>{
 test("V8 page references each new accessible section exactly once",()=>{
   const here=path.dirname(fileURLToPath(import.meta.url));
   const html=readFileSync(path.join(here,"../index.html"),"utf8");
-  for(const id of ["v8History","v8Performance","v8Evidence","v8News","gfLocale","gfSpeakGlobal","v8EvidenceChart"]){
+  for(const id of ["v8History","v8Performance","v8Evidence","v8News","gfLocale","gfSpeakGlobal","gfReplay","v8EvidenceChart"]){
     assert.equal([...html.matchAll(new RegExp('id="'+id+'"',"g"))].length,1,id);
   }
+});
+test("News Study never promotes period dates into verified release timestamps",()=>{
+  const here=path.dirname(fileURLToPath(import.meta.url));
+  const src=readFileSync(path.join(here,"../api/news-context.js"),"utf8");
+  assert.match(src,/verifiedReleases/);
+  assert.match(src,/latestOfficialObservations/);
+  assert.match(src,/releasedAtUTC:null/);
+  assert.match(src,/Period date is NOT the official publication timestamp/);
+});
+test("English locale covers new speech replay and news-classification labels",()=>{
+  const here=path.dirname(fileURLToPath(import.meta.url));
+  const en=JSON.parse(readFileSync(path.join(here,"../locales/en.json"),"utf8")).strings;
+  for(const key of ["replay","verifiedRelease","macroObservation","noVerifiedReleases","macroObservationNote"])assert.ok(en[key],key);
 });
