@@ -76,6 +76,13 @@
     "disclaimer": "All signals, simulations, explanations and news studies are educational market research. The user is responsible for trading decisions and risks. No guaranteed performance.",
     "tpTrailingBePositive": "TP, trailing and positive BE",
     "notAvailable": "Not available",
-    "signalId": "Signal ID"
+    "signalId": "Signal ID",
+    "replay": "↻ Replay",
+    "verifiedRelease": "VERIFIED RELEASE",
+    "macroObservation": "MACRO OBSERVATION",
+    "sourceNotVerified": "Previous/source not verified",
+    "verifiedReleaseNote": "Release-timed events below require a verified official publication timestamp and source.",
+    "noVerifiedReleases": "No release-timestamp-verified event is currently available. GoldFlow will not infer a release time from a data period.",
+    "macroObservationNote": "Official macro observations below are period-dated data, not release-timed news, and are not retrospectively linked to a signal."
   }
 }
