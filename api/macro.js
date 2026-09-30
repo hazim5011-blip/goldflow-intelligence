@@ -10,7 +10,8 @@ async function fetchText(url,ms=6500){const c=new AbortController(),t=setTimeout
 async function fetchJson(url,ms=6500){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal,cache:"no-store",headers:{"User-Agent":"GoldFlow-Intelligence/7.5"}});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json()}finally{clearTimeout(t)}}
 function last(a,n=0){return a&&a.length>n?a[a.length-1-n]:null}
 function delta(a,n=1){const x=last(a),y=last(a,n);return x&&y?x.value-y.value:null}
-function yoy(a){const x=last(a),y=last(a,12);return x&&y?pct(x.value,y.value):null}
+function yoyAt(a,date){if(!date)return null;const yr=Number(date.slice(0,4));const x=(a||[]).find(r=>r.date===date),y=(a||[]).find(r=>r.date===(yr-1)+date.slice(4));return x&&y?pct(x.value,y.value):null}
+function yoy(a){return yoyAt(a,last(a)?.date)}
 function monthDate(y,p){const m=Number(String(p).replace("M",""));return y&&m>=1&&m<=12?String(y)+"-"+String(m).padStart(2,"0")+"-01":null}
 async function bls(id){
   const j=await fetchJson("https://api.bls.gov/publicAPI/v2/timeseries/data/"+encodeURIComponent(id));
@@ -54,7 +55,7 @@ async function h41(){
   const gm=[...t.matchAll(rx("U\\.S\\.\\s+Treasury,\\s+General\\s+Account[\\s\\S]{0,120}?([0-9][0-9,]{3,})","ig"))];
   const d=t.match(rx("Release Date:\\s*([A-Za-z]+\\s+[0-9]{1,2},\\s*20[0-9]{2})","i"));
   if(!am.length||!gm.length)throw new Error("Fed H41 parse");
-  return {assets:num(am[0][1]),assetsCh:null,tga:num(gm[0][1]),tgaCh:null,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h41/Current/"};
+  return {assets:num(am[0][1]),assetsCh:null,tga:num((gm[1]||gm[0])[1]),tgaCh:null,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h41/Current/"};
 }
 async function nyfed(){
   const observations=await Promise.allSettled([
@@ -155,7 +156,7 @@ export default async function handler(req,res){
   const jobs=await Promise.allSettled([beaGDP(),beaPCE(),fedIP(),bls("CES0000000001"),bls("LNS14000000"),bls("CUUR0000SA0"),treasury("daily_treasury_yield_curve","BC_2YEAR"),treasury("daily_treasury_yield_curve","BC_10YEAR"),treasury("daily_treasury_real_yield_curve","TC_10YEAR"),h41(),nyfed(),h10(),onRrp()]);
   const v=i=>jobs[i].status==="fulfilled"?jobs[i].value:null,errors=jobs.map((x,i)=>x.status==="rejected"?"source"+i+": "+String(x.reason?.message||x.reason):null).filter(Boolean);
   const gdp=v(0),pce=v(1),ip=v(2),pay=v(3)||[],ur=v(4)||[],cp=v(5)||[],u2=v(6)||[],u10=v(7)||[],r10=v(8)||[],fed=v(9),ny=v(10)||{},usd=v(11),onrrp=v(12);
-  const payroll=delta(pay),payPrev=last(pay,1)&&last(pay,2)?last(pay,1).value-last(pay,2).value:null,unrate=last(ur)?.value,un3=delta(ur,3),cpi=yoy(cp),cpi3=last(cp,3)&&last(cp,15)?pct(last(cp,3).value,last(cp,15).value):null;
+  const payroll=delta(pay),payPrev=last(pay,1)&&last(pay,2)?last(pay,1).value-last(pay,2).value:null,unrate=last(ur)?.value,un3=delta(ur,3),cpi=yoy(cp),cpi3=last(cp,3)?yoyAt(cp,last(cp,3).date):null;
   const y2=last(u2),y10=last(u10),real=last(r10),breakeven=finite(y10?.value)&&finite(real?.value)?y10.value-real.value:null;
   const net=finite(fed?.assets)&&finite(fed?.tga)&&finite(onrrp?.value)?fed.assets-fed.tga-onrrp.value*1000:null,netCh=finite(fed?.assetsCh)&&finite(fed?.tgaCh)?fed.assetsCh-fed.tgaCh:null;
   const cards=[
@@ -180,7 +181,7 @@ export default async function handler(req,res){
   const inflation=clamp((score(cpi,1.5,4.5)+score(pce?.value,1.5,4)+score(breakeven,1.5,3))/3);
   const realPressure=score(real?.value,0,3),policy=clamp(.55*score(ny.high,2,6)+.45*realPressure),liquidity=finite(netCh)?score(netCh,-100000,100000):50,dollar=finite(usd?.change)?score(usd.change,-1.5,1.5):50;
   const reg=regime(growth,inflation),goldScore=clamp(.22*inflation+.28*(100-realPressure)+.18*liquidity+.12*(100-growth)+.20*(100-dollar)),goldBias=lab(goldScore);
-  const timeline=[];for(let i=11;i>=0;i--){const a=last(cp,i),b=last(cp,i+12),p0=last(pay,i),p1=last(pay,i+1),u=last(ur,i);if(!a||!b||!p0||!p1||!u)continue;const inf=pct(a.value,b.value),pm=p0.value-p1.value,g=clamp((score(pm,-100,300)+(100-score(u.value,3,6)))/2),ii=score(inf,1.5,4.5);timeline.push({date:a.date,month:a.date.slice(0,7),regime:regime(g,ii),growth:Math.round(g),inflation:Math.round(ii),liquidity:50})}
+  const timeline=[];for(let i=11;i>=0;i--){const a=last(cp,i),b=a?cp.find(r=>r.date===(Number(a.date.slice(0,4))-1)+a.date.slice(4)):null,p0=last(pay,i),p1=last(pay,i+1),u=last(ur,i);if(!a||!b||!p0||!p1||!u)continue;const inf=pct(a.value,b.value),pm=p0.value-p1.value,g=clamp((score(pm,-100,300)+(100-score(u.value,3,6)))/2),ii=score(inf,1.5,4.5);timeline.push({date:a.date,month:a.date.slice(0,7),regime:regime(g,ii),growth:Math.round(g),inflation:Math.round(ii),liquidity:50})}
   const quality={available:cards.filter(x=>finite(x.value)).length,total:cards.length,errors};
   return res.status(200).json({ok:true,official:true,modelDerived:true,fetchedAt:new Date().toISOString(),provider:"Direct official sources: BLS, BEA, Federal Reserve, U.S. Treasury, New York Fed",cards,scores:{growth:Math.round(growth),inflation:Math.round(inflation),policy:Math.round(policy),liquidity:Math.round(liquidity),realYield:Math.round(realPressure),dollar:Math.round(dollar)},regime:{name:reg,note:({REFLATION:"Growth and inflation are both firm.",GOLDILOCKS:"Growth is firm while inflation pressure is softer.",STAGFLATION:"Growth is weak while inflation remains firm.",SLOWDOWN:"Growth and inflation are both softer."})[reg],confidence:Math.round(clamp(45+(quality.available/quality.total)*40,35,90))},gold:{score:Math.round(goldScore),bias:goldBias,note:"DERIVED macro context only - not a trade signal or guaranteed direction."},playbook:{gold:{label:goldBias,detail:"Derived from inflation, real yields, liquidity, growth and broad USD."},usd:{label:lab(clamp(.55*dollar+.45*policy)),detail:"Official Fed broad USD momentum plus policy pressure."},treasury:{label:inflation>=60||policy>=60?"PRESSURE":"MIXED",detail:"Inflation and policy context; not a yield forecast."},equities:{label:growth>=55&&policy<60?"SUPPORTIVE":growth<45||policy>70?"PRESSURE":"MIXED",detail:"Growth versus restrictive policy."},oil:{label:reg==="REFLATION"?"SUPPORTIVE":reg==="SLOWDOWN"?"PRESSURE":"MIXED",detail:"Cyclical demand context."}},timeline,quality,methodology:{official:"Primary values are fetched directly from BLS, BEA, Federal Reserve Board, U.S. Treasury and New York Fed.",derived:"Regime, scores, 10Y breakeven and Net Liquidity Proxy are GoldFlow calculations from official inputs.",revisions:"BLS monthly history is used for the 12-month timeline; GDP/PCE may be revised by BEA.",netLiquidity:"Net Liquidity Proxy = Fed total assets - Treasury General Account - overnight reverse repo.",fallback:"FRED is not required for the primary path; it can be used later only as a cross-check."}});
 }
