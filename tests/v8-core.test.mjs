@@ -147,7 +147,7 @@ test("News Study never promotes period dates into verified release timestamps",(
   assert.match(src,/verifiedReleases/);
   assert.match(src,/latestOfficialObservations/);
   assert.match(src,/releasedAtUTC:null/);
-  assert.match(src,/Period date is NOT the official publication timestamp/);
+  assert.match(src,/period dates are NOT publication timestamps/i);
 });
 test("English locale covers new speech replay and news-classification labels",()=>{
   const here=path.dirname(fileURLToPath(import.meta.url));
