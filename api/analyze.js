@@ -18,6 +18,8 @@ const PROFILE={
 
 const NEXT={M1:"M5",M5:"M15",M15:"M30",M30:"H1",H1:"H4",H4:"D1",D1:"W1",W1:"MN1",MN1:"MN1"};
 const BAR_LIMIT={M1:1400,M5:1100,M15:950,M30:850,H1:750,H4:550,D1:420,W1:320,MN1:220};
+// Extended History is requested ONLY when a user opens a V8 research tab; normal V7.5 dashboard stays lightweight.
+const V8_HISTORY_LIMIT={M1:5000,M5:5000,M15:5000,M30:4500,H1:3000,H4:1600,D1:800};
 
 function patternProfile(tf){
   if(tf==="M1"||tf==="M5") return [tf,"M15","H1"];
@@ -41,9 +43,10 @@ function resolveProfile(tf,mode){
   return PROFILE[tf];
 }
 
-async function fetchFrames(symbol,frames){
+async function fetchFrames(symbol,frames,historyMode=false){
   const unique=[...new Set(frames.filter(Boolean))];
-  const limits=unique.map(tf=>BAR_LIMIT[tf]||500);
+  const trigger=frames[0];
+  const limits=unique.map(tf=>historyMode&&tf===trigger?(V8_HISTORY_LIMIT[tf]||BAR_LIMIT[tf]||500):(BAR_LIMIT[tf]||500));
   try{
     const batch=await brokerGet("/multi-bars",{symbol,tfs:unique.join(","),limits:limits.join(",")},55000);
     return {
@@ -53,7 +56,7 @@ async function fetchFrames(symbol,frames){
   }catch(batchErr){
     const msg=String(batchErr?.message||batchErr);
     if(!/404|Not Found|detail|multi-bars/i.test(msg)) throw batchErr;
-    const rows=await Promise.all(unique.map(tf=>brokerGet("/bars",{symbol,tf,limit:BAR_LIMIT[tf]||500},30000)));
+    const rows=await Promise.all(unique.map((tf,i)=>brokerGet("/bars",{symbol,tf,limit:limits[i]},30000)));
     const map={};for(let i=0;i<unique.length;i++)map[unique[i]]=rows[i].bars||[];
     const first=rows[0]||{};
     return {meta:{symbol:first.symbol,broker:first.broker,bid:first.bid,ask:first.ask,spread:first.spread,digits:first.digits,point:first.point,serverTime:first.serverTime},frames:map};
@@ -62,7 +65,8 @@ async function fetchFrames(symbol,frames){
 
 export default async function handler(req,res){
   if(req.method==="OPTIONS") return res.status(204).end();
-  res.setHeader("Cache-Control","s-maxage=10, stale-while-revalidate=86400");
+  const extended=String(req.query?.history||"")==="1";
+  res.setHeader("Cache-Control",extended?"s-maxage=90, stale-while-revalidate=240":"s-maxage=10, stale-while-revalidate=86400");
   if(!bridgeConfigured()) return res.status(200).json({ok:false,ready:false,bridgeConfigured:false,error:"BROKER_BRIDGE_URL_NOT_CONFIGURED"});
 
   const symbol=String(req.query?.symbol||"").trim();
@@ -74,7 +78,7 @@ export default async function handler(req,res){
   const [tTF,sTF,bTF]=resolveProfile(selectedTF,indicatorMode);
   const extra=(indicatorMode==="snd107"||indicatorMode==="snd"||indicatorMode==="1.07")?["M5","M15"]:[];
   try{
-    const data=await fetchFrames(symbol,[tTF,sTF,bTF,...extra]);
+    const data=await fetchFrames(symbol,[tTF,sTF,bTF,...extra],extended);
     const bars=tf=>data.frames?.[tf]||[];
     const meta=data.meta||{};
     let indicator;
@@ -110,7 +114,7 @@ export default async function handler(req,res){
       indicator,
       chartBars:(primaryBars||[]).slice(-500),
       // V8 internal history route requests the complete fetched trigger window for OHLC replay.
-      historyBars:String(req.query?.history||"") === "1" ? (primaryBars||[]).slice(-1400) : undefined
+      historyBars:extended ? (primaryBars||[]).slice(-5000) : undefined
     });
   }catch(e){
     res.setHeader("Cache-Control","no-store");
