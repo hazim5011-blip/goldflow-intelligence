@@ -32,7 +32,7 @@ export default async function handler(req,res){
     });
     const observations=events.map(e=>({...e,eventClass:"OFFICIAL_MACRO_OBSERVATION_NOT_RELEASE_EVENT"}));
     const verifiedReleases=observations.filter(e=>e.verifiedReleaseTimestamp&&e.releasedAtUTC&&e.sourceUrl&&e.dataPeriod);
-    return res.status(200).json({ok:true,version:"8.0.0-staging",
+    return res.status(200).json({ok:true,version:"8.0.0",
       verifiedReleases,latestOfficialEvents:verifiedReleases,latestOfficialObservations:observations,
       macro:{regime:result.regime,gold:result.gold,quality:result.quality,fetchedAtUTC:result.fetchedAt},
       historicalSignalAtUTC:at||null,linkedToSignal:linkedAtSignal,
