@@ -149,7 +149,7 @@
   }
   async function loadPerformance(){
     notice("v8PerformanceStatus",t("loadingBroker"));
-    try{state.performance=await json("/api/performance?"+uri("&period="+encodeURIComponent($("v8Period").value)));renderPerformance(state.performance)}
+    try{state.performance=await json("/api/performance?"+uri("&period="+encodeURIComponent($("v8Period").value)+"&direction="+encodeURIComponent($("v8PerformanceDirection").value)));renderPerformance(state.performance)}
     catch(e){state.performance=null;notice("v8PerformanceStatus",e.message,true);$("v8PerformanceSummary").innerHTML="";$("v8MonthComparison").innerHTML="";$("v8PeriodTable").innerHTML=""}
   }
   function evidenceURL(id,format){
