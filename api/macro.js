@@ -19,12 +19,31 @@ async function bls(id){
   return (s.data||[]).filter(x=>/^M\d{2}$/.test(x.period)).map(x=>({date:monthDate(x.year,x.period),value:num(x.value)})).filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date));
 }
 async function officialCpiHeadline(){
-  const t=clean(await fetchText("https://www.bls.gov/news.release/cpi.nr0.htm",6500));
-  const m=t.match(rx("Over the last 12 months[^.]{0,170}?increased\\s+([0-9]+(?:\\.[0-9]+)?)\\s+percent\\s+before seasonal adjustment","i"));
-  const pm=t.match(rx("CONSUMER\\s+PRICE\\s+INDEX\\s*-\\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\\s+(20\\d{2})","i"));
-  if(!m||!pm)throw Error("BLS published CPI release unavailable");
+  const pages=[
+    {url:"https://www.bls.gov/news.release/cpi.nr0.htm",kind:"release"},
+    {url:"https://www.bls.gov/cpi/news.htm",kind:"overview"}
+  ];
   const months={JANUARY:"01",FEBRUARY:"02",MARCH:"03",APRIL:"04",MAY:"05",JUNE:"06",JULY:"07",AUGUST:"08",SEPTEMBER:"09",OCTOBER:"10",NOVEMBER:"11",DECEMBER:"12"};
-  return {value:Number(m[1]),date:pm[2]+"-"+months[pm[1].toUpperCase()]+"-01",url:"https://www.bls.gov/news.release/cpi.nr0.htm"};
+  const results=await Promise.allSettled(pages.map(async page=>{
+    const t=clean(await fetchText(page.url,6500));
+    let val=null,mon=null,year=null;
+    if(page.kind==="release"){
+      const h=t.match(rx("CONSUMER\\s+PRICE\\s+INDEX\\s*-\\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\\s+(20\\d{2})","i"));
+      const m=t.match(rx("Over\\s+the\\s+last\\s+12\\s+months[^.]{0,170}?items\\s+index\\s+increased\\s+([0-9]+(?:\\.[0-9]+)?)\\s+percent\\s+before\\s+seasonal\\s+adjustment","i"));
+      if(h&&m){mon=h[1].toUpperCase();year=h[2];val=num(m[1]);}
+    }else{
+      const h=t.match(rx("\\bIn\\s+(January|February|March|April|May|June|July|August|September|October|November|December),\\s+the\\s+Consumer\\s+Price\\s+Index[^.]{0,300}?\\b(?:and\\s+)?rose\\s+([0-9]+(?:\\.[0-9]+)?)\\s+percent\\s+over\\s+the\\s+last\\s+12\\s+months","i"));
+      const dt=t.match(rx("(\\d{1,2})/(\\d{1,2})/(20\\d{2})","i"));
+      if(h&&dt){mon=h[1].toUpperCase();year=dt[3];val=num(h[2]);}
+    }
+    if(!mon||!year||!finite(val)||val<0||val>30)throw Error("BLS CPI release date or headline invalid");
+    return {value:val,date:year+"-"+months[mon]+"-01",url:page.url};
+  }));
+  const valid=results.filter(r=>r.status==="fulfilled").map(r=>r.value).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!valid.length)throw Error("BLS CPI published headline unavailable");
+  if(valid.length>1&&valid[0].date===valid[1].date&&Math.abs(valid[0].value-valid[1].value)>0.11)
+    throw Error("BLS CPI official release conflict for "+valid[0].date);
+  return valid[0];
 }
 async function beaGDP(){
   const t=clean(await fetchText("https://www.bea.gov/data/gdp/gross-domestic-product"));
@@ -171,7 +190,7 @@ export default async function handler(req,res){
   const jobs=await Promise.allSettled([beaGDP(),beaPCE(),fedIP(),bls("CES0000000001"),bls("LNS14000000"),bls("CUUR0000SA0"),treasury("daily_treasury_yield_curve","BC_2YEAR"),treasury("daily_treasury_yield_curve","BC_10YEAR"),treasury("daily_treasury_real_yield_curve","TC_10YEAR"),h41(),nyfed(),h10(),onRrp(),officialCpiHeadline()]);
   const v=i=>jobs[i].status==="fulfilled"?jobs[i].value:null,errors=jobs.map((x,i)=>x.status==="rejected"?"source"+i+": "+String(x.reason?.message||x.reason):null).filter(Boolean);
   const gdp=v(0),pce=v(1),ip=v(2),pay=v(3)||[],ur=v(4)||[],cp=v(5)||[],u2=v(6)||[],u10=v(7)||[],r10=v(8)||[],fed=v(9),ny=v(10)||{},usd=v(11),onrrp=v(12),cpiRelease=v(13);
-  const payroll=delta(pay),payPrev=last(pay,1)&&last(pay,2)?last(pay,1).value-last(pay,2).value:null,unrate=last(ur)?.value,un3=delta(ur,3),cpi=finite(cpiRelease?.value)?cpiRelease.value:yoy(cp),cpi3=last(cp,3)?yoyAt(cp,last(cp,3).date):null;
+  const payroll=delta(pay),payPrev=last(pay,1)&&last(pay,2)?last(pay,1).value-last(pay,2).value:null,unrate=last(ur)?.value,un3=delta(ur,3),cpi=finite(cpiRelease?.value)&&cpiRelease.date===last(cp)?.date?cpiRelease.value:yoy(cp),cpi3=last(cp,3)?yoyAt(cp,last(cp,3).date):null;
   const y2=last(u2),y10=last(u10),real=last(r10),breakeven=finite(y10?.value)&&finite(real?.value)?y10.value-real.value:null;
   const net=finite(fed?.assets)&&finite(fed?.tga)&&finite(onrrp?.value)?fed.assets-fed.tga-onrrp.value*1000:null,netCh=finite(fed?.assetsCh)&&finite(fed?.tgaCh)?fed.assetsCh-fed.tgaCh-(finite(onrrp?.weekChangeMn)?onrrp.weekChangeMn:0):null;
   const cards=[
@@ -179,7 +198,7 @@ export default async function handler(req,res){
     mk("IP","Industrial Production",ip?.value,finite(ip?.value)?fmt(ip.value,2)+"% YoY":null,ip?.date,"Federal Reserve G.17",ip?.url,null,"year-over-year",imp(ip?.value,false,.2),"Official industrial production."),
     mk("PAYEMS","Nonfarm Payroll Change",payroll,finite(payroll)?(payroll>=0?"+":"")+fmt(payroll,0)+"K":null,last(pay)?.date,"BLS","https://www.bls.gov/ces/",finite(payroll)&&finite(payPrev)?payroll-payPrev:null,"vs prior monthly change",finite(payroll)?(payroll<100?"SUPPORTIVE":payroll>200?"PRESSURE":"MIXED"):"MIXED","Total nonfarm payroll monthly change."),
     mk("UNRATE","Unemployment",unrate,finite(unrate)?fmt(unrate,1)+"%":null,last(ur)?.date,"BLS","https://www.bls.gov/cps/",un3,"3-month change",imp(un3,true,.05),"Official unemployment rate."),
-    mk("CPI","CPI Inflation",cpi,finite(cpi)?fmt(cpi,1)+"% YoY":null,cpiRelease?.date||last(cp)?.date,"BLS",cpiRelease?.url||"https://www.bls.gov/cpi/",finite(cpi)&&finite(cpi3)?cpi-cpi3:null,"3-month YoY trend","MIXED","Official headline CPI-U unadjusted 12-month change; BLS release cross-checked against CUUR0000SA0."),
+    mk("CPI","CPI Inflation",cpi,finite(cpi)?fmt(cpi,1)+"% YoY":null,(cpiRelease?.date===last(cp)?.date?cpiRelease.date:last(cp)?.date),"BLS",(cpiRelease?.date===last(cp)?.date?cpiRelease.url:"https://www.bls.gov/cpi/"),finite(cpi)&&finite(cpi3)?cpi-cpi3:null,"3-month YoY trend","MIXED","Official headline CPI-U unadjusted 12-month change; BLS release cross-checked against CUUR0000SA0."),
     mk("COREPCE","Core PCE",pce?.value,finite(pce?.value)?fmt(pce.value,2)+"% YoY":null,pce?.date,"BEA",pce?.url,pce?.change,"vs prior month YoY","MIXED","Core PCE year-over-year."),
     mk("BREAKEVEN10","10Y Breakeven",breakeven,finite(breakeven)?fmt(breakeven,2)+"%":null,y10?.date,"U.S. Treasury derived","https://home.treasury.gov/resource-center/data-chart-center/interest-rates",null,"nominal 10Y - real 10Y",finite(breakeven)?(breakeven>2.4?"SUPPORTIVE":breakeven<1.8?"PRESSURE":"MIXED"):"MIXED","Derived from official Treasury yields.",false),
     mk("FEDUPPER","Fed Target Upper",ny.high,finite(ny.high)?fmt(ny.high,2)+"%":null,ny.targetDate||null,"New York Fed",ny.targetUrl||ny.url,null,"current target range",finite(ny.high)?(ny.high>=4?"PRESSURE":ny.high<=3?"SUPPORTIVE":"MIXED"):"MIXED","Federal funds target upper bound."),
@@ -205,6 +224,6 @@ export default async function handler(req,res){
     derived:cards.filter(x=>finite(x.value)&&x.status==="DERIVED").length,
     unavailable:cards.filter(x=>x.status==="UNAVAILABLE").map(x=>x.id),
     stale:cards.filter(x=>x.stale).map(x=>x.id),errors,
-    notes:(finite(cpiRelease?.value)&&finite(yoy(cp))&&Math.abs(cpiRelease.value-yoy(cp))>.2)?["CPI published headline differs from computed index YoY; display uses the official release."]:[]};
+    notes:(finite(cpiRelease?.value)&&cpiRelease.date===last(cp)?.date&&finite(yoy(cp))&&Math.abs(cpiRelease.value-yoy(cp))>.2)?["CPI published headline differs from computed index YoY for the same period; display uses the official BLS release."]:cpiRelease&&cpiRelease.date!==last(cp)?.date?["Official CPI release and BLS series have different reporting months; CPI uses series result pending matching release."]:[]};
   return res.status(200).json({ok:true,official:true,modelDerived:true,fetchedAt:new Date().toISOString(),provider:"Direct official sources: BLS, BEA, Federal Reserve, U.S. Treasury, New York Fed",cards,scores:{growth:Math.round(growth),inflation:Math.round(inflation),policy:Math.round(policy),liquidity:finite(liquidity)?Math.round(liquidity):null,realYield:Math.round(realPressure),dollar:Math.round(dollar)},regime:{name:reg,note:({REFLATION:"Growth and inflation are both firm.",GOLDILOCKS:"Growth is firm while inflation pressure is softer.",STAGFLATION:"Growth is weak while inflation remains firm.",SLOWDOWN:"Growth and inflation are both softer."})[reg],confidence:Math.round(100*(quality.fresh/quality.total))},gold:{score:Math.round(goldScore),bias:goldBias,note:"DERIVED macro context from "+drivers.length+"/5 available components; not a trade signal, calibrated probability, or guaranteed direction."},playbook:{gold:{label:goldBias,detail:"Derived from inflation, real yields, liquidity, growth and broad USD."},usd:{label:lab(clamp(.55*dollar+.45*policy)),detail:"Official Fed broad USD momentum plus policy pressure."},treasury:{label:inflation>=60||policy>=60?"PRESSURE":"MIXED",detail:"Inflation and policy context; not a yield forecast."},equities:{label:growth>=55&&policy<60?"SUPPORTIVE":growth<45||policy>70?"PRESSURE":"MIXED",detail:"Growth versus restrictive policy."},oil:{label:reg==="REFLATION"?"SUPPORTIVE":reg==="SLOWDOWN"?"PRESSURE":"MIXED",detail:"Cyclical demand context."}},timeline,quality,methodology:{official:"Primary values are fetched directly from BLS, BEA, Federal Reserve Board, U.S. Treasury and New York Fed.",derived:"Regime, scores, 10Y breakeven and Net Liquidity Proxy are GoldFlow calculations from official inputs.",revisions:"BLS monthly history is used for the 12-month timeline; GDP/PCE may be revised by BEA.",netLiquidity:"Net Liquidity Proxy = H.4.1 Wednesday total assets - H.4.1 Wednesday TGA - latest daily NY Fed overnight Treasury RRP, after conversion to USD millions. It mixes observation dates; interpret as an approximation.",fallback:"FRED is not required for the primary path; it can be used later only as a cross-check."}});
 }
