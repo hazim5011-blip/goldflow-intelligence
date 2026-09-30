@@ -182,7 +182,12 @@ function drawChart(){
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
-  setInterval(checkBridge,30000);setInterval(function(){if(selectedSymbol)loadAnalysis()},30000);
+  setInterval(checkBridge,30000);
+  setInterval(function(){
+    // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
+    var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on");
+    if(selectedSymbol&&!v8Active)loadAnalysis();
+  },30000);
 }
 init();
 
