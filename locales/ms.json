@@ -76,6 +76,13 @@
     "disclaimer": "Semua signal, simulasi, penerangan dan kajian berita adalah untuk pendidikan/penyelidikan pasaran. Keputusan serta risiko dagangan tanggungjawab pengguna. Tiada jaminan keuntungan.",
     "tpTrailingBePositive": "TP, trailing dan BE positif",
     "notAvailable": "Tidak tersedia",
-    "signalId": "ID Signal"
+    "signalId": "ID Signal",
+    "replay": "↻ Ulang",
+    "verifiedRelease": "BERITA DISAHKAN",
+    "macroObservation": "PEMERHATIAN MAKRO",
+    "sourceNotVerified": "Bacaan sebelumnya/sumber belum disahkan",
+    "verifiedReleaseNote": "Berita di bawah hanya dianggap bertarikh keluaran apabila masa penerbitan dan sumber rasmi telah disahkan.",
+    "noVerifiedReleases": "Tiada berita dengan masa keluaran rasmi yang telah disahkan buat masa ini. GoldFlow tidak akan menganggap tempoh data sebagai masa berita dikeluarkan.",
+    "macroObservationNote": "Pemerhatian makro rasmi di bawah ialah data mengikut tempoh, bukan berita dengan masa keluaran, dan tidak dikaitkan semula secara retrospektif kepada signal."
   }
 }
