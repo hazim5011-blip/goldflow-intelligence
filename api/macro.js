@@ -63,23 +63,24 @@ async function nyfed(){
   ]);
   const t=clean(dataText), e=clean(effrText);
 
-  // EFFR page publishes the live target rate/range beside each daily observation.
-  const trg=e.match(rx("([0-9]+\\.[0-9]{2})\\s*-\\s*([0-9]+\\.[0-9]{2})","i"));
-  const dm=e.match(rx("([0-9]{1,2})/([0-9]{1,2})/([0-9]{2,4})","i"))
-        ||e.match(rx("([0-9]{1,2})/([0-9]{1,2})","i"));
-  let targetDate=null;
-  if(dm){
-    const yr=dm[3]?Number(dm[3]) : new Date().getUTCFullYear();
-    targetDate=new Date(Date.UTC(yr<100?2000+yr:yr,Number(dm[1])-1,Number(dm[2]))).toISOString().slice(0,10);
+  // Parse the latest EFFR table row:
+  // MM/DD rate p1 p25 p75 p99 volume targetLow-targetHigh
+  const row=e.match(rx("([0-9]{1,2})/([0-9]{1,2})\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9,]+)\\s+([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","i"));
+  let low=null,high=null,targetDate=null;
+  if(row){
+    low=num(row[9]); high=num(row[10]);
+    const now=new Date(),m=Number(row[1]),d=Number(row[2]);
+    let y=now.getUTCFullYear();
+    const candidate=new Date(Date.UTC(y,m-1,d));
+    if(candidate.getTime()-now.getTime()>45*86400000)y-=1;
+    targetDate=new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10);
   }
 
   const rr=t.match(rx("Reverse\\s+Repo\\s+Operations[\\s\\S]{0,900}?Treasury\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
   const sf=t.match(rx("Secured\\s+Overnight\\s+Financing\\s+Rate[\\s\\S]{0,700}?([0-9]+(?:\\.[0-9]+)?)\\s+[0-9,]+","i"));
 
   return {
-    low:trg?num(trg[1]):null,
-    high:trg?num(trg[2]):null,
-    targetDate,
+    low,high,targetDate,
     rrp:rr?num(rr[2]):null,
     sofr:sf?num(sf[1]):null,
     targetUrl:"https://www.newyorkfed.org/markets/reference-rates/effr",
