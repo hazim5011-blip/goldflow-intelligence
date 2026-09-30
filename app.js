@@ -213,7 +213,10 @@ function macroChangeText(c){
   return sign+fmt(n,2);
 }
 function macroStatusTag(card){
-  return card.stale?'<span class="y">EXPECTED LAG</span>':'<span class="g">OFFICIAL</span>';
+  if(card.status==="UNAVAILABLE")return '<span class="r">UNAVAILABLE</span>';
+  if(card.stale)return '<span class="y">STALE / DATE UNCONFIRMED</span>';
+  if(card.status==="DERIVED")return '<span class="y">DERIVED MODEL</span>';
+  return '<span class="g">OFFICIAL DATA</span>';
 }
 function renderMacroCards(cards){
   var el=$("macroCards");if(!el)return;
@@ -226,7 +229,7 @@ function renderMacroCards(cards){
       '<div class="mcDetail">'+(x.detail||"")+'</div>'+
       '<div class="mcFoot"><span>'+macroStatusTag(x)+' • '+(x.date||"—")+' • '+(x.frequency||"")+'</span>'+
       '<a class="macroLink" href="'+(x.seriesUrl||"#")+'" target="_blank" rel="noopener">'+(x.source||"FRED")+'</a>'+
-      '<span class="mcImpact '+macroImpactClass(impact)+'">GOLD '+impact+'</span></div>'+
+      '<span class="mcImpact '+macroImpactClass(impact)+'">GOLD '+(x.status==="UNAVAILABLE"?"WAIT DATA":impact)+'</span></div>'+
     '</div>';
   }).join("");
 }
@@ -270,13 +273,18 @@ async function loadMacro(force){
     if(!j.ok)throw new Error(j.error||"Macro data unavailable");
     lastMacro=j;macroLoaded=true;
     renderMacroCards(j.cards||[]);
-    $("macroQuality").textContent=(j.quality?.available||0)+"/"+(j.quality?.total||0)+" SERIES";
-    $("macroQuality").className="tag "+((j.quality?.available||0)===(j.quality?.total||0)?"g":"y");
-    $("macroNotice").className="notice good";
-    $("macroNotice").innerHTML="<b>Official data loaded.</b> Values come from FRED and originating U.S. agencies. Regime, pulse scores and Gold Macro Bias are GoldFlow-derived labels.";
+    $("macroQuality").textContent=(j.quality?.available||0)+"/"+(j.quality?.total||0)+" VALID • "+(j.quality?.fresh||0)+" FRESH";
+    $("macroQuality").className="tag "+((j.quality?.fresh||0)===(j.quality?.total||0)?"g":"y");
+    var issues=[...(j.quality?.errors||[]),...(j.quality?.notes||[])];
+    if(j.quality?.unavailable?.length)issues.push("Unavailable: "+j.quality.unavailable.join(", "));
+    if(j.quality?.stale?.length)issues.push("Stale / date unavailable: "+j.quality.stale.join(", "));
+    $("macroNotice").className=issues.length?"notice info":"notice good";
+    $("macroNotice").textContent=(issues.length?"PARTIAL DATA • ":"OFFICIAL DATA VERIFIED • ")+
+      "Source: BLS, BEA, Federal Reserve, Treasury and NY Fed. Scores, regime and gold impact are DERIVED, not guaranteed directions."+
+      (issues.length?" "+issues.join(" | "):"");
     $("macroRegime").textContent=j.regime?.name||"—";
     $("macroRegimeTag").textContent="DERIVED";
-    $("macroConfidence").textContent=finite(j.regime?.confidence)?"Model confidence "+Math.round(j.regime.confidence)+"%":"—";
+    $("macroConfidence").textContent=finite(j.regime?.confidence)?"Input coverage "+Math.round(j.regime.confidence)+"% • not probability":"—";
     $("macroRegimeNote").textContent=j.regime?.note||"—";
     setMacroScore("scoreGrowth",j.scores?.growth);
     setMacroScore("scoreInflation",j.scores?.inflation);
