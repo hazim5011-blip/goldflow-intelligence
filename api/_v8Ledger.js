@@ -18,7 +18,10 @@ export function normalizePublishedPayload(body,now=new Date()){
  const symbol=String(body.symbolResolved||""),indicator=String(body.indicatorId||"").toLowerCase(),tf=String(body.tf||"").toUpperCase();
  if(!matchSafe.test(symbol)||!INDICATORS.has(indicator)||!TF_SECONDS[tf])throw Error("INVALID_SYMBOL_INDICATOR_OR_TF");
  const direction=Number(body.direction),entry=xnum(body.entry),sl=xnum(body.originalSL),tp1=xnum(body.tp1);
- if(![-1,1].includes(direction)||entry==null||sl==null||tp1==null||direction*(entry-sl)<=0||direction*(tp1-entry)<=0)throw Error("INVALID_TRADE_PLAN");
+ const validationOnly=indicator==="pattern132"||indicator==="snd107";
+ if(![-1,1].includes(direction)||entry==null||sl==null||direction*(entry-sl)<=0||
+    (!validationOnly&&(tp1==null||direction*(tp1-entry)<=0))||
+    (validationOnly&&tp1!=null&&direction*(tp1-entry)<=0))throw Error("INVALID_TRADE_PLAN");
  const close=Date.parse(String(body.signalCandleCloseUTC||""));
  const maxDelay=Math.min(30*60000,Math.max(3*60000,TF_SECONDS[tf]*1000*.2));
  if(!Number.isFinite(close)||now.getTime()-close>maxDelay||close-now.getTime()>90*1000)throw Error("SIGNAL_NOT_CONTEMPORANEOUS");
@@ -93,6 +96,7 @@ export function normalizeOutcomePayload(body,published,now=new Date()){
  const signalId=String(body?.signalId||""),date=String(body?.date||"");
  if(signalId!==published.signalId||date!==published.receivedAtUTC.slice(0,10))throw Error("OUTCOME_RECORD_MISMATCH");
  const outcome=String(body?.outcome||"").toUpperCase();
+ if(published.indicatorId==="pattern132"||published.indicatorId==="snd107")throw Error("VALIDATION_ONLY_ENGINE_HAS_NO_OUTCOME_MODEL");
  if(!FINAL_OUTCOMES.has(outcome))throw Error("INVALID_FINAL_OUTCOME");
  const exitPrice=xnum(body?.exitPrice),exitTime=Date.parse(String(body?.exitTimeUTC||""));
  const signalClose=Date.parse(published.signalCandleCloseUTC);
