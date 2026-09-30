@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence V7.5</title>
+<title>GoldFlow Intelligence V8 Preview</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -12,8 +12,16 @@
 <body>
 <div class="wrap">
 <header class="top">
-  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.5</h1><small>HYBRID • MULTI-ASSET • 6 INDICATORS • OFFICIAL MACRO</small></div></div>
+  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V8 Preview</h1><small>V8 STAGING • 6 INDICATORS • VANTAGE MT5 • MACRO</small></div></div>
   <div class="statusRow"><span id="bridgeChip" class="chip warn">BRIDGE…</span><span id="engineChip" class="chip warn">ENGINE…</span><span id="marketChip" class="chip warn">MARKET…</span></div>
+  <div class="v8Global">
+    <label class="v8InlineLabel" for="gfLocale" data-i18n="language">Language</label>
+    <select id="gfLocale" aria-label="Language"></select>
+    <button type="button" id="gfSpeakGlobal" aria-label="Read explanation aloud" data-i18n="readAloud">🔊 Read aloud</button>
+    <button type="button" id="gfPause" aria-label="Pause or resume speech">⏯</button>
+    <button type="button" id="gfStop" aria-label="Stop speech">■</button>
+    <select id="gfSpeechRate" aria-label="Speech speed"><option value=".8">0.8×</option><option selected value="1">1.0×</option><option value="1.2">1.2×</option></select>
+  </div>
 </header>
 
 <section class="toolbar card">
@@ -38,9 +46,12 @@
   <button class="tab on" data-page="dashboard">Dashboard</button>
   <button class="tab" data-page="chartPage">Broker Chart</button>
   <button class="tab" data-page="tvPage">TradingView</button>
-  <button class="tab" data-page="historyPage">History</button>
+  <button class="tab" data-page="v8History" data-i18n="historyPro">History Pro</button>
+  <button class="tab" data-page="v8Performance" data-i18n="performance">Performance</button>
+  <button class="tab" data-page="v8Evidence" data-i18n="evidence">Evidence</button>
   <button class="tab" data-page="symbolsPage">All Symbols</button>
   <button class="tab" data-page="macroPage">Macro Regime</button>
+  <button class="tab" data-page="v8News" data-i18n="newsStudy">News Study</button>
 </nav>
 
 <main>
@@ -85,7 +96,7 @@
 <section id="tvPage" class="page">
   <div class="card"><div class="head"><h3>TRADINGVIEW LIVE REFERENCE</h3><span class="tag y">REFERENCE ONLY</span></div><div class="notice">TradingView digunakan sebagai carta rujukan live. Data widget TradingView tidak digunakan untuk mengira 6 indicator GoldFlow.</div><div id="tvWrap" class="tvwrap"></div></div>
 </section>
-
+  <div class="card sec" id="v8TradingTools"><div class="head"><h3>TRADINGVIEW HYBRID TOOLS</h3><span class="tag y">INDEPENDENT REFERENCE</span></div><div class="notice info" id="v8TVNote">TradingView reference data can differ from Vantage. GoldFlow signals always use the broker bridge.</div><div class="grid g2"><div id="v8TVTechnical" class="v8TVTool" aria-label="TradingView technical analysis"></div><div id="v8TVMarket" class="v8TVTool" aria-label="TradingView market overview"></div></div></div>
 <section id="historyPage" class="page">
   <div class="card"><div class="head"><h3>SIGNAL HISTORY</h3><span class="sub">Broker candles • closed-candle simulation</span></div><div id="historyRows"></div></div>
 </section>
@@ -139,10 +150,70 @@
     <div id="macroMethod" class="methodGrid"></div>
   </div>
 </section>
+<section id="v8History" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">BROKER CANDLE RECONSTRUCTION</small><h3 data-i18n="historyPro">History Pro</h3></div><span class="tag y">HISTORICAL SIM • NOT EXECUTED TRADES</span></div>
+    <div class="notice info">Closed-candle OHLC replay. TP and SL touched in the same candle are AMBIGUOUS. Existing indicator history is never advertised as prior publication proof.</div>
+    <div class="v8Filters">
+      <div><label for="v8Start" data-i18n="from">From</label><input type="date" id="v8Start"></div>
+      <div><label for="v8End" data-i18n="to">To</label><input type="date" id="v8End"></div>
+      <div><label for="v8Direction" data-i18n="direction">Direction</label><select id="v8Direction"><option value="ALL">ALL</option><option>BUY</option><option>SELL</option></select></div>
+      <button type="button" id="v8HistoryRefresh" class="primary" data-i18n="refreshHistory">Load History</button>
+    </div>
+    <div id="v8HistoryStatus" class="sub">Select a Vantage symbol, indicator and timeframe above.</div>
+    <div id="v8Summary" class="v8MetricGrid"></div>
+    <div id="v8Rows" class="v8Rows" aria-live="polite"></div>
+    <p class="v8Footnote">Pips are instrument display conventions, not identical units across asset classes. Gross P/L is shown only when Vantage contract metadata verifies a supported 0.01 lot and USD settlement.</p>
+  </div>
+</section>
+
+<section id="v8Performance" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">BY SYMBOL • INDICATOR • TIMEFRAME</small><h3 data-i18n="performance">Performance Analytics</h3></div><span class="tag y">SIMULATION • AVAILABLE WINDOW</span></div>
+    <div class="v8Filters">
+      <div><label for="v8Period" data-i18n="period">Period</label><select id="v8Period"><option value="day">Daily</option><option value="week">ISO Weekly</option><option value="month" selected>Monthly</option><option value="year">Yearly</option></select></div>
+      <button class="primary" id="v8PerformanceRefresh" type="button" data-i18n="refreshPerformance">Refresh Performance</button>
+    </div>
+    <div id="v8PerformanceStatus" class="notice info">Select period to compare historical results.</div>
+    <div id="v8PerformanceSummary" class="v8MetricGrid"></div>
+    <div class="head sec"><h3>Last month vs this month</h3><span class="sub">This month is MTD; matched days-to-date shown separately.</span></div>
+    <div id="v8MonthComparison" class="v8Scroll"></div>
+    <div class="head sec"><h3>Results by period</h3><span class="sub">Strict WR excludes BE0 and ambiguous candles.</span></div>
+    <div id="v8PeriodTable" class="v8Scroll"></div>
+    <p class="v8Footnote">If broker history does not cover a complete prior month/year, the result is marked N/A rather than invented. Pips/points are not mixed across symbols.</p>
+  </div>
+</section>
+
+<section id="v8Evidence" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">TRACEABLE HISTORICAL REPLAY</small><h3 data-i18n="evidence">Evidence / Proof</h3></div><span class="tag y" id="v8EvidenceStatus">NOT FORWARD VERIFIED</span></div>
+    <div class="notice info">A reconstruction hash verifies the current API response only. It does NOT prove that the signal was recorded before the market moved. Durable forward logging requires a separately configured archive.</div>
+    <div class="v8Filters">
+      <div class="grow"><label for="v8EvidenceSelect" data-i18n="selectSignal">Select historical signal</label><select id="v8EvidenceSelect"><option>Load History Pro first</option></select></div>
+      <button type="button" id="v8EvidenceLoad" class="primary" data-i18n="viewEvidence">View Evidence</button>
+    </div>
+    <div id="v8EvidenceSummary" class="v8EvidenceSummary"></div>
+    <div class="v8EvidenceActions"><button type="button" id="v8EvidenceRead" disabled>🔊 Explain</button><button type="button" id="v8EvidenceJson" disabled>Download JSON</button><button type="button" id="v8EvidenceCsv" disabled>Download CSV</button></div>
+    <div id="v8EvidenceChart" class="chart" role="img" aria-label="Broker OHLC reconstruction with entry stop and TP marker; not a contemporaneous screenshot"></div>
+    <div id="v8EvidenceCaption" class="v8Footnote">Rendered from currently available broker candles. TradingView is independent reference, not broker execution evidence.</div>
+    <div id="v8EvidenceDetails" class="v8Details"></div>
+  </div>
+</section>
+
+<section id="v8News" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">OFFICIAL ACTUAL • CONDITIONAL INTERPRETATION</small><h3 data-i18n="newsStudy">Macro & News Study</h3></div><button type="button" id="v8NewsRefresh" class="primary" data-i18n="refreshNews">Refresh News Study</button></div>
+    <div class="notice info" id="v8NewsNotice">Only reported official observations are displayed. If market consensus or exact release timestamp is unavailable, it is explicitly N/A.</div>
+    <div class="v8MetricGrid" id="v8NewsRegime"></div>
+    <div id="v8NewsList" class="v8NewsGrid"></div>
+    <div class="v8Footnote" data-i18n="disclaimer">Market research only. This is not financial advice, a guaranteed signal or proof of past market causation. Users make their own trading decisions and bear the risks.</div>
+  </div>
+</section>
 </main>
 
 <footer>GoldFlow research tool • Broker prices can differ across servers/accounts • No signal guarantees profit.</footer>
 </div>
 <script src="/app.js"></script>
+<script src="/v8.js" defer></script>
 </body>
 </html>
