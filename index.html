@@ -4,16 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence V7.5</title>
+<title>GoldFlow Intelligence V8 Staging</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/v8.css">
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
 <div class="wrap">
 <header class="top">
-  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V7.5</h1><small>HYBRID • MULTI-ASSET • 6 INDICATORS • OFFICIAL MACRO</small></div></div>
-  <div class="statusRow"><span id="bridgeChip" class="chip warn">BRIDGE…</span><span id="engineChip" class="chip warn">ENGINE…</span><span id="marketChip" class="chip warn">MARKET…</span></div>
+  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V8 STAGING</h1><small>HISTORY PRO • PERFORMANCE • EVIDENCE • 6 INDICATORS • OFFICIAL MACRO</small></div></div>
+  <div class="statusRow v8controls"><select id="localeSelect" aria-label="Language"></select><button id="explainBtn" class="primary mini">🔊 AI Explain / Terangkan</button><select id="speechRate" aria-label="Speech speed"><option value=".8">0.8x</option><option value="1" selected>1.0x</option><option value="1.2">1.2x</option></select><button id="speechStop" class="mini">Stop</button><span id="bridgeChip" class="chip warn">BRIDGE…</span><span id="engineChip" class="chip warn">ENGINE…</span><span id="marketChip" class="chip warn">MARKET…</span></div>
 </header>
 
 <section class="toolbar card">
@@ -39,6 +40,10 @@
   <button class="tab" data-page="chartPage">Broker Chart</button>
   <button class="tab" data-page="tvPage">TradingView</button>
   <button class="tab" data-page="historyPage">History</button>
+  <button class="tab" data-page="historyProPage">History Pro</button>
+  <button class="tab" data-page="performancePage">Performance</button>
+  <button class="tab" data-page="evidencePage">Evidence</button>
+  <button class="tab" data-page="newsStudyPage">News Study</button>
   <button class="tab" data-page="symbolsPage">All Symbols</button>
   <button class="tab" data-page="macroPage">Macro Regime</button>
 </nav>
@@ -90,6 +95,16 @@
   <div class="card"><div class="head"><h3>SIGNAL HISTORY</h3><span class="sub">Broker candles • closed-candle simulation</span></div><div id="historyRows"></div></div>
 </section>
 
+<section id="historyProPage" class="page">
+  <div class="card"><div class="head"><h3>HISTORY PRO</h3><span id="historyMode" class="tag y">HISTORICAL SIMULATION</span></div>
+  <div class="notice info">Legacy records are reconstructed from closed broker candles. Exact exit metrics remain N/A until the engine emits exitPrice/exitTime.</div><div id="historyProRows"></div></div>
+</section>
+<section id="performancePage" class="page"><div id="performanceBody"></div></section>
+<section id="evidencePage" class="page"><div id="evidenceBody"></div></section>
+<section id="newsStudyPage" class="page">
+ <div class="card"><div class="head"><h3>NEWS / FUNDAMENTAL STUDY</h3><span class="tag y">STAGING</span></div>
+ <div class="notice info">Macro Regime remains the verified official-data source. Signal-linked release IDs, actual/forecast/previous and publication-time news context are not yet enabled; no later news is backfilled as a cause for older signals.</div></div>
+</section>
 <section id="symbolsPage" class="page">
   <div class="card"><div class="head"><h3>VANTAGE SERVER SYMBOLS</h3><span id="symbolCount" class="tag">0</span></div><div id="symbolCards" class="symbolGrid"></div></div>
 </section>
@@ -141,8 +156,9 @@
 </section>
 </main>
 
-<footer>GoldFlow research tool • Broker prices can differ across servers/accounts • No signal guarantees profit.</footer>
+<footer>GoldFlow V8 STAGING research tool • Historical Simulation ≠ executed trades or publication proof • Broker prices can differ across servers/accounts • No signal guarantees profit.</footer>
 </div>
 <script src="/app.js"></script>
+<script src="/v8.js"></script>
 </body>
 </html>
