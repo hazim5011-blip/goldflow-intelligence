@@ -63,17 +63,27 @@ async function nyfed(){
   ]);
   const t=clean(dataText), e=clean(effrText);
 
-  // Parse the latest EFFR table row:
-  // MM/DD rate p1 p25 p75 p99 volume targetLow-targetHigh
-  const row=e.match(rx("([0-9]{1,2})/([0-9]{1,2})\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9,]+)\\s+([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","i"));
+  const rowRe=rx("([0-9]{1,2})/([0-9]{1,2})\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9,]+)\\s+([0-9]+\\.[0-9]+)\\s*-\\s*([0-9]+\\.[0-9]+)","ig");
+  const rows=[...e.matchAll(rowRe)];
   let low=null,high=null,targetDate=null;
-  if(row){
-    low=num(row[9]); high=num(row[10]);
-    const now=new Date(),m=Number(row[1]),d=Number(row[2]);
-    let y=now.getUTCFullYear();
-    const candidate=new Date(Date.UTC(y,m-1,d));
-    if(candidate.getTime()-now.getTime()>45*86400000)y-=1;
-    targetDate=new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10);
+
+  if(rows.length){
+    const now=new Date();
+    let best=null,bestDiff=Infinity;
+    for(const r of rows){
+      const m=Number(r[1]),d=Number(r[2]);
+      for(const y of [now.getUTCFullYear(),now.getUTCFullYear()-1]){
+        const dt=new Date(Date.UTC(y,m-1,d));
+        const diff=now.getTime()-dt.getTime();
+        if(diff>=-86400000 && diff<bestDiff){
+          bestDiff=diff;best={r,dt};
+        }
+      }
+    }
+    if(best){
+      low=num(best.r[9]); high=num(best.r[10]);
+      targetDate=best.dt.toISOString().slice(0,10);
+    }
   }
 
   const rr=t.match(rx("Reverse\\s+Repo\\s+Operations[\\s\\S]{0,900}?Treasury\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
