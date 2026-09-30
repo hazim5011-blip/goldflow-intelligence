@@ -182,13 +182,18 @@ function drawChart(){
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
-  setInterval(checkBridge,30000);setInterval(function(){if(selectedSymbol)loadAnalysis()},30000);
+  setInterval(checkBridge,30000);
+  setInterval(function(){
+    // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
+    var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on");
+    if(selectedSymbol&&!v8Active)loadAnalysis();
+  },30000);
 }
 init();
 
 function tvSymbol(s){
   var r=rootSymbol(s).toUpperCase();
-  if(r==="XAUUSD247")return "THINKMARKETS:XAUUSD247";
+  if(r==="XAUUSD247")return "OANDA:XAUUSD"; // TradingView independent reference, NOT Vantage native quote.
   if(r==="XAUUSD")return "OANDA:XAUUSD";
   if(r==="XAGUSD")return "OANDA:XAGUSD";
   if(/^(BTC|ETH|SOL|XRP|LTC|BCH)USD$/.test(r))return "COINBASE:"+r;
@@ -200,6 +205,8 @@ function tvInterval(tf){
 }
 function renderTradingView(){
   var el=$("tvWrap"); if(!el||!selectedSymbol)return;
+  // Defer the chart until the TradingView tab is visible (avoids hidden iframe load).
+  if(!$("tvPage")?.classList.contains("on"))return;
   var sym=tvSymbol(selectedSymbol),intv=tvInterval(selectedTF);
   el.innerHTML='<iframe allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen src="https://s.tradingview.com/widgetembed/?frameElementId=tv_goldflow&symbol='+encodeURIComponent(sym)+'&interval='+encodeURIComponent(intv)+'&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=%230f2740&studies=[]&theme=dark&style=1&timezone=Asia%2FKuala_Lumpur&withdateranges=1&hideideas=1"></iframe>';
 }

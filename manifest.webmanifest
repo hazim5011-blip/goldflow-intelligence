@@ -1,9 +1,9 @@
 {
-  "name": "GoldFlow Intelligence V7.1",
-  "short_name": "GoldFlow V7.1",
+  "name": "GoldFlow Intelligence V8",
+  "short_name": "GoldFlow V8",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#061018",
   "theme_color": "#061018",
-  "description": "24H broker-first gold and FX market monitor."
+  "description": "GoldFlow Intelligence V8 production: Vantage MT5 broker-first multi-asset research, History Pro, performance analytics, evidence, official macro context and multilingual accessibility."
 }

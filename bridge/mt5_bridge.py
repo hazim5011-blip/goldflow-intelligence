@@ -106,6 +106,10 @@ def symbol_row(s):
         "currencyProfit":getattr(s,"currency_profit","") or "",
         "currencyMargin":getattr(s,"currency_margin","") or "",
         "contractSize":float(getattr(s,"trade_contract_size",0.0) or 0.0),
+        "tickSize":float(getattr(s,"trade_tick_size",0.0) or 0.0),
+        "tickValue":float(getattr(s,"trade_tick_value",0.0) or 0.0),
+        "tickValueProfit":float(getattr(s,"trade_tick_value_profit",0.0) or 0.0),
+        "tickValueLoss":float(getattr(s,"trade_tick_value_loss",0.0) or 0.0),
         "volumeMin":float(getattr(s,"volume_min",0.0) or 0.0),
         "volumeMax":float(getattr(s,"volume_max",0.0) or 0.0),
         "volumeStep":float(getattr(s,"volume_step",0.0) or 0.0),
@@ -146,7 +150,9 @@ def catalog(filter:str="",category:str="",limit:int=Query(5000,ge=1,le=10000),x_
         if cat and row["category"]!=cat: continue
         out.append(row)
         if len(out)>=limit: break
-    return {"ok":True,"broker":BROKER_NAME,"count":len(out),"symbols":out}
+    ai=mt5.account_info()
+    return {"ok":True,"broker":BROKER_NAME,"server":getattr(ai,"server",None) if ai else None,
+            "count":len(out),"symbols":out}
 
 @app.get("/bars")
 def bars(symbol:str=Query(...),tf:str=Query("M5"),limit:int=Query(500,ge=20,le=5000),x_bridge_key:Optional[str]=Header(default=None)):
@@ -159,7 +165,9 @@ def bars(symbol:str=Query(...),tf:str=Query("M5"),limit:int=Query(500,ge=20,le=5
         raise HTTPException(status_code=503,detail=f"No rates for {sym} {tf}: {mt5.last_error()}")
     tick=mt5.symbol_info_tick(sym); info=mt5.symbol_info(sym)
     out=[{"t":int(r["time"]),"o":float(r["open"]),"h":float(r["high"]),"l":float(r["low"]),"c":float(r["close"]),"v":float(r["tick_volume"])} for r in rates]
-    return {"ok":True,"broker":BROKER_NAME,"requested":symbol,"symbol":sym,"tf":tf,
+    ai=mt5.account_info()
+    return {"ok":True,"broker":BROKER_NAME,"server":getattr(ai,"server",None) if ai else None,
+            "requested":symbol,"symbol":sym,"tf":tf,
             "digits":int(getattr(info,"digits",0) or 0) if info else None,
             "point":float(getattr(info,"point",0.0) or 0.0) if info else None,
             "bid":float(tick.bid) if tick else None,"ask":float(tick.ask) if tick else None,
@@ -188,8 +196,9 @@ def multi_bars(symbol:str=Query(...),tfs:str=Query("M5,M15,H1"),limits:str=Query
         if rates is None or len(rates)<10:
             raise HTTPException(status_code=503,detail=f"No rates for {sym} {tf}: {mt5.last_error()}")
         out[tf]=[{"t":int(r["time"]),"o":float(r["open"]),"h":float(r["high"]),"l":float(r["low"]),"c":float(r["close"]),"v":float(r["tick_volume"])} for r in rates]
-    tick=mt5.symbol_info_tick(sym); info=mt5.symbol_info(sym)
-    return {"ok":True,"broker":BROKER_NAME,"requested":symbol,"symbol":sym,
+    tick=mt5.symbol_info_tick(sym); info=mt5.symbol_info(sym); ai=mt5.account_info()
+    return {"ok":True,"broker":BROKER_NAME,"server":getattr(ai,"server",None) if ai else None,
+            "requested":symbol,"symbol":sym,
             "digits":int(getattr(info,"digits",0) or 0) if info else None,
             "point":float(getattr(info,"point",0.0) or 0.0) if info else None,
             "bid":float(tick.bid) if tick else None,"ask":float(tick.ask) if tick else None,

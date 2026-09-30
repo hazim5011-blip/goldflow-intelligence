@@ -1,0 +1,60 @@
+name: GoldFlow V8 CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  v8-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify six indicator engines are untouched
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          changed="$(git diff --name-only origin/main...HEAD -- \
+            api/_indicator105.js \
+            api/_indicator103.js \
+            api/_indicatorPVT102.js \
+            api/_indicatorPattern132.js \
+            api/_indicatorSND107.js \
+            api/_indicatorOWL101.js)"
+          if [ -n "$changed" ]; then
+            echo "Protected indicator engine files changed:"
+            echo "$changed"
+            exit 1
+          fi
+
+      - name: Enforce Vercel Hobby function limit
+        shell: bash
+        run: |
+          count="$(find api -maxdepth 1 -type f -name '*.js' ! -name '_*' | wc -l | tr -d ' ')"
+          echo "Deployable API functions: $count"
+          test "$count" -le 12
+
+      - name: JavaScript syntax checks
+        shell: bash
+        run: |
+          node --check app.js
+          node --check v8.js
+          find api -maxdepth 1 -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Python bridge syntax check
+        run: python -m py_compile bridge/mt5_bridge.py
+
+      - name: V8 unit and policy tests
+        run: npm test

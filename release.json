@@ -1,8 +1,8 @@
 {
   "product": "GoldFlow Intelligence",
   "channel": "production",
-  "version": "7.5.0",
-  "mode": "HYBRID_VANTAGE_6_INDICATORS_OFFICIAL_MACRO",
+  "version": "8.0.0",
+  "mode": "HYBRID_VANTAGE_6_INDICATORS_HISTORY_PRO_PERFORMANCE_EVIDENCE_NEWS_TV_GLOBAL",
   "indicators": [
     "MTF Research v1.05",
     "MTF Research v1.03",
@@ -38,6 +38,16 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "Adds official U.S. macro pulse, net-liquidity proxy, regime engine and transparent Gold macro context.",
-  "updated": "2026-09-30"
+  "message": "GoldFlow Intelligence V8.0.0 production release. Preserves all six indicator engines and adds History Pro, Performance Analytics, Evidence, News Study, TradingView Hybrid, Explain/Read Aloud, multilingual support and forward-evidence foundation.",
+  "updated": "2026-10-01",
+  "features": [
+    "History Pro closed-candle reconstruction",
+    "Performance Analytics with strict and legacy win-rate definitions",
+    "Evidence reconstruction and forward-ledger foundation",
+    "Macro & News Study",
+    "TradingView Hybrid reference tools",
+    "AI Explain / Read Aloud",
+    "22 locale packs with RTL support",
+    "Vantage MT5 broker metadata provenance"
+  ]
 }
