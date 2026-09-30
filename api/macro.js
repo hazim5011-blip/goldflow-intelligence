@@ -57,12 +57,24 @@ async function h41(){
   return {assets:num(am[0][1]),assetsCh:null,tga:num(gm[0][1]),tgaCh:null,date:d?new Date(d[1]).toISOString().slice(0,10):null,url:"https://www.federalreserve.gov/releases/h41/Current/"};
 }
 async function nyfed(){
-  const t=clean(await fetchText("https://www.newyorkfed.org/markets/data-hub"));
-  const trg=t.match(rx("Effective\\s+Federal\\s+Funds\\s+Rate[\\s\\S]{0,900}?Target\\s*Rate/Range\\s*\\(%\\)[\\s\\S]{0,140}?([0-9]+(?:\\.[0-9]+)?)\\s*-\\s*([0-9]+(?:\\.[0-9]+)?)","i"))
-    ||t.match(rx("Target\\s*Rate/Range\\s*\\(%\\)[\\s\\S]{0,140}?([0-9]+(?:\\.[0-9]+)?)\\s*-\\s*([0-9]+(?:\\.[0-9]+)?)","i"));
+  const [dataText,policyText]=await Promise.all([
+    fetchText("https://www.newyorkfed.org/markets/data-hub"),
+    fetchText("https://www.federalreserve.gov/monetarypolicy/openmarket.htm")
+  ]);
+  const t=clean(dataText), p=clean(policyText);
+  const yr=String(new Date().getUTCFullYear());
+  const seg=(p.split(yr)[1]||p).slice(0,2200);
+  const trg=seg.match(rx("([0-9]+(?:\\.[0-9]+)?)\\s*-\\s*([0-9]+(?:\\.[0-9]+)?)","i"));
   const rr=t.match(rx("Reverse\\s+Repo\\s+Operations[\\s\\S]{0,900}?Treasury\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)","i"));
   const sf=t.match(rx("Secured\\s+Overnight\\s+Financing\\s+Rate[\\s\\S]{0,700}?([0-9]+(?:\\.[0-9]+)?)\\s+[0-9,]+","i"));
-  return {low:trg?num(trg[1]):null,high:trg?num(trg[2]):null,rrp:rr?num(rr[2]):null,sofr:sf?num(sf[1]):null,url:"https://www.newyorkfed.org/markets/data-hub"};
+  return {
+    low:trg?num(trg[1]):null,
+    high:trg?num(trg[2]):null,
+    rrp:rr?num(rr[2]):null,
+    sofr:sf?num(sf[1]):null,
+    targetUrl:"https://www.federalreserve.gov/monetarypolicy/openmarket.htm",
+    url:"https://www.newyorkfed.org/markets/data-hub"
+  };
 }
 async function h10(){
   const t=clean(await fetchText("https://www.federalreserve.gov/releases/h10/current/"));
@@ -93,7 +105,7 @@ export default async function handler(req,res){
     mk("CPI","CPI Inflation",cpi,finite(cpi)?fmt(cpi,2)+"% YoY":null,last(cp)?.date,"BLS","https://www.bls.gov/cpi/",finite(cpi)&&finite(cpi3)?cpi-cpi3:null,"3-month YoY trend","MIXED","Headline CPI year-over-year."),
     mk("COREPCE","Core PCE",pce?.value,finite(pce?.value)?fmt(pce.value,2)+"% YoY":null,pce?.date,"BEA",pce?.url,pce?.change,"vs prior month YoY","MIXED","Core PCE year-over-year."),
     mk("BREAKEVEN10","10Y Breakeven",breakeven,finite(breakeven)?fmt(breakeven,2)+"%":null,y10?.date,"U.S. Treasury derived","https://home.treasury.gov/resource-center/data-chart-center/interest-rates",null,"nominal 10Y - real 10Y",finite(breakeven)?(breakeven>2.4?"SUPPORTIVE":breakeven<1.8?"PRESSURE":"MIXED"):"MIXED","Derived from official Treasury yields.",false),
-    mk("FEDUPPER","Fed Target Upper",ny.high,finite(ny.high)?fmt(ny.high,2)+"%":null,null,"New York Fed",ny.url,null,"current target range",finite(ny.high)?(ny.high>=4?"PRESSURE":ny.high<=3?"SUPPORTIVE":"MIXED"):"MIXED","Federal funds target upper bound."),
+    mk("FEDUPPER","Fed Target Upper",ny.high,finite(ny.high)?fmt(ny.high,2)+"%":null,null,"Federal Reserve Board",ny.targetUrl||ny.url,null,"current target range",finite(ny.high)?(ny.high>=4?"PRESSURE":ny.high<=3?"SUPPORTIVE":"MIXED"):"MIXED","Federal funds target upper bound."),
     mk("WALCL","Fed Balance Sheet",fed?.assets,finite(fed?.assets)?"$"+fmt(fed.assets/1e6,2)+"T":null,fed?.date,"Federal Reserve H.4.1",fed?.url,fed?.assetsCh,"weekly change, USD mn",imp(fed?.assetsCh,true,0),"Federal Reserve total assets."),
     mk("NETLIQ","Net Liquidity Proxy",net,finite(net)?"$"+fmt(net/1e6,2)+"T":null,fed?.date,"Derived Fed/NY Fed",fed?.url,netCh,"weekly proxy change, USD mn",imp(netCh,true,0),"Fed assets - TGA - ON RRP.",false),
     mk("US2Y","US 2Y Yield",y2?.value,finite(y2?.value)?fmt(y2.value,2)+"%":null,y2?.date,"U.S. Treasury","https://home.treasury.gov/resource-center/data-chart-center/interest-rates",delta(u2,5),"5-observation change",imp(delta(u2,5),false,.02),"Official 2-year Treasury yield."),
