@@ -193,7 +193,9 @@
     candles.setData(rows.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
     var s=data.signal||{};
     [{p:s.entry,c:"#5ab0ff",title:"ENTRY"},{p:s.originalSL,c:"#ff6079",title:"SL"},{p:s.tp1,c:"#31d6a4",title:"TP1"},{p:s.exitPrice,c:"#f2c75b",title:"EXIT"}].forEach(function(x){if(finite(x.p))candles.createPriceLine({price:Number(x.p),color:x.c,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:x.title})});
-    var signalBar=rows.find(function(b){return new Date(data.signal?.signalCandleCloseUTC).getTime()/1000<=b.t+60})||rows[Math.floor(rows.length/2)];
+    var secs={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400,W1:604800,MN1:2592000};
+    var signalOpen=Date.parse(s.signalCandleCloseUTC)/1000-(secs[s.tf]||300);
+    var signalBar=rows.find(function(b){return b.t===signalOpen})||rows.find(function(b){return b.t>=signalOpen})||rows[Math.floor(rows.length/2)];
     var marker={time:signalBar.t,position:s.direction>0?"belowBar":"aboveBar",color:s.direction>0?"#31d6a4":"#ff6079",shape:s.direction>0?"arrowUp":"arrowDown",text:(s.direction>0?"B":"S")+" SIM"};
     if(candles.setMarkers)candles.setMarkers([marker]);
     chart.timeScale().fitContent();state.evidenceChart=chart;
@@ -222,14 +224,16 @@
     }).join("")||"<p>"+t("noOfficialData")+"</p>";
   }
   function loadTVTools(){
-    if(state.tvReady)return;state.tvReady=true;
     var sym=(window.tvSymbol&&window.selectedSymbol)?window.tvSymbol(window.selectedSymbol):"OANDA:XAUUSD";
+    if(state.tvReady&&state.tvSymbol===sym)return;
+    state.tvReady=true;state.tvSymbol=sym;
     if(/THINKMARKETS:XAUUSD247/.test(sym))sym="OANDA:XAUUSD";
     $("v8TVNote").textContent="Reference provider: "+sym+" • Vantage MT5 remains the only signal source. Differences in spread, symbol and timing are normal.";
     function embed(id,src,config){
       var el=$(id);if(!el)return;el.innerHTML="";
       var box=document.createElement("div");box.className="tradingview-widget-container";box.style.height="100%";box.style.width="100%";
       var script=document.createElement("script");script.type="text/javascript";script.async=true;script.src=src;script.textContent=JSON.stringify(config);
+      script.onerror=function(){el.innerHTML='<p class="sub" style="padding:10px">TradingView reference widget unavailable. Use the broker chart for Vantage candles.</p>'};
       box.appendChild(script);el.appendChild(box);
     }
     embed("v8TVTechnical","https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js",
@@ -250,6 +254,12 @@
     $("v8EvidenceJson").onclick=function(){if(state.evidence)downloadJSON(state.evidence,"goldflow-v8-"+state.evidence.signalId+".json")};
     $("v8EvidenceCsv").onclick=function(){if(state.evidence)window.location.href=evidenceURL(state.evidence.signalId,"csv")};
     $("v8NewsRefresh").onclick=function(){loadNews(true)};
+    ["symbolSelect","tfSelect"].forEach(function(id){
+      $(id)?.addEventListener("change",function(){
+        state.tvReady=false;
+        if($("tvPage")?.classList.contains("on"))setTimeout(loadTVTools,60);
+      });
+    });
     document.querySelectorAll("nav .tab").forEach(function(b){b.addEventListener("click",function(){
       if(b.dataset.page==="v8History")loadHistory();
       if(b.dataset.page==="v8Performance")loadPerformance();
