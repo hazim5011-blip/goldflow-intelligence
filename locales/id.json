@@ -72,6 +72,9 @@
     "historicalWarning": "Simulasi historis dari candle broker yang tersedia, bukan transaksi nyata atau bukti publikasi sebelumnya.",
     "voiceUnavailable": "Browser tidak mendukung suara; teks tetap tersedia.",
     "voiceFallback": "Suara tidak ditemukan. Alternatif browser:",
-    "disclaimer": "Semua sinyal, simulasi, penjelasan, dan kajian berita adalah riset pendidikan. Pengguna bertanggung jawab atas keputusan dan risiko transaksi; tidak ada jaminan hasil."
+    "disclaimer": "Semua sinyal, simulasi, penjelasan, dan kajian berita adalah riset pendidikan. Pengguna bertanggung jawab atas keputusan dan risiko transaksi; tidak ada jaminan hasil.",
+    "tpTrailingBePositive": "TP, trailing dan BE positif",
+    "notAvailable": "Tidak tersedia",
+    "signalId": "ID Sinyal"
   }
 }
