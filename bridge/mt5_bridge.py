@@ -19,7 +19,7 @@ TF={"M1":mt5.TIMEFRAME_M1,"M5":mt5.TIMEFRAME_M5,"M15":mt5.TIMEFRAME_M15,
     "M30":mt5.TIMEFRAME_M30,"H1":mt5.TIMEFRAME_H1,"H4":mt5.TIMEFRAME_H4,
     "D1":mt5.TIMEFRAME_D1,"W1":mt5.TIMEFRAME_W1,"MN1":mt5.TIMEFRAME_MN1}
 
-app=FastAPI(title="GoldFlow Vantage MT5 Bridge",version="3.0.0")
+app=FastAPI(title="GoldFlow Vantage MT5 Bridge",version="3.1.0")
 app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_credentials=False,allow_methods=["GET"],allow_headers=["*"])
 
 def auth(key:Optional[str]):
@@ -106,6 +106,9 @@ def symbol_row(s):
         "currencyProfit":getattr(s,"currency_profit","") or "",
         "currencyMargin":getattr(s,"currency_margin","") or "",
         "contractSize":float(getattr(s,"trade_contract_size",0.0) or 0.0),
+        "tradeTickSize":float(getattr(s,"trade_tick_size",0.0) or 0.0),
+        "tradeTickValueProfit":float(getattr(s,"trade_tick_value_profit",0.0) or 0.0),
+        "tradeTickValueLoss":float(getattr(s,"trade_tick_value_loss",0.0) or 0.0),
         "volumeMin":float(getattr(s,"volume_min",0.0) or 0.0),
         "volumeMax":float(getattr(s,"volume_max",0.0) or 0.0),
         "volumeStep":float(getattr(s,"volume_step",0.0) or 0.0),
@@ -123,7 +126,7 @@ def health(x_bridge_key:Optional[str]=Header(default=None)):
             "terminal":getattr(ti,"name",None),"build":getattr(ti,"build",None),
             "server":getattr(ai,"server",None) if ai else None,
             "tradeAllowed":bool(getattr(ti,"trade_allowed",False)) if ti else False,
-            "time":int(time.time()),"version":"3.0.0"}
+            "time":int(time.time()),"version":"3.1.0"}
 
 @app.get("/symbols")
 def symbols(filter:str="",limit:int=Query(500,ge=1,le=5000),x_bridge_key:Optional[str]=Header(default=None)):
