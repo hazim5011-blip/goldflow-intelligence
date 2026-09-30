@@ -30,11 +30,14 @@ export default async function handler(req,res){
         interpretation:{...mechanism(c.id),fact:available?c.name+" "+c.display+" untuk tempoh "+(c.date||"tidak dinyatakan")+". Sumber: "+c.source+".":"Data belum tersedia."},
         signalLinkage:"NOT_LINKED_TO_HISTORICAL_SIGNAL"};
     });
-    return res.status(200).json({ok:true,version:"8.0.0-staging",latestOfficialEvents:events,
+    const observations=events.map(e=>({...e,eventClass:"OFFICIAL_MACRO_OBSERVATION_NOT_RELEASE_EVENT"}));
+    const verifiedReleases=observations.filter(e=>e.verifiedReleaseTimestamp&&e.releasedAtUTC&&e.sourceUrl&&e.dataPeriod);
+    return res.status(200).json({ok:true,version:"8.0.0-staging",
+      verifiedReleases,latestOfficialEvents:verifiedReleases,latestOfficialObservations:observations,
       macro:{regime:result.regime,gold:result.gold,quality:result.quality,fetchedAtUTC:result.fetchedAt},
       historicalSignalAtUTC:at||null,linkedToSignal:linkedAtSignal,
-      releaseTiming:"Period date is NOT the official publication timestamp. No look-ahead causal attribution is made.",
-      caveat:"Without a verified market-consensus feed, GoldFlow does not assert positive/negative surprises, definite USD/gold reactions or pre-release expectations.",
+      releaseTiming:"Only verifiedReleases are treated as release-timed news. Observation period dates are NOT publication timestamps. No look-ahead causal attribution is made.",
+      caveat:"Without a verified release timestamp and market-consensus feed, GoldFlow does not assert a news surprise, pre-release expectation or definite USD/gold reaction.",
       disclaimer:"Fundamental study is educational, conditional market context; not a BUY/SELL instruction. Users decide and bear their own trading risk."});
   }catch(e){res.setHeader("Cache-Control","no-store");return res.status(200).json({ok:false,error:String(e?.message||e),latestOfficialEvents:[]});}
 }
