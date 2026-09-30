@@ -143,7 +143,7 @@ test("V8 page references each new accessible section exactly once",()=>{
 });
 test("News Study never promotes period dates into verified release timestamps",()=>{
   const here=path.dirname(fileURLToPath(import.meta.url));
-  const src=readFileSync(path.join(here,"../api/news-context.js"),"utf8");
+  const src=readFileSync(path.join(here,"../api/_v8NewsApi.js"),"utf8");
   assert.match(src,/verifiedReleases/);
   assert.match(src,/latestOfficialObservations/);
   assert.match(src,/releasedAtUTC:null/);
