@@ -50,7 +50,7 @@ async function fetchFrames(symbol,frames,historyMode=false){
   try{
     const batch=await brokerGet("/multi-bars",{symbol,tfs:unique.join(","),limits:limits.join(",")},55000);
     return {
-      meta:{symbol:batch.symbol,broker:batch.broker,bid:batch.bid,ask:batch.ask,spread:batch.spread,digits:batch.digits,point:batch.point,serverTime:batch.serverTime},
+      meta:{symbol:batch.symbol,broker:batch.broker,server:batch.server,bid:batch.bid,ask:batch.ask,spread:batch.spread,digits:batch.digits,point:batch.point,serverTime:batch.serverTime},
       frames:batch.frames||{}
     };
   }catch(batchErr){
@@ -59,7 +59,7 @@ async function fetchFrames(symbol,frames,historyMode=false){
     const rows=await Promise.all(unique.map((tf,i)=>brokerGet("/bars",{symbol,tf,limit:limits[i]},30000)));
     const map={};for(let i=0;i<unique.length;i++)map[unique[i]]=rows[i].bars||[];
     const first=rows[0]||{};
-    return {meta:{symbol:first.symbol,broker:first.broker,bid:first.bid,ask:first.ask,spread:first.spread,digits:first.digits,point:first.point,serverTime:first.serverTime},frames:map};
+    return {meta:{symbol:first.symbol,broker:first.broker,server:first.server,bid:first.bid,ask:first.ask,spread:first.spread,digits:first.digits,point:first.point,serverTime:first.serverTime},frames:map};
   }
 }
 
@@ -105,7 +105,7 @@ export default async function handler(req,res){
 
     return res.status(200).json({
       ok:true,ready:indicator.ready,bridgeConfigured:true,source:"MT5_BRIDGE",
-      requested:symbol,symbol:meta.symbol||symbol,broker:meta.broker||"Vantage",indicatorMode,selectedTF,
+      requested:symbol,symbol:meta.symbol||symbol,broker:meta.broker||"Vantage",brokerServer:meta.server||null,indicatorMode,selectedTF,
       triggerTF:tTF,setupTF:sTF,biasTF:bTF,
       tick:{bid:meta.bid??null,ask:meta.ask??null,spread:meta.spread??null},
       price:meta.bid??primaryBars?.at(-1)?.c??null,digits:meta.digits??null,point:meta.point??null,
