@@ -30,8 +30,11 @@ export async function fetchV8Context(query={}){
   const barWindow=Array.isArray(payload.historyBars)?payload.historyBars:payload.chartBars||[];
   const closed=barWindow.slice(0,-1);
   const raw=payload.indicator?.history||[];
-  const rows=buildHistory(raw,barWindow,{requested,resolved,tf,indicator,spec,indicatorVersion:payload.indicator?.engine||indicator});
-  return {symbolRequested:requested,symbolResolved:resolved,broker:payload.broker||"Vantage",marketState:payload.marketState||"UNKNOWN",
+  const brokerServer=catalog?.server||null;
+  const rows=buildHistory(raw,barWindow,{requested,resolved,tf,indicator,spec,
+    indicatorVersion:payload.indicator?.engine||indicator,triggerTF:payload.triggerTF||tf,
+    setupTF:payload.setupTF||null,biasTF:payload.biasTF||null,brokerServer});
+  return {symbolRequested:requested,symbolResolved:resolved,broker:payload.broker||"Vantage",brokerServer,marketState:payload.marketState||"UNKNOWN",
     indicator,tf,profile:payload.indicator?.profile||null,
     historyMode:"HISTORICAL_SIM",rows,spec,
     brokerBars:barWindow,
