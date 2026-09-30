@@ -119,17 +119,25 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       disclaimer:"Historical reconstruction from currently available broker candles, not a contemporaneously published signal, executed trade, or profit guarantee."};
   });
 }
-function utcDate(record){return record.signalCandleCloseUTC?new Date(record.signalCandleCloseUTC):null}
-function isoWeek(d){
-  const x=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));
-  x.setUTCDate(x.getUTCDate()+4-(x.getUTCDay()||7));
-  const y=x.getUTCFullYear(),jan=new Date(Date.UTC(y,0,1));
-  return y+"-W"+String(Math.ceil((((x-jan)/86400000)+1)/7)).padStart(2,"0");
+const DEFAULT_TZ="Asia/Kuala_Lumpur";
+function zonedDay(date,timezone=DEFAULT_TZ){
+  if(!date)return null;
+  const d=date instanceof Date?date:new Date(date);if(Number.isNaN(d.getTime()))return null;
+  try{
+    const p=Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:timezone,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d).map(x=>[x.type,x.value]));
+    return p.year+"-"+p.month+"-"+p.day;
+  }catch{return d.toISOString().slice(0,10)}
 }
-export function periodKey(rec,period="month"){const d=utcDate(rec);if(!d||Number.isNaN(d.getTime()))return null;
-  const isoDay=d.toISOString().slice(0,10);
-  if(period==="day")return isoDay;if(period==="week")return isoWeek(d);if(period==="year")return isoDay.slice(0,4);
-  return isoDay.slice(0,7);
+function isoWeek(day){
+  const d=new Date(day+"T00:00:00Z");
+  d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));
+  const y=d.getUTCFullYear(),jan=new Date(Date.UTC(y,0,1));
+  return y+"-W"+String(Math.ceil((((d-jan)/86400000)+1)/7)).padStart(2,"0");
+}
+export function periodKey(rec,period="month",timezone=DEFAULT_TZ){
+  const day=zonedDay(rec.signalCandleCloseUTC,timezone);if(!day)return null;
+  if(period==="day")return day;if(period==="week")return isoWeek(day);if(period==="year")return day.slice(0,4);
+  return day.slice(0,7);
 }
 export function filterHistory(rows=[],f={}){
   return rows.filter(r=>{
@@ -138,8 +146,8 @@ export function filterHistory(rows=[],f={}){
     if(f.symbol&&f.symbol!=="ALL"&&r.symbolResolved!==f.symbol)return false;
     if(f.tf&&f.tf!=="ALL"&&r.tf!==f.tf)return false;
     if(f.direction&&f.direction!=="ALL"&&r.direction!==(f.direction==="BUY"?1:-1))return false;
-    if(f.from&&(!r.signalCandleCloseUTC||r.signalCandleCloseUTC.slice(0,10)<f.from))return false;
-    if(f.to&&(!r.signalCandleCloseUTC||r.signalCandleCloseUTC.slice(0,10)>f.to))return false;
+    if(f.from&&(!r.signalCandleCloseUTC||zonedDay(r.signalCandleCloseUTC,f.timezone||DEFAULT_TZ)<f.from))return false;
+    if(f.to&&(!r.signalCandleCloseUTC||zonedDay(r.signalCandleCloseUTC,f.timezone||DEFAULT_TZ)>f.to))return false;
     return true;
   });
 }
@@ -177,15 +185,16 @@ export function groupHistory(rows=[],period="month"){
   for(const r of rows){const key=periodKey(r,period);if(!key)continue;if(!m.has(key))m.set(key,[]);m.get(key).push(r)}
   return [...m].sort((a,b)=>a[0].localeCompare(b[0])).map(([periodKey,records])=>({period:periodKey,...aggregate(records)}));
 }
-export function compareMonths(rows=[],now=new Date()){
-  const current=now.toISOString().slice(0,7),prevDate=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,1));
-  const previous=prevDate.toISOString().slice(0,7),day=now.getUTCDate();
+export function compareMonths(rows=[],now=new Date(),timezone=DEFAULT_TZ){
+  const local=zonedDay(now,timezone);if(!local)return null;
+  const y=Number(local.slice(0,4)),m=Number(local.slice(5,7)),day=Number(local.slice(8,10));
+  const current=local.slice(0,7),prevDate=new Date(Date.UTC(y,m-2,1)),previous=prevDate.toISOString().slice(0,7);
   const prevLast=new Date(Date.UTC(prevDate.getUTCFullYear(),prevDate.getUTCMonth()+1,0)).getUTCDate();
   const sameDay=String(Math.min(day,prevLast)).padStart(2,"0");
-  const thisMonth=rows.filter(r=>periodKey(r,"month")===current);
-  const lastMonth=rows.filter(r=>periodKey(r,"month")===previous);
-  const matched=lastMonth.filter(r=>r.signalCandleCloseUTC?.slice(8,10)<=sameDay);
-  return {current:{period:current,label:"MONTH_TO_DATE",...aggregate(thisMonth)},
+  const thisMonth=rows.filter(r=>periodKey(r,"month",timezone)===current);
+  const lastMonth=rows.filter(r=>periodKey(r,"month",timezone)===previous);
+  const matched=lastMonth.filter(r=>(zonedDay(r.signalCandleCloseUTC,timezone)||"").slice(8,10)<=sameDay);
+  return {timezone,current:{period:current,label:"MONTH_TO_DATE",...aggregate(thisMonth)},
     previous:{period:previous,label:"FULL_CALENDAR_MONTH",...aggregate(lastMonth)},
     previousMatched:{period:previous,label:"MATCHED_DAYS_TO_DATE",throughDay:sameDay,...aggregate(matched)},
     note:"Comparisons reflect only the available broker candle window and selected indicator, not an all-time complete audited ledger."};
