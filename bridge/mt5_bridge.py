@@ -150,7 +150,9 @@ def catalog(filter:str="",category:str="",limit:int=Query(5000,ge=1,le=10000),x_
         if cat and row["category"]!=cat: continue
         out.append(row)
         if len(out)>=limit: break
-    return {"ok":True,"broker":BROKER_NAME,"count":len(out),"symbols":out}
+    ai=mt5.account_info()
+    return {"ok":True,"broker":BROKER_NAME,"server":getattr(ai,"server",None) if ai else None,
+            "count":len(out),"symbols":out}
 
 @app.get("/bars")
 def bars(symbol:str=Query(...),tf:str=Query("M5"),limit:int=Query(500,ge=20,le=5000),x_bridge_key:Optional[str]=Header(default=None)):
