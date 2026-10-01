@@ -68,7 +68,7 @@ async function fetchFrames(symbol,frames,historyMode=false){
 export default async function handler(req,res){
   if(req.method==="OPTIONS") return res.status(204).end();
   const extended=String(req.query?.history||"")==="1";
-  res.setHeader("Cache-Control",extended?"s-maxage=90, stale-while-revalidate=240":"s-maxage=10, stale-while-revalidate=86400");
+  res.setHeader("Cache-Control",extended?"s-maxage=90, stale-while-revalidate=120":"s-maxage=5, stale-while-revalidate=5");
   if(!bridgeConfigured()) return res.status(200).json({ok:false,ready:false,bridgeConfigured:false,error:"BROKER_BRIDGE_URL_NOT_CONFIGURED"});
 
   const symbol=String(req.query?.symbol||"").trim();
