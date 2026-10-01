@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {impactForType,classifyReleaseEvent} from "../api/_v8Impact.js";
-import {runFund104,fund104InvalidatedByClosedBars} from "../api/_indicatorFund104.js";
+import {runFund104,fund104InvalidatedByClosedBars,fund104WilderRSI} from "../api/_indicatorFund104.js";
 import {replayOutcome} from "../api/_v8Core.js";
 
 const source = p=>readFileSync(new URL(p,import.meta.url),"utf8");
@@ -121,4 +121,13 @@ test("Full API routes to Fund104; LIVE lite tick refuses stale or mismatched sym
   assert.match(analyzed.body.indicator.engine,/WEB STUDY/);
   assert.ok(analyzed.body.indicator.history.every(x=>x.tp1===null&&x.tp2===null));
  }finally{global.fetch=realFetch}
+});
+
+
+test("Fund104 RSI is Wilder-smoothed, not a 14-candle moving average",()=>{
+ const closes=Array.from({length:16},(_,i)=>({c:i<15?100+i:113}));
+ assert.equal(fund104WilderRSI(closes,13),null);
+ assert.equal(fund104WilderRSI(closes,14),100);
+ // After 14 gains of 1, one loss of 1 yields 13/14 gain and 1/14 loss.
+ assert.ok(Math.abs(fund104WilderRSI(closes,15)-92.85714285714286)<.000001);
 });
