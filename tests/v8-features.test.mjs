@@ -28,6 +28,7 @@ test("Fund104 is ready for clean broker window and excludes last forming candle"
  assert.equal(x.studyCoverage,"CLOSED_CANDLE_PATTERNS_SND_STRUCTURE_RSI_STOCH_MTF_ONLY");
  assert.ok(x.limitations.includes("A_PLUS_PLUS_DISABLED"));
  assert.ok(x.history.every(h=>h.time<trigger.at(-1).t && h.tp1===null&&h.tp2===null&&h.grade!=="A++"));
+ if(x.latestSignal.code!=="WAIT") assert.ok(x.latestSignal.time>=trigger.at(-5).t);
  const forming=[...trigger];forming[forming.length-1]={...forming.at(-1),c:9999,h:9999,l:1,o:4000};
  const y=runFund104({triggerBars:forming,setupBars:setup,biasBars:bias,triggerTF:"M5",setupTF:"H1",biasTF:"H4",symbol:"XAUUSD247"});
  assert.deepEqual(y.history,x.history);

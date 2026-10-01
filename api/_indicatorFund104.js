@@ -133,7 +133,9 @@ export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupT
  const low=min(a,i,SETTINGS.zoneLookback),high=max(a,i,SETTINGS.zoneLookback);
  const buyZone={direction:1,currentDirection:1,low,high:low+.65*ar,baseScore:60,sourceEvent:"SND DEMAND • WEB STUDY",currentRetests:0,tf:triggerTF};
  const sellZone={direction:-1,currentDirection:-1,low:high-.65*ar,high,baseScore:60,sourceEvent:"SND SUPPLY • WEB STUDY",currentRetests:0,tf:triggerTF};
- const latest=history.at(-1)||{code:"WAIT",status:"WAIT CLOSED-CANDLE CONFIRMATION",score:null,entry:null,invalidation:null,tp1:null,tp2:null,reasons:["NO QUALIFIED SETUP","A++ BLOCKED WITHOUT TIMESTAMP-VERIFIED MACRO"]};
+ const recent=history.at(-1);
+ const fresh=recent&&recent.time>=a[Math.max(0,i-3)].t;
+ const latest=(fresh?recent:null)||{code:"WAIT",status:"WAIT CLOSED-CANDLE CONFIRMATION",score:null,entry:null,invalidation:null,tp1:null,tp2:null,reasons:["NO RECENT QUALIFIED SETUP","A++ BLOCKED WITHOUT TIMESTAMP-VERIFIED MACRO"]};
  const bias=h4,setup=h1;
  return {ready:true,engine:"Fund Structure A Signal v1.04 • WEB STUDY SUBSET (not native iCustom)",symbol,
   studyCoverage:"CLOSED_CANDLE_PATTERNS_SND_STRUCTURE_RSI_STOCH_MTF_ONLY",
