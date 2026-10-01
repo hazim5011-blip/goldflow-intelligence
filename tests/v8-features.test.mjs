@@ -21,7 +21,9 @@ test("impact categories are explicitly potential, not realized market moves",()=
  assert.equal(classifyReleaseEvent({type:"CPI",verifiedReleaseTimestamp:false}).newsTimingVerified,false);
 });
 test("Fund104 is ready for clean broker window and excludes last forming candle",()=>{
- const trigger=gen(300),setup=gen(550,3600),bias=gen(560,14400);
+ const trigger=gen(300),end=trigger.at(-1).t;
+ const setup=gen(550,3600).map((b,i)=>({...b,t:end-(550-1-i)*3600}));
+ const bias=gen(560,14400).map((b,i)=>({...b,t:end-(560-1-i)*14400}));
  const x=runFund104({triggerBars:trigger,setupBars:setup,biasBars:bias,triggerTF:"M5",setupTF:"H1",biasTF:"H4",symbol:"XAUUSD247"});
  assert.equal(x.ready,true);
  assert.deepEqual(x.activeZones.swap,[]);
@@ -33,6 +35,13 @@ test("Fund104 is ready for clean broker window and excludes last forming candle"
  const y=runFund104({triggerBars:forming,setupBars:setup,biasBars:bias,triggerTF:"M5",setupTF:"H1",biasTF:"H4",symbol:"XAUUSD247"});
  assert.deepEqual(y.history,x.history);
  assert.deepEqual(y.activeZones,x.activeZones);
+ // The last higher-timeframe bar is still forming at trigger close; changing it
+ // must not alter current or historical signal calculations (no MTF lookahead).
+ const futureSetup=setup.slice();futureSetup[futureSetup.length-1]={...futureSetup.at(-1),c:999999};
+ const futureBias=bias.slice();futureBias[futureBias.length-1]={...futureBias.at(-1),c:1};
+ const z=runFund104({triggerBars:trigger,setupBars:futureSetup,biasBars:futureBias,triggerTF:"M5",setupTF:"H1",biasTF:"H4",symbol:"XAUUSD247"});
+ assert.deepEqual(z.history,x.history);
+ assert.deepEqual(z.latestSignal,x.latestSignal);
 });
 test("Fund104 does not claim broker trade outcomes or retrospective TP/SL",()=>{
  const h=source("../api/_v8Core.js");
