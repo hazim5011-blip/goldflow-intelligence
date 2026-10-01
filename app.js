@@ -164,12 +164,21 @@ function quoteForZone(d,tick){
   var q=Number(d)>0?tick.ask:tick.bid;
   return finite(q)?Number(q):null;
 }
+function zoneTradeEligible(x,d){
+  var event=String(x&&x.sourceEvent||"").toUpperCase();
+  if(/\bWATCH\b/.test(event))return false;
+  if(selectedIndicator==="fund104"){
+    var sig=lastAnalysis&&lastAnalysis.indicator&&lastAnalysis.indicator.latestSignal;
+    return !!(sig&&sig.confirmed&&Number(sig.direction)===Number(d));
+  }
+  return true;
+}
 function zoneEntryState(x,d,tick){
   var lo=Number(x&&x.low),hi=Number(x&&x.high),q=quoteForZone(d,tick);
   var side=Number(d)>0?"ASK":"BID";
-  if(!Number.isFinite(lo)||!Number.isFinite(hi)||q===null)return {label:"QUOTE OFFLINE",live:false,quote:null,side:side,ready:false};
-  var live=q>=Math.min(lo,hi)&&q<=Math.max(lo,hi);
-  return{label:live?"LIVE ENTRY":"PENDING",live:live,quote:q,side:side,ready:true};
+  if(!Number.isFinite(lo)||!Number.isFinite(hi)||q===null)return {label:"QUOTE OFFLINE",live:false,inZone:false,eligible:false,quote:null,side:side,ready:false};
+  var inZone=q>=Math.min(lo,hi)&&q<=Math.max(lo,hi),eligible=zoneTradeEligible(x,d),live=inZone&&eligible;
+  return{label:live?"LIVE ENTRY":inZone?"IN ZONE • WATCH":"PENDING",live:live,inZone:inZone,eligible:eligible,quote:q,side:side,ready:true};
 }
 function renderZones(z,tick){
   var buy=z.buy||[],sell=z.sell||[];
@@ -177,7 +186,7 @@ function renderZones(z,tick){
   function html(a,d){return a.length?a.map(function(x,i){
     var st=zoneEntryState(x,d,tick),side=d>0?"buy":"sell";
     var action=st.live?'<button class="zoneAction" type="button" data-side="'+side+'" data-index="'+i+'" aria-label="View live entry setup on broker chart">LIVE TRADE • VIEW CHART ↗</button>':"";
-    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span><span class="sub">Retest '+x.currentRetests+'</span></div>'+action+'<div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>';
+    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.inZone?"watch":st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span><span class="sub">Retest '+x.currentRetests+'</span></div>'+action+'<div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>';
   }).join(""):'<div class="sub">No active zone.</div>'}
   $("buyZones").innerHTML=html(buy,1);$("sellZones").innerHTML=html(sell,-1);
   document.querySelectorAll(".zoneAction").forEach(function(b){b.onclick=function(){
@@ -232,7 +241,7 @@ function drawChart(){
   var zones=focusedZone?[focusedZone]:allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)}).slice(0,10);
   zones.forEach(function(z){
     var d=z.currentDirection||z.direction||1,st=zoneEntryState(z,d,lastLiveTick),col=d>0?"#31d6a4":"#ff6079";
-    var label=st.live?"LIVE SETUP":st.ready?"PENDING":"OFFLINE";
+    var label=st.live?"LIVE SETUP":st.inZone?"WATCH IN ZONE":st.ready?"PENDING":"OFFLINE";
     candleSeries.createPriceLine({price:Number(z.low),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:true,title:label+" "+(d>0?"BUY":"SELL")+" ENTRY LOW"});
     candleSeries.createPriceLine({price:Number(z.high),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:true,title:label+" "+(d>0?"BUY":"SELL")+" ENTRY HIGH"});
   });
