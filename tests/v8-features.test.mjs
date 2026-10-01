@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {impactForType,classifyReleaseEvent} from "../api/_v8Impact.js";
-import {runFund104} from "../api/_indicatorFund104.js";
+import {runFund104,fund104InvalidatedByClosedBars} from "../api/_indicatorFund104.js";
 import {replayOutcome} from "../api/_v8Core.js";
 
 const source = p=>readFileSync(new URL(p,import.meta.url),"utf8");
@@ -55,4 +55,70 @@ test("Pending zones have no broker-order action; button is chart-view only",()=>
  assert.ok(markup.includes('No automatic trade execution'));
  assert.ok(markup.includes('data-page="blogPage"'));
  assert.ok(markup.includes('value="fund104"'));
+});
+
+
+test("Fund104 default invalidation follows later CLOSED candle, not wick-only touches",()=>{
+ const closed=[
+  bar(1000,100,101,99,100),
+  bar(1300,100,101.5,98.9,99.8),
+  bar(1600,99.8,100,98.7,98.8)
+ ];
+ // ATR of signal bar at t=1000 is 2, so BUY invalid threshold=98.9.
+ assert.equal(fund104InvalidatedByClosedBars(closed.slice(0,2),{time:1000,direction:1}),false,"wick touch alone cannot invalidate default closed-candle mode");
+ assert.equal(fund104InvalidatedByClosedBars(closed,{time:1000,direction:1}),true);
+ const sells=[
+  bar(1000,100,101,99,100),
+  bar(1300,100,101.5,99,100.4),
+  bar(1600,101,102.5,100,102)
+ ];
+ assert.equal(fund104InvalidatedByClosedBars(sells.slice(0,2),{time:1000,direction:-1}),false);
+ assert.equal(fund104InvalidatedByClosedBars(sells,{time:1000,direction:-1}),true);
+});
+test("Full API routes to Fund104; LIVE lite tick refuses stale or mismatched symbols",async()=>{
+ process.env.BROKER_BRIDGE_URL="https://bridge.hazim5011.com";
+ process.env.BROKER_BRIDGE_KEY="test-key-not-a-real-credential";
+ const realFetch=global.fetch;
+ const {default:statusHandler}=await import("../api/status.js");
+ const {default:analysisHandler}=await import("../api/analyze.js");
+ const api=(fn,q)=>new Promise(async(resolve,reject)=>{
+  let status=200;
+  const res={setHeader(){return this},status(c){status=c;return this},json(o){resolve({status,body:o});return this},end(){resolve({status});return this}};
+  try{await fn({method:"GET",query:q},res)}catch(e){reject(e)}
+ });
+ let mockedTime=Math.floor(Date.now()/1000);
+ global.fetch=async url=>{
+  const u=new URL(String(url));
+  let payload={};
+  if(u.pathname==="/snapshot"){
+   payload={ok:true,ts:mockedTime,data:{XAUUSD247:{symbol:"XAUUSD247",bid:4200,ask:4200.2,time:mockedTime,digits:2}}};
+  }else if(u.pathname==="/multi-bars"){
+   const frames={};for(const tf of u.searchParams.get("tfs").split(",")){
+    const period={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400}[tf]||300;
+    const n=tf==="M5"?350:tf==="H1"?500:550;
+    frames[tf]=gen(n,period);
+   }
+   payload={ok:true,symbol:"XAUUSD247",broker:"Vantage",server:"Mock Test",bid:4200,ask:4200.2,
+     digits:2,point:.01,serverTime:mockedTime,frames};
+  }else throw Error("Unexpected mock route "+u.pathname);
+  return {ok:true,status:200,text:async()=>JSON.stringify(payload),json:async()=>payload};
+ };
+ try{
+  const tick=await api(statusHandler,{lite:"1",pair:"XAUUSD247"});
+  assert.equal(tick.body.bridgeOnline,true);
+  assert.equal(tick.body.ask,4200.2);
+  mockedTime-=65;
+  const stale=await api(statusHandler,{lite:"1",pair:"XAUUSD247"});
+  assert.equal(stale.body.bridgeOnline,false);
+  assert.equal(stale.body.status,"QUOTE_STALE_OR_INVALID");
+  const wrong=await api(statusHandler,{lite:"1",pair:"EURUSD"});
+  assert.equal(wrong.body.bridgeOnline,false,"NEVER use XAUUSD247 tick for requested EURUSD");
+  mockedTime=Math.floor(Date.now()/1000);
+  const analyzed=await api(analysisHandler,{symbol:"XAUUSD247",tf:"M5",indicator:"fund104"});
+  assert.equal(analyzed.body.ok,true);
+  assert.equal(analyzed.body.ready,true);
+  assert.equal(analyzed.body.indicatorMode,"fund104");
+  assert.match(analyzed.body.indicator.engine,/WEB STUDY/);
+  assert.ok(analyzed.body.indicator.history.every(x=>x.tp1===null&&x.tp2===null));
+ }finally{global.fetch=realFetch}
 });
