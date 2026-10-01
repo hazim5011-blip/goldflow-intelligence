@@ -2,7 +2,7 @@
 // may still contain an expired *.trycloudflare.com URL from V7.5.
 // Keep the existing env presence gate and BRIDGE_KEY; never route broker traffic
 // through a temporary Quick Tunnel again.
-const CONFIGURED_BASE=(process.env.BROKER_BRIDGE_URL||"").trim().replace(/\\/$/,"");
+const CONFIGURED_BASE=(process.env.BROKER_BRIDGE_URL||"").trim().replace(/\/$/,"");
 const PERMANENT_BASE="https://bridge.hazim5011.com";
 const BASE=CONFIGURED_BASE?PERMANENT_BASE:"";
 export function bridgeBaseUrl(){return BASE;}
