@@ -145,7 +145,7 @@ async function loadAnalysis(){
     if(ind.watch&&ind.watch.zone){$("watch").textContent=ind.watch.reason+" • "+px(ind.watch.zone.low)+" - "+px(ind.watch.zone.high)}else $("watch").textContent="No active zone nearby.";
     if($("statsNote")){
       $("statsNote").textContent=selectedIndicator==="fund104"
-        ?"FUND 1.04 WEB STUDY • VALIDATION ONLY • native buffers/macro grading not yet verified"
+        ?"FUND 1.04 WEB STUDY • VALIDATION ONLY • Candidates "+(ind.studyDiagnostics?.patternCandidates??0)+" • Confirmed "+(ind.studyDiagnostics?.confirmedAtClose??0)+" • Invalidated "+(ind.studyDiagnostics?.invalidatedAfterClose??0)+" • Native buffers/macro parity not verified"
         :(selectedIndicator==="pattern132"||selectedIndicator==="snd107")
           ?"VALIDATION ONLY • TP/SL outcome not defined by indicator source"
           :"WIN = TP + TRAIL + BE • LOSE = SL only";
