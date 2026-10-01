@@ -113,7 +113,9 @@ function resetDashboard(){
   $("signal").textContent="WAIT";$("reasons").textContent="Waiting for broker analysis…";$("watch").textContent="No active zone nearby.";
 }
 async function loadAnalysis(){
-  if(!selectedSymbol||loading)return;loading=true;lastLiveTick=null;lastAnalysis=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null);
+  if(!selectedSymbol||loading)return;loading=true;
+  var sameContext=!!(lastAnalysis?.ready&&lastAnalysis.requested===selectedSymbol&&lastAnalysis.selectedTF===selectedTF&&lastAnalysis.indicatorMode===selectedIndicator);
+  if(!sameContext){lastLiveTick=null;lastAnalysis=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null)}
   try{
     var requestedSymbol=selectedSymbol,requestedTF=selectedTF,requestedIndicator=selectedIndicator;
     var r=await getJson("/api/analyze?symbol="+encodeURIComponent(requestedSymbol)+"&tf="+encodeURIComponent(requestedTF)+"&indicator="+encodeURIComponent(requestedIndicator));
@@ -121,7 +123,7 @@ async function loadAnalysis(){
     lastAnalysis=r;
     if(!r.ok||!r.ready){
       chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","WAIT");
-      $("connectionNotice").className="notice bad";$("connectionNotice").textContent=r.error||"Indicator engine not ready.";clearChart();return;
+      lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();$("connectionNotice").className="notice bad";$("connectionNotice").textContent=r.error||"Indicator engine not ready.";clearChart();return;
     }
     var ind=r.indicator||{},sig=ind.latestSignal||{},st=ind.stats||{},pd=ind.premiumDiscount||null;
     var engName=indicatorName(selectedIndicator);
@@ -151,7 +153,7 @@ async function loadAnalysis(){
     $("chartTitle").textContent=(r.symbol||selectedSymbol)+" • VANTAGE MT5";$("chartTag").textContent=r.triggerTF;
     if($("chartPage").classList.contains("on"))drawChart();
   }catch(e){
-    chip("engineChip","bad","ENGINE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;
+    lastAnalysis=null;lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();chip("engineChip","bad","ENGINE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;
   }finally{loading=false}
 }
 
