@@ -147,7 +147,7 @@ export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupT
   latestSignal:latest,
   watch:{direction:0,reason:"Fund Structure web study zones, not broker orders",zone:buyZone},
   history:history.slice(-160),
-  stats:{total:history.length,wins:0,losses:0,pending:history.length,tp:0,tr:0,be:0,sl:0,winRate:null},
+  stats:{total:history.length,validOnly:history.length,wins:0,losses:0,pending:0,tp:0,tr:0,be:0,sl:0,winRate:null},
   gradeMethod:"MQL5 grade source 60/70/85. WEB STUDY A++ disabled without archived as-of macro."
  };
 }
