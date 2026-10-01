@@ -1,0 +1,27 @@
+name: GoldFlow V8.1 Live Broker Smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "api/_indicatorFund104.js"
+      - "tests/v8-live-broker.test.mjs"
+      - ".github/workflows/v8-live-broker-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vantage-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Real Vantage XAUUSD247 broker candles through LIVE production proxy
+        env:
+          GOLDFLOW_LIVE_SMOKE: "1"
+        run: node --test tests/v8-live-broker.test.mjs
