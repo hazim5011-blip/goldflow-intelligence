@@ -49,8 +49,8 @@ function patterns(a,i,ar,inDemand,inSupply){
  if(!p)return {bs,ss,namesBuy,namesSell};
  const body=x=>Math.abs(x.c-x.o),range=x=>x.h-x.l;
  const bottom=x=>Math.min(x.o,x.c),top=x=>Math.max(x.o,x.c);
- if(bullish(b)&&bearish(p)&&bottom(b)<=bottom(p)&&top(b)>=top(p))add(1,"Bullish Engulfing",3);
- if(bearish(b)&&bullish(p)&&bottom(b)<=bottom(p)&&top(b)>=top(p))add(-1,"Bearish Engulfing",3);
+ if(bullish(b)&&bearish(p)&&b.o<=p.c&&b.c>=p.o&&body(b)>=body(p)*.85)add(1,"Bullish Engulfing",3);
+ if(bearish(b)&&bullish(p)&&b.o>=p.c&&b.c<=p.o&&body(b)>=body(p)*.85)add(-1,"Bearish Engulfing",3);
  if(range(b)>0){
    const bo=Math.max(body(b),range(b)*.02),lw=bottom(b)-b.l,uw=b.h-top(b);
    if(lw>=2*bo&&uw<=.7*bo&&!inSupply)add(1,inDemand?"Hammer Candlestick":"Bullish Pin Bar",2);
@@ -129,11 +129,25 @@ export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupT
   const s=oneSignal(a,i,h1,h4);
   if(s&&s.confirmed)history.push(s);
  }
+ // Match the native default invalidation lifecycle using only later CLOSED candles.
+ // A currently invalid pattern must not remain the latest "VALID" web signal.
+ const invalidated=(sig)=>{
+   const sourceIndex=a.findIndex(b=>b.t===sig.time);
+   if(sourceIndex<0)return false;
+   const ar=atr(a,sourceIndex),src=a[sourceIndex];
+   const level=sig.direction>0?src.l-.05*ar:src.h+.05*ar;
+   for(let j=sourceIndex+1;j<a.length-1;j++){
+     if(sig.direction>0&&a[j].c<level)return true;
+     if(sig.direction<0&&a[j].c>level)return true;
+   }
+   return false;
+ };
+ const visibleHistory=history.filter(sig=>!invalidated(sig));
  const i=a.length-2,last=a[i],closeTime=last.t+(TF_SEC[triggerTF]||300),h1=trend(one,setupTF,closeTime),h4=trend(two,biasTF,closeTime),ar=atr(a,i);
  const low=min(a,i,SETTINGS.zoneLookback),high=max(a,i,SETTINGS.zoneLookback);
  const buyZone={direction:1,currentDirection:1,low,high:low+.65*ar,baseScore:60,sourceEvent:"SND DEMAND • WEB STUDY",currentRetests:0,tf:triggerTF};
  const sellZone={direction:-1,currentDirection:-1,low:high-.65*ar,high,baseScore:60,sourceEvent:"SND SUPPLY • WEB STUDY",currentRetests:0,tf:triggerTF};
- const recent=history.at(-1);
+ const recent=visibleHistory.at(-1);
  const fresh=recent&&recent.time>=a[Math.max(0,i-3)].t;
  const latest=(fresh?recent:null)||{code:"WAIT",status:"WAIT CLOSED-CANDLE CONFIRMATION",score:null,entry:null,invalidation:null,tp1:null,tp2:null,reasons:["NO RECENT QUALIFIED SETUP","A++ BLOCKED WITHOUT TIMESTAMP-VERIFIED MACRO"]};
  const bias=h4,setup=h1;
@@ -146,8 +160,8 @@ export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupT
   activeZones:{buy:[buyZone],sell:[sellZone],swap:[]},
   latestSignal:latest,
   watch:{direction:0,reason:"Fund Structure web study zones, not broker orders",zone:buyZone},
-  history:history.slice(-160),
-  stats:{total:history.length,validOnly:history.length,wins:0,losses:0,pending:0,tp:0,tr:0,be:0,sl:0,winRate:null},
+  history:visibleHistory.slice(-160),
+  stats:{total:visibleHistory.length,validOnly:visibleHistory.length,wins:0,losses:0,pending:0,tp:0,tr:0,be:0,sl:0,winRate:null},
   gradeMethod:"MQL5 grade source 60/70/85. WEB STUDY A++ disabled without archived as-of macro."
  };
 }
