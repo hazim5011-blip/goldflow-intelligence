@@ -3,7 +3,7 @@ import {brokerGet} from "./_broker.js";
 import {buildHistory,metadataFromCatalog,filterHistory,aggregate,groupHistory,compareMonths,evidenceForRecord,explainRecord,DISCLAIMER} from "./_v8Core.js";
 
 const TF_ALLOWED=new Set(["M1","M5","M15","M30","H1","H4","D1"]);
-const MODES=new Set(["105","103","pvt","pvt102","pattern132","snd107","owl101"]);
+const MODES=new Set(["105","103","pvt","pvt102","pattern132","snd107","owl101","fund104"]);
 function fakeResponse(){
   let payload=null,code=200;
   const res={setHeader(){return res},status(n){code=n;return res},json(x){payload=x;return res},end(){return res}};

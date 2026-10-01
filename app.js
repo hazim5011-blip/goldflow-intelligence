@@ -17,7 +17,8 @@ function indicatorName(v){
     "pvt":"PVT 1.02",
     "pattern132":"Pattern Tutor 1.32",
     "snd107":"SND/SNR 1.07",
-    "owl101":"OWL 1.01"
+    "owl101":"OWL 1.01",
+    "fund104":"Fund Structure A 1.04 • WEB STUDY"
   })[v]||String(v||"ENGINE").toUpperCase();
 }
 
