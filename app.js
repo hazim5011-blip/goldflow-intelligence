@@ -216,7 +216,7 @@ function renderStats(s){
 }
 function renderHistory(rows){
   $("historyRows").innerHTML=rows.slice().reverse().map(function(x){
-    var raw=String(x.status||"P"),win=["TP","TR","BE"].indexOf(raw)>=0,out=raw==="SL"?"LOSE":win?"WIN":"PENDING";
+    var raw=String(x.status||"P"),win=["TP","TR","BE"].indexOf(raw)>=0,study=["pattern132","snd107","fund104"].includes(selectedIndicator),out=study?(raw==="WEB_INVALIDATED"?"INVALID STUDY":raw==="WEB_VALIDATION"||raw==="VALID"?"VALID STUDY":"WATCH"):raw==="SL"?"LOSE":win?"WIN":"PENDING";
     var when=new Date(Number(x.time)*1000).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
     return '<div class="hist"><div>'+when+'</div><div class="'+clsDir(x.direction)+'"><b>'+x.code+'</b><br>'+fmt(x.score,0)+'%</div><div>Entry '+px(x.entry)+'<br><span class="sub">SL '+px(x.invalidation)+' • TP1 '+px(x.tp1)+' • TP2 '+px(x.tp2)+'</span></div><div><b class="'+(out==="WIN"?"g":out==="LOSE"?"r":"y")+'">'+out+'</b><br><span class="sub">'+raw+'</span></div><div>'+(x.reasons||[]).join(" + ")+'</div></div>';
   }).join("")||'<div class="sub">No completed signal history for this symbol/TF yet.</div>';
