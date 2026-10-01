@@ -119,6 +119,19 @@ function oneSignal(a,i,htf1,htf2){
  // Native engine suppresses equal-grade opposite directions (avoid ambiguous B+S).
  return results.length>1&&results[0].score===results[1].score?null:results[0]||null;
 }
+
+export function fund104InvalidatedByClosedBars(closedBars,sig){
+ const a=norm(closedBars),i=a.findIndex(b=>b.t===sig?.time);
+ if(i<0||sig?.direction===0)return false;
+ const ar=atr(a,i),src=a[i],level=sig.direction>0?src.l-.05*ar:src.h+.05*ar;
+ // The default native INVALIDATE_CLOSE_BEYOND_WICK ignores unclosed and intrabar-only touches.
+ for(let j=i+1;j<a.length;j++){
+   if(sig.direction>0&&a[j].c<level)return true;
+   if(sig.direction<0&&a[j].c>level)return true;
+ }
+ return false;
+}
+
 export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupTF="H1",biasTF="H4",symbol="",point=0}){
  const a=norm(triggerBars),one=norm(setupBars),two=norm(biasBars);
  if(a.length<110)return {ready:false,error:"Insufficient closed broker candles for Fund Structure v1.04 study."};
@@ -129,20 +142,8 @@ export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupT
   const s=oneSignal(a,i,h1,h4);
   if(s&&s.confirmed)history.push(s);
  }
- // Match the native default invalidation lifecycle using only later CLOSED candles.
- // A currently invalid pattern must not remain the latest "VALID" web signal.
- const invalidated=(sig)=>{
-   const sourceIndex=a.findIndex(b=>b.t===sig.time);
-   if(sourceIndex<0)return false;
-   const ar=atr(a,sourceIndex),src=a[sourceIndex];
-   const level=sig.direction>0?src.l-.05*ar:src.h+.05*ar;
-   for(let j=sourceIndex+1;j<a.length-1;j++){
-     if(sig.direction>0&&a[j].c<level)return true;
-     if(sig.direction<0&&a[j].c>level)return true;
-   }
-   return false;
- };
- const visibleHistory=history.filter(sig=>!invalidated(sig));
+ const closed=a.slice(0,-1);
+ const visibleHistory=history.filter(sig=>!fund104InvalidatedByClosedBars(closed,sig));
  const i=a.length-2,last=a[i],closeTime=last.t+(TF_SEC[triggerTF]||300),h1=trend(one,setupTF,closeTime),h4=trend(two,biasTF,closeTime),ar=atr(a,i);
  const low=min(a,i,SETTINGS.zoneLookback),high=max(a,i,SETTINGS.zoneLookback);
  const buyZone={direction:1,currentDirection:1,low,high:low+.65*ar,baseScore:60,sourceEvent:"SND DEMAND • WEB STUDY",currentRetests:0,tf:triggerTF};
