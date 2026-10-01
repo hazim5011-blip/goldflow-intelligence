@@ -26,7 +26,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
   document.querySelectorAll(".page").forEach(function(x){x.classList.remove("on")});
   b.classList.add("on");$(b.dataset.page).classList.add("on");
-  if(b.dataset.page==="chartPage")setTimeout(drawChart,50);
+  if(b.dataset.page==="chartPage")setTimeout(function(){drawChart();refreshLiveZoneEntry()},50);
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
 }});
@@ -188,7 +188,9 @@ function renderZones(z,tick){
 }
 async function refreshLiveZoneEntry(){
   if(liveTickLoading||document.hidden||!selectedSymbol||!lastAnalysis||!lastAnalysis.ready)return;
-  if(!$("dashboard").classList.contains("on"))return;
+  var onChart=$("chartPage").classList.contains("on");
+  if(!$("dashboard").classList.contains("on")&&!onChart)return;
+  var previousChartLive=!!(onChart&&focusedZone&&zoneEntryState(focusedZone,focusedZone.currentDirection,lastLiveTick).live);
   liveTickLoading=true;
   try{
     var activeSymbol=selectedSymbol,activeAnalysis=lastAnalysis;
@@ -199,9 +201,10 @@ async function refreshLiveZoneEntry(){
     lastAnalysis.price=lastLiveTick.bid;$("price").textContent=px(lastLiveTick.bid);
     $("spread").textContent="Spread "+px(lastLiveTick.ask-lastLiveTick.bid);
     renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},lastLiveTick);
+    if(onChart&&focusedZone&&previousChartLive!==zoneEntryState(focusedZone,focusedZone.currentDirection,lastLiveTick).live)drawChart();
   }catch(e){
     // Never retain a stale quote as a LIVE ENTRY indication.
-    if(lastAnalysis&&lastAnalysis.ready){lastLiveTick=null;renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},null)}
+    if(lastAnalysis&&lastAnalysis.ready){lastLiveTick=null;renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},null);if(onChart&&focusedZone&&previousChartLive)drawChart()}
   }finally{liveTickLoading=false}
 }
 function renderStats(s){
@@ -241,6 +244,7 @@ async function init(){
   await checkBridge();await loadSymbols(false);
   setInterval(checkBridge,30000);
   setInterval(refreshLiveZoneEntry,5000);
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)refreshLiveZoneEntry()});
   setInterval(function(){
     // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
     var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on");
