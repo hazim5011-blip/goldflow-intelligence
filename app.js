@@ -1,5 +1,5 @@
 var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5", selectedIndicator=localStorage.getItem("gf_indicator")||"105";
-var lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
+var focusedZone=null, lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
 function $(id){return document.getElementById(id)}
 function finite(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}
 function fmt(v,d){if(!finite(v))return "—";return Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}
@@ -17,7 +17,8 @@ function indicatorName(v){
     "pvt":"PVT 1.02",
     "pattern132":"Pattern Tutor 1.32",
     "snd107":"SND/SNR 1.07",
-    "owl101":"OWL 1.01"
+    "owl101":"OWL 1.01",
+    "fund104":"Fund Structure A 1.04 • WEB STUDY"
   })[v]||String(v||"ENGINE").toUpperCase();
 }
 
@@ -25,15 +26,15 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
   document.querySelectorAll(".page").forEach(function(x){x.classList.remove("on")});
   b.classList.add("on");$(b.dataset.page).classList.add("on");
-  if(b.dataset.page==="chartPage")setTimeout(drawChart,50);
+  if(b.dataset.page==="chartPage")setTimeout(function(){drawChart();refreshLiveZoneEntry()},50);
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
 }});
 
 $("tfSelect").value=selectedTF;
 $("indicatorSelect").value=selectedIndicator;
-$("tfSelect").onchange=function(){selectedTF=this.value;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
-$("indicatorSelect").onchange=function(){selectedIndicator=this.value;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
+$("tfSelect").onchange=function(){selectedTF=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
+$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
 $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
@@ -41,7 +42,7 @@ $("symbolSelect").onchange=function(){selectSymbol(this.value)};
 if($("macroRefresh"))$("macroRefresh").onclick=function(){loadMacro(true)};
 
 function selectSymbol(s){
-  if(!s)return;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
+  if(!s)return;focusedZone=null;lastLiveTick=null;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
   $("symbolSelect").value=s;renderSymbolCards();loadAnalysis();renderTradingView();
 }
 function categoryRank(x){return {METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7}[x]||9}
@@ -88,8 +89,8 @@ async function checkBridge(){
       $("connectionNotice").innerHTML="<b>Vantage MT5 LIVE.</b> "+(h.server||"")+" • Bridge "+(h.version||"")+" • "+(h.terminal||"");
       return true;
     }
-    chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=h.error||"Bridge configured but offline.";return false;
-  }catch(e){chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;return false}
+    lastLiveTick=null;if(lastAnalysis?.ready)renderZones(lastAnalysis.indicator?.activeZones||{},null);chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=h.error||"Bridge configured but offline.";return false;
+  }catch(e){lastLiveTick=null;if(lastAnalysis?.ready)renderZones(lastAnalysis.indicator?.activeZones||{},null);chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;return false}
 }
 async function loadSymbols(force){
   try{
@@ -112,22 +113,26 @@ function resetDashboard(){
   $("signal").textContent="WAIT";$("reasons").textContent="Waiting for broker analysis…";$("watch").textContent="No active zone nearby.";
 }
 async function loadAnalysis(){
-  if(!selectedSymbol||loading)return;loading=true;resetDashboard();
+  if(!selectedSymbol||loading)return;loading=true;
+  var sameContext=!!(lastAnalysis?.ready&&lastAnalysis.requested===selectedSymbol&&lastAnalysis.selectedTF===selectedTF&&lastAnalysis.indicatorMode===selectedIndicator);
+  if(!sameContext){lastLiveTick=null;lastAnalysis=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null)}
   try{
-    var r=await getJson("/api/analyze?symbol="+encodeURIComponent(selectedSymbol)+"&tf="+encodeURIComponent(selectedTF)+"&indicator="+encodeURIComponent(selectedIndicator));
+    var requestedSymbol=selectedSymbol,requestedTF=selectedTF,requestedIndicator=selectedIndicator;
+    var r=await getJson("/api/analyze?symbol="+encodeURIComponent(requestedSymbol)+"&tf="+encodeURIComponent(requestedTF)+"&indicator="+encodeURIComponent(requestedIndicator));
+    if(requestedSymbol!==selectedSymbol||requestedTF!==selectedTF||requestedIndicator!==selectedIndicator){setTimeout(loadAnalysis,0);return}
     lastAnalysis=r;
     if(!r.ok||!r.ready){
       chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","WAIT");
-      $("connectionNotice").className="notice bad";$("connectionNotice").textContent=r.error||"Indicator engine not ready.";clearChart();return;
+      lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();$("connectionNotice").className="notice bad";$("connectionNotice").textContent=r.error||"Indicator engine not ready.";clearChart();return;
     }
     var ind=r.indicator||{},sig=ind.latestSignal||{},st=ind.stats||{},pd=ind.premiumDiscount||null;
     var engName=indicatorName(selectedIndicator);
     chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip","good","● "+engName+" ENGINE");chip("marketChip",String(r.marketState).indexOf("STALE")>=0?"warn":"good",r.marketState||"MT5 LIVE");
-    $("connectionNotice").className="notice good";$("connectionNotice").innerHTML="<b>"+selectedSymbol+"</b> • "+r.symbol+" • "+engName+" • "+r.triggerTF+" → "+r.setupTF+" → "+r.biasTF+" • direct Vantage MT5 candles";
+    $("connectionNotice").className="notice good";$("connectionNotice").innerHTML="<b>"+selectedSymbol+"</b> • "+r.symbol+" • "+engName+" • "+r.triggerTF+" → "+r.setupTF+" → "+r.biasTF+" • direct Vantage MT5 candles"+(selectedIndicator==="fund104"?" • WEB STUDY SUBSET: native iCustom / full macro parity unavailable; A++ blocked; VALID_ONLY results.":"");
     $("price").textContent=px(r.price);$("spread").textContent=finite(r.tick&&r.tick.spread)?"Spread "+px(r.tick.spread):"";
     $("source").textContent=(r.broker||"Vantage")+" • "+r.symbol+" • MT5_BRIDGE";
     $("signal").textContent=sig.code||"WAIT";$("signal").className=clsDir(sig.direction);
-    $("signalScore").textContent=finite(sig.score)?fmt(sig.score,0)+"%":"—";$("signalStatus").textContent=sig.status||"WAIT";
+    $("signalScore").textContent=finite(sig.score)?fmt(sig.score,0)+"%":"—";$("signalStatus").textContent=(sig.grade?(sig.grade+(selectedIndicator==="fund104"?" WEB STUDY":"")+" • "):"")+(sig.status||"WAIT");
     $("biasState").textContent=stateText(ind.biasState&&ind.biasState.trend);$("biasState").className=clsDir(ind.biasState&&ind.biasState.trend);
     $("biasStrength").textContent=finite(ind.biasState&&ind.biasState.strength)?fmt(ind.biasState.strength,0)+"%":"—";$("biasEvent").textContent=(ind.biasState&&ind.biasState.lastEvent)||"—";
     $("setupState").textContent=stateText(ind.setupState&&ind.setupState.trend);$("setupState").className=clsDir(ind.setupState&&ind.setupState.trend);
@@ -139,51 +144,71 @@ async function loadAnalysis(){
     if(pd){$("pdHigh").textContent=px(pd.high);$("pdEq").textContent=px(pd.equilibrium);$("pdLow").textContent=px(pd.low);$("pdPos").textContent=pd.position}else{$("pdHigh").textContent=$("pdEq").textContent=$("pdLow").textContent=$("pdPos").textContent="—"}
     if(ind.watch&&ind.watch.zone){$("watch").textContent=ind.watch.reason+" • "+px(ind.watch.zone.low)+" - "+px(ind.watch.zone.high)}else $("watch").textContent="No active zone nearby.";
     if($("statsNote")){
-      $("statsNote").textContent=(selectedIndicator==="pattern132"||selectedIndicator==="snd107")
-        ?"VALID = native indicator confirmation • TP/SL outcome not defined by source"
-        :"WIN = TP + TRAIL + BE • LOSE = SL only";
+      $("statsNote").textContent=selectedIndicator==="fund104"
+        ?"FUND 1.04 WEB STUDY • VALIDATION ONLY • Candidates "+(ind.studyDiagnostics?.patternCandidates??0)+" • Confirmed "+(ind.studyDiagnostics?.confirmedAtClose??0)+" • Invalidated "+(ind.studyDiagnostics?.invalidatedAfterClose??0)+" • Native buffers/macro parity not verified"
+        :(selectedIndicator==="pattern132"||selectedIndicator==="snd107")
+          ?"VALIDATION ONLY • TP/SL outcome not defined by indicator source"
+          :"WIN = TP + TRAIL + BE • LOSE = SL only";
     }
-    lastLiveTick=r.tick||{bid:r.price,ask:r.price};renderZones(ind.activeZones||{},lastLiveTick);renderStats(st);renderHistory(ind.history||[]);
+    lastLiveTick=null;renderZones(ind.activeZones||{},null);renderStats(st);renderHistory(ind.history||[]);setTimeout(refreshLiveZoneEntry,0);
     $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(selectedSymbol));
     $("chartTitle").textContent=(r.symbol||selectedSymbol)+" • VANTAGE MT5";$("chartTag").textContent=r.triggerTF;
     if($("chartPage").classList.contains("on"))drawChart();
   }catch(e){
-    chip("engineChip","bad","ENGINE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;
+    lastAnalysis=null;lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();chip("engineChip","bad","ENGINE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;
   }finally{loading=false}
 }
-function quoteForZone(d,tick,fallback){
-  var q=Number(d)>0?(tick&&tick.ask):(tick&&tick.bid);
-  if(!finite(q))q=fallback;
+
+function quoteForZone(d,tick){
+  if(!tick||!Number.isFinite(tick.seenAtMs)||Date.now()-tick.seenAtMs>15000)return null;
+  var q=Number(d)>0?tick.ask:tick.bid;
   return finite(q)?Number(q):null;
 }
-function zoneEntryState(x,d,tick,fallback){
-  var lo=Number(x&&x.low),hi=Number(x&&x.high),q=quoteForZone(d,tick,fallback);
-  if(!Number.isFinite(lo)||!Number.isFinite(hi)||!Number.isFinite(q))return{label:"PENDING",live:false,quote:q,side:Number(d)>0?"ASK":"BID"};
-  var low=Math.min(lo,hi),high=Math.max(lo,hi),live=q>=low&&q<=high;
-  return{label:live?"LIVE ENTRY":"PENDING",live:live,quote:q,side:Number(d)>0?"ASK":"BID"};
+function zoneEntryState(x,d,tick){
+  var lo=Number(x&&x.low),hi=Number(x&&x.high),q=quoteForZone(d,tick);
+  var side=Number(d)>0?"ASK":"BID";
+  if(!Number.isFinite(lo)||!Number.isFinite(hi)||q===null)return {label:"QUOTE OFFLINE",live:false,quote:null,side:side,ready:false};
+  var live=q>=Math.min(lo,hi)&&q<=Math.max(lo,hi);
+  return{label:live?"LIVE ENTRY":"PENDING",live:live,quote:q,side:side,ready:true};
 }
 function renderZones(z,tick){
-  var buy=z.buy||[],sell=z.sell||[];$("buyCount").textContent=buy.length;$("sellCount").textContent=sell.length;
-  function html(a,d){return a.length?a.map(function(x){
-    var st=zoneEntryState(x,d,tick,lastAnalysis&&lastAnalysis.price),side=d>0?"buy":"sell";
-    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):"pending")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span><span class="sub">Retest '+x.currentRetests+'</span></div><div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>'
+  var buy=z.buy||[],sell=z.sell||[];
+  $("buyCount").textContent=buy.length;$("sellCount").textContent=sell.length;
+  function html(a,d){return a.length?a.map(function(x,i){
+    var st=zoneEntryState(x,d,tick),side=d>0?"buy":"sell";
+    var action=st.live?'<button class="zoneAction" type="button" data-side="'+side+'" data-index="'+i+'" aria-label="View live entry setup on broker chart">LIVE TRADE • VIEW CHART ↗</button>':"";
+    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span><span class="sub">Retest '+x.currentRetests+'</span></div>'+action+'<div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>';
   }).join(""):'<div class="sub">No active zone.</div>'}
   $("buyZones").innerHTML=html(buy,1);$("sellZones").innerHTML=html(sell,-1);
+  document.querySelectorAll(".zoneAction").forEach(function(b){b.onclick=function(){
+    var z=(lastAnalysis?.indicator?.activeZones||{})[b.dataset.side]||[];
+    var item=z[Number(b.dataset.index)];
+    var d=b.dataset.side==="buy"?1:-1;
+    if(!item||!zoneEntryState(item,d,lastLiveTick).live)return;
+    focusedZone={...item,currentDirection:d};
+    document.querySelector('.tab[data-page="chartPage"]').click();
+    setTimeout(drawChart,70);
+  }});
 }
 async function refreshLiveZoneEntry(){
   if(liveTickLoading||document.hidden||!selectedSymbol||!lastAnalysis||!lastAnalysis.ready)return;
-  if(!$("dashboard").classList.contains("on"))return;
+  var onChart=$("chartPage").classList.contains("on");
+  if(!$("dashboard").classList.contains("on")&&!onChart)return;
+  var previousChartLive=!!(onChart&&focusedZone&&zoneEntryState(focusedZone,focusedZone.currentDirection,lastLiveTick).live);
   liveTickLoading=true;
   try{
-    var j=await getJson("/api/status?lite=1&pair="+encodeURIComponent(selectedSymbol));
-    if(!j.ok||!j.bridgeOnline)return;
-    lastLiveTick={bid:j.bid,ask:j.ask,time:j.serverTime};
-    if(finite(j.bid)){lastAnalysis.price=Number(j.bid);$("price").textContent=px(j.bid)}
-    lastAnalysis.tick=Object.assign({},lastAnalysis.tick||{},lastLiveTick);
-    if(finite(j.bid)&&finite(j.ask))$("spread").textContent="Spread "+px(Number(j.ask)-Number(j.bid));
+    var activeSymbol=selectedSymbol,activeAnalysis=lastAnalysis;
+    var j=await getJson("/api/status?lite=1&pair="+encodeURIComponent(activeSymbol));
+    if(activeSymbol!==selectedSymbol||activeAnalysis!==lastAnalysis)return;
+    if(!j.ok||!j.bridgeOnline||!finite(j.bid)||!finite(j.ask)||!finite(j.serverTime)||!finite(j.ageSeconds)||Number(j.ageSeconds)>30||Number(j.bid)<=0||Number(j.ask)<Number(j.bid))throw Error("BROKER_TICK_STALE_OR_UNAVAILABLE");
+    lastLiveTick={bid:Number(j.bid),ask:Number(j.ask),seenAtMs:Date.now()};
+    lastAnalysis.price=lastLiveTick.bid;$("price").textContent=px(lastLiveTick.bid);
+    $("spread").textContent="Spread "+px(lastLiveTick.ask-lastLiveTick.bid);
     renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},lastLiveTick);
+    if(onChart&&focusedZone&&previousChartLive!==zoneEntryState(focusedZone,focusedZone.currentDirection,lastLiveTick).live)drawChart();
   }catch(e){
-    // Keep the last broker analysis visible if a single live-tick refresh fails.
+    // Never retain a stale quote as a LIVE ENTRY indication.
+    if(lastAnalysis&&lastAnalysis.ready){lastLiveTick=null;renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},null);if(onChart&&focusedZone&&previousChartLive)drawChart()}
   }finally{liveTickLoading=false}
 }
 function renderStats(s){
@@ -191,7 +216,7 @@ function renderStats(s){
 }
 function renderHistory(rows){
   $("historyRows").innerHTML=rows.slice().reverse().map(function(x){
-    var raw=String(x.status||"P"),win=["TP","TR","BE"].indexOf(raw)>=0,out=raw==="SL"?"LOSE":win?"WIN":"PENDING";
+    var raw=String(x.status||"P"),win=["TP","TR","BE"].indexOf(raw)>=0,study=["pattern132","snd107","fund104"].includes(selectedIndicator),out=study?(raw==="WEB_INVALIDATED"?"INVALID STUDY":raw==="WEB_VALIDATION"||raw==="VALID"?"VALID STUDY":"WATCH"):raw==="SL"?"LOSE":win?"WIN":"PENDING";
     var when=new Date(Number(x.time)*1000).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
     return '<div class="hist"><div>'+when+'</div><div class="'+clsDir(x.direction)+'"><b>'+x.code+'</b><br>'+fmt(x.score,0)+'%</div><div>Entry '+px(x.entry)+'<br><span class="sub">SL '+px(x.invalidation)+' • TP1 '+px(x.tp1)+' • TP2 '+px(x.tp2)+'</span></div><div><b class="'+(out==="WIN"?"g":out==="LOSE"?"r":"y")+'">'+out+'</b><br><span class="sub">'+raw+'</span></div><div>'+(x.reasons||[]).join(" + ")+'</div></div>';
   }).join("")||'<div class="sub">No completed signal history for this symbol/TF yet.</div>';
@@ -203,17 +228,27 @@ function drawChart(){
   chart=LightweightCharts.createChart($("chart"),{layout:{background:{color:"#07131c"},textColor:"#aab9c3"},grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true,secondsVisible:false}});
   candleSeries=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
   candleSeries.setData(bars.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
-  var zones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
-  zones.slice(0,10).forEach(function(z){var d=z.currentDirection||z.direction,col=d>0?"#31d6a4":"#ff6079";candleSeries.createPriceLine({price:z.low,color:col,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:(d>0?"BUY":"SELL")+" L"});candleSeries.createPriceLine({price:z.high,color:col,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:(d>0?"BUY":"SELL")+" H"})});
+  var allZones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
+  var zones=focusedZone?[focusedZone]:allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)}).slice(0,10);
+  zones.forEach(function(z){
+    var d=z.currentDirection||z.direction||1,st=zoneEntryState(z,d,lastLiveTick),col=d>0?"#31d6a4":"#ff6079";
+    var label=st.live?"LIVE SETUP":st.ready?"PENDING":"OFFLINE";
+    candleSeries.createPriceLine({price:Number(z.low),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:true,title:label+" "+(d>0?"BUY":"SELL")+" ENTRY LOW"});
+    candleSeries.createPriceLine({price:Number(z.high),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:true,title:label+" "+(d>0?"BUY":"SELL")+" ENTRY HIGH"});
+  });
   var barTimes=new Set(bars.map(function(b){return b.t}));
   var markers=(ind.history||[]).filter(function(x){return barTimes.has(x.time)}).slice(-80).map(function(x){return {time:x.time,position:x.direction>0?"belowBar":"aboveBar",color:x.direction>0?"#f2c75b":"#ff6079",shape:x.direction>0?"arrowUp":"arrowDown",text:x.code+" "+Math.round(x.score)+"%"}});
-  if(candleSeries.setMarkers)candleSeries.setMarkers(markers);
-  chart.timeScale().fitContent();$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"");
+  if(focusedZone && zoneEntryState(focusedZone,focusedZone.currentDirection,lastLiveTick).live && bars.length){
+    markers.push({time:bars[bars.length-1].t,position:focusedZone.currentDirection>0?"belowBar":"aboveBar",color:focusedZone.currentDirection>0?"#31d6a4":"#ff6079",shape:"circle",text:"LIVE ENTRY • PRICE IN ZONE (NOT EXECUTED)"});
+  }
+  if(candleSeries.setMarkers)candleSeries.setMarkers(markers.sort(function(a,b){return a.time-b.time}));
+  chart.timeScale().fitContent();$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+" • PENDING = entry area; LIVE = current quote within area, NOT broker order";
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
   setInterval(checkBridge,30000);
   setInterval(refreshLiveZoneEntry,5000);
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)refreshLiveZoneEntry()});
   setInterval(function(){
     // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
     var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on");

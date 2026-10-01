@@ -71,6 +71,7 @@
     if(state.history)renderHistory(state.history);
     if(state.performance)renderPerformance(state.performance);
     if(state.news)renderNews(state.news);
+    if(blogCache)renderBlog();
     if(state.evidence)renderEvidence(state.evidence);
   }
   async function initLocale(){
@@ -223,13 +224,15 @@
     $("v8NewsRegime").innerHTML=stat("REGIME",macro.regime?.name||"N/A","DERIVED • "+(macro.regime?.confidence??"N/A")+"% input coverage")+
       stat("GOLD CONTEXT",macro.gold?.bias||"N/A","DERIVED • no guarantee")+
       stat(t("updated"),dt(macro.fetchedAtUTC),"FRED/BEA/BLS/Fed/Treasury • source verified");
-    var releases=data.verifiedReleases||data.latestOfficialEvents||[],observations=data.latestOfficialObservations||[];
+    var impactOrder={HIGH:0,MEDIUM:1,LOW:2,CONTEXT:3};
+    var orderImpact=function(a,b){return (impactOrder[a.impact]??9)-(impactOrder[b.impact]??9)};
+    var releases=(data.verifiedReleases||data.latestOfficialEvents||[]).slice().sort(orderImpact),observations=(data.latestOfficialObservations||[]).slice().sort(orderImpact);
     function newsCard(ev,isRelease){
-      return '<details class="v8NewsItem"><summary><b>'+safe(ev.title)+'</b><strong>'+safe(ev.display||"N/A")+'</strong><small>'+safe(ev.dataPeriod||"N/A")+" • "+safe(ev.source)+" • "+safe(isRelease?t("verifiedRelease"):t("macroObservation"))+'</small></summary><div class="v8NewsBody">'+
+      return '<details class="v8NewsItem impact-'+safe(ev.impact||"LOW")+'"><summary><div class="gfNewsTitle"><b>'+safe(ev.title)+'</b><span class="gfImpactBadge">'+safe(ev.impact==="CONTEXT"?"MARKET CONTEXT":(ev.impact||"LOW")+" IMPACT")+(isRelease?"":" • OBSERVATION")+'</span></div><strong>'+safe(ev.display||"N/A")+'</strong><small>'+safe(ev.dataPeriod||"N/A")+" • "+safe(ev.source)+" • "+safe(isRelease?t("verifiedRelease"):t("macroObservation"))+'</small></summary><div class="v8NewsBody">'+
         '<div class="v8NewsMeta">'+stat(t("actual"),ev.display||"N/A")+stat(t("forecast"),finite(ev.forecast)?number(ev.forecast,2):"N/A",finite(ev.forecast)?"":t("consensusUnavailable"))+
         stat(t("previous"),finite(ev.previous)?number(ev.previous,2):"N/A",finite(ev.previous)?"":t("sourceNotVerified"))+
         stat(t("releaseTime"),isRelease?dt(ev.releasedAtUTC):"N/A",isRelease?"":t("releaseDateNotPeriod"))+'</div>'+
-        '<p><b>'+t("scenarioHigher")+':</b> '+safe(ev.interpretation?.ifHigher||"")+'</p>'+
+        '<p class="gfImpactCaveat">Impact category = typical potential of this event type; NOT a measured move, forecast or trade signal. Observations without a verified release timestamp are not presented as live news.</p><p><b>'+t("scenarioHigher")+':</b> '+safe(ev.interpretation?.ifHigher||"")+'</p>'+
         '<p><b>'+t("scenarioLower")+':</b> '+safe(ev.interpretation?.ifLower||"")+'</p>'+
         '<p class="v8Footnote">'+safe(ev.interpretation?.fact||"")+' '+t("notTradeSignal")+'</p>'+
         (ev.sourceUrl?'<a href="'+safe(ev.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+t("officialSource")+'</a>':"")+
@@ -240,6 +243,27 @@
     else html+='<div class="v8Footnote">'+safe(t("noVerifiedReleases"))+'</div>';
     if(observations.length)html+='<div class="v8Footnote">'+safe(t("macroObservationNote"))+'</div>'+observations.map(function(ev){return newsCard(ev,false)}).join("");
     $("v8NewsList").innerHTML=html||"<p>"+t("noOfficialData")+"</p>";
+  }
+
+  var blogCache=null;
+  function renderBlog(){
+    var el=$("gfBlogPosts");if(!el||!blogCache)return;
+    var ms=["ms","id"].includes(state.locale);
+    el.innerHTML=blogCache.map(function(p){
+      var title=ms?p.titleMS:p.titleEN,summary=ms?p.summaryMS:p.summaryEN,body=ms?p.bodyMS:p.bodyEN;
+      return '<details class="gfBlogPost"><summary><span class="gfBlogCategory">'+safe(p.category)+'</span><b>'+safe(title)+'</b><small>'+safe(p.dateUTC)+' • '+safe(p.version)+' • '+safe(p.changeType)+'</small><p>'+safe(summary)+'</p></summary><div class="gfBlogBody">'+
+        '<p>'+safe(body)+'</p><p class="v8Footnote">'+safe(p.qualityNote||"")+'</p></div></details>';
+    }).join("")||"<p>No published articles yet.</p>";
+  }
+  async function loadBlog(){
+    var el=$("gfBlogPosts");if(!el)return;
+    $("gfBlogNote").textContent="Loading published GoldFlow articles…";
+    try{
+      var r=await fetch("/blog/posts.json",{cache:"no-store"}),j=await r.json();
+      if(!r.ok||!Array.isArray(j.posts))throw Error("BLOG_FEED_UNAVAILABLE");
+      blogCache=j.posts.filter(function(p){return p&&p.published===true}).sort(function(a,b){return b.dateUTC.localeCompare(a.dateUTC)});
+      renderBlog();$("gfBlogNote").textContent="Verified release notes and methodology. No claims of executed trades without forward proof.";
+    }catch(e){el.textContent="Blog is temporarily unavailable.";$("gfBlogNote").textContent=e.message}
   }
   function loadTVTools(){
     var sym=(window.tvSymbol&&window.selectedSymbol)?window.tvSymbol(window.selectedSymbol):"OANDA:XAUUSD";
@@ -274,6 +298,7 @@
     $("v8EvidenceJson").onclick=function(){if(state.evidence)downloadJSON(state.evidence,"goldflow-v8-"+state.evidence.signalId+".json")};
     $("v8EvidenceCsv").onclick=function(){if(state.evidence)window.location.href=evidenceURL(state.evidence.signalId,"csv")};
     $("v8NewsRefresh").onclick=function(){loadNews(true)};
+    $("gfBlogRefresh").onclick=loadBlog;
     ["symbolSelect","tfSelect"].forEach(function(id){
       $(id)?.addEventListener("change",function(){
         state.tvReady=false;
@@ -285,6 +310,7 @@
       if(b.dataset.page==="v8Performance")loadPerformance();
       if(b.dataset.page==="v8Evidence"&&!state.history)loadHistory().then(function(){fillEvidenceChoices(state.history?.rows||[])});
       if(b.dataset.page==="v8News")loadNews();
+      if(b.dataset.page==="blogPage")loadBlog();
       if(b.dataset.page==="tvPage")loadTVTools();
     })});
   }

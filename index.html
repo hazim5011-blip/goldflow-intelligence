@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence V8</title>
+<title>GoldFlow Intelligence V8.1</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -12,7 +12,7 @@
 <body>
 <div class="wrap">
 <header class="top">
-  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V8</h1><small>V8 PRODUCTION • 6 INDICATORS • VANTAGE MT5 • MACRO</small></div></div>
+  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V8.1</h1><small>V8.1 PRODUCTION • 6 ORIGINAL ENGINES + FUND 1.04 WEB STUDY • VANTAGE MT5</small></div></div>
   <div class="statusRow"><span id="bridgeChip" class="chip warn">BRIDGE…</span><span id="engineChip" class="chip warn">ENGINE…</span><span id="marketChip" class="chip warn">MARKET…</span></div>
   <div class="v8Global">
     <label class="v8InlineLabel" for="gfLocale" data-i18n="language">Language</label>
@@ -36,6 +36,7 @@
     <option value="pattern132">Pattern Zone Tutor v1.32</option>
     <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
     <option value="owl101">OWL Style Research v1.01</option>
+    <option value="fund104">Fund Structure A v1.04 — Web Study</option>
   </select></div>
   <div class="field"><label>Signal TF</label><select id="tfSelect"><option>M1</option><option selected>M5</option><option>M15</option><option>M30</option><option>H1</option><option>H4</option><option>D1</option></select></div>
   <button id="refreshBtn" class="primary">Refresh</button>
@@ -53,6 +54,7 @@
   <button class="tab" data-page="symbolsPage">All Symbols</button>
   <button class="tab" data-page="macroPage">Macro Regime</button>
   <button class="tab" data-page="v8News" data-i18n="newsStudy">News Study</button>
+  <button class="tab" data-page="blogPage">Blog & Updates</button>
 </nav>
 
 <main>
@@ -80,8 +82,8 @@
   </div>
 
   <div class="grid g2 sec">
-    <div class="card"><div class="head"><h3>DEMAND / BUY ZONES</h3><span id="buyCount" class="tag g">0</span></div><div id="buyZones"></div></div>
-    <div class="card"><div class="head"><h3>SUPPLY / SELL ZONES</h3><span id="sellCount" class="tag r">0</span></div><div id="sellZones"></div></div>
+    <div class="card"><div class="head"><h3>DEMAND / BUY ZONES</h3><span id="buyCount" class="tag g">0</span></div><div id="buyZones"></div><div class="sub">PENDING = entry area only. LIVE TRADE button is a chart-view action; no broker order is placed.</div></div>
+    <div class="card"><div class="head"><h3>SUPPLY / SELL ZONES</h3><span id="sellCount" class="tag r">0</span></div><div id="sellZones"></div><div class="sub">LIVE ENTRY means the Vantage quote is within this zone; not an executed position.</div></div>
   </div>
 
   <div class="card sec">
@@ -91,7 +93,7 @@
 </section>
 
 <section id="chartPage" class="page">
-  <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><span id="chartTag" class="tag">—</span></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div></div>
+  <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><span id="chartTag" class="tag">—</span></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div><div class="sub">Pending: dashed entry-range boundary lines. Live setup: solid entry range + marker. No automatic trade execution.</div></div>
 </section>
 
 <section id="tvPage" class="page">
@@ -209,6 +211,14 @@
     <div class="v8MetricGrid" id="v8NewsRegime"></div>
     <div id="v8NewsList" class="v8NewsGrid"></div>
     <div class="v8Footnote" data-i18n="disclaimer">Market research only. This is not financial advice, a guaranteed signal or proof of past market causation. Users make their own trading decisions and bear the risks.</div>
+  </div>
+</section>
+<section id="blogPage" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">RESEARCH • INDICATOR CHANGELOG</small><h3>GoldFlow Blog & Indicator Updates</h3></div><button type="button" class="primary" id="gfBlogRefresh">Refresh Blog</button></div>
+    <div id="gfBlogNote" class="notice info">Release notes, indicator methodology and verified changes. No invented performance claims.</div>
+    <div id="gfBlogPosts" class="gfBlogPosts" aria-live="polite"></div>
+    <p class="v8Footnote">Version notes describe code changes; historical backtests are separate from live forward-logged evidence. Articles are available in Malay and English; other locales use an English fallback until reviewed translations are available.</p>
   </div>
 </section>
 </main>

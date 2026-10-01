@@ -1,3 +1,4 @@
+import {classifyReleaseEvent} from "./_v8Impact.js";
 import macroHandler from "./macro.js";
 const COUNTRY="United States";
 const TAKE=["GDP","IP","PAYEMS","UNRATE","CPI","COREPCE","BREAKEVEN10","FEDUPPER","WALCL","TGA","ONRRP","US2Y","US10Y","REAL10Y","USDBROAD"];
@@ -27,12 +28,13 @@ export default async function handler(req,res){
         fetchedAtUTC:result.fetchedAt,source:c.source,sourceUrl:c.seriesUrl||null,
         derived:c.status==="DERIVED",stale:!!c.stale,status:!available?"UNAVAILABLE":c.stale?"STALE":"OFFICIAL_RECORDED",
         surprise:null,surprisePercent:null,changeVsHistory:c.change??null,changeLabel:c.changeLabel||null,
+        ...classifyReleaseEvent({type:c.id,verifiedReleaseTimestamp:false,releasedAtUTC:null}),
         interpretation:{...mechanism(c.id),fact:available?c.name+" "+c.display+" untuk tempoh "+(c.date||"tidak dinyatakan")+". Sumber: "+c.source+".":"Data belum tersedia."},
         signalLinkage:"NOT_LINKED_TO_HISTORICAL_SIGNAL"};
     });
     const observations=events.map(e=>({...e,eventClass:"OFFICIAL_MACRO_OBSERVATION_NOT_RELEASE_EVENT"}));
     const verifiedReleases=observations.filter(e=>e.verifiedReleaseTimestamp&&e.releasedAtUTC&&e.sourceUrl&&e.dataPeriod);
-    return res.status(200).json({ok:true,version:"8.0.0",
+    return res.status(200).json({ok:true,version:"8.1.0",
       verifiedReleases,latestOfficialEvents:verifiedReleases,latestOfficialObservations:observations,
       macro:{regime:result.regime,gold:result.gold,quality:result.quality,fetchedAtUTC:result.fetchedAt},
       historicalSignalAtUTC:at||null,linkedToSignal:linkedAtSignal,

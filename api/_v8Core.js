@@ -45,7 +45,7 @@ function stoppedAt(b,d,level){return d>0?Math.min(b.o,level):Math.max(b.o,level)
 export function replayOutcome(signal,bars=[],tf="M5",mode="105"){
   const d=parseDirection(signal),entry=n(signal.entry),stop=n(signal.invalidation??signal.originalSL),tp=n(signal.tp1);
   const signalOpen=n(signal.time),close=n(signal.closeTime)??(signalOpen!=null?signalOpen+(TF_SECONDS[tf]||300):null);
-  const isValidation=["pattern132","snd107","pattern","snd"].includes(String(mode).toLowerCase());
+  const isValidation=["pattern132","snd107","pattern","snd","fund104"].includes(String(mode).toLowerCase());
   const blank={exitPrice:null,exitTimeUTC:null,exitRule:null,priceMove:null,outcome:"PENDING",dataQuality:[],replayRule:"OHLC conservative; last forming candle excluded"};
   if(isValidation||tp==null) return {...blank,outcome:"VALID_ONLY",dataQuality:["NO_DEFINED_EXIT_MODEL"]};
   if(!d||entry==null||stop==null||signalOpen==null||close==null) return {...blank,outcome:"INVALID",dataQuality:["INVALID_SIGNAL_FIELDS"]};
