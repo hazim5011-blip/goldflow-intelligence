@@ -153,14 +153,24 @@ test("Fund104 RSI is Wilder-smoothed, not a 14-candle moving average",()=>{
 test("Browser zone-state math uses BUY ASK, SELL BID and expires old quotes",()=>{
  const src=source("../app.js"),a=src.indexOf("function quoteForZone("),b=src.indexOf("function renderZones(",a);
  assert.ok(a>0&&b>a);
- const context=vm.createContext({finite:v=>v!==null&&v!==undefined&&Number.isFinite(Number(v)),Number,Date,Math});
+ const context=vm.createContext({
+  finite:v=>v!==null&&v!==undefined&&Number.isFinite(Number(v)),Number,Date,Math,
+  selectedIndicator:"pattern132",lastAnalysis:{indicator:{latestSignal:{confirmed:true,direction:1}}}
+ });
  vm.runInContext(src.slice(a,b),context);
  const quote={bid:100.5,ask:101.2,seenAtMs:Date.now()};
- const z={low:100,high:101};
+ const z={low:100,high:101,sourceEvent:"VALID RBS Retest"};
  assert.equal(context.zoneEntryState(z,1,quote).label,"PENDING","BUY requires ASK to be inside");
- assert.equal(context.zoneEntryState(z,-1,quote).label,"LIVE ENTRY","SELL uses BID");
+ assert.equal(context.zoneEntryState(z,-1,quote).label,"LIVE ENTRY","SELL uses BID when zone is eligible");
  const freshBuy={...quote,ask:100.9};
  assert.equal(context.zoneEntryState(z,1,freshBuy).label,"LIVE ENTRY");
+ assert.equal(context.zoneEntryState({...z,sourceEvent:"WATCH Double Top"},-1,quote).label,"IN ZONE • WATCH");
+ assert.equal(context.zoneEntryState({...z,sourceEvent:"WATCH Double Top"},-1,quote).live,false);
+ context.selectedIndicator="fund104";
+ context.lastAnalysis={indicator:{latestSignal:{confirmed:false,direction:1}}};
+ assert.equal(context.zoneEntryState({low:100,high:101,sourceEvent:"SND DEMAND • WEB STUDY"},1,freshBuy).label,"IN ZONE • WATCH");
+ context.lastAnalysis={indicator:{latestSignal:{confirmed:true,direction:1}}};
+ assert.equal(context.zoneEntryState({low:100,high:101,sourceEvent:"SND DEMAND • WEB STUDY"},1,freshBuy).label,"LIVE ENTRY");
  assert.equal(context.zoneEntryState(z,1,{...freshBuy,seenAtMs:Date.now()-20000}).label,"QUOTE OFFLINE");
  assert.equal(context.zoneEntryState(z,-1,null).live,false);
 });
