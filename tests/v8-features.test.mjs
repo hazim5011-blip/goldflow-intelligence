@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import vm from "node:vm";
 import {impactForType,classifyReleaseEvent} from "../api/_v8Impact.js";
-import {runFund104,fund104InvalidatedByClosedBars,fund104WilderRSI} from "../api/_indicatorFund104.js";
+import {runFund104,fund104InvalidatedByClosedBars,fund104InvalidationAtByClosedBars,fund104WilderRSI} from "../api/_indicatorFund104.js";
 import {replayOutcome} from "../api/_v8Core.js";
 
 const source = p=>readFileSync(new URL(p,import.meta.url),"utf8");
@@ -77,6 +77,7 @@ test("Fund104 default invalidation follows later CLOSED candle, not wick-only to
  // ATR of signal bar at t=1000 is 2, so BUY invalid threshold=98.9.
  assert.equal(fund104InvalidatedByClosedBars(closed.slice(0,2),{time:1000,direction:1}),false,"wick touch alone cannot invalidate default closed-candle mode");
  assert.equal(fund104InvalidatedByClosedBars(closed,{time:1000,direction:1}),true);
+ assert.equal(fund104InvalidationAtByClosedBars(closed,{time:1000,direction:1}),1600);
  const sells=[
   bar(1000,100,101,99,100),
   bar(1300,100,101.5,99,100.4),
@@ -155,4 +156,22 @@ test("Browser zone-state math uses BUY ASK, SELL BID and expires old quotes",()=
  assert.equal(context.zoneEntryState(z,1,freshBuy).label,"LIVE ENTRY");
  assert.equal(context.zoneEntryState(z,1,{...freshBuy,seenAtMs:Date.now()-20000}).label,"QUOTE OFFLINE");
  assert.equal(context.zoneEntryState(z,-1,null).live,false);
+});
+
+test("Fund104 audit retains later invalidated studies without claiming trade wins",()=>{
+ const trigger=gen(420);
+ const setup=gen(600,3600).map((b,i)=>({...b,t:trigger.at(-1).t-(599-i)*3600}));
+ const bias=gen(600,14400).map((b,i)=>({...b,t:trigger.at(-1).t-(599-i)*14400}));
+ const study=runFund104({triggerBars:trigger,setupBars:setup,biasBars:bias,symbol:"XAUUSD247"});
+ assert.equal(study.ready,true);
+ assert.ok(study.studyDiagnostics.studyWindowBars>0);
+ assert.ok(study.studyDiagnostics.patternCandidates>=study.studyDiagnostics.confirmedAtClose);
+ assert.equal(study.studyDiagnostics.confirmedAtClose,study.stats.total);
+ assert.equal(study.stats.total,study.stats.validOnly+study.stats.invalidated);
+ assert.ok(study.history.every(h=>["WEB_VALIDATION","WEB_INVALIDATED"].includes(h.status)));
+ assert.ok(study.history.every(h=>h.tp1===null&&h.tp2===null));
+ assert.equal(study.stats.wins,0);
+ assert.equal(study.stats.losses,0);
+ assert.equal(study.stats.winRate,null);
+ if(study.latestSignal.status?.includes("WATCH"))assert.equal(study.latestSignal.confirmed,false);
 });
