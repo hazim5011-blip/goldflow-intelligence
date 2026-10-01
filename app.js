@@ -140,7 +140,7 @@ async function loadAnalysis(){
     if(pd){$("pdHigh").textContent=px(pd.high);$("pdEq").textContent=px(pd.equilibrium);$("pdLow").textContent=px(pd.low);$("pdPos").textContent=pd.position}else{$("pdHigh").textContent=$("pdEq").textContent=$("pdLow").textContent=$("pdPos").textContent="—"}
     if(ind.watch&&ind.watch.zone){$("watch").textContent=ind.watch.reason+" • "+px(ind.watch.zone.low)+" - "+px(ind.watch.zone.high)}else $("watch").textContent="No active zone nearby.";
     if($("statsNote")){
-      $("statsNote").textContent=(selectedIndicator==="pattern132"||selectedIndicator==="snd107")
+      $("statsNote").textContent=(selectedIndicator==="pattern132"||selectedIndicator==="snd107"||selectedIndicator==="fund104")
         ?"VALID = native indicator confirmation • TP/SL outcome not defined by source"
         :"WIN = TP + TRAIL + BE • LOSE = SL only";
     }
