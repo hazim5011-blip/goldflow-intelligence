@@ -115,7 +115,9 @@ function resetDashboard(){
 async function loadAnalysis(){
   if(!selectedSymbol||loading)return;loading=true;resetDashboard();
   try{
-    var r=await getJson("/api/analyze?symbol="+encodeURIComponent(selectedSymbol)+"&tf="+encodeURIComponent(selectedTF)+"&indicator="+encodeURIComponent(selectedIndicator));
+    var requestedSymbol=selectedSymbol,requestedTF=selectedTF,requestedIndicator=selectedIndicator;
+    var r=await getJson("/api/analyze?symbol="+encodeURIComponent(requestedSymbol)+"&tf="+encodeURIComponent(requestedTF)+"&indicator="+encodeURIComponent(requestedIndicator));
+    if(requestedSymbol!==selectedSymbol||requestedTF!==selectedTF||requestedIndicator!==selectedIndicator){setTimeout(loadAnalysis,0);return}
     lastAnalysis=r;
     if(!r.ok||!r.ready){
       chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","WAIT");
@@ -144,7 +146,7 @@ async function loadAnalysis(){
         ?"VALID = native indicator confirmation • TP/SL outcome not defined by source"
         :"WIN = TP + TRAIL + BE • LOSE = SL only";
     }
-    lastLiveTick=r.tick?{...r.tick,seenAtMs:Date.now()}:null;renderZones(ind.activeZones||{},lastLiveTick);renderStats(st);renderHistory(ind.history||[]);
+    lastLiveTick=null;renderZones(ind.activeZones||{},null);renderStats(st);renderHistory(ind.history||[]);setTimeout(refreshLiveZoneEntry,0);
     $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(selectedSymbol));
     $("chartTitle").textContent=(r.symbol||selectedSymbol)+" • VANTAGE MT5";$("chartTag").textContent=r.triggerTF;
     if($("chartPage").classList.contains("on"))drawChart();
@@ -189,16 +191,17 @@ async function refreshLiveZoneEntry(){
   if(!$("dashboard").classList.contains("on"))return;
   liveTickLoading=true;
   try{
-    var j=await getJson("/api/status?lite=1&pair="+encodeURIComponent(selectedSymbol));
-    if(!j.ok||!j.bridgeOnline||!finite(j.bid)||!finite(j.ask))throw Error("BROKER_TICK_UNAVAILABLE");
+    var activeSymbol=selectedSymbol,activeAnalysis=lastAnalysis;
+    var j=await getJson("/api/status?lite=1&pair="+encodeURIComponent(activeSymbol));
+    if(activeSymbol!==selectedSymbol||activeAnalysis!==lastAnalysis)return;
+    if(!j.ok||!j.bridgeOnline||!finite(j.bid)||!finite(j.ask)||!finite(j.serverTime)||!finite(j.ageSeconds)||Number(j.ageSeconds)>30||Number(j.bid)<=0||Number(j.ask)<Number(j.bid))throw Error("BROKER_TICK_STALE_OR_UNAVAILABLE");
     lastLiveTick={bid:Number(j.bid),ask:Number(j.ask),seenAtMs:Date.now()};
     lastAnalysis.price=lastLiveTick.bid;$("price").textContent=px(lastLiveTick.bid);
     $("spread").textContent="Spread "+px(lastLiveTick.ask-lastLiveTick.bid);
     renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},lastLiveTick);
   }catch(e){
     // Never retain a stale quote as a LIVE ENTRY indication.
-    lastLiveTick=null;
-    renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},null);
+    if(lastAnalysis&&lastAnalysis.ready){lastLiveTick=null;renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},null)}
   }finally{liveTickLoading=false}
 }
 function renderStats(s){
