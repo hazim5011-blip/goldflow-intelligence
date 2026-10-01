@@ -224,7 +224,9 @@
     $("v8NewsRegime").innerHTML=stat("REGIME",macro.regime?.name||"N/A","DERIVED • "+(macro.regime?.confidence??"N/A")+"% input coverage")+
       stat("GOLD CONTEXT",macro.gold?.bias||"N/A","DERIVED • no guarantee")+
       stat(t("updated"),dt(macro.fetchedAtUTC),"FRED/BEA/BLS/Fed/Treasury • source verified");
-    var releases=data.verifiedReleases||data.latestOfficialEvents||[],observations=data.latestOfficialObservations||[];
+    var impactOrder={HIGH:0,MEDIUM:1,LOW:2,CONTEXT:3};
+    var orderImpact=function(a,b){return (impactOrder[a.impact]??9)-(impactOrder[b.impact]??9)};
+    var releases=(data.verifiedReleases||data.latestOfficialEvents||[]).slice().sort(orderImpact),observations=(data.latestOfficialObservations||[]).slice().sort(orderImpact);
     function newsCard(ev,isRelease){
       return '<details class="v8NewsItem impact-'+safe(ev.impact||"LOW")+'"><summary><div class="gfNewsTitle"><b>'+safe(ev.title)+'</b><span class="gfImpactBadge">'+safe(ev.impact==="CONTEXT"?"MARKET CONTEXT":(ev.impact||"LOW")+" IMPACT")+(isRelease?"":" • OBSERVATION")+'</span></div><strong>'+safe(ev.display||"N/A")+'</strong><small>'+safe(ev.dataPeriod||"N/A")+" • "+safe(ev.source)+" • "+safe(isRelease?t("verifiedRelease"):t("macroObservation"))+'</small></summary><div class="v8NewsBody">'+
         '<div class="v8NewsMeta">'+stat(t("actual"),ev.display||"N/A")+stat(t("forecast"),finite(ev.forecast)?number(ev.forecast,2):"N/A",finite(ev.forecast)?"":t("consensusUnavailable"))+

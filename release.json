@@ -1,15 +1,16 @@
 {
   "product": "GoldFlow Intelligence",
-  "channel": "production",
-  "version": "8.0.0",
-  "mode": "HYBRID_VANTAGE_6_INDICATORS_HISTORY_PRO_PERFORMANCE_EVIDENCE_NEWS_TV_GLOBAL",
+  "channel": "staging",
+  "version": "8.1.0-rc.1",
+  "mode": "V8_1_BLOG_NEWS_IMPACT_LIVE_ZONE_FUND104_WEB_STUDY",
   "indicators": [
     "MTF Research v1.05",
     "MTF Research v1.03",
     "PVT v1.02",
     "Pattern Zone Tutor v1.32",
     "SND/SNR/SBR/RBS v1.07 STRICT TF",
-    "OWL Style Research v1.01"
+    "OWL Style Research v1.01",
+    "Fund Structure A Signal v1.04 — WEB STUDY SUBSET (not native iCustom)"
   ],
   "macro": {
     "officialSeries": [
@@ -38,8 +39,8 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "GoldFlow Intelligence V8.0.0 production release. Preserves all six indicator engines and adds History Pro, Performance Analytics, Evidence, News Study, TradingView Hybrid, Explain/Read Aloud, multilingual support and forward-evidence foundation. Production redeploy requested after Vercel plan upgrade.",
-  "updated": "2026-10-01",
+  "message": "Staging release candidate; do not represent Fund104 as native MT5 compiled/buffer-equivalent; six original engines unchanged. Broker must be live for production smoke.",
+  "updated": "2026-10-02",
   "features": [
     "History Pro closed-candle reconstruction",
     "Performance Analytics with strict and legacy win-rate definitions",
@@ -48,7 +49,10 @@
     "TradingView Hybrid reference tools",
     "AI Explain / Read Aloud",
     "22 locale packs with RTL support",
-    "Vantage MT5 broker metadata provenance"
-  ],
-  "deploymentRetry": "2026-10-01"
+    "Vantage MT5 broker metadata provenance",
+    "GoldFlow Blog & Indicator Updates (MS/EN)",
+    "LIVE TRADE chart-view action and Pending entry ranges (no order placement)",
+    "News impact class (HIGH/MEDIUM/LOW/CONTEXT) with conditional interpretation",
+    "Fund Structure 1.04 closed-candle WEB STUDY subset; native parity pending"
+  ]
 }
