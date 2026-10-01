@@ -152,37 +152,56 @@ function oneSignal(a,i,htf1,htf2){
  return results.length>1&&results[0].score===results[1].score?null:results[0]||null;
 }
 
-export function fund104InvalidatedByClosedBars(closedBars,sig,alreadyNormalized=false){
+export function fund104InvalidationAtByClosedBars(closedBars,sig,alreadyNormalized=false){
  const a=alreadyNormalized?closedBars:norm(closedBars),i=a.findIndex(b=>b.t===sig?.time);
- if(i<0||sig?.direction===0)return false;
+ if(i<0||sig?.direction===0)return null;
  const ar=atr(a,i),src=a[i],level=sig.direction>0?src.l-.05*ar:src.h+.05*ar;
- // The default native INVALIDATE_CLOSE_BEYOND_WICK ignores unclosed and intrabar-only touches.
+ // Signal + 1 onward: only later FULLY-CLOSED candles can invalidate.
  for(let j=i+1;j<a.length;j++){
-   if(sig.direction>0&&a[j].c<level)return true;
-   if(sig.direction<0&&a[j].c>level)return true;
+   if(sig.direction>0&&a[j].c<level)return a[j].t;
+   if(sig.direction<0&&a[j].c>level)return a[j].t;
  }
- return false;
+ return null;
+}
+export function fund104InvalidatedByClosedBars(closedBars,sig,alreadyNormalized=false){
+ return fund104InvalidationAtByClosedBars(closedBars,sig,alreadyNormalized)!==null;
 }
 
 export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupTF="H1",biasTF="H4",symbol="",point=0}){
  const a=norm(triggerBars),one=norm(setupBars),two=norm(biasBars);
  if(a.length<110)return {ready:false,error:"Insufficient closed broker candles for Fund Structure v1.04 study."};
- const history=[],limit=Math.min(a.length-2,400),first=Math.max(80,a.length-2-limit);
+ const history=[],watchCandidates=[],limit=Math.min(a.length-2,400),first=Math.max(80,a.length-2-limit);
+ let patternCandidates=0;
  for(let i=first;i<a.length-1;i++){
   const closeTime=a[i].t+(TF_SEC[triggerTF]||300);
   const h1=trend(one,setupTF,closeTime),h4=trend(two,biasTF,closeTime);
   const s=oneSignal(a,i,h1,h4);
-  if(s&&s.confirmed)history.push(s);
+  if(s){patternCandidates++;
+    if(s.confirmed)history.push(s);
+    else if(i>=a.length-5)watchCandidates.push(s);
+  }
  }
  const closed=a.slice(0,-1);
- const visibleHistory=history.filter(sig=>!fund104InvalidatedByClosedBars(closed,sig,true));
+ // Preserve native invalid-study audit history (xBx/xSx concept). Removing
+ // invalidated events would silently erase historical studies and understate churn.
+ const auditedHistory=history.map(sig=>{
+   const invalidatedAt=fund104InvalidationAtByClosedBars(closed,sig,true);
+   return {...sig,status:invalidatedAt!==null?"WEB_INVALIDATED":"WEB_VALIDATION",
+     validity:invalidatedAt!==null?"INVALIDATED":"VALID",invalidatedAt,
+     confirmed:invalidatedAt===null};
+ });
+ const activeHistory=auditedHistory.filter(sig=>sig.invalidatedAt===null);
+ const invalidatedCount=auditedHistory.length-activeHistory.length;
  const i=a.length-2,last=a[i],closeTime=last.t+(TF_SEC[triggerTF]||300),h1=trend(one,setupTF,closeTime),h4=trend(two,biasTF,closeTime),ar=atr(a,i);
  const low=min(a,i,SETTINGS.zoneLookback),high=max(a,i,SETTINGS.zoneLookback);
  const buyZone={direction:1,currentDirection:1,low,high:low+.65*ar,baseScore:60,sourceEvent:"SND DEMAND • WEB STUDY",currentRetests:0,tf:triggerTF};
  const sellZone={direction:-1,currentDirection:-1,low:high-.65*ar,high,baseScore:60,sourceEvent:"SND SUPPLY • WEB STUDY",currentRetests:0,tf:triggerTF};
- const recent=visibleHistory.at(-1);
+ const recent=activeHistory.at(-1);
  const fresh=recent&&recent.time>=a[Math.max(0,i-3)].t;
- const latest=(fresh?recent:null)||{code:"WAIT",status:"WAIT CLOSED-CANDLE CONFIRMATION",score:null,entry:null,invalidation:null,tp1:null,tp2:null,reasons:["NO RECENT QUALIFIED SETUP","A++ BLOCKED WITHOUT TIMESTAMP-VERIFIED MACRO"]};
+ const watchCandidate=watchCandidates.at(-1);
+ const latest=(fresh?recent:null)||(watchCandidate?{...watchCandidate,status:"WATCH • WEB STUDY (NOT CONFIRMED)",grade:"",confirmed:false}:null)||{
+  code:"WAIT",direction:0,status:"WAIT CLOSED-CANDLE CONFIRMATION",score:null,entry:null,invalidation:null,
+  tp1:null,tp2:null,reasons:["NO QUALIFIED CLOSED-CANDLE SETUP IN STUDY WINDOW","A++ BLOCKED WITHOUT TIMESTAMP-VERIFIED MACRO"]};
  const bias=h4,setup=h1;
  return {ready:true,engine:"Fund Structure A Signal v1.04 • WEB STUDY SUBSET (not native iCustom)",symbol,
   studyCoverage:"CLOSED_CANDLE_PATTERNS_SND_STRUCTURE_RSI_STOCH_MTF_ONLY",
@@ -193,8 +212,11 @@ export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupT
   activeZones:{buy:[buyZone],sell:[sellZone],swap:[]},
   latestSignal:latest,
   watch:{direction:0,reason:"Fund Structure web study zones, not broker orders",zone:buyZone},
-  history:visibleHistory.slice(-160),
-  stats:{total:visibleHistory.length,validOnly:visibleHistory.length,wins:0,losses:0,pending:0,tp:0,tr:0,be:0,sl:0,winRate:null},
+  history:auditedHistory.slice(-160),
+  studyDiagnostics:{sourceClosedBars:a.length-1,studyWindowBars:a.length-1-first,patternCandidates,
+    confirmedAtClose:history.length,invalidatedAfterClose:invalidatedCount,stillValid:activeHistory.length,
+    recentWatchCount:watchCandidates.length,quality:history.length?"HISTORICAL_WEB_STUDY_ONLY":"NO_QUALIFIED_CLOSED_SIGNAL_IN_WINDOW"},
+  stats:{total:auditedHistory.length,validOnly:activeHistory.length,invalidated:invalidatedCount,wins:0,losses:0,pending:0,tp:0,tr:0,be:0,sl:0,winRate:null},
   gradeMethod:"MQL5 grade source 60/70/85. WEB STUDY A++ disabled without archived as-of macro."
  };
 }
