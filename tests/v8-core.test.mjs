@@ -168,3 +168,20 @@ test("English locale covers new speech replay and news-classification labels",()
   const en=JSON.parse(readFileSync(path.join(here,"../locales/en.json"),"utf8")).strings;
   for(const key of ["replay","verifiedRelease","macroObservation","noVerifiedReleases","macroObservationNote"])assert.ok(en[key],key);
 });
+
+test("Vantage broker UTC+3 is normalized ONLY in published historical timestamps",()=>{
+  const t=Date.parse("2026-10-01T23:30:00.000Z")/1000; // raw MT5 broker clock
+  const signal={time:t,direction:1,entry:100,invalidation:90,tp1:110,code:"B",score:67,reasons:["TEST"]};
+  const bars=[mk(t,99,101,97,100),mk(t+300,101,112,100,111),mk(t+600,109,111,108,110)];
+  const spec=metadataFromCatalog({name:"XAUUSD247",point:.01,digits:2},"XAUUSD247","XAUUSD247");
+  const ctx={requested:"XAUUSD247",resolved:"XAUUSD247",tf:"M5",indicator:"103",spec,brokerServerUTCOffsetSeconds:10800};
+  const row=buildHistory([signal],bars,ctx)[0];
+  assert.equal(row.sourceBrokerBarEpoch,t,"raw replay timestamps must remain auditable");
+  assert.equal(row.brokerServerUTCOffsetSeconds,10800);
+  assert.equal(row.signalCandleCloseUTC,"2026-10-01T20:35:00.000Z");
+  assert.equal(row.exitTimeUTC,"2026-10-01T20:35:00.000Z");
+  assert.equal(row.outcome,"TP1");
+  assert.equal(row.priceMove,10,"correcting time must not change quote move");
+  const backwardCompatible=buildHistory([signal],bars,{...ctx,brokerServerUTCOffsetSeconds:0})[0];
+  assert.equal(backwardCompatible.signalCandleCloseUTC,"2026-10-01T23:35:00.000Z");
+});

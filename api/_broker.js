@@ -6,6 +6,15 @@ const CONFIGURED_BASE=(process.env.BROKER_BRIDGE_URL||"").trim().replace(/\/$/,"
 const PERMANENT_BASE="https://bridge.hazim5011.com";
 const BASE=CONFIGURED_BASE?PERMANENT_BASE:"";
 export function bridgeBaseUrl(){return BASE;}
+// VantageMarkets-Live 3 was observed reporting an MT5 tick/bar clock at UTC+3
+// relative to the bridge host in October 2026. Use the SAME explicit offset
+// for freshness, history UTC labels and candle age; never infer it per tick.
+export function vantageBrokerUtcOffsetSeconds(){
+ const raw=process.env.VANTAGE_TICK_UTC_OFFSET_SECONDS;
+ const n=raw===undefined||raw===""?10800:Number(raw);
+ return Number.isInteger(n)&&Math.abs(n)<=50400?n:null;
+}
+
 export function bridgeEndpointMode(){return BASE?"PERMANENT_NAMED_TUNNEL":"UNCONFIGURED";}
 const KEY=(process.env.BROKER_BRIDGE_KEY||"").trim();
 
