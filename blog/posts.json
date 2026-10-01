@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "disclaimer": "GoldFlow blog is research documentation; never proof of executed trades.",
+  "posts": [
+    {
+      "id": "v8-news-impact-categories",
+      "published": true,
+      "dateUTC": "2026-10-02",
+      "category": "RESEARCH METHODOLOGY",
+      "version": "V8 candidate",
+      "changeType": "New UI study",
+      "titleMS": "Cara membaca warna High / Medium / Low Impact",
+      "titleEN": "Reading High / Medium / Low Impact",
+      "summaryMS": "Kategori impak berdasarkan jenis peristiwa. Warna tidak menjamin pergerakan USD atau emas.",
+      "summaryEN": "Impact class reflects typical event potential, not a guaranteed USD/gold move.",
+      "bodyMS": "CPI, Core PCE, NFP, kadar Fed dan data pekerjaan utama dikelaskan sebagai peristiwa yang lazimnya berpotensi impak tinggi. Industrial Production sederhana; pemerhatian seperti US2Y dan US10Y ialah konteks pasaran, bukan jadual berita. Tanpa konsensus dan masa keluaran yang disahkan, tiada kejutan Actual-versus-Forecast direka.",
+      "bodyEN": "CPI, Core PCE, NFP, Fed rate and major employment reports are typical high-potential categories. Industrial Production is medium. US2Y/US10Y are market observations, not scheduled releases. With no verified timestamp/consensus GoldFlow never fabricates an Actual-versus-Forecast surprise.",
+      "qualityNote": "Classification by event type only; direction is a conditional macro interpretation, not an instruction."
+    },
+    {
+      "id": "v8-pattern132-source",
+      "published": true,
+      "dateUTC": "2026-10-02",
+      "category": "INDICATOR STUDY",
+      "version": "Pattern Zone Tutor v1.32",
+      "changeType": "Source review",
+      "titleMS": "Pattern Zone Tutor v1.32 — audit sumber MT5",
+      "titleEN": "Pattern Zone Tutor v1.32 — MT5 source audit",
+      "summaryMS": "Fungsi asal melibatkan candle tutup, WATCH/VALID, SND, pressure dan Fibonacci.",
+      "summaryEN": "Original closed-candle WATCH/VALID flow, SND, pressure and Fibonacci reviewed.",
+      "bodyMS": "Engine web Pattern Tutor v1.32 sedia ada dikekalkan. Pemilihan TIMEFRAME untuk signal kekal mengikut sumber dan validasi berasaskan candle yang sudah tutup. WEB adalah kajian berasingan: ia tidak membaca iCustom MT5 atau mendakwa kesamaan setiap objek grafik Fibonacci.",
+      "bodyEN": "The existing v1.32 web research engine is retained. Signals remain sourced from closed broker candles on the selected timeframe. This web research port does not claim to reproduce each native MT5 graphical Fibonacci object or use iCustom buffers.",
+      "qualityNote": "Pattern v1.32 is VALID_ONLY; original source does not define an executed-trade TP/SL model."
+    }
+  ]
+}

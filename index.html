@@ -53,6 +53,7 @@
   <button class="tab" data-page="symbolsPage">All Symbols</button>
   <button class="tab" data-page="macroPage">Macro Regime</button>
   <button class="tab" data-page="v8News" data-i18n="newsStudy">News Study</button>
+  <button class="tab" data-page="blogPage">Blog & Updates</button>
 </nav>
 
 <main>
@@ -209,6 +210,14 @@
     <div class="v8MetricGrid" id="v8NewsRegime"></div>
     <div id="v8NewsList" class="v8NewsGrid"></div>
     <div class="v8Footnote" data-i18n="disclaimer">Market research only. This is not financial advice, a guaranteed signal or proof of past market causation. Users make their own trading decisions and bear the risks.</div>
+  </div>
+</section>
+<section id="blogPage" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">RESEARCH • INDICATOR CHANGELOG</small><h3>GoldFlow Blog & Indicator Updates</h3></div><button type="button" class="primary" id="gfBlogRefresh">Refresh Blog</button></div>
+    <div id="gfBlogNote" class="notice info">Release notes, indicator methodology and verified changes. No invented performance claims.</div>
+    <div id="gfBlogPosts" class="gfBlogPosts" aria-live="polite"></div>
+    <p class="v8Footnote">Version notes describe code changes; historical backtests are separate from live forward-logged evidence. Articles are available in Malay and English; other locales use an English fallback until reviewed translations are available.</p>
   </div>
 </section>
 </main>

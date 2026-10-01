@@ -1,3 +1,4 @@
+import {classifyReleaseEvent} from "./_v8Impact.js";
 import macroHandler from "./macro.js";
 const COUNTRY="United States";
 const TAKE=["GDP","IP","PAYEMS","UNRATE","CPI","COREPCE","BREAKEVEN10","FEDUPPER","WALCL","TGA","ONRRP","US2Y","US10Y","REAL10Y","USDBROAD"];
@@ -27,6 +28,7 @@ export default async function handler(req,res){
         fetchedAtUTC:result.fetchedAt,source:c.source,sourceUrl:c.seriesUrl||null,
         derived:c.status==="DERIVED",stale:!!c.stale,status:!available?"UNAVAILABLE":c.stale?"STALE":"OFFICIAL_RECORDED",
         surprise:null,surprisePercent:null,changeVsHistory:c.change??null,changeLabel:c.changeLabel||null,
+        ...classifyReleaseEvent({type:c.id,verifiedReleaseTimestamp:false,releasedAtUTC:null}),
         interpretation:{...mechanism(c.id),fact:available?c.name+" "+c.display+" untuk tempoh "+(c.date||"tidak dinyatakan")+". Sumber: "+c.source+".":"Data belum tersedia."},
         signalLinkage:"NOT_LINKED_TO_HISTORICAL_SIGNAL"};
     });
