@@ -81,8 +81,8 @@
   </div>
 
   <div class="grid g2 sec">
-    <div class="card"><div class="head"><h3>DEMAND / BUY ZONES</h3><span id="buyCount" class="tag g">0</span></div><div id="buyZones"></div></div>
-    <div class="card"><div class="head"><h3>SUPPLY / SELL ZONES</h3><span id="sellCount" class="tag r">0</span></div><div id="sellZones"></div></div>
+    <div class="card"><div class="head"><h3>DEMAND / BUY ZONES</h3><span id="buyCount" class="tag g">0</span></div><div id="buyZones"></div><div class="sub">PENDING = entry area only. LIVE TRADE button is a chart-view action; no broker order is placed.</div></div>
+    <div class="card"><div class="head"><h3>SUPPLY / SELL ZONES</h3><span id="sellCount" class="tag r">0</span></div><div id="sellZones"></div><div class="sub">LIVE ENTRY means the Vantage quote is within this zone; not an executed position.</div></div>
   </div>
 
   <div class="card sec">
@@ -92,7 +92,7 @@
 </section>
 
 <section id="chartPage" class="page">
-  <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><span id="chartTag" class="tag">—</span></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div></div>
+  <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><span id="chartTag" class="tag">—</span></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div><div class="sub">Pending: dashed entry-range boundary lines. Live setup: solid entry range + marker. No automatic trade execution.</div></div>
 </section>
 
 <section id="tvPage" class="page">

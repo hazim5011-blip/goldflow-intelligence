@@ -1,5 +1,5 @@
 var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5", selectedIndicator=localStorage.getItem("gf_indicator")||"105";
-var lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
+var focusedZone=null, lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
 function $(id){return document.getElementById(id)}
 function finite(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}
 function fmt(v,d){if(!finite(v))return "—";return Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}
@@ -32,8 +32,8 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
 
 $("tfSelect").value=selectedTF;
 $("indicatorSelect").value=selectedIndicator;
-$("tfSelect").onchange=function(){selectedTF=this.value;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
-$("indicatorSelect").onchange=function(){selectedIndicator=this.value;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
+$("tfSelect").onchange=function(){selectedTF=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
+$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
 $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
@@ -41,7 +41,7 @@ $("symbolSelect").onchange=function(){selectSymbol(this.value)};
 if($("macroRefresh"))$("macroRefresh").onclick=function(){loadMacro(true)};
 
 function selectSymbol(s){
-  if(!s)return;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
+  if(!s)return;focusedZone=null;lastLiveTick=null;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
   $("symbolSelect").value=s;renderSymbolCards();loadAnalysis();renderTradingView();
 }
 function categoryRank(x){return {METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7}[x]||9}
@@ -143,7 +143,7 @@ async function loadAnalysis(){
         ?"VALID = native indicator confirmation • TP/SL outcome not defined by source"
         :"WIN = TP + TRAIL + BE • LOSE = SL only";
     }
-    lastLiveTick=r.tick||{bid:r.price,ask:r.price};renderZones(ind.activeZones||{},lastLiveTick);renderStats(st);renderHistory(ind.history||[]);
+    lastLiveTick=r.tick?{...r.tick,seenAtMs:Date.now()}:null;renderZones(ind.activeZones||{},lastLiveTick);renderStats(st);renderHistory(ind.history||[]);
     $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(selectedSymbol));
     $("chartTitle").textContent=(r.symbol||selectedSymbol)+" • VANTAGE MT5";$("chartTag").textContent=r.triggerTF;
     if($("chartPage").classList.contains("on"))drawChart();
@@ -151,24 +151,37 @@ async function loadAnalysis(){
     chip("engineChip","bad","ENGINE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;
   }finally{loading=false}
 }
-function quoteForZone(d,tick,fallback){
-  var q=Number(d)>0?(tick&&tick.ask):(tick&&tick.bid);
-  if(!finite(q))q=fallback;
+
+function quoteForZone(d,tick){
+  if(!tick||!Number.isFinite(tick.seenAtMs)||Date.now()-tick.seenAtMs>15000)return null;
+  var q=Number(d)>0?tick.ask:tick.bid;
   return finite(q)?Number(q):null;
 }
-function zoneEntryState(x,d,tick,fallback){
-  var lo=Number(x&&x.low),hi=Number(x&&x.high),q=quoteForZone(d,tick,fallback);
-  if(!Number.isFinite(lo)||!Number.isFinite(hi)||!Number.isFinite(q))return{label:"PENDING",live:false,quote:q,side:Number(d)>0?"ASK":"BID"};
-  var low=Math.min(lo,hi),high=Math.max(lo,hi),live=q>=low&&q<=high;
-  return{label:live?"LIVE ENTRY":"PENDING",live:live,quote:q,side:Number(d)>0?"ASK":"BID"};
+function zoneEntryState(x,d,tick){
+  var lo=Number(x&&x.low),hi=Number(x&&x.high),q=quoteForZone(d,tick);
+  var side=Number(d)>0?"ASK":"BID";
+  if(!Number.isFinite(lo)||!Number.isFinite(hi)||q===null)return {label:"QUOTE OFFLINE",live:false,quote:null,side:side,ready:false};
+  var live=q>=Math.min(lo,hi)&&q<=Math.max(lo,hi);
+  return{label:live?"LIVE ENTRY":"PENDING",live:live,quote:q,side:side,ready:true};
 }
 function renderZones(z,tick){
-  var buy=z.buy||[],sell=z.sell||[];$("buyCount").textContent=buy.length;$("sellCount").textContent=sell.length;
-  function html(a,d){return a.length?a.map(function(x){
-    var st=zoneEntryState(x,d,tick,lastAnalysis&&lastAnalysis.price),side=d>0?"buy":"sell";
-    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):"pending")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span><span class="sub">Retest '+x.currentRetests+'</span></div><div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>'
+  var buy=z.buy||[],sell=z.sell||[];
+  $("buyCount").textContent=buy.length;$("sellCount").textContent=sell.length;
+  function html(a,d){return a.length?a.map(function(x,i){
+    var st=zoneEntryState(x,d,tick),side=d>0?"buy":"sell";
+    var action=st.live?'<button class="zoneAction" type="button" data-side="'+side+'" data-index="'+i+'" aria-label="View live entry setup on broker chart">LIVE TRADE • VIEW CHART ↗</button>':"";
+    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span><span class="sub">Retest '+x.currentRetests+'</span></div>'+action+'<div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>';
   }).join(""):'<div class="sub">No active zone.</div>'}
   $("buyZones").innerHTML=html(buy,1);$("sellZones").innerHTML=html(sell,-1);
+  document.querySelectorAll(".zoneAction").forEach(function(b){b.onclick=function(){
+    var z=(lastAnalysis?.indicator?.activeZones||{})[b.dataset.side]||[];
+    var item=z[Number(b.dataset.index)];
+    var d=b.dataset.side==="buy"?1:-1;
+    if(!item||!zoneEntryState(item,d,lastLiveTick).live)return;
+    focusedZone={...item,currentDirection:d};
+    document.querySelector('.tab[data-page="chartPage"]').click();
+    setTimeout(drawChart,70);
+  }});
 }
 async function refreshLiveZoneEntry(){
   if(liveTickLoading||document.hidden||!selectedSymbol||!lastAnalysis||!lastAnalysis.ready)return;
@@ -176,14 +189,15 @@ async function refreshLiveZoneEntry(){
   liveTickLoading=true;
   try{
     var j=await getJson("/api/status?lite=1&pair="+encodeURIComponent(selectedSymbol));
-    if(!j.ok||!j.bridgeOnline)return;
-    lastLiveTick={bid:j.bid,ask:j.ask,time:j.serverTime};
-    if(finite(j.bid)){lastAnalysis.price=Number(j.bid);$("price").textContent=px(j.bid)}
-    lastAnalysis.tick=Object.assign({},lastAnalysis.tick||{},lastLiveTick);
-    if(finite(j.bid)&&finite(j.ask))$("spread").textContent="Spread "+px(Number(j.ask)-Number(j.bid));
+    if(!j.ok||!j.bridgeOnline||!finite(j.bid)||!finite(j.ask))throw Error("BROKER_TICK_UNAVAILABLE");
+    lastLiveTick={bid:Number(j.bid),ask:Number(j.ask),seenAtMs:Date.now()};
+    lastAnalysis.price=lastLiveTick.bid;$("price").textContent=px(lastLiveTick.bid);
+    $("spread").textContent="Spread "+px(lastLiveTick.ask-lastLiveTick.bid);
     renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},lastLiveTick);
   }catch(e){
-    // Keep the last broker analysis visible if a single live-tick refresh fails.
+    // Never retain a stale quote as a LIVE ENTRY indication.
+    lastLiveTick=null;
+    renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},null);
   }finally{liveTickLoading=false}
 }
 function renderStats(s){
@@ -203,12 +217,21 @@ function drawChart(){
   chart=LightweightCharts.createChart($("chart"),{layout:{background:{color:"#07131c"},textColor:"#aab9c3"},grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true,secondsVisible:false}});
   candleSeries=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
   candleSeries.setData(bars.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
-  var zones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
-  zones.slice(0,10).forEach(function(z){var d=z.currentDirection||z.direction,col=d>0?"#31d6a4":"#ff6079";candleSeries.createPriceLine({price:z.low,color:col,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:(d>0?"BUY":"SELL")+" L"});candleSeries.createPriceLine({price:z.high,color:col,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:(d>0?"BUY":"SELL")+" H"})});
+  var allZones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
+  var zones=focusedZone?[focusedZone]:allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)}).slice(0,5);
+  zones.forEach(function(z){
+    var d=z.currentDirection||z.direction||1,st=zoneEntryState(z,d,lastLiveTick),col=d>0?"#31d6a4":"#ff6079";
+    var label=st.live?"LIVE SETUP":st.ready?"PENDING":"OFFLINE";
+    candleSeries.createPriceLine({price:Number(z.low),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:true,title:label+" "+(d>0?"BUY":"SELL")+" ENTRY LOW"});
+    candleSeries.createPriceLine({price:Number(z.high),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:true,title:label+" "+(d>0?"BUY":"SELL")+" ENTRY HIGH"});
+  });
   var barTimes=new Set(bars.map(function(b){return b.t}));
   var markers=(ind.history||[]).filter(function(x){return barTimes.has(x.time)}).slice(-80).map(function(x){return {time:x.time,position:x.direction>0?"belowBar":"aboveBar",color:x.direction>0?"#f2c75b":"#ff6079",shape:x.direction>0?"arrowUp":"arrowDown",text:x.code+" "+Math.round(x.score)+"%"}});
-  if(candleSeries.setMarkers)candleSeries.setMarkers(markers);
-  chart.timeScale().fitContent();$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"");
+  if(focusedZone && zoneEntryState(focusedZone,focusedZone.currentDirection,lastLiveTick).live && bars.length){
+    markers.push({time:bars[bars.length-1].t,position:focusedZone.currentDirection>0?"belowBar":"aboveBar",color:focusedZone.currentDirection>0?"#31d6a4":"#ff6079",shape:"circle",text:"LIVE ENTRY • PRICE IN ZONE (NOT EXECUTED)"});
+  }
+  if(candleSeries.setMarkers)candleSeries.setMarkers(markers.sort(function(a,b){return a.time-b.time}));
+  chart.timeScale().fitContent();$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+" • PENDING = entry area; LIVE = current quote within area, NOT broker order";
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
