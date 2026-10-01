@@ -29,12 +29,44 @@ function trend(src,tf,closeTime){
   const fast=ema(src,i,SETTINGS.fastEMA),slow=ema(src,i,SETTINGS.slowEMA);
   return fast>slow&&src[i].c>fast?1:fast<slow&&src[i].c<fast?-1:0;
 }
-function rsi(a,i,p=14){
-  if(i<p)return null;let up=0,down=0;
-  for(let j=i-p+1;j<=i;j++){const delta=a[j].c-a[j-1].c;up+=Math.max(0,delta);down+=Math.max(0,-delta)}
-  up/=p;down/=p;
-  if(up===0&&down===0)return 50;if(down===0)return 100;
-  return 100-100/(1+up/down);
+// MQL5 iRSI(PRICE_CLOSE) uses Wilder's recursive smoothing, not an SMA of
+// only the latest 14 deltas. A deterministic chronological calculation avoids
+// time-series lookahead when reconstructing older CLOSED bars.
+export function fund104WilderRSI(a,i,p=14){
+ if(i<p||p<2)return null;
+ let gain=0,loss=0;
+ for(let j=1;j<=p;j++){
+  const change=a[j].c-a[j-1].c;gain+=Math.max(0,change);loss+=Math.max(0,-change);
+ }
+ gain/=p;loss/=p;
+ for(let j=p+1;j<=i;j++){
+  const change=a[j].c-a[j-1].c;
+  gain=(gain*(p-1)+Math.max(0,change))/p;
+  loss=(loss*(p-1)+Math.max(0,-change))/p;
+ }
+ if(gain===0&&loss===0)return 50;
+ if(loss===0)return 100;
+ return 100-100/(1+gain/loss);
+}
+function confirmedPivot(a,j,depth,d,i){
+ if(j-depth<0||j+depth>=i)return false;
+ const p=d>0?a[j].l:a[j].h;
+ for(let k=1;k<=depth;k++){
+  const newer=d>0?a[j+k].l:a[j+k].h,older=d>0?a[j-k].l:a[j-k].h;
+  if(d>0&&(newer<=p||older<p))return false;
+  if(d<0&&(newer>=p||older>p))return false;
+ }
+ return true;
+}
+function localSwingTrend(a,i,lookback=220,depth=3){
+ let lows=[],highs=[];
+ for(let j=i-depth-1;j>=Math.max(depth,i-lookback);j--){
+  if(lows.length<2&&confirmedPivot(a,j,depth,1,i))lows.push(a[j].l);
+  if(highs.length<2&&confirmedPivot(a,j,depth,-1,i))highs.push(a[j].h);
+  if(lows.length>=2&&highs.length>=2)break;
+ }
+ const bull=lows.length>=2&&lows[0]>lows[1],bear=highs.length>=2&&highs[0]<highs[1];
+ return bull&&!bear?1:bear&&!bull?-1:0;
 }
 function stoch(a,i){
   function raw(j){if(j<4)return null;const lo=Math.min(...a.slice(j-4,j+1).map(x=>x.l)),hi=Math.max(...a.slice(j-4,j+1).map(x=>x.h));return hi===lo?50:100*(a[j].c-lo)/(hi-lo)}
@@ -95,7 +127,7 @@ function oneSignal(a,i,htf1,htf2){
  const prevDown=a[i-2].c<a[i-3].c||a[i-1].c<a[i-2].c,prevUp=a[i-2].c>a[i-3].c||a[i-1].c>a[i-2].c;
  const chochUp=prevDown&&b.c>max(a,i,7),chochDown=prevUp&&b.c<min(a,i,7);
  const structUp=bosUp||chochUp,structDown=bosDown||chochDown;
- const p=patterns(a,i,ar,inDemand,inSupply),rr=rsi(a,i),st=stoch(a,i);
+ const p=patterns(a,i,ar,inDemand,inSupply),rr=fund104WilderRSI(a,i,SETTINGS.rsiPeriod),st=stoch(a,i),local=localSwingTrend(a,i);
  const rb=rr!==null&&rr>=SETTINGS.rsiBuy[0]&&rr<=SETTINGS.rsiBuy[1],rs=rr!==null&&rr>=SETTINGS.rsiSell[0]&&rr<=SETTINGS.rsiSell[1];
  const sb=!!st&&st.k>st.d&&st.k>st.prevK,ss=!!st&&st.k<st.d&&st.k<st.prevK;
  const d1=htf1,d2=htf2,dominance=b.h===b.l?50:(b.c-b.l)/(b.h-b.l)*100;
@@ -104,15 +136,15 @@ function oneSignal(a,i,htf1,htf2){
   const strength=d>0?p.bs:p.ss,names=d>0?p.namesBuy:p.namesSell;
   if(strength<1)continue;
   const zone=d>0?inDemand:inSupply,sweep=d>0?sweepLow:sweepHigh,structure=d>0?structUp:structDown;
-  const rsiOk=d>0?rb:rs,stochOk=d>0?sb:ss,trendOk=d1===d||d2===d,domOk=d>0?dominance>=60:dominance<=40;
+  const rsiOk=d>0?rb:rs,stochOk=d>0?sb:ss,htfOk=d1===d||d2===d,trendOk=local===d||htfOk,domOk=d>0?dominance>=60:dominance<=40;
   const bs=strength+(zone?2:0)+(sweep?2:0)+(structure?2:0)+(d1===d?1:0)+(d2===d?1:0)+(domOk?1:0);
   const validated=zone&&structure&&bs>=SETTINGS.minValidScore;
   // Native grade: 25 zone + 15 structure + 8/12/15 pattern +
   // 10 RSI + 10 stochastic + 0..15 macro + 5 local trend + 5 HTF.
   // No as-of macro feed = NO MACRO POINTS and NEVER an A++ claim.
-  const score=Math.min(100,(zone?25:0)+(structure?15:0)+(strength>=3?15:strength===2?12:8)+(rsiOk?10:0)+(stochOk?10:0)+(trendOk?5:0));
+  const score=Math.min(100,(zone?25:0)+(structure?15:0)+(strength>=3?15:strength===2?12:8)+(rsiOk?10:0)+(stochOk?10:0)+(local===d?5:0)+(htfOk?5:0));
   const grade=zone&&score>=SETTINGS.gradePlus?"A+":zone&&score>=SETTINGS.gradeA?"A":"";
-  const reasons=[...names,zone?(d>0?"Demand":"Supply"):"OUTSIDE ZONE",sweep?(d>0?"SWEEP LOW":"SWEEP HIGH"):"",structure?(d>0?(bosUp?"BOS UP":"CHOCH UP"):(bosDown?"BOS DOWN":"CHOCH DOWN")):"",rsiOk?"RSI CONFIRMED":"",stochOk?"STOCH CONFIRMED":"",trendOk?"HTF ALIGN":"", "FUNDAMENTAL AS-OF UNAVAILABLE • A++ BLOCKED"].filter(Boolean);
+  const reasons=[...names,zone?(d>0?"Demand":"Supply"):"OUTSIDE ZONE",sweep?(d>0?"SWEEP LOW":"SWEEP HIGH"):"",structure?(d>0?(bosUp?"BOS UP":"CHOCH UP"):(bosDown?"BOS DOWN":"CHOCH DOWN")):"",rsiOk?"RSI CONFIRMED":"",stochOk?"STOCH CONFIRMED":"",local===d?"LOCAL PIVOT ALIGN":"",htfOk?"HTF ALIGN":"", "FUNDAMENTAL AS-OF UNAVAILABLE • A++ BLOCKED"].filter(Boolean);
   results.push({time:b.t,direction:d,code:d>0?"B":"S",score,status:grade||validated?"VALID":"WATCH",grade,entry:b.c,invalidation:d>0?b.l-ar*.18:b.h+ar*.18,tp1:null,tp2:null,reasons,entryScore:Math.round(100*bs/16),confirmed:validated||grade!==""});
  }
  results.sort((x,y)=>y.score-x.score);
