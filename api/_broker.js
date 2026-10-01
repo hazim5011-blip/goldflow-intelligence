@@ -44,7 +44,13 @@ export async function brokerGet(path,params={},timeoutMs=15000,attempts=3){
 
 export function apiError(res,error,status=200,extra={}){
   const msg=String(error?.message||error||"Unknown error");
-  return res.status(status).json({ok:false,bridgeConfigured:bridgeConfigured(),error:msg,...extra});
+  // Undici/Node can wrap DNS, TCP and TLS failures as generic "fetch failed".
+  // Surface only machine-readable error codes (never URL, token or bridge key).
+  const causes=Array.isArray(error?.cause?.errors)?error.cause.errors:[error?.cause];
+  const errorCodes=[...new Set(causes.map(x=>String(x?.code||"").trim()).filter(Boolean))];
+  const errorCode=errorCodes[0]||String(error?.code||"")||null;
+  if(errorCode) console.error("[GoldFlow broker transport]",{error:msg,code:errorCode,subCodes:errorCodes});
+  return res.status(status).json({ok:false,bridgeConfigured:bridgeConfigured(),error:msg,errorCode,errorCodes,...extra});
 }
 
 export function classifySymbol(name="",path="",description=""){
