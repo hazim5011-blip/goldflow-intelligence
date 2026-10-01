@@ -132,7 +132,7 @@ async function loadAnalysis(){
     $("price").textContent=px(r.price);$("spread").textContent=finite(r.tick&&r.tick.spread)?"Spread "+px(r.tick.spread):"";
     $("source").textContent=(r.broker||"Vantage")+" • "+r.symbol+" • MT5_BRIDGE";
     $("signal").textContent=sig.code||"WAIT";$("signal").className=clsDir(sig.direction);
-    $("signalScore").textContent=finite(sig.score)?fmt(sig.score,0)+"%":"—";$("signalStatus").textContent=(sig.grade?(sig.grade+" • "):"")+(sig.status||"WAIT");
+    $("signalScore").textContent=finite(sig.score)?fmt(sig.score,0)+"%":"—";$("signalStatus").textContent=(sig.grade?(sig.grade+(selectedIndicator==="fund104"?" WEB STUDY":"")+" • "):"")+(sig.status||"WAIT");
     $("biasState").textContent=stateText(ind.biasState&&ind.biasState.trend);$("biasState").className=clsDir(ind.biasState&&ind.biasState.trend);
     $("biasStrength").textContent=finite(ind.biasState&&ind.biasState.strength)?fmt(ind.biasState.strength,0)+"%":"—";$("biasEvent").textContent=(ind.biasState&&ind.biasState.lastEvent)||"—";
     $("setupState").textContent=stateText(ind.setupState&&ind.setupState.trend);$("setupState").className=clsDir(ind.setupState&&ind.setupState.trend);
@@ -144,9 +144,11 @@ async function loadAnalysis(){
     if(pd){$("pdHigh").textContent=px(pd.high);$("pdEq").textContent=px(pd.equilibrium);$("pdLow").textContent=px(pd.low);$("pdPos").textContent=pd.position}else{$("pdHigh").textContent=$("pdEq").textContent=$("pdLow").textContent=$("pdPos").textContent="—"}
     if(ind.watch&&ind.watch.zone){$("watch").textContent=ind.watch.reason+" • "+px(ind.watch.zone.low)+" - "+px(ind.watch.zone.high)}else $("watch").textContent="No active zone nearby.";
     if($("statsNote")){
-      $("statsNote").textContent=(selectedIndicator==="pattern132"||selectedIndicator==="snd107"||selectedIndicator==="fund104")
-        ?"VALID = native indicator confirmation • TP/SL outcome not defined by source"
-        :"WIN = TP + TRAIL + BE • LOSE = SL only";
+      $("statsNote").textContent=selectedIndicator==="fund104"
+        ?"FUND 1.04 WEB STUDY • VALIDATION ONLY • native buffers/macro grading not yet verified"
+        :(selectedIndicator==="pattern132"||selectedIndicator==="snd107")
+          ?"VALIDATION ONLY • TP/SL outcome not defined by indicator source"
+          :"WIN = TP + TRAIL + BE • LOSE = SL only";
     }
     lastLiveTick=null;renderZones(ind.activeZones||{},null);renderStats(st);renderHistory(ind.history||[]);setTimeout(refreshLiveZoneEntry,0);
     $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(selectedSymbol));
@@ -227,7 +229,7 @@ function drawChart(){
   candleSeries=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
   candleSeries.setData(bars.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
   var allZones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
-  var zones=focusedZone?[focusedZone]:allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)}).slice(0,5);
+  var zones=focusedZone?[focusedZone]:allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)}).slice(0,10);
   zones.forEach(function(z){
     var d=z.currentDirection||z.direction||1,st=zoneEntryState(z,d,lastLiveTick),col=d>0?"#31d6a4":"#ff6079";
     var label=st.live?"LIVE SETUP":st.ready?"PENDING":"OFFLINE";

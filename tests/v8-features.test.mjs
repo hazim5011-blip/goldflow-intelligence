@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import vm from "node:vm";
 import {impactForType,classifyReleaseEvent} from "../api/_v8Impact.js";
 import {runFund104,fund104InvalidatedByClosedBars,fund104WilderRSI} from "../api/_indicatorFund104.js";
 import {replayOutcome} from "../api/_v8Core.js";
@@ -139,4 +140,19 @@ test("Fund104 RSI is Wilder-smoothed, not a 14-candle moving average",()=>{
  assert.equal(fund104WilderRSI(closes,14),100);
  // After 14 gains of 1, one loss of 1 yields 13/14 gain and 1/14 loss.
  assert.ok(Math.abs(fund104WilderRSI(closes,15)-92.85714285714286)<.000001);
+});
+
+test("Browser zone-state math uses BUY ASK, SELL BID and expires old quotes",()=>{
+ const src=source("../app.js"),a=src.indexOf("function quoteForZone("),b=src.indexOf("function renderZones(",a);
+ assert.ok(a>0&&b>a);
+ const context=vm.createContext({finite:v=>v!==null&&v!==undefined&&Number.isFinite(Number(v)),Number,Date,Math});
+ vm.runInContext(src.slice(a,b),context);
+ const quote={bid:100.5,ask:101.2,seenAtMs:Date.now()};
+ const z={low:100,high:101};
+ assert.equal(context.zoneEntryState(z,1,quote).label,"PENDING","BUY requires ASK to be inside");
+ assert.equal(context.zoneEntryState(z,-1,quote).label,"LIVE ENTRY","SELL uses BID");
+ const freshBuy={...quote,ask:100.9};
+ assert.equal(context.zoneEntryState(z,1,freshBuy).label,"LIVE ENTRY");
+ assert.equal(context.zoneEntryState(z,1,{...freshBuy,seenAtMs:Date.now()-20000}).label,"QUOTE OFFLINE");
+ assert.equal(context.zoneEntryState(z,-1,null).live,false);
 });

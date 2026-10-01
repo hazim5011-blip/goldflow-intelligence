@@ -145,15 +145,15 @@ function oneSignal(a,i,htf1,htf2){
   const score=Math.min(100,(zone?25:0)+(structure?15:0)+(strength>=3?15:strength===2?12:8)+(rsiOk?10:0)+(stochOk?10:0)+(local===d?5:0)+(htfOk?5:0));
   const grade=zone&&score>=SETTINGS.gradePlus?"A+":zone&&score>=SETTINGS.gradeA?"A":"";
   const reasons=[...names,zone?(d>0?"Demand":"Supply"):"OUTSIDE ZONE",sweep?(d>0?"SWEEP LOW":"SWEEP HIGH"):"",structure?(d>0?(bosUp?"BOS UP":"CHOCH UP"):(bosDown?"BOS DOWN":"CHOCH DOWN")):"",rsiOk?"RSI CONFIRMED":"",stochOk?"STOCH CONFIRMED":"",local===d?"LOCAL PIVOT ALIGN":"",htfOk?"HTF ALIGN":"", "FUNDAMENTAL AS-OF UNAVAILABLE • A++ BLOCKED"].filter(Boolean);
-  results.push({time:b.t,direction:d,code:d>0?"B":"S",score,status:grade||validated?"VALID":"WATCH",grade,entry:b.c,invalidation:d>0?b.l-ar*.18:b.h+ar*.18,tp1:null,tp2:null,reasons,entryScore:Math.round(100*bs/16),confirmed:validated||grade!==""});
+  results.push({time:b.t,direction:d,code:d>0?"B":"S",score,status:grade||validated?"WEB_VALIDATION":"WATCH",grade,entry:b.c,invalidation:d>0?b.l-ar*.18:b.h+ar*.18,tp1:null,tp2:null,reasons,entryScore:Math.round(100*bs/16),confirmed:validated||grade!==""});
  }
  results.sort((x,y)=>y.score-x.score);
  // Native engine suppresses equal-grade opposite directions (avoid ambiguous B+S).
  return results.length>1&&results[0].score===results[1].score?null:results[0]||null;
 }
 
-export function fund104InvalidatedByClosedBars(closedBars,sig){
- const a=norm(closedBars),i=a.findIndex(b=>b.t===sig?.time);
+export function fund104InvalidatedByClosedBars(closedBars,sig,alreadyNormalized=false){
+ const a=alreadyNormalized?closedBars:norm(closedBars),i=a.findIndex(b=>b.t===sig?.time);
  if(i<0||sig?.direction===0)return false;
  const ar=atr(a,i),src=a[i],level=sig.direction>0?src.l-.05*ar:src.h+.05*ar;
  // The default native INVALIDATE_CLOSE_BEYOND_WICK ignores unclosed and intrabar-only touches.
@@ -175,7 +175,7 @@ export function runFund104({triggerBars,setupBars,biasBars,triggerTF="M5",setupT
   if(s&&s.confirmed)history.push(s);
  }
  const closed=a.slice(0,-1);
- const visibleHistory=history.filter(sig=>!fund104InvalidatedByClosedBars(closed,sig));
+ const visibleHistory=history.filter(sig=>!fund104InvalidatedByClosedBars(closed,sig,true));
  const i=a.length-2,last=a[i],closeTime=last.t+(TF_SEC[triggerTF]||300),h1=trend(one,setupTF,closeTime),h4=trend(two,biasTF,closeTime),ar=atr(a,i);
  const low=min(a,i,SETTINGS.zoneLookback),high=max(a,i,SETTINGS.zoneLookback);
  const buyZone={direction:1,currentDirection:1,low,high:low+.65*ar,baseScore:60,sourceEvent:"SND DEMAND • WEB STUDY",currentRetests:0,tf:triggerTF};
