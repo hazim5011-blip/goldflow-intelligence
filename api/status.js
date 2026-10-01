@@ -1,4 +1,4 @@
-import {bridgeBaseUrl} from "./_broker.js";
+import {bridgeBaseUrl,vantageBrokerUtcOffsetSeconds} from "./_broker.js";
 const TF="M5";
 function n(v){if(v===null||v===undefined||v==="")return null;const x=Number(v);return Number.isFinite(x)?x:null}
 function zoneFromBars(bars,digits){if(!Array.isArray(bars)||bars.length<30)return null;const a=bars.slice(-30);const lo=Math.min(...a.map(x=>n(x.l)).filter(Number.isFinite));const hi=Math.max(...a.map(x=>n(x.h)).filter(Number.isFinite));const closes=a.map(x=>n(x.c)).filter(Number.isFinite);const last=closes.at(-1);const avg=closes.reduce((s,x)=>s+x,0)/closes.length;const span=hi-lo;const pad=span*.08;const bias=last>avg?"BUY":last<avg?"SELL":"WAIT";const d=x=>Number(x).toFixed(digits);return{demand:d(lo)+" - "+d(lo+pad),supply:d(hi-pad)+" - "+d(hi),bias,entry:bias==="BUY"?d(lo+pad):bias==="SELL"?d(hi-pad):"N/A",sl:bias==="BUY"?d(lo-pad):bias==="SELL"?d(hi+pad):"N/A",tp:bias==="BUY"?d(hi):bias==="SELL"?d(lo):"N/A"}}
@@ -10,9 +10,8 @@ const nowSec=Math.floor(Date.now()/1000);
 // inferring hours from EACH sample: otherwise a quote stale by one hour could
 // falsely look "fresh" under a newly rounded UTC offset. Seasonal changes must
 // fail closed until the configured offset is corrected.
-const configuredOffset=process.env.VANTAGE_TICK_UTC_OFFSET_SECONDS;
-const offsetSeconds=configuredOffset===undefined||configuredOffset===""?10800:Number(configuredOffset);
-const offsetValid=Number.isInteger(offsetSeconds)&&Math.abs(offsetSeconds)<=50400;
+const offsetSeconds=vantageBrokerUtcOffsetSeconds();
+const offsetValid=offsetSeconds!==null;
 const ageSeconds=sampleTime===null||tickTime===null||!offsetValid?null:sampleTime-(tickTime-offsetSeconds);
 const sampleAgeSeconds=sampleTime===null?null:nowSec-sampleTime;
 const tickInvalid=bid===null||ask===null||bid<=0||ask<bid||

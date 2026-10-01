@@ -1,5 +1,5 @@
 import analyzeHandler from "./analyze.js";
-import {brokerGet} from "./_broker.js";
+import {brokerGet,vantageBrokerUtcOffsetSeconds} from "./_broker.js";
 import {buildHistory,metadataFromCatalog,filterHistory,aggregate,groupHistory,compareMonths,evidenceForRecord,explainRecord,DISCLAIMER} from "./_v8Core.js";
 
 const TF_ALLOWED=new Set(["M1","M5","M15","M30","H1","H4","D1"]);
@@ -31,15 +31,18 @@ export async function fetchV8Context(query={}){
   const closed=barWindow.slice(0,-1);
   const raw=payload.indicator?.history||[];
   const brokerServer=catalog?.server||null;
+  const brokerServerUTCOffsetSeconds=vantageBrokerUtcOffsetSeconds();
+  if(brokerServerUTCOffsetSeconds===null)throw new Error("BROKER_UTC_OFFSET_UNVERIFIED");
   const rows=buildHistory(raw,barWindow,{requested,resolved,tf,indicator,spec,
     indicatorVersion:payload.indicator?.engine||indicator,triggerTF:payload.triggerTF||tf,
-    setupTF:payload.setupTF||null,biasTF:payload.biasTF||null,brokerServer});
+    setupTF:payload.setupTF||null,biasTF:payload.biasTF||null,brokerServer,brokerServerUTCOffsetSeconds});
   return {symbolRequested:requested,symbolResolved:resolved,broker:payload.broker||"Vantage",brokerServer,marketState:payload.marketState||"UNKNOWN",
     indicator,tf,profile:payload.indicator?.profile||null,
     historyMode:"HISTORICAL_SIM",rows,spec,
     brokerBars:barWindow,
-    dataWindow:{startUTC:closed[0]?.t?new Date(closed[0].t*1000).toISOString():null,
-      endUTC:closed.at(-1)?.t?new Date(closed.at(-1).t*1000).toISOString():null,
+    dataWindow:{startUTC:closed[0]?.t?new Date((closed[0].t-brokerServerUTCOffsetSeconds)*1000).toISOString():null,
+      endUTC:closed.at(-1)?.t?new Date((closed.at(-1).t-brokerServerUTCOffsetSeconds)*1000).toISOString():null,
+      brokerServerUTCOffsetSeconds,timeBasis:"BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
       availableClosedCandles:closed.length,historyLimitedToAvailableBars:true},
     capturedAtUTC:new Date().toISOString(),
     warning:"This is a reconstruction from currently accessible Vantage MT5 closed candles. It is not a forward-logged publication or executed-trade statement."};

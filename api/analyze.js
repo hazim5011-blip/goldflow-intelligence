@@ -1,4 +1,4 @@
-import {bridgeConfigured,brokerGet,apiError} from "./_broker.js";
+import {bridgeConfigured,brokerGet,apiError,vantageBrokerUtcOffsetSeconds} from "./_broker.js";
 import {runIndicator as run105} from "./_indicator105.js";
 import {runIndicator as run103} from "./_indicator103.js";
 import {runPVT} from "./_indicatorPVT102.js";
@@ -104,8 +104,13 @@ export default async function handler(req,res){
     const now=Math.floor(Date.now()/1000);
     const primaryBars=bars(tTF);
     const last=primaryBars?.at(-1)?.t||null;
-    const ageMin=last?Math.max(0,(now-last)/60):null;
+    const brokerUTCOffsetSeconds=vantageBrokerUtcOffsetSeconds();
+    const lastUTC=last!=null&&brokerUTCOffsetSeconds!==null?last-brokerUTCOffsetSeconds:null;
+    const rawAgeMin=lastUTC!=null?(now-lastUTC)/60:null;
+    const ageMin=rawAgeMin!=null?Math.max(0,rawAgeMin):null;
     const tfMin={M1:1,M5:5,M15:15,M30:30,H1:60,H4:240,D1:1440,W1:10080,MN1:43200};
+    const marketState=brokerUTCOffsetSeconds===null?"MT5_CLOCK_UNVERIFIED":rawAgeMin<-2?"MT5_CLOCK_MISMATCH":
+      ageMin>Math.max(3,(tfMin[tTF]||5)*3)?"MT5_STALE":"MT5_LIVE";
 
     return res.status(200).json({
       ok:true,ready:indicator.ready,bridgeConfigured:true,source:"MT5_BRIDGE",
@@ -113,8 +118,9 @@ export default async function handler(req,res){
       triggerTF:tTF,setupTF:sTF,biasTF:bTF,
       tick:{bid:meta.bid??null,ask:meta.ask??null,spread:meta.spread??null},
       price:meta.bid??primaryBars?.at(-1)?.c??null,digits:meta.digits??null,point:meta.point??null,
-      serverTime:meta.serverTime??null,lastBarTime:last,ageMin,
-      marketState:ageMin!=null&&ageMin>Math.max(3,(tfMin[tTF]||5)*3)?"MT5_STALE":"MT5_LIVE",
+      serverTime:meta.serverTime??null,lastBarTime:last,
+      lastBarTimeUTC:lastUTC!=null?new Date(lastUTC*1000).toISOString():null,
+      brokerServerUTCOffsetSeconds:brokerUTCOffsetSeconds,ageMin,marketState,
       indicator,
       chartBars:(primaryBars||[]).slice(-500),
       // V8 internal history route requests the complete fetched trigger window for OHLC replay.

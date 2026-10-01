@@ -1,6 +1,6 @@
 import {createHash} from "node:crypto";
 
-export const V8_ENGINE_BUILD="v8.0.0-closed-candle-reconstruction";
+export const V8_ENGINE_BUILD="v8.1.1-vantage-broker-utc-normalization";
 export const TF_SECONDS={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400,W1:604800,MN1:2592000};
 const VALID_OUTCOMES=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","BE_ZERO","SL"]);
 const POSITIVE=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE"]);
@@ -82,6 +82,7 @@ function grossEstimate(m,spec){
 }
 export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
   const tf=ctx.tf||"M5",mode=String(ctx.indicator||"105").toLowerCase(),resolved=ctx.resolved||ctx.requested||"";
+  const offset=Number.isInteger(ctx.brokerServerUTCOffsetSeconds)?ctx.brokerServerUTCOffsetSeconds:0;
   const spec=ctx.spec||metadataFromCatalog({},ctx.requested,resolved);
   return (Array.isArray(rawHistory)?rawHistory:[]).map(x=>{
     const d=parseDirection(x),open=n(x.time),entry=n(x.entry),sl=n(x.invalidation);
@@ -93,7 +94,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
     const evidenceBase={recordMode:"HISTORICAL_SIM",symbolRequested:ctx.requested||resolved,symbolResolved:resolved,
       indicatorId:mode,indicatorVersion:ctx.indicatorVersion||mode,tf,
       triggerTF:ctx.triggerTF||tf,setupTF:ctx.setupTF||null,biasTF:ctx.biasTF||null,direction:d,
-      signalCandleCloseUTC:n(x.closeTime)!=null?iso(x.closeTime):open!=null?iso(open+(TF_SECONDS[tf]||300)):null,
+      signalCandleCloseUTC:n(x.closeTime)!=null?iso(n(x.closeTime)-offset):open!=null?iso(open+(TF_SECONDS[tf]||300)-offset):null,
       entry,originalSL:sl,tp1:n(x.tp1),tp2:n(x.tp2),tp3:n(x.tp3),score:n(x.score)};
     const signalId=hmaclessHash(evidenceBase).slice(0,32);
     const rMultiple=completed&&moveVal!=null&&risk>0?snap(moveVal/risk):null;
@@ -102,6 +103,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
     const gross=grossEstimate(moveVal,spec);
     return {signalId,...evidenceBase,code:x.code||"",zone:x.zone||null,
       source:"VANTAGE_MT5_CANDLES",brokerServer:ctx.brokerServer||null,
+      sourceBrokerBarEpoch:open,brokerServerUTCOffsetSeconds:offset,
       recordMode:"HISTORICAL_SIM",publishedAtUTC:null,capturedAtUTC:null,
       originalEngineStatus:x.status||null,originalEngineOutcome:n(x.outcome),engineBuildHash:V8_ENGINE_BUILD,
       reasons:Array.isArray(x.reasons)?x.reasons.filter(Boolean).map(String):[],
@@ -109,7 +111,8 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       tickValueProfit:spec.tickValueProfit,tickValueLoss:spec.tickValueLoss,contractSize:spec.contractSize,
       currencyProfit:spec.currencyProfit,volumeMin:spec.volumeMin,volumeStep:spec.volumeStep,
       lotExample:spec.lotExample,lotExampleSupported:spec.lotExampleSupported,
-      outcome:outcome.outcome,status:outcome.outcome,exitPrice:outcome.exitPrice,exitTimeUTC:outcome.exitTimeUTC,
+      outcome:outcome.outcome,status:outcome.outcome,exitPrice:outcome.exitPrice,
+      exitTimeUTC:outcome.exitTimeUTC?new Date(Date.parse(outcome.exitTimeUTC)-offset*1000).toISOString():null,
       exitRule:outcome.exitRule,priceMove:moveVal,priceMoveUnit:priceUnit,
       signedPoints,signedPips,riskQuote,riskPoints:risk!=null&&spec.point>0?-snap(risk/spec.point,3):null,
       riskPips:risk!=null&&spec.pipSize>0?-snap(risk/spec.pipSize,3):null,

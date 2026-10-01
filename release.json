@@ -1,7 +1,7 @@
 {
   "product": "GoldFlow Intelligence",
   "channel": "production",
-  "version": "8.1.0",
+  "version": "8.1.1",
   "mode": "V8_1_BLOG_NEWS_IMPACT_LIVE_ZONE_FUND104_WEB_STUDY",
   "indicators": [
     "MTF Research v1.05",
@@ -39,7 +39,7 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "GoldFlow V8.1 release: Blog, live/pending zone chart views, categorized macro impact and Fund Structure A 1.04 limited web study. Existing six indicator engines preserved. Fund104 is not native MT5 buffer-parity or broker execution.",
+  "message": "GoldFlow V8.1.1: retains V8.1 Blog, Live/Pending chart, Impact study and Fund104 WEB STUDY. Normalizes Vantage broker server UTC+3 to real UTC for History Pro and candle age; original broker epoch retained for audit. Not a native MQL5 parity claim.",
   "updated": "2026-10-02",
   "features": [
     "History Pro closed-candle reconstruction",
@@ -53,6 +53,7 @@
     "GoldFlow Blog & Indicator Updates (MS/EN)",
     "LIVE TRADE chart-view action and Pending entry ranges (no order placement)",
     "News impact class (HIGH/MEDIUM/LOW/CONTEXT) with conditional interpretation",
-    "Fund Structure 1.04 closed-candle WEB STUDY subset; native parity pending"
+    "Fund Structure 1.04 closed-candle WEB STUDY subset; native parity pending",
+    "Broker server UTC+3 normalized for historical UTC labels, period windows and candle freshness"
   ]
 }
