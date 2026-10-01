@@ -1,5 +1,5 @@
 var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5", selectedIndicator=localStorage.getItem("gf_indicator")||"105";
-var lastAnalysis=null, chart=null, candleSeries=null, loading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
+var lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
 function $(id){return document.getElementById(id)}
 function finite(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}
 function fmt(v,d){if(!finite(v))return "—";return Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}
@@ -143,7 +143,7 @@ async function loadAnalysis(){
         ?"VALID = native indicator confirmation • TP/SL outcome not defined by source"
         :"WIN = TP + TRAIL + BE • LOSE = SL only";
     }
-    renderZones(ind.activeZones||{});renderStats(st);renderHistory(ind.history||[]);
+    lastLiveTick=r.tick||{bid:r.price,ask:r.price};renderZones(ind.activeZones||{},lastLiveTick);renderStats(st);renderHistory(ind.history||[]);
     $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(selectedSymbol));
     $("chartTitle").textContent=(r.symbol||selectedSymbol)+" • VANTAGE MT5";$("chartTag").textContent=r.triggerTF;
     if($("chartPage").classList.contains("on"))drawChart();
@@ -151,10 +151,40 @@ async function loadAnalysis(){
     chip("engineChip","bad","ENGINE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;
   }finally{loading=false}
 }
-function renderZones(z){
+function quoteForZone(d,tick,fallback){
+  var q=Number(d)>0?(tick&&tick.ask):(tick&&tick.bid);
+  if(!finite(q))q=fallback;
+  return finite(q)?Number(q):null;
+}
+function zoneEntryState(x,d,tick,fallback){
+  var lo=Number(x&&x.low),hi=Number(x&&x.high),q=quoteForZone(d,tick,fallback);
+  if(!Number.isFinite(lo)||!Number.isFinite(hi)||!Number.isFinite(q))return{label:"PENDING",live:false,quote:q,side:Number(d)>0?"ASK":"BID"};
+  var low=Math.min(lo,hi),high=Math.max(lo,hi),live=q>=low&&q<=high;
+  return{label:live?"LIVE ENTRY":"PENDING",live:live,quote:q,side:Number(d)>0?"ASK":"BID"};
+}
+function renderZones(z,tick){
   var buy=z.buy||[],sell=z.sell||[];$("buyCount").textContent=buy.length;$("sellCount").textContent=sell.length;
-  function html(a,d){return a.length?a.map(function(x){return '<div class="zone"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="sub">Retest '+x.currentRetests+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>'}).join(""):'<div class="sub">No active zone.</div>'}
+  function html(a,d){return a.length?a.map(function(x){
+    var st=zoneEntryState(x,d,tick,lastAnalysis&&lastAnalysis.price),side=d>0?"buy":"sell";
+    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):"pending")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span><span class="sub">Retest '+x.currentRetests+'</span></div><div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>'
+  }).join(""):'<div class="sub">No active zone.</div>'}
   $("buyZones").innerHTML=html(buy,1);$("sellZones").innerHTML=html(sell,-1);
+}
+async function refreshLiveZoneEntry(){
+  if(liveTickLoading||document.hidden||!selectedSymbol||!lastAnalysis||!lastAnalysis.ready)return;
+  if(!$("dashboard").classList.contains("on"))return;
+  liveTickLoading=true;
+  try{
+    var j=await getJson("/api/status?lite=1&pair="+encodeURIComponent(selectedSymbol));
+    if(!j.ok||!j.bridgeOnline)return;
+    lastLiveTick={bid:j.bid,ask:j.ask,time:j.serverTime};
+    if(finite(j.bid)){lastAnalysis.price=Number(j.bid);$("price").textContent=px(j.bid)}
+    lastAnalysis.tick=Object.assign({},lastAnalysis.tick||{},lastLiveTick);
+    if(finite(j.bid)&&finite(j.ask))$("spread").textContent="Spread "+px(Number(j.ask)-Number(j.bid));
+    renderZones((lastAnalysis.indicator&&lastAnalysis.indicator.activeZones)||{},lastLiveTick);
+  }catch(e){
+    // Keep the last broker analysis visible if a single live-tick refresh fails.
+  }finally{liveTickLoading=false}
 }
 function renderStats(s){
   var win=Number(s.wins||0),lose=Number(s.losses||0);$("stTotal").textContent=s.total||0;$("stWin").textContent=win;$("stLose").textContent=lose;$("stPending").textContent=s.pending||0;$("stWR").textContent=win+lose?fmt(100*win/(win+lose),1)+"%":"—";
@@ -183,6 +213,7 @@ function drawChart(){
 async function init(){
   await checkBridge();await loadSymbols(false);
   setInterval(checkBridge,30000);
+  setInterval(refreshLiveZoneEntry,5000);
   setInterval(function(){
     // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
     var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on");
