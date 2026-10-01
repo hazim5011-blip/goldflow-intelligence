@@ -6,7 +6,7 @@ async function safeDnsDiagnostic(){
   const host=String(process.env.BROKER_BRIDGE_URL||"").trim();
   let hostname="";
   try{hostname=new URL(host).hostname.toLowerCase()}catch{return{status:"BRIDGE_URL_INVALID"}}
-  if(hostname!==ALLOWED_DIAG_HOST)return{status:"NOT_PERMITTED"};
+  if(hostname!==ALLOWED_DIAG_HOST)return{status:"UNEXPECTED_BRIDGE_HOST",host:hostname};
   const out={host:hostname};
   try{
     const ips=await lookup(hostname,{all:true,verbatim:true});
