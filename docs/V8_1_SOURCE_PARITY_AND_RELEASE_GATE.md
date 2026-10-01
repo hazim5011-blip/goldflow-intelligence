@@ -37,3 +37,13 @@
 
 - Keep `BROKER_BRIDGE_KEY` server-side, use only named tunnel `bridge.hazim5011.com`, avoid old trycloudflare.com Quick Tunnel; DO NOT change user PC watchdog or Windows services in this feature release.
 - No changes to order execution or account credentials.
+
+
+## Live Vantage smoke after hotspot recovery (2026-10-02 MYT)
+
+Production Named Tunnel returned `MT5 LIVE` from VantageMarkets-Live 3. Read-only Production `/api/bars` supplied real XAUUSD247 broker OHLC/quotes to the staging engine without exposing bridge credentials.
+
+- Fund Structure v1.04 WEB STUDY: processed 400 M5 + 550 H1 + 550 H4 Vantage bars with `ready:true`; current BUY/SELL research zones were PENDING at the sampled quote; latest candidate remained WATCH and therefore was not promoted to Live Trade. No TP1/TP2, synthetic win/loss or A++ was published.
+- Pattern Zone Tutor v1.32: processed 500 M5 + 500 M15 + 500 H1. A VALID RBS Retest BUY zone contained the current ASK and qualified as LIVE ENTRY. A WATCH Double Top SELL zone also contained the current BID but **must remain IN ZONE • WATCH**, never Live Trade.
+- UI release rule: PENDING = display entry range on broker chart; price-inside WATCH = `IN ZONE • WATCH` without Live Trade button; price-inside eligible/validated zone = `LIVE ENTRY` + `LIVE TRADE • VIEW CHART`. This button is a chart-view action and never submits an MT5 order.
+- Broker quote rule remains fail-closed: BUY uses fresh ASK, SELL uses fresh BID; wrong-symbol, missing, stale or invalid broker ticks cannot produce LIVE ENTRY.
