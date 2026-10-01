@@ -97,12 +97,12 @@ test("Full API routes to Fund104; LIVE lite tick refuses stale or mismatched sym
   const res={setHeader(){return this},status(c){status=c;return this},json(o){resolve({status,body:o});return this},end(){resolve({status});return this}};
   try{await fn({method:"GET",query:q},res)}catch(e){reject(e)}
  });
- let mockedTime=Math.floor(Date.now()/1000);
+ let mockedTime=Math.floor(Date.now()/1000),mockedTickTime=mockedTime+10800;
  global.fetch=async url=>{
   const u=new URL(String(url));
   let payload={};
   if(u.pathname==="/snapshot"){
-   payload={ok:true,ts:mockedTime,data:{XAUUSD247:{symbol:"XAUUSD247",bid:4200,ask:4200.2,time:mockedTime,digits:2}}};
+   payload={ok:true,ts:mockedTime,data:{XAUUSD247:{symbol:"XAUUSD247",bid:4200,ask:4200.2,time:mockedTickTime,digits:2}}};
   }else if(u.pathname==="/multi-bars"){
    const frames={};for(const tf of u.searchParams.get("tfs").split(",")){
     const period={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400}[tf]||300;
@@ -116,12 +116,19 @@ test("Full API routes to Fund104; LIVE lite tick refuses stale or mismatched sym
  };
  try{
   const tick=await api(statusHandler,{lite:"1",pair:"XAUUSD247"});
-  assert.equal(tick.body.bridgeOnline,true);
+  assert.equal(tick.body.bridgeOnline,true,"Vantage UTC+3 server timestamp correctly normalized");
+  assert.equal(tick.body.brokerOffsetSeconds,10800);
   assert.equal(tick.body.ask,4200.2);
-  mockedTime-=65;
+  mockedTickTime-=65; // PC sample fresh, market tick stale
   const stale=await api(statusHandler,{lite:"1",pair:"XAUUSD247"});
   assert.equal(stale.body.bridgeOnline,false);
   assert.equal(stale.body.status,"QUOTE_STALE_OR_INVALID");
+  assert.ok(stale.body.ageSeconds>=65);
+  mockedTickTime=mockedTime+10800;
+  mockedTime-=65; // tick claims fresh in old bridge clock, but sample itself is stale
+  const staleBridge=await api(statusHandler,{lite:"1",pair:"XAUUSD247"});
+  assert.equal(staleBridge.body.bridgeOnline,false);
+  assert.ok(staleBridge.body.sampleAgeSeconds>=65);
   const wrong=await api(statusHandler,{lite:"1",pair:"EURUSD"});
   assert.equal(wrong.body.bridgeOnline,false,"NEVER use XAUUSD247 tick for requested EURUSD");
   mockedTime=Math.floor(Date.now()/1000);
