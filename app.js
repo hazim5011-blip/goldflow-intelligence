@@ -89,8 +89,8 @@ async function checkBridge(){
       $("connectionNotice").innerHTML="<b>Vantage MT5 LIVE.</b> "+(h.server||"")+" • Bridge "+(h.version||"")+" • "+(h.terminal||"");
       return true;
     }
-    chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=h.error||"Bridge configured but offline.";return false;
-  }catch(e){chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;return false}
+    lastLiveTick=null;if(lastAnalysis?.ready)renderZones(lastAnalysis.indicator?.activeZones||{},null);chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=h.error||"Bridge configured but offline.";return false;
+  }catch(e){lastLiveTick=null;if(lastAnalysis?.ready)renderZones(lastAnalysis.indicator?.activeZones||{},null);chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;return false}
 }
 async function loadSymbols(force){
   try{
@@ -113,7 +113,7 @@ function resetDashboard(){
   $("signal").textContent="WAIT";$("reasons").textContent="Waiting for broker analysis…";$("watch").textContent="No active zone nearby.";
 }
 async function loadAnalysis(){
-  if(!selectedSymbol||loading)return;loading=true;resetDashboard();
+  if(!selectedSymbol||loading)return;loading=true;lastLiveTick=null;lastAnalysis=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null);
   try{
     var requestedSymbol=selectedSymbol,requestedTF=selectedTF,requestedIndicator=selectedIndicator;
     var r=await getJson("/api/analyze?symbol="+encodeURIComponent(requestedSymbol)+"&tf="+encodeURIComponent(requestedTF)+"&indicator="+encodeURIComponent(requestedIndicator));
