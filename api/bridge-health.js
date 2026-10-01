@@ -1,9 +1,9 @@
-import {bridgeConfigured,brokerGet,apiError} from "./_broker.js";
+import {bridgeConfigured,brokerGet,apiError,bridgeBaseUrl,bridgeEndpointMode} from "./_broker.js";
 import {lookup} from "node:dns/promises";
 
 const ALLOWED_DIAG_HOST="bridge.hazim5011.com";
 async function safeDnsDiagnostic(){
-  const host=String(process.env.BROKER_BRIDGE_URL||"").trim();
+  const host=bridgeBaseUrl();
   let hostname="";
   try{hostname=new URL(host).hostname.toLowerCase()}catch{return{status:"BRIDGE_URL_INVALID"}}
   if(hostname!==ALLOWED_DIAG_HOST)return{status:"UNEXPECTED_BRIDGE_HOST",host:hostname};
@@ -35,9 +35,9 @@ export default async function handler(req,res){
   const diagnostic=String(req.query?.dns||"")==="1";
   try{
     const h=await brokerGet("/health",{},15000);
-    return res.status(200).json({ok:true,configured:true,online:!!h?.connected,status:h?.connected?"MT5 LIVE":"BRIDGE DATA",...h,...(diagnostic?{dns:await safeDnsDiagnostic()}:{})});
+    return res.status(200).json({ok:true,configured:true,online:!!h?.connected,status:h?.connected?"MT5 LIVE":"BRIDGE DATA",bridgeRoute:bridgeEndpointMode(),...h,...(diagnostic?{dns:await safeDnsDiagnostic()}:{})});
   }catch(e){
-    const extra={configured:true,online:false,status:"BRIDGE ERROR"};
+    const extra={configured:true,online:false,status:"BRIDGE ERROR",bridgeRoute:bridgeEndpointMode()};
     if(diagnostic)extra.dns=await safeDnsDiagnostic();
     return apiError(res,e,200,extra);
   }
