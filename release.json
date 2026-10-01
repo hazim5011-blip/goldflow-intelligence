@@ -1,7 +1,7 @@
 {
   "product": "GoldFlow Intelligence",
-  "channel": "staging",
-  "version": "8.1.0-rc.1",
+  "channel": "production",
+  "version": "8.1.0",
   "mode": "V8_1_BLOG_NEWS_IMPACT_LIVE_ZONE_FUND104_WEB_STUDY",
   "indicators": [
     "MTF Research v1.05",
@@ -39,7 +39,7 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "Staging release candidate; do not represent Fund104 as native MT5 compiled/buffer-equivalent; six original engines unchanged. Broker must be live for production smoke.",
+  "message": "GoldFlow V8.1 release: Blog, live/pending zone chart views, categorized macro impact and Fund Structure A 1.04 limited web study. Existing six indicator engines preserved. Fund104 is not native MT5 buffer-parity or broker execution.",
   "updated": "2026-10-02",
   "features": [
     "History Pro closed-candle reconstruction",
