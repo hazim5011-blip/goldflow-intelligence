@@ -11,7 +11,16 @@
   function signed(v,d){if(!finite(v))return "N/A";return (Number(v)>0?"+":"")+number(v,d==null?2:d)}
   function money(v){return finite(v)?signed(v,2)+" USD":"N/A"}
   function dt(v){if(!v)return "N/A";var x=new Date(v);return Number.isNaN(x.getTime())?"N/A":new Intl.DateTimeFormat(state.locale,{timeZone:"Asia/Kuala_Lumpur",year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(x)+" MYT"}
-  function uri(params){return "symbol="+encodeURIComponent(window.selectedSymbol||document.getElementById("symbolSelect")?.value||"XAUUSD")+"&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(window.selectedIndicator||"105")+(params||"")}
+  function historyIndicator(){
+    // GF AI/News/Market Study are read-only conditional research, not the legacy
+    // forward/history engine. Never mislabel a legacy reconstruction as AI proof.
+    var sel=String(window.selectedIndicator||"105").toLowerCase();
+    return ["105","103","pvt","pvt102","pattern132","snd107","owl101","fund104"].includes(sel)?sel:"105";
+  }
+  function historyContext(){
+    return [window.selectedSymbol||$("symbolSelect")?.value||"XAUUSD",window.selectedTF||"M5",historyIndicator()].join("|");
+  }
+  function uri(params){return "symbol="+encodeURIComponent(window.selectedSymbol||document.getElementById("symbolSelect")?.value||"XAUUSD")+"&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(historyIndicator())+(params||"")}
   async function json(url){var r=await fetch(url,{cache:"no-store"}),j=await r.json();if(!r.ok||j.ok===false)throw Error(j.error||("HTTP "+r.status));return j}
   function notice(id,msg,bad){if($(id)){$(id).className=bad?"notice bad":"notice info";$(id).textContent=msg}}
   function stat(label,value,detail){
@@ -91,7 +100,7 @@
       if($("v8End").value)params+="&to="+encodeURIComponent($("v8End").value);
       params+="&direction="+encodeURIComponent($("v8Direction").value);
       var data=await json("/api/history?"+uri(params));
-      state.history=data;renderHistory(data);
+      state.history=data;state.historyContext=historyContext();renderHistory(data);
       fillEvidenceChoices(data.rows||[]);
     }catch(e){state.history=null;rows.innerHTML="";$("v8Summary").innerHTML="";notice("v8HistoryStatus",e.message,true)}
   }
@@ -163,13 +172,24 @@
   }
   async function loadEvidence(id){
     if(!id)id=$("v8EvidenceSelect")?.value;
-    if(!id){$("v8EvidenceSummary").textContent=t("selectSignal");return}
+    if(!id){$("v8EvidenceSummary").textContent="No validated historical signal in the current broker candle window. Select another symbol, timeframe or original research indicator in History Pro.";
+      $("v8EvidenceChart").textContent="No evidence reconstruction is available for this selection.";
+      $("v8EvidenceDetails").textContent="Forward publication and broker fill proof are not configured for GF-AI.";
+      ["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true});return}
+    state.evidence=null;
     $("v8EvidenceSummary").textContent=t("loadingBroker");
+    $("v8EvidenceChart").textContent="Fetching historical Vantage candle reconstruction...";
+    $("v8EvidenceDetails").textContent="";
+    ["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true});
     try{
       var data=await json(evidenceURL(id));state.evidence=data;renderEvidence(data);
       $("v8EvidenceRead").disabled=false;$("v8EvidenceJson").disabled=false;$("v8EvidenceCsv").disabled=false;
       $("v8EvidencePng").disabled=!(state.evidenceChart&&typeof state.evidenceChart.takeScreenshot==="function");
-    }catch(e){state.evidence=null;$("v8EvidenceSummary").textContent=e.message;["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true})}
+    }catch(e){state.evidence=null;$("v8EvidenceSummary").textContent="Evidence unavailable: "+e.message+
+      ". A reconstructed signal must still be present in the current broker history window; this is not proof of a forward-published trade.";
+      $("v8EvidenceChart").textContent="Broker reconstruction could not be verified for this signal.";
+      $("v8EvidenceDetails").textContent="Refresh History Pro to obtain a valid signal ID; no image or execution record is invented.";
+      ["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true})}
   }
   function renderEvidence(data){
     if(!data)return;
@@ -308,7 +328,22 @@
     document.querySelectorAll("nav .tab").forEach(function(b){b.addEventListener("click",function(){
       if(b.dataset.page==="v8History")loadHistory();
       if(b.dataset.page==="v8Performance")loadPerformance();
-      if(b.dataset.page==="v8Evidence"&&!state.history)loadHistory().then(function(){fillEvidenceChoices(state.history?.rows||[])});
+      if(b.dataset.page==="v8Evidence"){
+        (async function(){
+          var context=historyContext();
+          if(!state.history||state.historyContext!==context)await loadHistory(true);
+          var rows=state.history?.rows||[];
+          fillEvidenceChoices(rows);
+          if($("v8EvidenceContext")){
+           $("v8EvidenceContext").textContent=/^gf-/.test(String(window.selectedIndicator||""))?
+             "GF-AI/News/Market Study have no forward-published evidence archive yet. Below is an explicitly labelled HISTORICAL RECONSTRUCTION using original MTF Research v1.05, not GF-AI proof.":
+             "Historical reconstruction • "+context+". The report is generated from currently available broker candles, NOT a forward-published signal.";
+          }
+          var first=rows[0]?.signalId;
+          if(first){$("v8EvidenceSelect").value=first;await loadEvidence(first)}
+          else await loadEvidence("");
+        })().catch(function(e){$("v8EvidenceSummary").textContent="Evidence loading failed: "+String(e.message||e)});
+      }
       if(b.dataset.page==="v8News")loadNews();
       if(b.dataset.page==="blogPage")loadBlog();
       if(b.dataset.page==="tvPage")loadTVTools();
