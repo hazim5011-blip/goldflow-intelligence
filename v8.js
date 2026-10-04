@@ -523,4 +523,5 @@
    if(!document.hidden)loadWorldNews(false);
   });
   attach();initLocale();
+  setTimeout(function(){if(!document.hidden)loadWorldNews(false)},2200); // check NEW stories soon after site open, not only after visiting News tab
 })();
