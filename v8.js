@@ -408,8 +408,12 @@
     var ms=["ms","id"].includes(state.locale);
     el.innerHTML=blogCache.map(function(p){
       var title=ms?p.titleMS:p.titleEN,summary=ms?p.summaryMS:p.summaryEN,body=ms?p.bodyMS:p.bodyEN;
+      var links=(p.sources||[]).filter(function(s){return safeNewsLink(s.url)!=="#"}).map(function(s){
+         return '<a href="'+safeNewsLink(s.url)+'" target="_blank" rel="noopener noreferrer">'+safe(s.label||"Publisher source")+' ↗</a>'
+        }).join(" • ");
       return '<details class="gfBlogPost"><summary><span class="gfBlogCategory">'+safe(p.category)+'</span><b>'+safe(title)+'</b><small>'+safe(p.dateUTC)+' • '+safe(p.version)+' • '+safe(p.changeType)+'</small><p>'+safe(summary)+'</p></summary><div class="gfBlogBody">'+
-        '<p>'+safe(body)+'</p><p class="v8Footnote">'+safe(p.qualityNote||"")+'</p></div></details>';
+        '<p class="gfEditorialBody">'+safe(body)+'</p><p class="v8Footnote">'+safe(p.qualityNote||"")+'</p>'+
+        (links?'<div class="gfBlogSources"><b>SOURCE REFERENCES:</b> '+links+'</div>':"")+'</div></details>';
     }).join("")||"<p>No published articles yet.</p>";
   }
   async function loadBlog(){
