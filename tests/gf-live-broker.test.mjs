@@ -43,14 +43,18 @@ test("GF-AI on actual XAUUSD247 closed M15, H1/H4, 16/16 official macro and Vant
   quote:{bid:m15.bid,ask:m15.ask,tickTime:m15.serverTime,observedAt:now},macro,offsetSeconds:OFFSET,nowSec:now,mode:"ai"};
  const result=evaluateStudy(args);
  assert.equal(result.ok,true);
- if(officialReady)assert.notEqual(result.status,"DATA_UNVERIFIED",result.reason);
+ if(result.status==="MARKET_OFFLINE"){
+  // On Saturday/Sunday the MT5 *terminal* may be LIVE while XAUUSD247 is CLOSED.
+  // An old Friday gold tick must fail closed, not incorrectly fail the safety test.
+  assert.equal(result.canEnter,false,"A closed Gold market cannot have an entry-ready signal");
+  console.log("GF-GOLD-MARKET-CLOSED: "+String(result.reason||"STALE_GOLD_TICK"));
+ }else if(officialReady)assert.notEqual(result.status,"DATA_UNVERIFIED",result.reason);
  else {
   assert.equal(result.status,"DATA_UNVERIFIED","GF-AI MUST fail closed when primary macro sources temporarily degrade");
   assert.equal(result.reason,"OFFICIAL_MACRO_INCOMPLETE_OR_STALE");
   assert.equal(result.canEnter,false,"No synthetic READY while macro degraded");
-  console.log("GF-RELEASE-BLOCKER: official macro quality "+macro.quality.available+"/16; source errors "+JSON.stringify(macro.quality.errors||[]));
  }
- assert.notEqual(result.status,"MARKET_OFFLINE",JSON.stringify(result));
+ if(!officialReady)console.log("GF-RELEASE-BLOCKER: official macro quality "+macro.quality.available+"/16; source errors "+JSON.stringify(macro.quality.errors||[]));
  assert.ok(normalizedClosedBars(m15.bars,"M15",now,OFFSET).length>=40);
  assert.ok(result.canEnter?["BUY_ENTRY_READY","SELL_ENTRY_READY"].includes(result.status):true);
  assert.equal(result.isExecutedTrade,false);
