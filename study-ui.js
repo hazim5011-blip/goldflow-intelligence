@@ -273,10 +273,14 @@
  function note(cat){
   if(!market.last)return "Checking Vantage MT5 tradeMode and fresh broker ticks… No unverified symbol is labelled ONLINE.";
   let s=market.last;
+  const synth=s.byCategory?.SYNTHETIC,listed=s.syntheticSamples||[],missing=s.examplesNotListed||[];
   return (cat==="MARKET_24H"?"Weekend LIVE verified currently: "+s.market24hWeekendVerified.length:
           "MARKET ONLINE verified: "+s.verified.length)+
-    " • sampled "+s.sampled+"/"+s.catalogCount+" broker symbols • "+(s.partialCoverage?"PARTIAL COVERAGE":"FULL COVERAGE")+
-    " • "+s.asOfUTC+". Weekend-active means verified NOW, not guaranteed permanent 24/7 opening.";
+    " • verified-scan "+s.sampled+"/"+(s.tradableCatalogCount??s.catalogCount)+" tradable broker symbols • "+
+    (s.partialCoverage?"PARTIAL / UNKNOWN batches":"ALL TRADABLE CATALOG SCANNED")+
+    " • SYNTHETIC "+(synth?.verifiedOnline??0)+"/"+(synth?.catalogTradable??0)+" ONLINE"+
+    (missing.length?" • Not listed in this Vantage account: "+missing.join(", "):"")+
+    " • "+s.asOfUTC+". ONLINE is verified NOW, not guaranteed permanent 24/7 opening.";
  }
  window.GFMarket={ensure,has,note,needsUpdate};
  setInterval(function(){
