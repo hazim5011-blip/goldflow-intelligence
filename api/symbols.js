@@ -24,13 +24,13 @@ export default async function handler(req,res){
         name,
         description:x?.description||"",
         path:x?.path||"",
-        category:x?.category||classifySymbol(name,x?.path,x?.description),
+        category:classifySymbol(name,x?.path,x?.description),
         digits:Number.isFinite(Number(x?.digits))?Number(x.digits):null,
         point:Number.isFinite(Number(x?.point))?Number(x.point):null,
         visible:x?.visible!==false
       });
     }
-    const priority={METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7};
+    const priority={SYNTHETIC:0,METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7};
     symbols.sort((a,b)=>(priority[a.category]-priority[b.category])||a.name.localeCompare(b.name));
     return res.status(200).json({ok:true,configured:true,count:symbols.length,symbols});
   }catch(e){ res.setHeader("Cache-Control","no-store"); return apiError(res,e,200,{symbols:[]}); }
