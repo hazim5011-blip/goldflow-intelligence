@@ -80,6 +80,7 @@
     if(state.history)renderHistory(state.history);
     if(state.performance)renderPerformance(state.performance);
     if(state.news)renderNews(state.news);
+    if(liveNewsCache)renderWorldNews(liveNewsCache);
     if(blogCache)renderBlog();
     if(state.evidence)renderEvidence(state.evidence);
   }
@@ -253,7 +254,122 @@
     if(candles.setMarkers)candles.setMarkers([marker]);
     chart.timeScale().fitContent();state.evidenceChart=chart;
   }
+  // World news is independent from /api/news-context (economic observations).
+  // Only authenticated broker data can validate actual Gold price, never a headline.
+  var liveNewsCache=null,liveNewsAt=0,liveNewsPromise=null,worldNewIds=new Set();
+  var SEEN_KEY="gf_world_news_seen_v1";
+  function newsIsMS(){return ["ms","id"].includes(state.locale)}
+  function safeNewsLink(url){
+    try{var x=new URL(String(url));return x.protocol==="https:"&&!x.username&&!x.password?safe(x.href):"#"}
+    catch(e){return "#"}
+  }
+  function liveTime(x){
+    if(x.publishedAtUTC)return dt(x.publishedAtUTC)+" • RSS feed time, not release verification";
+    return safe(x.publishedOn||"N/A")+" • SOURCE DATE ONLY";
+  }
+  function newsNarrative(x){
+    var ms=newsIsMS();
+    return {title:ms?x.title:x.titleEN||x.title,
+      reported:ms?x.reported:x.reportedEN||x.reported,
+      pathway:ms?x.pathway:x.pathwayEN||x.pathway,
+      opposing:ms?x.opposing:x.opposingEN||x.opposing};
+  }
+  function newStoryCount(){
+    var tab=document.querySelector('nav [data-page="v8News"]');
+    if(tab)tab.textContent=t("newsStudy")+(worldNewIds.size?" • "+worldNewIds.size+" NEW":"");
+  }
+  function recordWorldSeen(){
+    if(!liveNewsCache?.items)return;
+    try{
+      var previous=JSON.parse(localStorage.getItem(SEEN_KEY)||"[]");
+      if(!Array.isArray(previous))previous=[];
+      localStorage.setItem(SEEN_KEY,JSON.stringify(Array.from(new Set([...liveNewsCache.items.map(function(x){return x.id}),...previous])).slice(0,250)));
+      worldNewIds.clear();newStoryCount();
+    }catch(e){}
+  }
+  function worldCard(item,compact){
+    var p=newsNarrative(item),time=liveTime(item),newFlag=worldNewIds.has(item.id);
+    var sourceStatus=item.headlineOnly?"HEADLINE ONLY • CHECK ARTICLE":"SOURCE-ATTRIBUTED REPORT";
+    return '<article class="gfWorldStory impact-'+safe(item.impact||"LOW")+'">'+
+      '<div class="gfWorldMeta"><span class="gfWorldImpact">'+safe(item.impact)+" POTENTIAL • "+safe(item.category)+'</span>'+
+      (newFlag?'<span class="gfWorldNew">NEW</span>':"")+'</div>'+
+      '<h4>'+safe(p.title)+'</h4><div class="gfWorldSource">'+safe(item.publisher)+" • "+time+" • "+safe(sourceStatus)+'</div>'+
+      (compact?'<p>'+safe(p.reported)+'</p>':
+        '<p class="gfWorldFact">'+safe(p.reported)+'</p>'+
+        '<p><b>GOLD • CONDITIONAL SUPPORT:</b> '+safe(p.pathway)+'</p>'+
+        '<p><b>COUNTER-RISK / WHIPSAW:</b> '+safe(p.opposing)+'</p>'+
+        '<small>'+safe(item.limitation||"Publisher reporting, not independent fact certification.")+'</small>')+
+      '<a href="'+safeNewsLink(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer">SOURCE • '+safe(item.publisher)+' ↗</a>'+
+      '</article>';
+  }
+  function renderWorldNews(data){
+    if(!data||!data.ok)return;
+    var all=data.items||[],high=all.find(function(x){return x.impact==="HIGH"}),lead=high||all[0];
+    var healthy=(data.sourceChecks||[]).filter(function(x){return x.status==="FETCHED"}).length,total=(data.sourceChecks||[]).length;
+    if($("gfWorldHealth"))$("gfWorldHealth").textContent="CHECKED "+dt(data.updatedAtUTC)+" • FEEDS "+healthy+"/"+total;
+    var status="External sources: "+safe(data.sourceStatus)+" • "+data.fetchedLiveHeadlines+" publisher headlines / "+
+      data.curatedCandidates+" dated source-attributed reports. "+data.fallbackNote;
+    if($("gfWorldNotice")){ $("gfWorldNotice").className="notice "+(healthy?"info":"bad");
+      $("gfWorldNotice").textContent=status; }
+    if($("gfWorldFeature")){
+      $("gfWorldFeature").innerHTML=lead?
+       '<div class="gfFeatureEyebrow">IMPORTANT DEVELOPMENTS • SOURCE-ATTRIBUTED, NOT A TRADE SIGNAL</div>'+
+       worldCard(lead,false)+
+       '<p class="gfFeatureDisclaimer">No newly verified XAUUSD opening quote, gap, price target or causal move is inferred from this news item. Different news drivers can offset each other.</p>':
+       '<p>No credible recent publisher headlines were obtained; never fabricate breaking news.</p>';
+    }
+    if($("gfWorldStories"))$("gfWorldStories").innerHTML=all.filter(function(x){return !lead||x.id!==lead.id})
+      .slice(0,18).map(function(x){return worldCard(x,false)}).join("")||
+      '<p class="sub">No additional qualifying developments. Recheck the external sources later.</p>';
+    if($("gfWorldOpening"))$("gfWorldOpening").innerHTML=
+      '<div class="gfOpeningNote">POSSIBLE SAFE-HAVEN GAP ≠ CONFIRMED BUY. OIL/INFLATION/YIELDS MAY OPPOSE THE MOVE.</div>'+
+      '<ol>'+(data.openingWatch||[]).map(function(x){return "<li>"+safe(x)+"</li>"}).join("")+'</ol>';
+    var blog=$("gfBlogLiveJournal");
+    if(blog)blog.innerHTML=all.slice(0,8).map(function(x){return worldCard(x,true)}).join("")||
+      '<p>Live world-news providers have no qualifying recent article at the moment. Dated editorial research remains below.</p>';
+    if($("gfBlogLiveStatus"))$("gfBlogLiveStatus").textContent=
+      "FEED "+safe(data.sourceStatus)+" • "+dt(data.updatedAtUTC);
+    newStoryCount();
+  }
+  function computeWorldNew(data){
+    try{
+      var saved=JSON.parse(localStorage.getItem(SEEN_KEY)||"null");
+      if(!Array.isArray(saved)){
+        saved=(data.items||[]).map(function(x){return x.id});
+        localStorage.setItem(SEEN_KEY,JSON.stringify(saved.slice(0,200)));
+      }
+      var seen=new Set(saved);
+      worldNewIds=new Set((data.items||[]).filter(function(x){return !seen.has(x.id)}).map(function(x){return x.id}));
+    }catch(e){worldNewIds=new Set()}
+  }
+  async function loadWorldNews(force){
+    if(liveNewsPromise)return liveNewsPromise;
+    if(!force&&liveNewsCache&&Date.now()-liveNewsAt<180000){renderWorldNews(liveNewsCache);return liveNewsCache}
+    liveNewsPromise=(async function(){
+      try{
+        var d=await json("/api/news-live"+(force?"?force=1":""));
+        if(!d||!d.ok)throw Error("NO_VERIFIABLE_WORLD_NEWS_DATA");
+        liveNewsCache=d;liveNewsAt=Date.now();computeWorldNew(d);renderWorldNews(d);
+        if($("v8News")?.classList.contains("on"))recordWorldSeen();
+        return d;
+      }catch(e){
+        var msg="Live publisher feed unavailable: "+String(e.message||e);
+        if($("gfWorldNotice")){$("gfWorldNotice").className="notice bad";$("gfWorldNotice").textContent=msg}
+        if(!liveNewsCache){
+          if($("gfWorldHealth"))$("gfWorldHealth").textContent="SOURCE UNAVAILABLE";
+          if($("gfWorldFeature"))$("gfWorldFeature").textContent="No verified fresh report. Check the linked official/publication sources; no substitute headline has been invented.";
+          if($("gfBlogLiveStatus"))$("gfBlogLiveStatus").textContent="EXTERNAL FEED UNAVAILABLE";
+        }else{
+          if($("gfWorldHealth"))$("gfWorldHealth").textContent="LAST CHECKED "+dt(liveNewsCache.updatedAtUTC)+" • STALE";
+          if($("gfBlogLiveStatus"))$("gfBlogLiveStatus").textContent="LAST FETCH "+dt(liveNewsCache.updatedAtUTC)+" • STALE";
+        }
+        return null;
+      }finally{liveNewsPromise=null}
+    })();
+    return liveNewsPromise;
+  }
   async function loadNews(force){
+    loadWorldNews(!!force);
     notice("v8NewsNotice",t("loadingOfficial"));
     try{state.news=await json("/api/news-context?"+(force?"v="+Date.now():""));renderNews(state.news)}
     catch(e){state.news=null;notice("v8NewsNotice",e.message,true);$("v8NewsRegime").innerHTML="";$("v8NewsList").innerHTML=""}
@@ -303,7 +419,7 @@
       var r=await fetch("/blog/posts.json",{cache:"no-store"}),j=await r.json();
       if(!r.ok||!Array.isArray(j.posts))throw Error("BLOG_FEED_UNAVAILABLE");
       blogCache=j.posts.filter(function(p){return p&&p.published===true}).sort(function(a,b){return b.dateUTC.localeCompare(a.dateUTC)});
-      renderBlog();$("gfBlogNote").textContent="Verified release notes and methodology. No claims of executed trades without forward proof.";
+      renderBlog();loadWorldNews(false);$("gfBlogNote").textContent="Current source-attributed market journal above; dated research articles below. None is proof of a broker trade.";
     }catch(e){el.textContent="Blog is temporarily unavailable.";$("gfBlogNote").textContent=e.message}
   }
   function loadTVTools(){
@@ -339,7 +455,7 @@
     $("v8EvidenceJson").onclick=function(){if(state.evidence)downloadJSON(state.evidence,"goldflow-v8-"+state.evidence.signalId+".json")};
     $("v8EvidenceCsv").onclick=function(){if(state.evidence)window.location.href=evidenceURL(state.evidence.signalId,"csv")};
     $("v8NewsRefresh").onclick=function(){loadNews(true)};
-    $("gfBlogRefresh").onclick=loadBlog;
+    $("gfBlogRefresh").onclick=function(){loadBlog();loadWorldNews(true)};
     ["symbolSelect","tfSelect"].forEach(function(id){
       $(id)?.addEventListener("change",function(){
         state.tvReady=false;
@@ -365,10 +481,16 @@
           else await loadEvidence("");
         })().catch(function(e){$("v8EvidenceSummary").textContent="Evidence loading failed: "+String(e.message||e)});
       }
-      if(b.dataset.page==="v8News")loadNews();
-      if(b.dataset.page==="blogPage")loadBlog();
+      if(b.dataset.page==="v8News"){loadNews();recordWorldSeen();}
+      if(b.dataset.page==="blogPage"){loadBlog();loadWorldNews(false)};
       if(b.dataset.page==="tvPage")loadTVTools();
     })});
   }
+  // Open-page monitoring: latest publisher headlines every ~5 minutes.
+  // Background browser tabs may throttle polling; visibility restores freshness.
+  setInterval(function(){if(!document.hidden)loadWorldNews(false)},300000);
+  document.addEventListener("visibilitychange",function(){
+   if(!document.hidden)loadWorldNews(false);
+  });
   attach();initLocale();
 })();
