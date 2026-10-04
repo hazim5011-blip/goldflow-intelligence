@@ -28,7 +28,7 @@ export default async function handler(req,res){
   const frames=[...new Set([tf,"H1","H4"])];
   const [bridge,macro]=await Promise.all([
    brokerGet("/multi-bars",{symbol,tfs:frames.join(","),limits:frames.map(f=>f===tf?180:100).join(",")},25000,2),
-   (mode==="ai"||(/^(XAU|GOLD)/i.test(symbol)))?macroSnapshot().catch(()=>null):Promise.resolve(null)
+   /^(XAU|GOLD)/i.test(symbol)?macroSnapshot().catch(()=>null):Promise.resolve(null)
   ]);
   const nowSec=Math.floor(Date.now()/1000);
   const evaluator=mode==="ai"?evaluateAILive:mode==="study"?evaluateMarketStudy:evaluateStudy;
