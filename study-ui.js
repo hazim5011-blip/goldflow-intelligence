@@ -85,7 +85,7 @@
       m==="ai"?"GF-AI Live Analyst • Strict MTF Confluence":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose",technicalMode?
     "STRUCTURE-DRIVEN: closed-candle rejection/break-retest; H1/H4 may be neutral but cannot oppose. Entry comes from dynamic pivots, targets from liquidity levels; Gold macro/yields are commentary ONLY, never entry gate.":
-    m==="ai"?(gold?"STRICT AI RULES: BOTH H1 and H4 must align with trigger; verified official Gold macro must not oppose. Not ML-trained or win probability.":
+    m==="ai"?(gold?"AI RESEARCH: both H1 and H4 plus closed pattern. Use verified Macro Regime when available; if missing, downgrade transparently to TECHNICAL ONLY. Verified contradictory Gold macro blocks the setup. No ML-trained win probability.":
     "STRICT AI RULES: BOTH H1 and H4 must align. No verified asset-specific fundamental feed for this symbol; TECHNICAL-ONLY confluence, not Gold macro or trained ML."):
     "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
 
@@ -174,7 +174,7 @@
     ...(d?.macroContext?.observations||[]).map(x=>x.id+": "+(x.display||"N/A")+" • Period "+(x.date||"N/A")+" • "+x.status)
    ].join("\n"):
     aiMode?[
-     "GF-AI: "+(research?.scope||"MACRO_UNAVAILABLE")+" • "+(research?.bias||"UNVERIFIED")+" • Macro score "+safe(research?.score)+"/100 (not a price guarantee).",
+     "GF-AI: "+(d.researchScope||"EVIDENCE REVIEW")+" • "+(research?.scope||"MACRO_UNAVAILABLE")+" • "+(research?.bias||"UNVERIFIED")+" • Macro score "+safe(research?.score)+(research?.score==null?" (unavailable)":" /100 (not a price guarantee)."),
      research?.explanation||"",
      ...(research?.observations||[]).map(x=>x.id+": "+(x.display||"N/A")+" • "+x.impactCategory+" potential • Period "+(x.period||"N/A")+" • "+x.status),
      "NO verified news release timestamp, market consensus or surprise. Conditions remain dependent on broker price."
