@@ -66,6 +66,9 @@
   else if(st==="DATA_UNVERIFIED"){decision="DATA UNVERIFIED";hint="Source quality is insufficient; cannot issue a new trade-ready indication."}
   put("gfEntryDecision",decision);$("gfEntryDecision").className=d?.canEnter?(p?.direction>0?"g":"r"):"y";
   put("gfEntryHint",hint);
+  put("gfOppositeDirection",p&&["BUY_ENTRY_READY","SELL_ENTRY_READY","BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)?
+   (p.direction>0?"SELL INVALID for this BUY study":"BUY INVALID for this SELL study"):
+   "Opposite-direction status is not an independent confirmed trade.");
   put("gfEntryRange",p?safe(p.entryLow)+" — "+safe(p.entryHigh):"—");
   put("gfInvalidate",p?safe(p.invalidation):"—");put("gfTP1",p?safe(p.tp1):"—");
   put("gfTP2",p?safe(p.tp2):"—");put("gfTP3",p?safe(p.tp3):"—");
