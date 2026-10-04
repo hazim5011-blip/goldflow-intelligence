@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import vm from "node:vm";
 import {classifySymbol} from "../api/_broker.js";
 import {verifyOnline} from "../api/market-online.js";
 const now=1900000000,offset=10800;
@@ -42,4 +43,18 @@ test("TradingView never relies only on blank third-party iframe: authenticated V
  assert.ok(app.includes('/api/bars?symbol='));
  assert.ok(app.includes('tvNativeChart=LightweightCharts.createChart'));
  assert.ok(app.includes('TradingView can still open in a separate tab.'));
+});
+
+test("own broker OHLC SVG renders chart safely without any external TradingView or chart CDN",()=>{
+ const code=readFileSync(new URL("../ohlc-fallback.js",import.meta.url),"utf8"),window={};
+ vm.runInNewContext(code,{window,Math,Number,Date,String,Object,Array});
+ const node={innerHTML:"",textContent:""};
+ const candles=Array.from({length:22},(_,i)=>({t:1700000000+i*900,o:4200+i,h:4202+i,l:4199+i,c:4201+i}));
+ const ok=window.GFOHLC.render(node,candles,[{p:4210,name:"ENTRY"},{p:4190,name:"STOP"}]);
+ assert.equal(ok,true);assert.ok(node.innerHTML.includes("<svg"));
+ assert.ok(node.innerHTML.includes("ENTRY"));assert.ok(node.innerHTML.includes("STOP"));
+ const builder=readFileSync(new URL("../cloudflare/build.mjs",import.meta.url),"utf8");
+ assert.ok(builder.includes("ohlc-fallback.js"));
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ assert.ok(html.includes('<script src="/ohlc-fallback.js"></script>'));
 });
