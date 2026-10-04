@@ -422,7 +422,7 @@
     try{
       var r=await fetch("/blog/posts.json",{cache:"no-store"}),j=await r.json();
       if(!r.ok||!Array.isArray(j.posts))throw Error("BLOG_FEED_UNAVAILABLE");
-      blogCache=j.posts.filter(function(p){return p&&p.published===true}).sort(function(a,b){return b.dateUTC.localeCompare(a.dateUTC)});
+      blogCache=j.posts.filter(function(p){return p&&p.published===true}).sort(function(a,b){return b.dateUTC.localeCompare(a.dateUTC)||(Number(a.featuredRank??99)-Number(b.featuredRank??99))});
       renderBlog();loadWorldNews(false);$("gfBlogNote").textContent="Current source-attributed market journal above; dated research articles below. None is proof of a broker trade.";
     }catch(e){el.textContent="Blog is temporarily unavailable.";$("gfBlogNote").textContent=e.message}
   }
