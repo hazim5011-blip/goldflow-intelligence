@@ -3,7 +3,7 @@ import {build} from "esbuild";
 import {cp,mkdir,rm,writeFile,access} from "node:fs/promises";
 import {resolve,join,basename} from "node:path";
 const root=resolve(process.cwd()),dist=join(root,"dist");
-for(const need of ["index.html","app.js","v8.js","study-ui.js","style.css","release.json",
+for(const need of ["index.html","app.js","v8.js","study-ui.js","ohlc-fallback.js","style.css","release.json",
  "api/_studyEngine.js","api/market-online.js","cloudflare/worker.js"])await access(join(root,need));
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
 for(const f of ["index.html","app.js","v8.js","study-ui.js","style.css","release.json",
