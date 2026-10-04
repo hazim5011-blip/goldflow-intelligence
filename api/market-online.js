@@ -61,7 +61,11 @@ export default async function handler(req,res){
   return res.status(200).json({ok:true,source:"VANTAGE_MT5_TICK_AND_TRADE_MODE",asOfUTC:new Date(nowSec*1000).toISOString(),
     verified,market24hWeekendVerified:weekendUTC?verified:[],states,sampled:successful,attempted:pool.length,tradableCatalogCount:pool.length,catalogCount:all.length,
     weekendBasis:"SATURDAY_OR_SUNDAY_UTC_SNAPSHOT_ONLY",byCategory,syntheticSamples:matchingSynthetic,
-    examplesNotListed:requested.filter(name=>!all.some(x=>x.name.toUpperCase()===name)),
+    examplesNotListed:requested.filter(name=>!all.some(x=>{
+     const normalized=x.name.toUpperCase().replace(/[^A-Z0-9]/g,"");
+     return name==="VOL80"?/^(VOL80|V80|VOLATILITY80)/.test(normalized):
+      /^(STEP05|FIXEDSTEP05|STEPINDEX05)/.test(normalized);
+    })),
     scanErrors,partialCoverage:successful<pool.length,coverageNote:"Full tradable catalog was attempted with bounded batches; failed/unknown symbols are NOT reported offline or permanently 24/7. Exact symbol and fresh tick required.",
     definition:"ONLINE = exact resolved broker symbol + tradable tradeMode + fresh BID/ASK tick <=35s. 24H weekend verification confirms ACTIVE NOW during weekend only, not a contractual 24/7 guarantee."});
  }catch(e){return res.status(200).json({ok:false,status:"MARKET_SCAN_UNAVAILABLE",verified:[],sampled:0,errorCode:String(e?.code||"BROKER_UNAVAILABLE")})}
