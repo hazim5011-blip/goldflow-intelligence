@@ -11,13 +11,14 @@
  // Never retain a previous mode's BUY/SELL marker or entry plan while selecting
  // a different mode/symbol/TF. No cached UI result can act as LIVE evidence.
  function invalidate(){
-  state.last=null;state.context=null;
+  state.last=null;state.context=null;state.seq++;
   const m=mode();
   put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst • Strict MTF Confluence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose","Loading the NEW mode. Previous signal/entry plan deliberately cleared; NO ENTRY until verified.");
   put("gfStudyState","REFRESHING");if($("gfStudyState"))$("gfStudyState").className="y";
   put("gfStudyReason","Waiting for a new verified response for this symbol / timeframe / study mode.");
   put("gfEntryDecision","NO ENTRY • REFRESHING");
+  put("gfScenarioTitle","Live Research / Scenario");put("gfScenarioBadge","WAIT NEW VERIFIED RESULT");put("gfScenarioNarrative","Previous mode result removed. Waiting for a fresh analysis.");
   put("gfEntryHint","Old mode's confirmation is cleared. Never act on a previous selection.");
   put("gfOppositeDirection","NO CURRENT VERIFIED DIRECTION");
   put("gfConfirmTime","—");put("gfStudyFresh","—");
@@ -73,17 +74,44 @@
     "STRICT AI RULES: BOTH H1 and H4 must align. No verified asset-specific fundamental feed for this symbol; TECHNICAL-ONLY confluence, not Gold macro or trained ML."):
     "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
 
+  const aiMode=m==="ai",research=d?.macroEvidence,structure=d?.structureLevels,scenario=d?.explanation;
+  put("gfScenarioTitle",aiMode?"GF-AI • Evidence & Macro/Pattern Decision":
+    technicalMode?"Market Structure Study • Continuation / Reclaim / Reaction":"GF-News Study");
+  put("gfScenarioBadge",d?.canEnter?"ENTRY CONDITIONS MET":"RESEARCH ONLY • NO EXECUTION");
+  put("gfScenarioNarrative",aiMode?[
+    scenario?.headline||"AI scenario pending verified confluence.",
+    ...(scenario?.drivers||[]),
+    "AI methodology: "+(p?.entryMethod||"Await macro + H1/H4 + newly closed chart pattern"),
+    "Verified observations: "+(research?.observations||[]).filter(x=>x.display&&x.status!=="UNAVAILABLE")
+      .slice(0,10).map(x=>x.id+" "+x.display+" (period "+x.period+", "+x.impactCategory+" category)").join("; "),
+    research?.explanation||"",
+    d?.reason||""
+   ].filter(Boolean).join("\n"):
+   technicalMode?[
+    "SCENARIO: "+(d?.scenario||"WAIT STRUCTURE"),
+    d?.scenarioNarrative||"Wait for verified structural levels.",
+    "SUPPORT: "+safe(structure?.support)+"  |  RESISTANCE: "+safe(structure?.resistance),
+    "REACTION ZONE: "+safe(structure?.reactionZoneLow)+" — "+safe(structure?.reactionZoneHigh),
+    "BREAK/RETEST TRIGGER: "+safe(structure?.breakoutLevel)+" on CLOSED "+(d?.tf||"selected")+" candle.",
+    "CONDITION A: "+(d?.confirmationRules?.reaction||""),
+    "CONDITION B: "+(d?.confirmationRules?.breakdown||""),
+    "INVALIDATION: "+(d?.confirmationRules?.invalidation||""),
+    "PROVISIONAL TARGETS (NOT ENTRY): "+(d?.projectedTargets||[]).map(safe).join(" → "),
+    "FUNDAMENTAL: "+(d?.macroContext?.explanation||"Not applied as entry gate."),
+    d?.reason||""
+   ].filter(Boolean).join("\n"):
+   d?.reason||"No release-time claim without a verified official calendar.");
   put("gfStudyState",st.replaceAll("_"," "));
-  $("gfStudyState").className=colors[st]||"y";
+  $("gfStudyState").className=colors[st]||(st.endsWith("READY")?"g":"y");
   put("gfStudyReason",d?.reason||"No verified study state.");
   put("gfStudyFresh",[d?.symbol||"",d?.tf||"",d?.closedAtUTC||"N/A",d?.quoteAgeSeconds==null?"Tick N/A":"Tick "+d.quoteAgeSeconds+" s"].filter(Boolean).join(" • "));
-  put("gfConfirmTime",p?"Confirmed candle closed at "+p.confirmationCloseUTC+" • expires after 3 closed bars":"No confirmed closed trigger candle");
+  put("gfConfirmTime",p?"Confirmed candle closed at "+p.confirmationCloseUTC+" • expires after "+(p.expiresAfterClosedBars||3)+" closed bars":"No confirmed closed trigger candle");
   let decision="NO ENTRY",hint="WAIT for a fresh confirmed candle. No broker order is sent.";
-  if(d?.canEnter && ["BUY_ENTRY_READY","SELL_ENTRY_READY"].includes(st)){
+  if(d?.canEnter && ["AI_BUY_READY","AI_SELL_READY","BUY_ENTRY_READY","SELL_ENTRY_READY"].includes(st)){
     decision=p?.side+" • ENTRY READY";hint="Verified CLOSED candle + FRESH "+d.entryQuoteSide+" inside entry area. Study ONLY; confirm your own trade.";
-  }else if(["BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)){
+  }else if(["AI_BUY_CONFIRMED","AI_SELL_CONFIRMED","BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)){
     decision=p?.side+" CONFIRMED • WAIT RETEST";hint="The direction has confirmed but the quote is OUTSIDE the entry range. Do not chase.";
-  }else if(["BUY_INVALID","SELL_INVALID"].includes(st)){
+  }else if(["AI_INVALIDATED","BUY_INVALID","SELL_INVALID"].includes(st)){
     decision=p?.side+" INVALID • NO ENTRY";hint=d?.invalidationBasis==="INTRABAR_QUOTE"?"Live price crossed study invalidation; close validation is pending but entry blocked.":"The original study invalidation was breached by broker candles. Previous setup is cancelled.";
   }else if(st==="MISSED_ENTRY"){decision="MISSED ENTRY • NO CHASE";hint="Price already moved beyond the safe retest band. Wait for a NEW closed-candle setup."}
   else if(st==="COMPLETED_STUDY"){decision="TARGET ALREADY TOUCHED • NO ENTRY";hint="TP1 was touched after confirmation. Never reactivate a completed old setup."}
@@ -91,29 +119,51 @@
   else if(st==="EXPIRED"){decision="EXPIRED • NO ENTRY";hint="Three closed trigger candles passed; a new setup must be confirmed."}
   else if(st==="MARKET_OFFLINE"){decision="OFFLINE • NO ENTRY";hint="No verified fresh broker quote or closed-candle feed."}
   else if(st==="WAIT_CONFLICT"){decision="CONFLICT • WAIT";hint="Pattern disagrees with higher timeframe/fundamental context."}
+  else if(["STUDY_WAIT_BUY_CONFIRMATION","STUDY_WAIT_SELL_CONFIRMATION","STUDY_WAIT_STRUCTURE"].includes(st)){
+   decision="STRUCTURE SCENARIO • WAIT CLOSED CANDLE";hint="Reaction zone and provisional targets are research only. WAIT for a new verified close and retest.";
+  }else if(["AI_WAIT_VERIFIED_MACRO","AI_ASSET_FUNDAMENTAL_UNAVAILABLE","AI_WAIT_MACRO_CONFLUENCE","AI_WAIT_MTF_ALIGNMENT","AI_WAIT_PATTERN"].includes(st)){
+   decision="AI CONFLUENCE INCOMPLETE • NO ENTRY";hint="One or more independent AI evidence gates are not verified; never reuse a previous mode's signal.";
+  }else if(["AI_MISSED_ENTRY","STUDY_MISSED_ENTRY"].includes(st)){
+   decision="MISSED ENTRY • DO NOT CHASE";hint="Current quote moved beyond the original independently calculated zone.";
+  }else if(["AI_COMPLETED_STUDY","STUDY_TARGET_TOUCHED"].includes(st)){
+   decision="TARGET ALREADY TOUCHED • NO ENTRY";hint="Earlier study has retired after reaching the first objective.";
+  }else if(["AI_EXPIRED","STUDY_EXPIRED"].includes(st)){
+   decision="EXPIRED • NO ENTRY";hint="Entry confirmation window elapsed.";
+  }else if(st==="STUDY_AMBIGUOUS_PATH"){
+   decision="AMBIGUOUS OHLC PATH • NO ENTRY";hint="Cannot prove whether TP or SL touched first.";
+  }
   else if(st==="DATA_UNVERIFIED"){decision="DATA UNVERIFIED";hint="Source quality is insufficient; cannot issue a new trade-ready indication."}
   put("gfEntryDecision",decision);$("gfEntryDecision").className=d?.canEnter?(p?.direction>0?"g":"r"):"y";
   put("gfEntryHint",hint);
-  put("gfOppositeDirection",p&&["BUY_ENTRY_READY","SELL_ENTRY_READY","BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)?
+  put("gfOppositeDirection",p&&["AI_BUY_READY","AI_SELL_READY","AI_BUY_CONFIRMED","AI_SELL_CONFIRMED","BUY_ENTRY_READY","SELL_ENTRY_READY","BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)?
    (p.direction>0?"SELL INVALID for this BUY study":"BUY INVALID for this SELL study"):
    "Opposite-direction status is not an independent confirmed trade.");
-  put("gfEntryRange",p?safe(p.entryLow)+" — "+safe(p.entryHigh):"—");
-  put("gfInvalidate",p?safe(p.invalidation):"—");put("gfTP1",p?safe(p.tp1):"—");
-  put("gfTP2",p?safe(p.tp2):"—");put("gfTP3",p?safe(p.tp3):"—");
+  put("gfEntryRange",p?safe(p.entryLow)+" — "+safe(p.entryHigh):structure&&technicalMode?"REACTION (WAIT): "+safe(structure.reactionZoneLow)+" — "+safe(structure.reactionZoneHigh):"—");
+  put("gfInvalidate",p?safe(p.invalidation):technicalMode?safe(structure?.invalidationLevel)+" (WAIT)":"—");
+  put("gfTP1",p?safe(p.tp1):technicalMode&&d.projectedTargets?.length?safe(d.projectedTargets[0])+" (PROJECTION)":"—");
+  put("gfTP2",p?safe(p.tp2):technicalMode&&d.projectedTargets?.length>1?safe(d.projectedTargets[1])+" (PROJECTION)":"—");
+  put("gfTP3",p?safe(p.tp3):technicalMode&&d.projectedTargets?.length>2?safe(d.projectedTargets[2])+" (PROJECTION)":"—");
   const h1=v=>v===1?"BULLISH":v===-1?"BEARISH":"NEUTRAL / N/A";
   put("gfStudyTechnical",[
     "Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
-    p?"Closed candle: "+p.confirmationType+" • Confluence score "+p.score+"/100 (NOT win probability)":"No validated signal candle",
+    p?"Closed candle: "+p.confirmationType+(Number.isFinite(Number(p.score))?" • Auditable AI alignment score "+p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
     p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):"",
-    p?"Exit plan: invalidation "+safe(p.invalidation)+"; TP levels are derived hypothetical R multiples.":""
+    p?"Entry model: "+String(p.entryMethod||"LEGACY")+"; targets: "+String(p.targetMethod||"derived study")+"; structural stop "+safe(p.invalidation)+".":""
   ].filter(Boolean).join("\n"));
   const macro=d?.news,events=macro?.cards||[],find=id=>events.find(x=>x.id===id);
   const ids=["CPI","FEDUPPER","USDBROAD","US2Y","US10Y","REAL10Y","NETLIQ"];
-  put("gfStudyMacro",technicalMode?
-    "GF-MARKET STUDY: fundamental data deliberately NOT used as entry gate. This is a technical execution/lifecycle study. View Macro Regime separately.":
-    !gold&&m==="ai"?
-    "No verified asset-specific fundamental, derivatives or on-chain source is connected for "+String(d?.symbol||"this symbol")+". AI is stricter H1/H4 + price-action CONFLUENCE ONLY. Gold macro is NOT applied.":
+  put("gfStudyMacro",technicalMode?[
+    "GF-MARKET STUDY: NEWS/YIELDS ARE CONTEXT ONLY, never an entry gate or level formula.",
+    d?.macroContext?.explanation||"Macro context unavailable.",
+    ...(d?.macroContext?.observations||[]).map(x=>x.id+": "+(x.display||"N/A")+" • Period "+(x.date||"N/A")+" • "+x.status)
+   ].join("\n"):
+    aiMode?[
+     "GF-AI: "+(research?.scope||"MACRO_UNAVAILABLE")+" • "+(research?.bias||"UNVERIFIED")+" • Macro score "+safe(research?.score)+"/100 (not a price guarantee).",
+     research?.explanation||"",
+     ...(research?.observations||[]).map(x=>x.id+": "+(x.display||"N/A")+" • "+x.impactCategory+" potential • Period "+(x.period||"N/A")+" • "+x.status),
+     "NO verified news release timestamp, market consensus or surprise. Conditions remain dependent on broker price."
+    ].filter(Boolean).join("\n"):
     macro?[
     "Derived gold macro context: "+(macro.gold?.bias||"N/A")+" • Score "+safe(macro.gold?.score)+"/100 (NOT a directional guarantee)",
     "Official/derived coverage: "+safe(macro.quality?.available)+"/"+safe(macro.quality?.total)+"; source errors "+(macro.quality?.errors?.length||0),
@@ -136,8 +186,8 @@
   try{
    const r=await fetch("/api/study?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&mode="+m,{cache:"no-store"});
    const d=await r.json();if(!r.ok)throw Error(d?.error||"HTTP "+r.status);
-   if(symbol===(window.selectedSymbol||$("symbolSelect")?.value)&&tf===(window.selectedTF||$("tfSelect")?.value)&&m===mode())render(d);
-  }catch(e){render({ok:false,status:"DATA_UNVERIFIED",reason:"Study API unavailable. Entry blocked.",limitation:String(e.message||e)})}
+   if(seq===state.seq&&symbol===(window.selectedSymbol||$("symbolSelect")?.value)&&tf===(window.selectedTF||$("tfSelect")?.value)&&m===mode())render(d);
+  }catch(e){if(seq===state.seq)render({ok:false,status:"DATA_UNVERIFIED",mode:m,reason:"Study API unavailable. Entry blocked.",limitation:String(e.message||e)})}
   finally{state.busy=false;if(state.seq!==seq&&isGF())setTimeout(load,0)}
  }
 
