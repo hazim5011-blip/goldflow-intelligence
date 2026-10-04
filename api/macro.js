@@ -268,6 +268,7 @@ function lab(s){return s>=60?"SUPPORTIVE":s<=40?"PRESSURE":"MIXED"}
 export default async function handler(req,res){
   if(req.method==="OPTIONS")return res.status(204).end();
   res.setHeader("Cache-Control","s-maxage=300, stale-while-revalidate=1800");
+  const localFallbackPromise=bridgeConfigured()?brokerGet("/macro/bls",{},28000,1).catch(e=>({ok:false,reason:String(e?.status||e?.code||e?.message||"REQUEST_FAILED").slice(0,90)})):Promise.resolve(null);
   const jobs=await Promise.allSettled([beaGDP(),beaPCE(),fedIP(),bls("CES0000000001"),bls("LNS14000000"),bls("CUUR0000SA0"),treasury("daily_treasury_yield_curve","BC_2YEAR"),treasury("daily_treasury_yield_curve","BC_10YEAR"),treasury("daily_treasury_real_yield_curve","TC_10YEAR"),h41(),nyfed(),h10(),onRrp()]);
   const v=i=>jobs[i].status==="fulfilled"?jobs[i].value:null,errors=jobs.map((x,i)=>x.status==="rejected"?"source"+i+": "+String(x.reason?.message||x.reason):null).filter(Boolean);
   const gdp=v(0),pce=v(1),ip=v(2),u2=v(6)||[],u10=v(7)||[],r10=v(8)||[],fed=v(9),ny=v(10)||{},usd=v(11),onrrp=v(12);
@@ -278,7 +279,7 @@ export default async function handler(req,res){
   // clearly-labelled FRED BLS-origin mirror. Never accept user-provided URLs.
   if(bridgeConfigured()&&Object.values(blsRows).some(rows=>rows.length<25)){
     try{
-      const local=await brokerGet("/macro/bls",{},28000,1);
+      const local=await localFallbackPromise;
       if(local?.ok===true&&local?.bridgeTransport==="AUTHENTICATED_LOCAL_WINDOWS"&&local?.version===1){
         for(const id of ["CES0000000001","LNS14000000","CUUR0000SA0"]){
           if(blsRows[id].length>=25)continue;
@@ -296,7 +297,7 @@ export default async function handler(req,res){
         }
         if(local.errors&&Object.keys(local.errors).length)
           localBridgeErrors.push("Windows-source diagnostics: "+Object.keys(local.errors).join(", "));
-      }else localBridgeErrors.push("Windows bridge returned invalid macro response");
+      }else localBridgeErrors.push("Windows macro endpoint unavailable or invalid: "+String(local?.reason||"NO_LOCAL_RESPONSE"));
     }catch(e){localBridgeErrors.push("Windows macro bridge unavailable: "+String(e?.status||e?.code||e?.message||"REQUEST_FAILED").slice(0,110))}
   }
   // Only request the Fed's BLS-origin mirrors for failed direct BLS series.
