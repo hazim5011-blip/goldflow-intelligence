@@ -92,10 +92,22 @@ export function evaluateStudy({symbol="XAUUSD247",tf="M15",bars=[],h1=[],h4=[],q
   confirmationType:event.type,confirmationCloseUTC:new Date((signal.t-offsetSeconds+interval)*1000).toISOString(),signalCandleTime:signal.t,expiresAfterClosedBars:3,
   explanation:[event.type,"H1 trend "+h1Trend,"H4 trend "+h4Trend,"Macro "+(macroDir===null?"UNVERIFIED":macroDir)],verifiedForecastSurprise:false};
  const current=d===1?qAsk:qBid;
- const closedInvalid=c.slice(event.i+1).some(x=>d*(x.c-invalidation)<=0);
  const liveInvalid=d*(current-invalidation)<=0;
  const overlay={...base,...context,direction:d,confirmation:plan,elapsedClosedBars:elapsed,entryQuote:current,entryQuoteSide:d===1?"ASK":"BID"};
- if(closedInvalid||liveInvalid)return result(d===1?"BUY_INVALID":"SELL_INVALID",{...overlay,reason:closedInvalid?"CLOSED_CANDLE_BEYOND_INVALIDATION":"LIVE_BROKER_QUOTE_BREACHED_INVALIDATION",invalidationBasis:closedInvalid?"CLOSE":"INTRABAR_QUOTE"});
+ // Lifecycle is terminal after an observed SL/TP touch. A stale/revisited zone must
+ // NEVER turn ENTRY READY after the path has already completed. When both are
+ // touched in one historical OHLC candle, intrabar order is unknown: fail closed.
+ for(const bar of c.slice(event.i+1)){
+  const stopTouched=d===1?bar.l<=invalidation:bar.h>=invalidation;
+  const targetTouched=d===1?bar.h>=plan.tp1:bar.l<=plan.tp1;
+  const closedInvalid=d*(bar.c-invalidation)<=0;
+  if(stopTouched&&targetTouched)return result("AMBIGUOUS_PATH",{...overlay,reason:"HISTORICAL_CANDLE_TOUCHED_TP_AND_SL_ORDER_UNKNOWN"});
+  if(stopTouched)return result(d===1?"BUY_INVALID":"SELL_INVALID",{...overlay,
+   reason:closedInvalid?"CLOSED_CANDLE_BEYOND_INVALIDATION":"POST_CONFIRMATION_WICK_BREACHED_INVALIDATION",
+   invalidationBasis:closedInvalid?"CLOSE":"POST_CONFIRMATION_INTRABAR"});
+  if(targetTouched)return result("COMPLETED_STUDY",{...overlay,reason:"TP1_LEVEL_ALREADY_TOUCHED_AFTER_CONFIRMATION"});
+ }
+ if(liveInvalid)return result(d===1?"BUY_INVALID":"SELL_INVALID",{...overlay,reason:"LIVE_BROKER_QUOTE_BREACHED_INVALIDATION",invalidationBasis:"INTRABAR_QUOTE"});
  if(elapsed>3)return result("EXPIRED",{...overlay,reason:"ENTRY_WINDOW_EXPIRED_AFTER_3_CLOSED_BARS"});
  const inside=current>=entry.low&&current<=entry.high;
  // Price travelling too far towards target becomes MISSED, not a chased entry.
