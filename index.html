@@ -37,16 +37,21 @@
     <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
     <option value="owl101">OWL Style Research v1.01</option>
     <option value="fund104">Fund Structure A v1.04 — Web Study</option>
+    <option value="gf-ai">GF-AI Live Analyst v1.00 • Rule-Based</option>
+    <option value="gf-news">GF-News Impact Pro v1.00 • Gold</option>
+    <option value="gf-study">GF-Market Study Pro v1.00</option>
   </select></div>
   <div class="field"><label>Signal TF</label><select id="tfSelect"><option>M1</option><option selected>M5</option><option>M15</option><option>M30</option><option>H1</option><option>H4</option><option>D1</option></select></div>
   <button id="refreshBtn" class="primary">Refresh</button>
 </section>
 
+<div id="marketFilterNotice" class="sub" aria-live="polite">Market ONLINE and weekend-active categories are verified from Vantage trade mode and fresh tick, not inferred from symbol names.</div>
 <div id="connectionNotice" class="notice info">Checking Vantage MT5 Bridge…</div>
 
 <nav class="tabs">
   <button class="tab on" data-page="dashboard">Dashboard</button>
   <button class="tab" data-page="chartPage">Broker Chart</button>
+  <button class="tab" data-page="gfStudyPage">AI Study / News Time</button>
   <button class="tab" data-page="tvPage">TradingView</button>
   <button class="tab" data-page="v8History" data-i18n="historyPro">History Pro</button>
   <button class="tab" data-page="v8Performance" data-i18n="performance">Performance</button>
@@ -94,6 +99,30 @@
 
 <section id="chartPage" class="page">
   <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><span id="chartTag" class="tag">—</span></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div><div class="sub">Pending: dashed entry-range boundary lines. Live setup: solid entry range + marker. No automatic trade execution.</div></div>
+</section>
+
+
+<section id="gfStudyPage" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">BROKER-FIRST • CLOSED CANDLE STUDY</small><h3>GF-AI Analyst / Fundamental News Time / Market Study</h3></div><button id="gfStudyRefresh" type="button" class="primary">Refresh Study</button></div>
+    <div class="notice info" id="gfStudyNote">Select one of the GF-AI / GF-News / GF-Market Study indicators to begin. Rule-based confluence; no trained AI prediction or automatic broker order.</div>
+    <div class="grid g2">
+      <div class="card"><small>CONFIRMATION STATE</small><h2 id="gfStudyState" aria-live="polite">WAIT CONFIRMATION</h2><div id="gfStudyReason" class="reason">Waiting for verified closed candles and fresh Vantage quote.</div><div class="sub" id="gfStudyFresh">—</div></div>
+      <div class="card"><small>ENTRY DECISION</small><h2 id="gfEntryDecision">NO ENTRY</h2><div id="gfEntryHint" class="reason">A trade setup is NOT executed automatically.</div><div class="sub" id="gfConfirmTime">—</div></div>
+    </div>
+    <div class="grid g5 sec">
+      <div class="card kpi"><small>ENTRY RANGE</small><strong id="gfEntryRange">—</strong></div>
+      <div class="card kpi"><small>INVALIDATION / SL STUDY</small><strong id="gfInvalidate">—</strong></div>
+      <div class="card kpi"><small>TP1 STUDY</small><strong id="gfTP1">—</strong></div>
+      <div class="card kpi"><small>TP2 STUDY</small><strong id="gfTP2">—</strong></div>
+      <div class="card kpi"><small>TP3 STUDY</small><strong id="gfTP3">—</strong></div>
+    </div>
+    <div class="grid g2 sec">
+      <div class="card"><div class="head"><h3>Technical Confirmation</h3><span class="tag y">VANTAGE MT5</span></div><div id="gfStudyTechnical" class="reason">—</div></div>
+      <div class="card"><div class="head"><h3>Fundamental / News Impact</h3><span class="tag y">OFFICIAL VS DERIVED</span></div><div id="gfStudyMacro" class="reason">—</div></div>
+    </div>
+    <div class="macroDisclaimer">WAIT becomes BUY/SELL CONFIRMED only on a verified closed trigger candle. ENTRY READY additionally requires a fresh broker BID/ASK inside the studied entry range. If invalidated, expired, already moved away or news quality fails, no entry prompt is issued. The AI label describes transparent rule-based research, NOT a trained ML model, trade execution, guaranteed direction, or win probability.</div>
+  </div>
 </section>
 
 <section id="tvPage" class="page">
@@ -227,5 +256,6 @@
 </div>
 <script src="/app.js"></script>
 <script src="/v8.js" defer></script>
+<script src="/study-ui.js" defer></script>
 </body>
 </html>
