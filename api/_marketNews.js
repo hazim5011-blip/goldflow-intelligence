@@ -93,13 +93,27 @@ export function mechanism(cat){
   pathway:"Pantau sama ada maklumat ini mengubah permintaan safe-haven, jangkaan kadar, USD atau posisi risiko terhadap Gold.",
   opposing:"Tiada arah BUY/SELL yang boleh disahkan daripada headline sahaja; tunggu harga, spread dan candle broker."};
 }
+function mechanismEN(cat){
+ if(cat==="GEOPOLITICS")return {
+  pathwayEN:"Higher geopolitical/shipping risks can increase safe-haven Gold demand, particularly if the dollar and real yields are not rising simultaneously.",
+  opposingEN:"Oil disruption may increase inflation expectations, US yields and the dollar, limiting Gold or triggering opening whipsaw."};
+ if(cat==="ENERGY_SUPPLY")return {
+  pathwayEN:"Oil supply disruption may raise the risk premium and safe-haven interest in Gold. Actual reserve releases can also temper that pressure.",
+  opposingEN:"Expensive oil can lift inflation expectations and real yields. Recheck fresh Brent/WTI, DXY, US2Y/US10Y and broker XAUUSD rather than assuming direction."};
+ if(cat==="MONETARY_POLICY"||cat==="ECONOMIC_RELEASE")return {
+  pathwayEN:"A development that reduces expected real rates or dollar strength could support Gold after verified details and actual-versus-consensus become available.",
+  opposingEN:"Hawkish repricing or higher US yields/USD could pressure Gold. Headlines do not prove a macro surprise or a realized price move."};
+ return {
+  pathwayEN:"Watch whether the news changes demand for safe havens, rates, the US dollar or overall risk appetite.",
+  opposingEN:"No BUY/SELL direction is confirmed by a headline alone. Require price, spread and CLOSED broker candle evidence."};
+}
 export function makeEditorial(now=Date.now()){
  return CURATED_WORLD_NEWS.filter(s=>{
   const t=Date.parse(s.publishedOn+"T12:00:00Z");
   return Number.isFinite(t)&&now-t<=120*HOURS&&t<=now+24*HOURS;
  }).map(s=>({...s,sourceMode:"CURATED_SOURCE_ATTRIBUTED",publishedAtUTC:null,
    publicationDatePrecision:"DAY",dateLabel:s.publishedOn,headlineOnly:false,
-   ...mechanism(s.category),goldStudyOnly:true,priceReactionVerified:false}));
+   ...mechanism(s.category),...mechanismEN(s.category),goldStudyOnly:true,priceReactionVerified:false}));
 }
 export function parseRss(xml,feed,now=Date.now()){
  const out=[];
@@ -126,7 +140,7 @@ export function parseRss(xml,feed,now=Date.now()){
    verification:"PUBLISHER_HEADLINE_VIA_"+(feed.google?"GOOGLE_NEWS":"DIRECT_RSS"),
    sourceMode:feed.google?"AGGREGATOR_RSS_HEADLINE":"PUBLISHER_DIRECT_RSS_HEADLINE",
    headlineOnly:true,limitation:"Tarikh ialah masa pada feed; atribusi, angka dalam headline dan kandungan penuh belum disahkan bebas.",
-   category:flags.category,impact:flags.impact,...mechanism(flags.category),
+   category:flags.category,impact:flags.impact,...mechanism(flags.category),...mechanismEN(flags.category),
    goldStudyOnly:true,priceReactionVerified:false});
   if(out.length>=18)break;
  }
