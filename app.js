@@ -322,6 +322,7 @@ function macroChangeText(c){
 function macroStatusTag(card){
   if(card.status==="UNAVAILABLE")return '<span class="r">UNAVAILABLE</span>';
   if(card.stale)return '<span class="y">STALE / DATE UNCONFIRMED</span>';
+  if(card.status==="SECONDARY_MIRROR")return '<span class="y">BLS DATA VIA FRED MIRROR</span>';
   if(card.status==="DERIVED")return '<span class="y">DERIVED MODEL</span>';
   return '<span class="g">OFFICIAL DATA</span>';
 }
@@ -380,9 +381,11 @@ async function loadMacro(force){
     if(!j.ok)throw new Error(j.error||"Macro data unavailable");
     lastMacro=j;macroLoaded=true;
     renderMacroCards(j.cards||[]);
-    $("macroQuality").textContent=(j.quality?.available||0)+"/"+(j.quality?.total||0)+" VALID • "+(j.quality?.fresh||0)+" FRESH";
-    $("macroQuality").className="tag "+((j.quality?.fresh||0)===(j.quality?.total||0)?"g":"y");
+    var primaryReady=j.quality?.strictPrimaryReady!==undefined?j.quality.strictPrimaryReady:(j.quality?.fresh===j.quality?.total&&!(j.quality?.errors||[]).length);
+    $("macroQuality").textContent=(j.quality?.available||0)+"/"+(j.quality?.total||0)+" AVAILABLE • "+(j.quality?.fresh||0)+" FRESH"+(primaryReady?" • PRIMARY OK":" • PRIMARY DEGRADED");
+    $("macroQuality").className="tag "+(primaryReady?"g":"y");
     var issues=[...(j.quality?.errors||[]),...(j.quality?.notes||[])];
+    if(j.quality?.secondaryMirror?.length)issues.unshift("SECONDARY MIRROR: "+j.quality.secondaryMirror.join(", ")+" supplied through FRED (BLS-origin data; DIRECT BLS REMAINS BLOCKED). Not primary-source verified.");
     if(j.quality?.unavailable?.length)issues.push("Unavailable: "+j.quality.unavailable.join(", "));
     if(j.quality?.stale?.length)issues.push("Stale / date unavailable: "+j.quality.stale.join(", "));
     $("macroNotice").className=issues.length?"notice info":"notice good";
