@@ -302,6 +302,27 @@
       '<a href="'+safeNewsLink(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer">SOURCE • '+safe(item.publisher)+' ↗</a>'+
       '</article>';
   }
+  function renderOpeningRisk(data){
+    var el=$("gfWorldBias");if(!el)return;
+    var research=data?.openingRisk||{},up=research.status==="SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED";
+    var m=state.news?.macro,q=m?.quality,now=Date.parse(data?.updatedAtUTC)||Date.now(),
+      fetched=Date.parse(m?.fetchedAtUTC||"");
+    var macroGood=!!(q&&Number(q.available)>0&&Number(q.available)===Number(q.total)&&
+      !(q.errors||[]).length&&!(q.stale||[]).length&&Number.isFinite(fetched)&&now-fetched>=-60000&&now-fetched<=3600000);
+    var macroBias=macroGood?String(m?.gold?.bias||"UNAVAILABLE"):"UNVERIFIED";
+    var contradiction=up&&macroBias==="PRESSURE",ms=newsIsMS();
+    el.className="gfWorldBias"+(contradiction?" conflict":up?" watch":"");
+    var outcome=contradiction?
+      (ms?"KONFLIK: berita geopolitik berpotensi gap naik, tetapi Macro Regime Gold menunjukkan PRESSURE. Tunggu pembukaan sebenar.":"CONFLICT: geopolitical news creates upside-gap risk while verified Gold Macro shows PRESSURE. Wait for actual market opening."):
+      up?(ms?"RISIKO SELAMAT: potensi safe-haven, tetapi bukan BUY sebelum tick segar dan candle M15 tutup.":"WATCH: potential safe-haven upside risk, but NOT a BUY before fresh ticks and a CLOSED M15 candle."):
+      (ms?"Berita masih bersifat dua hala atau tiada arah yang dapat disahkan.":"News impact remains two-sided or has no verified directional conclusion.");
+    el.innerHTML='<small>NEWS-ONLY PRE-OPEN SCENARIO • NO AUTO ENTRY / NO WIN PROBABILITY</small>'+
+      '<h3>'+safe((ms?research.labelMS:research.labelEN)||"WAIT • EVIDENCE INCOMPLETE")+'</h3>'+
+      '<p>'+safe(outcome)+'</p>'+
+      '<p class="gfWorldMacroContrast">Macro Gold: '+safe(macroBias)+
+      (macroGood?" • current source-quality gate passed":" • current synchronized macro quality not verified")+
+      ' • XAUUSD fresh quote/M15: NOT ESTABLISHED BY NEWS</p>';
+  }
   function renderWorldNews(data){
     if(!data||!data.ok)return;
     var all=data.items||[],asOf=Date.parse(data.updatedAtUTC)||Date.now(),
@@ -314,6 +335,7 @@
       data.curatedCandidates+" dated source-attributed reports. "+data.fallbackNote;
     if($("gfWorldNotice")){ $("gfWorldNotice").className="notice "+(healthy?"info":"bad");
       $("gfWorldNotice").textContent=status; }
+    renderOpeningRisk(data);
     if($("gfWorldFeature")){
       $("gfWorldFeature").innerHTML=lead?
        '<div class="gfFeatureEyebrow">IMPORTANT DEVELOPMENTS • SOURCE-ATTRIBUTED, NOT A TRADE SIGNAL</div>'+
@@ -403,6 +425,7 @@
     else html+='<div class="v8Footnote">'+safe(t("noVerifiedReleases"))+'</div>';
     if(observations.length)html+='<div class="v8Footnote">'+safe(t("macroObservationNote"))+'</div>'+observations.map(function(ev){return newsCard(ev,false)}).join("");
     $("v8NewsList").innerHTML=html||"<p>"+t("noOfficialData")+"</p>";
+    if(liveNewsCache)renderOpeningRisk(liveNewsCache);
   }
 
   var blogCache=null;
