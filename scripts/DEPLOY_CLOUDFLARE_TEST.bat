@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 cd /d "%~dp0.."
 echo ==========================================================
-echo GoldFlow V8.1.1 + GF Study - Cloudflare TEST (NOT Vercel)
+echo GoldFlow V8.1.3 + Independent World News - Cloudflare TEST (NOT Vercel)
 echo ==========================================================
 echo Source must be the staging/v8-1-ai-confirmation-market-online branch.
 where node >nul 2>nul || (echo ERROR: Node.js 20+ required. & pause & exit /b 1)
@@ -27,6 +27,9 @@ if errorlevel 1 echo Project may already exist. Continuing to the safe test-only
 call npx wrangler pages deploy dist --project-name goldflow-intelligence-cf-test --branch main
 if errorlevel 1 goto fail
 echo SUCCESS: Save the returned *.pages.dev URL.
+echo VERIFY PUBLIC NEWS: https://goldflow-intelligence-cf-test.pages.dev/api/news-live
+echo VERIFY EDITORIAL BLOG: https://goldflow-intelligence-cf-test.pages.dev/blog/posts.json
+echo Confirm headline is V8.1.3 TEST after Ctrl+Shift+R; check sourceStatus/updatedAtUTC and actual article links.
 echo BEFORE TESTING MT5: configure BROKER_BRIDGE_URL, encrypted BROKER_BRIDGE_KEY,
 echo and VANTAGE_TICK_UTC_OFFSET_SECONDS in Cloudflare Pages project variables.
 echo DO NOT SHARE BRIDGE KEY. Do NOT cancel Vercel until CF smoke tests pass.
