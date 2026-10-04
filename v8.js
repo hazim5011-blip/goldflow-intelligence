@@ -298,13 +298,16 @@
         '<p class="gfWorldFact">'+safe(p.reported)+'</p>'+
         '<p><b>GOLD • CONDITIONAL SUPPORT:</b> '+safe(p.pathway)+'</p>'+
         '<p><b>COUNTER-RISK / WHIPSAW:</b> '+safe(p.opposing)+'</p>'+
-        '<small>'+safe(item.limitation||"Publisher reporting, not independent fact certification.")+'</small>')+
+        '<small>'+safe(newsIsMS()?(item.limitation||"Laporan penerbit, belum disahkan secara bebas."):(item.limitationEN||"Source reporting only; article details, exact time and independent attribution remain unverified."))+'</small>')+
       '<a href="'+safeNewsLink(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer">SOURCE • '+safe(item.publisher)+' ↗</a>'+
       '</article>';
   }
   function renderWorldNews(data){
     if(!data||!data.ok)return;
-    var all=data.items||[],high=all.find(function(x){return x.impact==="HIGH"}),lead=high||all[0];
+    var all=data.items||[],asOf=Date.parse(data.updatedAtUTC)||Date.now(),
+      high=all.find(function(x){var t=Date.parse(x.publishedAtUTC||((x.publishedOn||"")+"T12:00:00Z"));
+        return x.impact==="HIGH"&&Number.isFinite(t)&&asOf-t>=0&&asOf-t<=36*3600000
+      }),lead=high||all[0];
     var healthy=(data.sourceChecks||[]).filter(function(x){return x.status==="FETCHED"}).length,total=(data.sourceChecks||[]).length;
     if($("gfWorldHealth"))$("gfWorldHealth").textContent="CHECKED "+dt(data.updatedAtUTC)+" • FEEDS "+healthy+"/"+total;
     var status="External sources: "+safe(data.sourceStatus)+" • "+data.fetchedLiveHeadlines+" publisher headlines / "+
@@ -322,8 +325,8 @@
       .slice(0,18).map(function(x){return worldCard(x,false)}).join("")||
       '<p class="sub">No additional qualifying developments. Recheck the external sources later.</p>';
     if($("gfWorldOpening"))$("gfWorldOpening").innerHTML=
-      '<div class="gfOpeningNote">POSSIBLE SAFE-HAVEN GAP ≠ CONFIRMED BUY. OIL/INFLATION/YIELDS MAY OPPOSE THE MOVE.</div>'+
-      '<ol>'+(data.openingWatch||[]).map(function(x){return "<li>"+safe(x)+"</li>"}).join("")+'</ol>';
+      '<div class="gfOpeningNote">POSSIBLE OPENING GAP ≠ CONFIRMED BUY/SELL. OIL/INFLATION/YIELDS MAY OPPOSE SAFE-HAVEN FLOWS.</div>'+
+      '<ol>'+((newsIsMS()?data.openingWatch:data.openingWatchEN)||data.openingWatch||[]).map(function(x){return "<li>"+safe(x)+"</li>"}).join("")+'</ol>';
     var blog=$("gfBlogLiveJournal");
     if(blog)blog.innerHTML=all.slice(0,8).map(function(x){return worldCard(x,true)}).join("")||
       '<p>Live world-news providers have no qualifying recent article at the moment. Dated editorial research remains below.</p>';
