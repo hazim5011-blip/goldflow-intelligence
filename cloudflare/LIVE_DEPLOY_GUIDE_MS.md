@@ -2,6 +2,19 @@
 
 **Tujuan**: Gunakan branch staging pada Pages test tanpa menaikkan caj Vercel Pro.
 
+### PENTING: Macro BLS 13/16 / FRED HTTP 520 di Cloudflare
+
+Apabila kedua-dua domain BLS dan FRED menyekat sambungan dari Cloudflare, deploy Pages sahaja TIDAK menyelesaikan masalah. Kod baharu menggunakan laluan PC MT5 Bridge yang sedia ada (named tunnel, key sama). Di PC, selepas download ZIP terbaru:
+
+1. Double-click `scripts\\INSTALL_MACRO_ON_LOCAL_BRIDGE.bat`. Script cuba kesan folder Bridge yang sedang berjalan; jika tidak berjaya, paste folder sebenar yang mengandungi `mt5_bridge.py` (bukan folder ZIP baharu).
+2. Taip `YES` untuk pengesahan. Script backup fail Bridge lama dan salin HANYA `mt5_bridge.py` + `macro_sources.py`; `.env`, key, MT5 terminal, positions, named tunnel dan config asal tidak diubah.
+3. **Restart proses Bridge sedia ada menggunakan launcher asal apabila selamat**, supaya endpoint `/macro/bls` baharu dimuatkan. Tunnel sedia ada boleh kekal; elakkan mencipta dua proses port 8787. Pastikan halaman `/api/bridge-health` kekal `MT5 LIVE`.
+4. Jalankan `scripts\\DEPLOY_CLOUDFLARE_TEST.bat` dalam ZIP BARU untuk upload API Cloudflare yang boleh meminta `/macro/bls` dengan `BROKER_BRIDGE_KEY` sedia ada.
+5. Buka Cloudflare `/api/macro`. Semak `quality.available`, `quality.primarySourceHealth`, `quality.secondaryMirror`, `quality.errors`, `quality.edgeSourceErrors` dan timeline. Jika BLS direct melalui PC berjaya: direct official via local authenticated bridge, bukan rekaan nombor. Jika hanya FRED melalui PC berjaya: `SECONDARY_MIRROR` + `PRIMARY DEGRADED` dan GF-AI Gold masih fail-closed. Jika kedua-dua PC routes gagal: `UNAVAILABLE`; jangan sembunyikan ralat.
+6. JANGAN akses `https://bridge.hazim5011.com/macro/bls` secara terus dalam browser atau kongsi key. Panggilan ini memerlukan header X-Bridge-Key; Cloudflare memanggilnya melalui secret sedia ada.
+
+
+
 1. Buka GitHub PR #5 -> Code -> pilih branch \`staging/v8-1-ai-confirmation-market-online\` -> Download ZIP (jangan ambil main lama). Unzip ke folder BARU Windows (bukan direktori MT5/bridge yang sedang berjalan).
 2. Pastikan Node.js 20+ tersedia. Di Cloudflare dashboard: Workers & Pages -> Create -> Pages -> Direct Upload; project name **goldflow-intelligence-cf-test**; production branch **main**. Ini perlu dibuat oleh pemilik Cloudflare.
 3. Double-click \`scripts\\DEPLOY_CLOUDFLARE_TEST.bat\`. Ia jalankan original & adapter tests, bundle \`dist\`, login rasmi Wrangler melalui browser, kemudian upload ke Pages TEST sahaja. Simpan URL sebenar \`https://goldflow-intelligence-cf-test.pages.dev\` yang dipulangkan jika berjaya — jangan andaikan slug sebelum deploy.
