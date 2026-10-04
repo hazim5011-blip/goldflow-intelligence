@@ -43,7 +43,9 @@ export function evaluateStudy({symbol="XAUUSD247",tf="M15",bars=[],h1=[],h4=[],q
  macro=null,mode="ai",nowSec=Math.floor(Date.now()/1000)}={}){
  if(!TF_SECONDS[tf]||!Number.isInteger(offsetSeconds)||Math.abs(offsetSeconds)>50400)return result("DATA_UNVERIFIED",{reason:"INVALID_TF_OR_BROKER_OFFSET"});
  const c=normalizedClosedBars(bars,tf,nowSec,offsetSeconds),a1=normalizedClosedBars(h1,"H1",nowSec,offsetSeconds),a4=normalizedClosedBars(h4,"H4",nowSec,offsetSeconds);
- const info={symbol,tf,mode,closedCandleCount:c.length,brokerUtcOffsetSeconds:offsetSeconds,updatedAtUTC:new Date(nowSec*1000).toISOString(),macroStatus:macro?.quality||null};
+ const profile=mode==="ai"?"AI_STRICT_MTF_CONFLUENCE":mode==="study"?"TECHNICAL_ENTRY_LIFECYCLE":"GOLD_NEWS_CONFLUENCE";
+ const usesGoldMacro=goldSymbol(symbol)&&mode!=="study";
+ const info={symbol,tf,mode,modeProfile:profile,fundamentalApplied:usesGoldMacro,closedCandleCount:c.length,brokerUtcOffsetSeconds:offsetSeconds,updatedAtUTC:new Date(nowSec*1000).toISOString(),macroStatus:usesGoldMacro?macro?.quality||null:null};
  if(c.length<40||a1.length<30||a4.length<30)return result("DATA_UNVERIFIED",{...info,reason:"INSUFFICIENT_CLOSED_MTF_CANDLES"});
  const latest=c.at(-1),interval=TF_SECONDS[tf],closedAtUTC=new Date((latest.t-offsetSeconds+interval)*1000).toISOString(),ageSec=nowSec-(latest.t-offsetSeconds+interval);
  const qBid=N(quote?.bid),qAsk=N(quote?.ask),qTime=N(quote?.tickTime),qObs=N(quote?.observedAt);
@@ -51,13 +53,15 @@ export function evaluateStudy({symbol="XAUUSD247",tf="M15",bars=[],h1=[],h4=[],q
  const snapshotAge=qObs===null?null:nowSec-qObs;
  const quoteGood=qBid!==null&&qAsk!==null&&qBid>0&&qAsk>=qBid&&quoteAge!==null&&quoteAge>=-20&&quoteAge<=35&&snapshotAge!==null&&snapshotAge>=-25&&snapshotAge<=35;
  const marketFresh=ageSec>=-2&&ageSec<=Math.max(interval*2,300);
- const base={...info,closedAtUTC,ageSeconds:round(ageSec,0),quoteAgeSeconds:round(quoteAge,0),bid:qBid,ask:qAsk,macroBias:macro?.gold?.bias||"UNAVAILABLE",
-  macroScore:N(macro?.gold?.score),newsModeNote:"Official observation date is NOT a verified news release time; no forecast/surprise is invented.",
+ const base={...info,closedAtUTC,ageSeconds:round(ageSec,0),quoteAgeSeconds:round(quoteAge,0),bid:qBid,ask:qAsk,
+  macroBias:usesGoldMacro?macro?.gold?.bias||"UNAVAILABLE":mode==="study"?"NOT_APPLIED_TECHNICAL_ONLY":"NO_VERIFIED_ASSET_MACRO",
+  macroScore:usesGoldMacro?N(macro?.gold?.score):null,
+  newsModeNote:"Official observation date is NOT a verified news release time; no forecast/surprise is invented.",
   caution:"Derived macro context and technical confirmation are NOT a guaranteed price direction."};
  if(!quoteGood||!marketFresh)return result("MARKET_OFFLINE",{...base,reason:!quoteGood?"BROKER_TICK_MISSING_OR_STALE":"LATEST_CLOSED_CANDLE_STALE"});
  if(mode==="news"&&!goldSymbol(symbol))return result("DATA_UNVERIFIED",{...base,reason:"GOLD_NEWS_STUDY_ONLY"});
- const macroDir=goldSymbol(symbol)?macroDirection(macro):0;
- if(goldSymbol(symbol)&&macroDir===null)return result("DATA_UNVERIFIED",{...base,reason:"OFFICIAL_MACRO_INCOMPLETE_OR_STALE"});
+ const macroDir=usesGoldMacro?macroDirection(macro):0;
+ if(usesGoldMacro&&macroDir===null)return result("DATA_UNVERIFIED",{...base,reason:"OFFICIAL_MACRO_INCOMPLETE_OR_STALE"});
  const h1Trend=trend(a1),h4Trend=trend(a4);
  const context={h1Trend,h4Trend,macroDir,technicalSource:"VANTAGE_CLOSED_CANDLES",fundamentalSource:macro?.provider||"UNAVAILABLE"};
  // Search last five closed trigger bars; publish only recent confirmations, never invent one from price alone.
@@ -69,14 +73,25 @@ export function evaluateStudy({symbol="XAUUSD247",tf="M15",bars=[],h1=[],h4=[],q
   for(const x of checks){
    const e=ema(prior.slice(-70),20),d=x.direction;
    if(d*(c[i].c-e)<=0)continue; // directional EMA validation at signal close
-   if(h1Trend===-d||h4Trend===-d||(macroDir!==null&&macroDir===-d)){conflict={direction:d,type:x.type,closedAtUTC:new Date((c[i].t-offsetSeconds+interval)*1000).toISOString()};continue}
-   event={...x,i,signal:c[i],atr:p,d,score:Math.min(90,50+10*(h1Trend===d)+8*(h4Trend===d)+8*(macroDir===d)+8*(x.type.includes("BREAK")))};
+   // Different study policies over the SAME broker OHLC. AI requires both HTF
+   // trends to AGREE with its directional scenario; Market Study focuses on
+   // technical retest/SL/TP lifecycle and only VETOES an opposing HTF trend.
+   const strictAI=mode==="ai";
+   const htfConflict=strictAI?(h1Trend!==d||h4Trend!==d):(h1Trend===-d||h4Trend===-d);
+   const fundamentalConflict=usesGoldMacro&&macroDir===-d;
+   if(htfConflict||fundamentalConflict){
+    conflict={direction:d,type:x.type,reason:fundamentalConflict?"VERIFIED_GOLD_MACRO_OPPOSES_SETUP":strictAI?"AI_REQUIRES_H1_H4_ALIGNMENT":"OPPOSING_HTF_TREND",
+     closedAtUTC:new Date((c[i].t-offsetSeconds+interval)*1000).toISOString()};continue;
+   }
+   event={...x,i,signal:c[i],atr:p,d,score:Math.min(90,50+10*(h1Trend===d)+8*(h4Trend===d)+8*(usesGoldMacro&&macroDir===d)+8*(x.type.includes("BREAK")))};
    break;
   }
   if(event)break;
  }
  if(!event)return result(conflict?"WAIT_CONFLICT":"WAIT_CONFIRMATION",{...base,...context,
-  direction:conflict?.direction||h1Trend||0,confirmation:null,reason:conflict?"Technical pattern conflicts with current HTF/macro context":"Waiting for a NEW closed-candle breakout or validated zone rejection.",
+  direction:conflict?.direction||h1Trend||0,confirmation:null,
+  conflictReason:conflict?.reason||null,
+  reason:conflict?(conflict.reason==="AI_REQUIRES_H1_H4_ALIGNMENT"?"AI Analyst requires BOTH H1 and H4 to support the CLOSED trigger direction.":conflict.reason==="VERIFIED_GOLD_MACRO_OPPOSES_SETUP"?"Verified Gold macro bias opposes this technical setup.":"Market Study veto: opposing higher timeframe trend."):"Waiting for a NEW closed-candle breakout or validated zone rejection.",
   nextCandleCloseUTC:new Date((latest.t-offsetSeconds+2*interval)*1000).toISOString()});
  const {d,signal,p,atr:vol}=event;const elapsed=c.length-1-event.i;
  const point=Math.max(vol*.005,1e-9);
@@ -90,7 +105,9 @@ export function evaluateStudy({symbol="XAUUSD247",tf="M15",bars=[],h1=[],h4=[],q
  const plan={direction:d,side:d===1?"BUY":"SELL",entryLow:round(entry.low),entryHigh:round(entry.high),invalidation:round(invalidation),
   tp1:round(center+d*risk),tp2:round(center+d*2*risk),tp3:round(center+d*3*risk),riskPriceMove:round(risk),score:Math.round(event.score),
   confirmationType:event.type,confirmationCloseUTC:new Date((signal.t-offsetSeconds+interval)*1000).toISOString(),signalCandleTime:signal.t,expiresAfterClosedBars:3,
-  explanation:[event.type,"H1 trend "+h1Trend,"H4 trend "+h4Trend,"Macro "+(macroDir===null?"UNVERIFIED":macroDir)],verifiedForecastSurprise:false};
+  explanation:[event.type,"H1 trend "+h1Trend,"H4 trend "+h4Trend,
+   usesGoldMacro?"Gold macro "+(macroDir===null?"UNVERIFIED":macroDir):mode==="study"?"Macro NOT APPLIED (technical execution study)":"No verified asset-specific macro feed; technical confluence only"],
+  verifiedForecastSurprise:false};
  const current=d===1?qAsk:qBid;
  const liveInvalid=d*(current-invalidation)<=0;
  const overlay={...base,...context,direction:d,confirmation:plan,elapsedClosedBars:elapsed,entryQuote:current,entryQuoteSide:d===1?"ASK":"BID"};
