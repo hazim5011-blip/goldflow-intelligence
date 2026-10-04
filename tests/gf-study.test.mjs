@@ -151,3 +151,44 @@ test("an observed forming-candle wick reaching TP1 retires previous entry even b
  assert.equal(after.status,"COMPLETED_STUDY");
  assert.equal(after.canEnter,false);
 });
+
+test("GF-AI and GF-Market Study are NOT aliases: AI requires both H1/H4 aligned; Study allows neutral HTF",()=>{
+ const f=fixture();
+ const neutralH1=f.h1.map(b=>({...b,o:4300,c:4300,h:4300.2,l:4299.8}));
+ const args={...f,h1:neutralH1,quote:tick(f.bars.at(-2).c)};
+ const ai=evaluateStudy({...args,mode:"ai"});
+ const study=evaluateStudy({...args,mode:"study",macro:null});
+ assert.equal(ai.modeProfile,"AI_STRICT_MTF_CONFLUENCE");
+ assert.equal(study.modeProfile,"TECHNICAL_ENTRY_LIFECYCLE");
+ assert.equal(ai.status,"WAIT_CONFLICT");
+ assert.equal(ai.conflictReason,"AI_REQUIRES_H1_H4_ALIGNMENT");
+ assert.equal(ai.canEnter,false);
+ assert.equal(study.status,"SELL_CONFIRMED");
+ assert.equal(study.confirmation?.side,"SELL");
+ assert.equal(study.fundamentalApplied,false);
+});
+test("Market Study never changes when Gold macro flips or disappears; AI Gold fails closed on incomplete official macro",()=>{
+ const f=fixture(),quote=tick(f.bars.at(-2).c);
+ const bad={...macro(),quality:{available:13,total:16,errors:["BLS"],stale:[]}};
+ const studyOne=evaluateStudy({...f,mode:"study",macro:macro("SUPPORTIVE"),quote});
+ const studyTwo=evaluateStudy({...f,mode:"study",macro:bad,quote});
+ const studyThree=evaluateStudy({...f,mode:"study",macro:null,quote});
+ assert.equal(studyOne.status,"SELL_CONFIRMED");
+ assert.deepEqual(studyOne.confirmation,studyTwo.confirmation);
+ assert.deepEqual(studyOne.confirmation,studyThree.confirmation);
+ assert.equal(studyOne.fundamentalApplied,false);
+ assert.equal(studyTwo.macroBias,"NOT_APPLIED_TECHNICAL_ONLY");
+ const ai=evaluateStudy({...f,mode:"ai",macro:bad,quote});
+ assert.equal(ai.status,"DATA_UNVERIFIED");
+ assert.equal(ai.reason,"OFFICIAL_MACRO_INCOMPLETE_OR_STALE");
+ assert.equal(ai.canEnter,false);
+});
+test("AI on BTCUSD does not masquerade Gold macro or ML model as verified BTC research",()=>{
+ const f=fixture(),b={...f,symbol:"BTCUSD",mode:"ai",macro:null,quote:tick(f.bars.at(-2).c)};
+ const r=evaluateStudy(b);
+ assert.equal(r.modeProfile,"AI_STRICT_MTF_CONFLUENCE");
+ assert.equal(r.fundamentalApplied,false);
+ assert.equal(r.macroBias,"NO_VERIFIED_ASSET_MACRO");
+ assert.equal(r.modelType,"AUDITABLE_RULES_NOT_TRAINED_ML");
+ assert.equal(r.status,"SELL_CONFIRMED");
+});
