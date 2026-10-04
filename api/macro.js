@@ -1,4 +1,4 @@
-import {brokerConfigured,brokerGet} from "./_broker.js";
+import {bridgeConfigured,brokerGet} from "./_broker.js";
 const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
 const finite=v=>v!==null&&v!==undefined&&String(v).trim()!==""&&Number.isFinite(Number(v));
 const num=v=>{if(v==null||String(v).trim()==="")return null;const n=Number(String(v).replace(/,/g,"").replace(/\s/g,""));return Number.isFinite(n)?n:null};
@@ -276,7 +276,7 @@ export default async function handler(req,res){
   // Edge BLS and FRED are sometimes blocked from Cloudflare. The authenticated
   // Windows bridge independently queries the SAME official BLS series, then a
   // clearly-labelled FRED BLS-origin mirror. Never accept user-provided URLs.
-  if(brokerConfigured()&&Object.values(blsRows).some(rows=>rows.length<25)){
+  if(bridgeConfigured()&&Object.values(blsRows).some(rows=>rows.length<25)){
     try{
       const local=await brokerGet("/macro/bls",{},28000,1);
       if(local?.ok===true&&local?.bridgeTransport==="AUTHENTICATED_LOCAL_WINDOWS"&&local?.version===1){
