@@ -26,14 +26,14 @@ export default async function handler(req,res){
   const frames=[...new Set([tf,"H1","H4"])];
   const [bridge,macro]=await Promise.all([
    brokerGet("/multi-bars",{symbol,tfs:frames.join(","),limits:frames.map(f=>f===tf?180:100).join(",")},25000,2),
-   /^(XAU|GOLD)/i.test(symbol)?macroSnapshot().catch(()=>null):Promise.resolve(null)
+   /^(XAU|GOLD)/i.test(symbol)&&mode!=="study"?macroSnapshot().catch(()=>null):Promise.resolve(null)
   ]);
   const nowSec=Math.floor(Date.now()/1000);
   const output=evaluateStudy({symbol:bridge.symbol||symbol,tf,mode,bars:bridge.frames?.[tf]||[],
    h1:bridge.frames?.H1||[],h4:bridge.frames?.H4||[],
    quote:{bid:bridge.bid,ask:bridge.ask,tickTime:bridge.serverTime,observedAt:nowSec},
    offsetSeconds:offset,macro,nowSec});
-  const publicMacro=macro?{fetchedAtUTC:macro.fetchedAt,quality:macro.quality,gold:macro.gold,
+  const publicMacro=mode!=="study"&&macro?{fetchedAtUTC:macro.fetchedAt,quality:macro.quality,gold:macro.gold,
    cards:(macro.cards||[]).filter(c=>["CPI","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"].includes(c.id)).map(c=>({id:c.id,name:c.name,display:c.display,value:c.value,date:c.date,status:c.status,source:c.source,stale:c.stale}))}:null;
   return res.status(200).json({...output,source:"VANTAGE_MT5",marketResearchOnly:true,autoTrading:false,news:publicMacro,
    chartBars:(bridge.frames?.[tf]||[]).slice(-160).map(b=>({t:Number(b.t)-offset,o:b.o,h:b.h,l:b.l,c:b.c})),
