@@ -39,7 +39,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
 $("tfSelect").value=selectedTF;
 $("indicatorSelect").value=selectedIndicator;
 $("tfSelect").onchange=function(){selectedTF=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
-$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_indicator",selectedIndicator);if(/^gf-/.test(selectedIndicator))document.querySelector('[data-page="gfStudyPage"]')?.click();else if($("gfStudyPage").classList.contains("on"))document.querySelector('[data-page="dashboard"]')?.click();loadAnalysis()};
+$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;window.GFStudy?.invalidate?.();localStorage.setItem("gf_indicator",selectedIndicator);if(/^gf-/.test(selectedIndicator))document.querySelector('[data-page="gfStudyPage"]')?.click();else if($("gfStudyPage").classList.contains("on"))document.querySelector('[data-page="dashboard"]')?.click();loadAnalysis()};
 $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
