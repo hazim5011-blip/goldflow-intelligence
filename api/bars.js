@@ -1,4 +1,4 @@
-import {bridgeConfigured,brokerGet,apiError} from "./_broker.js";
+import {bridgeConfigured,brokerGet,apiError,vantageBrokerUtcOffsetSeconds} from "./_broker.js";
 const ALLOWED=new Set(["M1","M5","M15","M30","H1","H4","D1","W1","MN1"]);
 
 export default async function handler(req,res){
@@ -12,6 +12,6 @@ export default async function handler(req,res){
   if(!ALLOWED.has(tf)) return res.status(400).json({ok:false,error:"unsupported tf"});
   try{
     const d=await brokerGet("/bars",{symbol,tf,limit},10000);
-    return res.status(200).json({ok:true,configured:true,...d});
+    return res.status(200).json({ok:true,configured:true,...d,brokerUtcOffsetSeconds:vantageBrokerUtcOffsetSeconds()});
   }catch(e){ return apiError(res,e,200,{symbol,tf}); }
 }
