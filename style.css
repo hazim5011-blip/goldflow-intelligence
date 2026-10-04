@@ -59,3 +59,35 @@
 #gfStudyState.y,#gfEntryDecision.y{color:#f2c75b}
 #gfStudyTechnical,#gfStudyMacro{min-height:110px}
 @media(max-width:650px){#gfStudyPage .g5{grid-template-columns:repeat(2,minmax(0,1fr))}#gfStudyPage .g2{grid-template-columns:minmax(0,1fr)}}
+
+
+/* GF World Intelligence • evidence-first global news, kept separate from economic observations. */
+.gfWorldSection,.gfBlogJournal{margin:13px 0 18px;padding:13px;background:#081c28;border:1px solid #264554;border-radius:12px}
+.gfWorldTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+.gfWorldTop h3{font-size:16px;line-height:1.38;margin:3px 0 0;color:#eef7ff}
+.gfWorldHealth{color:#a5cadd;background:#0e2937;border:1px solid #365669;border-radius:16px;font-weight:700;letter-spacing:.025em;font-size:10px;padding:6px 10px}
+.gfWorldFeature{border:1px solid #3e6878;border-radius:10px;background:#0d2431;padding:11px;margin:12px 0}
+.gfFeatureEyebrow,.gfMacroSectionTitle{font-weight:900;letter-spacing:.055em;font-size:10px;color:#f2c75b;margin:8px 0}
+.gfMacroSectionTitle{border-top:1px solid #355262;padding-top:11px;margin-top:20px}
+.gfWorldGrid,.gfBlogLiveGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.gfWorldStory{display:flex;flex-direction:column;gap:8px;min-width:0;padding:13px;background:#091620;border:1px solid #2c4553;border-left:4px solid #608799;border-radius:10px;overflow-wrap:anywhere}
+.gfWorldStory.impact-HIGH{border-left-color:#fb6781}
+.gfWorldStory.impact-MEDIUM{border-left-color:#f2c75b}
+.gfWorldStory.impact-LOW,.gfWorldStory.impact-CONTEXT{border-left-color:#6da4bf}
+.gfWorldStory h4{font-size:14px;line-height:1.5;margin:0;color:#f2f8fb}
+.gfWorldStory p{color:#c5dae4;font-size:12px;line-height:1.65;margin:2px 0}
+.gfWorldStory .gfWorldFact{font-size:13px;color:#e5f2f7;font-weight:550}
+.gfWorldStory p b{font-size:11px;color:#f2c75b}
+.gfWorldStory small{font-size:10px;color:#b9cbd6;line-height:1.55}
+.gfWorldStory a{margin-top:auto;font-size:11px;color:#91cfff;text-decoration:underline;text-underline-offset:3px}
+.gfWorldMeta{display:flex;align-items:center;gap:7px;justify-content:space-between;flex-wrap:wrap}
+.gfWorldImpact{font-size:10px;font-weight:900;color:#f2c75b}
+.gfWorldNew{background:#173c42;color:#71eed1;border:1px solid #299a84;border-radius:7px;padding:2px 7px;font-size:10px;font-weight:850}
+.gfWorldSource{font-size:10px;color:#98b7c8;line-height:1.6}
+.gfFeatureDisclaimer{font-size:11px;color:#e6c778;line-height:1.6}
+.gfOpeningWatch{margin-top:10px;background:#0a1922;border:1px solid #284657;border-radius:9px;padding:10px 13px}
+.gfOpeningWatch summary{font-weight:750;font-size:12px;color:#f2d98c;cursor:pointer}
+.gfOpeningWatch ol{padding-left:20px;font-size:12px;line-height:1.75;color:#c9dce7;margin:9px 0 0}
+.gfOpeningNote{color:#f5b87e;font-weight:800;font-size:11px;margin:12px 0 5px}
+.gfBlogJournal .gfBlogLiveGrid .gfWorldStory p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+@media(max-width:850px){.gfWorldGrid,.gfBlogLiveGrid{grid-template-columns:minmax(0,1fr)}.gfWorldSection,.gfBlogJournal{padding:8px}.gfWorldTop h3{font-size:14px}}
