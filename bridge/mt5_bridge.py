@@ -3,6 +3,8 @@ from typing import Optional
 from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from fastapi.concurrency import run_in_threadpool
+from macro_sources import collect_macro_bls
 import MetaTrader5 as mt5
 
 load_dotenv()
@@ -128,6 +130,18 @@ def health(x_bridge_key:Optional[str]=Header(default=None)):
             "server":getattr(ai,"server",None) if ai else None,
             "tradeAllowed":bool(getattr(ti,"trade_allowed",False)) if ti else False,
             "time":int(time.time()),"version":"3.0.0"}
+
+@app.get("/macro/bls")
+async def macro_bls(x_bridge_key:Optional[str]=Header(default=None)):
+    # Unlike legacy local endpoints, macro transport must never become public
+    # if BRIDGE_KEY is missing. The named tunnel uses the same existing key.
+    if not BRIDGE_KEY:
+        raise HTTPException(status_code=503,detail="BRIDGE_KEY_REQUIRED_FOR_MACRO")
+    auth(x_bridge_key)
+    try:
+        return await run_in_threadpool(collect_macro_bls)
+    except Exception:
+        raise HTTPException(status_code=503,detail="MACRO_LOCAL_COLLECTOR_UNAVAILABLE")
 
 @app.get("/symbols")
 def symbols(filter:str="",limit:int=Query(500,ge=1,le=5000),x_bridge_key:Optional[str]=Header(default=None)):
