@@ -57,6 +57,11 @@ function applySymbolFilter(){
     var hay=(s.name+" "+(s.description||"")+" "+(s.path||"")).toUpperCase();
     return okCat&&(!q||hay.indexOf(q)>=0);
   });
+  if((cat==="MARKET_ONLINE"||cat==="MARKET_24H")&&filteredSymbols.length&&!filteredSymbols.some(function(s){return s.name===selectedSymbol})){
+    // Auto-focus the first VERIFIED active instrument, never a guessed crypto alias.
+    selectedSymbol=filteredSymbols[0].name;localStorage.setItem("gf_symbol",selectedSymbol);
+    loadAnalysis();renderTradingView();
+  }
   renderSymbolSelect();renderSymbolCards();
   if((cat==="MARKET_ONLINE"||cat==="MARKET_24H")&&window.GFMarket){
     if(window.GFMarket.needsUpdate())window.GFMarket.ensure().then(function(){if($("category").value===cat)applySymbolFilter()});
