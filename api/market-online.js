@@ -22,7 +22,7 @@ export default async function handler(req,res){
  if(offset===null)return res.status(200).json({ok:false,status:"BROKER_OFFSET_UNVERIFIED",verified:[],sampled:0});
  try{
   const catalog=await brokerGet("/catalog",{limit:5000},14000,1);
-  const all=(catalog.symbols||[]).filter(x=>safe.test(x.name||""));
+  const all=(catalog.symbols||[]).filter(x=>safe.test(x.name||"")).map(x=>({...x,category:classifySymbol(x.name,x.path,x.description)}));
   // The scan prioritizes likely 24/7 instruments, but ALL sampled symbols still need fresh ticks.
   const priority={SYNTHETIC:0,OTHER:1,INDICES:2,CRYPTO:3,ENERGY:4,METALS:5,FOREX:6,STOCKS:7};
   // NO 90-symbol cap: previously crypto exhausted the whole sample and hid
