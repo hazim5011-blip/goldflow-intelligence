@@ -102,6 +102,51 @@
   }catch(e){render({ok:false,status:"DATA_UNVERIFIED",reason:"Study API unavailable. Entry blocked.",limitation:String(e.message||e)})}
   finally{state.busy=false;if(state.seq!==seq&&isGF())setTimeout(load,0)}
  }
+
+ // A previously displayed READY state is never left stale while the price moves.
+ // Fast tick polling may only DEMOTE a server-confirmed signal. It never upgrades
+ // WAIT/CONFIRMED to READY without another full closed-candle server evaluation.
+ let rapidCheckBusy=false;
+ async function verifyDisplayedReady(){
+  if(rapidCheckBusy||document.hidden||!isGF()||!$("gfStudyPage")?.classList.contains("on"))return;
+  const old=state.last;
+  if(!old?.canEnter||!old?.confirmation)return;
+  rapidCheckBusy=true;
+  try{
+   const name=old.symbol,p=old.confirmation,d=p.direction;
+   const r=await fetch("/api/status?lite=1&pair="+encodeURIComponent(name),{cache:"no-store"});
+   const j=await r.json();
+   if(state.last!==old)return;
+   const stamp=Date.parse(old.updatedAtUTC||"");
+   const fresh=Number.isFinite(stamp)&&Date.now()-stamp<=22000;
+   const quoteOk=r.ok&&j.ok&&j.bridgeOnline&&j.symbol===name&&
+    Number.isFinite(Number(j.ageSeconds))&&Number(j.ageSeconds)>=-20&&Number(j.ageSeconds)<=30&&
+    Number.isFinite(Number(j.sampleAgeSeconds))&&Number(j.sampleAgeSeconds)>=-25&&Number(j.sampleAgeSeconds)<=35&&
+    Number.isFinite(Number(j.bid))&&Number.isFinite(Number(j.ask))&&Number(j.bid)>0&&Number(j.ask)>=Number(j.bid);
+   if(!fresh||!quoteOk){
+    render({...old,status:"MARKET_OFFLINE",canEnter:false,reason:"READY status suppressed: full analysis or broker tick is no longer fresh."});
+    return;
+   }
+   const px=d===1?Number(j.ask):Number(j.bid);
+   if(d*(px-Number(p.invalidation))<=0){
+    render({...old,status:d===1?"BUY_INVALID":"SELL_INVALID",canEnter:false,
+     invalidationBasis:"INTRABAR_QUOTE",reason:"Fresh broker tick has breached original invalidation."});
+   }else if(px<Number(p.entryLow)||px>Number(p.entryHigh)){
+    render({...old,status:d===1?"BUY_CONFIRMED":"SELL_CONFIRMED",canEnter:false,
+     entryState:"WAIT_RETEST",reason:"Previously READY, but fresh broker quote has left the original entry band. Wait for full revalidation."});
+   }
+  }catch(e){
+   if(state.last===old)render({...old,status:"MARKET_OFFLINE",canEnter:false,reason:"Live tick check unavailable; previous ENTRY READY revoked."});
+  }finally{rapidCheckBusy=false}
+ }
+ setInterval(function(){
+  if(!document.hidden&&isGF()&&$("gfStudyPage")?.classList.contains("on"))load();
+ },15000);
+ setInterval(verifyDisplayedReady,5000);
+ document.addEventListener("visibilitychange",function(){
+  if(!document.hidden&&isGF()&&$("gfStudyPage")?.classList.contains("on"))load();
+ });
+
  window.GFStudy={load,getLast:()=>state.last};
  if($("gfStudyRefresh"))$("gfStudyRefresh").onclick=load;
  // API returns only positive exact-symbol fresh ticks. Unsampled symbols never count as ONLINE.
