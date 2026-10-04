@@ -50,7 +50,7 @@ function selectSymbol(s){
   if(!s)return;focusedZone=null;lastLiveTick=null;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
   $("symbolSelect").value=s;renderSymbolCards();loadAnalysis();renderTradingView();
 }
-function categoryRank(x){return {METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7}[x]||9}
+function categoryRank(x){return {SYNTHETIC:0,METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7}[x]??9}
 function applySymbolFilter(){
   var q=$("symbolSearch").value.trim().toUpperCase(),cat=$("category").value;
   filteredSymbols=allSymbols.filter(function(s){
