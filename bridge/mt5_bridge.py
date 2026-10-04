@@ -4,7 +4,10 @@ from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi.concurrency import run_in_threadpool
-from macro_sources import collect_macro_bls
+try:
+    from .macro_sources import collect_macro_bls
+except ImportError:
+    from macro_sources import collect_macro_bls
 import MetaTrader5 as mt5
 
 load_dotenv()
