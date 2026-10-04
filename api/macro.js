@@ -23,7 +23,7 @@ export function parseBlsPayload(j,requested=BLS_IDS){
  const out={};
  for(const series of j.Results.series){
   if(!requested.includes(series?.seriesID)||!Array.isArray(series?.data))continue;
-  const rows=series.data.filter(x=>/^M\\d{2}$/.test(x.period)).map(x=>({date:monthDate(x.year,x.period),value:num(x.value)}))
+  const rows=series.data.filter(x=>/^M\d{2}$/.test(x.period)).map(x=>({date:monthDate(x.year,x.period),value:num(x.value)}))
    .filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date));
   if(rows.length>=13)out[series.seriesID]=rows;
  }
