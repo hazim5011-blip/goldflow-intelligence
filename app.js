@@ -26,12 +26,14 @@ function indicatorName(v){
 }
 
 document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
+  if(b.dataset.page==="chartPage"&&/^gf-/.test(selectedIndicator)){document.querySelector('[data-page="gfStudyPage"]')?.click();return}
   document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
   document.querySelectorAll(".page").forEach(function(x){x.classList.remove("on")});
   b.classList.add("on");$(b.dataset.page).classList.add("on");
   if(b.dataset.page==="chartPage")setTimeout(function(){drawChart();refreshLiveZoneEntry()},50);
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
+  if(b.dataset.page==="gfStudyPage"&&/^gf-/.test(selectedIndicator))setTimeout(function(){window.GFStudy?.load()},50);
 }});
 
 $("tfSelect").value=selectedTF;
