@@ -284,7 +284,7 @@ export default async function handler(req,res){
           if(blsRows[id].length>=25)continue;
           const meta=local.sources?.[id],candidate=local.series?.[id],kind=meta?.kind;
           if(!["DIRECT_BLS_VIA_LOCAL_BRIDGE","FRED_BLS_ORIGIN_MIRROR_VIA_LOCAL_BRIDGE"].includes(kind)||!Array.isArray(candidate))continue;
-          const rows=candidate.filter(x=>/^\\d{4}-\\d{2}-01$/.test(String(x?.date))&&finite(x.value))
+          const rows=candidate.filter(x=>/^\d{4}-\d{2}-01$/.test(String(x?.date))&&finite(x.value))
             .map(x=>({date:x.date,value:Number(x.value)})).sort((a,b)=>a.date.localeCompare(b.date));
           const unique=rows.filter((x,i)=>!i||x.date!==rows[i-1].date);
           const lastDate=Date.parse(unique.at(-1)?.date+"T00:00:00Z");
