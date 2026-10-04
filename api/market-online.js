@@ -23,7 +23,7 @@ export default async function handler(req,res){
  try{
   const catalog=await brokerGet("/catalog",{limit:5000},14000,1);
   const all=(catalog.symbols||[]).filter(x=>safe.test(x.name||""));
-  // Weekend prioritizes likely 24/7 instruments, but ALL sampled symbols still need fresh ticks.
+  // The scan prioritizes likely 24/7 instruments, but ALL sampled symbols still need fresh ticks.
   const priority={CRYPTO:0,INDICES:1,ENERGY:2,METALS:3,FOREX:4,STOCKS:5,OTHER:6};
   const pool=all.filter(x=>[1,2,4].includes(Number(x.tradeMode))).sort((a,b)=>(priority[a.category]??9)-(priority[b.category]??9));
   const selected=pool.slice(0,90),states={},nowSec=Math.floor(Date.now()/1000);
@@ -35,10 +35,10 @@ export default async function handler(req,res){
     states[x.name]=v;
    }
   }
-  const utcDay=new Date(nowSec*1000).getUTCDay(),weekendUTC=utcDay===0||utcDay===6;
+  const mytDay=new Date((nowSec+8*3600)*1000).getUTCDay(),weekendMYT=mytDay===0||mytDay===6;
   const verified=selected.filter(x=>states[x.name]?.verifiedNow).map(x=>x.name);
   return res.status(200).json({ok:true,source:"VANTAGE_MT5_TICK_AND_TRADE_MODE",asOfUTC:new Date(nowSec*1000).toISOString(),
-    verified,market24hWeekendVerified:weekendUTC?verified:[],states,sampled:selected.length,catalogCount:all.length,
+    verified,market24hWeekendVerified:weekendMYT?verified:[],states,sampled:selected.length,catalogCount:all.length,
     partialCoverage:selected.length<pool.length,coverageNote:"90 tradable catalog symbols sampled in category priority; unsampled symbols are UNKNOWN, never presumed offline or 24/7.",
     definition:"ONLINE = exact resolved broker symbol + tradable tradeMode + fresh BID/ASK tick <=35s. 24H weekend verification confirms ACTIVE NOW during weekend only, not a contractual 24/7 guarantee."});
  }catch(e){return res.status(200).json({ok:false,status:"MARKET_SCAN_UNAVAILABLE",verified:[],sampled:0,errorCode:String(e?.code||"BROKER_UNAVAILABLE")})}
