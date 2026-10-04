@@ -13,10 +13,50 @@ function delta(a,n=1){const x=last(a),y=last(a,n);return x&&y?x.value-y.value:nu
 function yoyAt(a,date){if(!date)return null;const yr=Number(date.slice(0,4));const x=(a||[]).find(r=>r.date===date),y=(a||[]).find(r=>r.date===(yr-1)+date.slice(4));return x&&y?pct(x.value,y.value):null}
 function yoy(a){return yoyAt(a,last(a)?.date)}
 function monthDate(y,p){const m=Number(String(p).replace("M",""));return y&&m>=1&&m<=12?String(y)+"-"+String(m).padStart(2,"0")+"-01":null}
+// Request all three labour/inflation series together first to reduce BLS rate pressure.
+// Parse only BLS' explicit REQUEST_SUCCEEDED responses; never substitute mock or cached data.
+const BLS_IDS=["CES0000000001","LNS14000000","CUUR0000SA0"];
+let blsBatchPending=null;
+export function parseBlsPayload(j,requested=BLS_IDS){
+ if(j?.status!=="REQUEST_SUCCEEDED"||!Array.isArray(j?.Results?.series))
+  throw Error("BLS_STATUS_"+String(j?.status||"UNKNOWN").replace(/[^A-Z0-9_]/gi,"").slice(0,42));
+ const out={};
+ for(const series of j.Results.series){
+  if(!requested.includes(series?.seriesID)||!Array.isArray(series?.data))continue;
+  const rows=series.data.filter(x=>/^M\\d{2}$/.test(x.period)).map(x=>({date:monthDate(x.year,x.period),value:num(x.value)}))
+   .filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date));
+  if(rows.length>=13)out[series.seriesID]=rows;
+ }
+ return out;
+}
+async function blsPostBatch(){
+ const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),8500);
+ try{
+  const year=new Date().getUTCFullYear();
+  const response=await fetch("https://api.bls.gov/publicAPI/v2/timeseries/data/",{
+   method:"POST",signal:ctrl.signal,cache:"no-store",
+   headers:{"Accept":"application/json","Content-Type":"application/json"},
+   body:JSON.stringify({seriesid:BLS_IDS,startyear:String(year-3),endyear:String(year)})});
+  if(!response.ok)throw Error("BLS_POST_HTTP_"+response.status);
+  return parseBlsPayload(await response.json());
+ }finally{clearTimeout(timeout)}
+}
 async function bls(id){
-  const j=await fetchJson("https://api.bls.gov/publicAPI/v2/timeseries/data/"+encodeURIComponent(id));
-  const s=j&&j.Results&&j.Results.series&&j.Results.series[0];if(!s)throw new Error("BLS "+id+" no data");
-  return (s.data||[]).filter(x=>/^M\d{2}$/.test(x.period)).map(x=>({date:monthDate(x.year,x.period),value:num(x.value)})).filter(x=>x.date&&finite(x.value)).sort((a,b)=>a.date.localeCompare(b.date));
+ if(!BLS_IDS.includes(id))throw Error("INVALID_BLS_ID");
+ // Failed shared request is not retained: later refresh can recover when BLS recovers.
+ if(!blsBatchPending)blsBatchPending=blsPostBatch().catch(e=>({__batchError:String(e?.message||e)}))
+  .finally(()=>{blsBatchPending=null});
+ const batch=await blsBatchPending;
+ if(batch[id])return batch[id];
+ // GET is a second official API route. Fail closed if both GET and POST are blocked.
+ try{
+  const j=await fetchJson("https://api.bls.gov/publicAPI/v2/timeseries/data/"+encodeURIComponent(id),8500);
+  const records=parseBlsPayload(j,[id])[id];
+  if(records)return records;
+  throw Error("BLS_SERIES_INCOMPLETE");
+ }catch(e){
+  throw Error("BLS_"+id+"_UNAVAILABLE: POST="+String(batch.__batchError||"SERIES_MISSING")+"; GET="+String(e?.message||e));
+ }
 }
 async function officialCpiHeadline(){
   const pages=[
@@ -226,6 +266,6 @@ export default async function handler(req,res){
     derived:cards.filter(x=>finite(x.value)&&x.status==="DERIVED").length,
     unavailable:cards.filter(x=>x.status==="UNAVAILABLE").map(x=>x.id),
     stale:cards.filter(x=>x.stale).map(x=>x.id),errors,
-    notes:!finite(yoy(cp))?["CPI primary BLS series unavailable; BLS published release fallback used."]:[]};
+    notes:!finite(yoy(cp))?[cpiRelease?"CPI primary BLS series unavailable; verified BLS release fallback used.":"CPI primary BLS series and release fallback unavailable; CPI remains UNAVAILABLE."]:[]};
   return res.status(200).json({ok:true,official:true,modelDerived:true,fetchedAt:new Date().toISOString(),provider:"Direct official sources: BLS, BEA, Federal Reserve, U.S. Treasury, New York Fed",cards,scores:{growth:Math.round(growth),inflation:Math.round(inflation),policy:Math.round(policy),liquidity:finite(liquidity)?Math.round(liquidity):null,realYield:Math.round(realPressure),dollar:Math.round(dollar)},regime:{name:reg,note:({REFLATION:"Growth and inflation are both firm.",GOLDILOCKS:"Growth is firm while inflation pressure is softer.",STAGFLATION:"Growth is weak while inflation remains firm.",SLOWDOWN:"Growth and inflation are both softer."})[reg],confidence:Math.round(100*(quality.fresh/quality.total))},gold:{score:Math.round(goldScore),bias:goldBias,note:"DERIVED macro context from "+drivers.length+"/5 available components; not a trade signal, calibrated probability, or guaranteed direction."},playbook:{gold:{label:goldBias,detail:"Derived from inflation, real yields, liquidity, growth and broad USD."},usd:{label:lab(clamp(.55*dollar+.45*policy)),detail:"Official Fed broad USD momentum plus policy pressure."},treasury:{label:inflation>=60||policy>=60?"PRESSURE":"MIXED",detail:"Inflation and policy context; not a yield forecast."},equities:{label:growth>=55&&policy<60?"SUPPORTIVE":growth<45||policy>70?"PRESSURE":"MIXED",detail:"Growth versus restrictive policy."},oil:{label:reg==="REFLATION"?"SUPPORTIVE":reg==="SLOWDOWN"?"PRESSURE":"MIXED",detail:"Cyclical demand context."}},timeline,quality,methodology:{official:"Primary values are fetched directly from BLS, BEA, Federal Reserve Board, U.S. Treasury and New York Fed.",derived:"Regime, scores, 10Y breakeven and Net Liquidity Proxy are GoldFlow calculations from official inputs.",revisions:"BLS monthly history is used for the 12-month timeline; GDP/PCE may be revised by BEA.",netLiquidity:"Net Liquidity Proxy = H.4.1 Wednesday total assets - H.4.1 Wednesday TGA - latest daily NY Fed overnight Treasury RRP, after conversion to USD millions. It mixes observation dates; interpret as an approximation.",fallback:"FRED is not required for the primary path; it can be used later only as a cross-check."}});
 }
