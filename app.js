@@ -389,7 +389,7 @@ async function loadMacro(force){
     if(j.quality?.unavailable?.length)issues.push("Unavailable: "+j.quality.unavailable.join(", "));
     if(j.quality?.stale?.length)issues.push("Stale / date unavailable: "+j.quality.stale.join(", "));
     $("macroNotice").className=issues.length?"notice info":"notice good";
-    $("macroNotice").textContent=(issues.length?"PARTIAL DATA • ":"OFFICIAL DATA VERIFIED • ")+
+    $("macroNotice").textContent=(primaryReady?(j.quality?.primarySourceHealth==="RECOVERED_OFFICIAL_VIA_LOCAL_BRIDGE"?"OFFICIAL BLS RECOVERED VIA LOCAL PC • ":"OFFICIAL DATA VERIFIED • "):"PARTIAL / PRIMARY DEGRADED • ")+
       "Source: BLS, BEA, Federal Reserve, Treasury and NY Fed. Scores, regime and gold impact are DERIVED, not guaranteed directions."+
       (issues.length?" "+issues.join(" | "):"");
     $("macroRegime").textContent=j.regime?.name||"—";
