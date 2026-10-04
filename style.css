@@ -46,3 +46,16 @@
 .zoneAction{width:100%;background:#113927;border:1px solid #2a8f67;color:#9cf5cc;font-size:10px;font-weight:900;padding:7px;border-radius:7px;cursor:pointer;margin:6px 0}.zoneAction:hover{background:#1b5037}.zoneStatus.offline{color:#d1d8df;border-color:#486273;background:#13212d;animation:none}
 
 .zoneStatus.watch{color:#ffdd79;border-color:#8a6d24;background:#2a240f;animation:none}
+
+/* GF AI Study v1.00 — additive styling, existing indicator themes unchanged */
+#marketFilterNotice{padding:4px 12px;font-size:11px;line-height:1.55;color:#8bb7c6;min-height:22px}
+#gfStudyPage .grid{margin-top:12px}
+#gfStudyPage h2{font-size:clamp(19px,2.6vw,28px);margin:9px 0;letter-spacing:.015em;overflow-wrap:anywhere}
+#gfStudyPage .reason{white-space:pre-line;line-height:1.6}
+#gfStudyPage .kpi strong{font-size:clamp(12px,1.8vw,19px);overflow-wrap:anywhere}
+#gfStudyPage .card{min-width:0}
+#gfStudyState.g,#gfEntryDecision.g{color:#31d6a4}
+#gfStudyState.r,#gfEntryDecision.r{color:#ff6079}
+#gfStudyState.y,#gfEntryDecision.y{color:#f2c75b}
+#gfStudyTechnical,#gfStudyMacro{min-height:110px}
+@media(max-width:650px){#gfStudyPage .g5{grid-template-columns:repeat(2,minmax(0,1fr))}#gfStudyPage .g2{grid-template-columns:minmax(0,1fr)}}
