@@ -162,7 +162,7 @@
   put("gfStudyTechnical",[
     "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
-    p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Auditable AI alignment score +p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
+    p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Auditable AI alignment score "+p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
     p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):"",
     p?"Entry model: "+String(p.entryMethod||"LEGACY")+"; targets: "+String(p.targetMethod||"derived study")+"; structural stop "+safe(p.invalidation)+".":""
   ].filter(Boolean).join("\n"));
