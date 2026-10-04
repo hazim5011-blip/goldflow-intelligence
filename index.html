@@ -241,6 +241,16 @@
   <div class="card">
     <div class="head"><div><small class="eyebrow">OFFICIAL ACTUAL • CONDITIONAL INTERPRETATION</small><h3 data-i18n="newsStudy">Macro & News Study</h3></div><button type="button" id="v8NewsRefresh" class="primary" data-i18n="refreshNews">Refresh News Study</button></div>
     <div class="notice info" id="v8NewsNotice">Only reported official observations are displayed. If market consensus or exact release timestamp is unavailable, it is explicitly N/A.</div>
+    <section class="gfWorldSection" id="gfWorldSection" aria-label="Live world news and Gold market interpretation">
+      <div class="gfWorldTop"><div><small class="eyebrow">LIVE GLOBAL SOURCES • NOT MT5 CALENDAR</small><h3>World News Intelligence — XAUUSD Weekend & Opening Watch</h3></div>
+      <span class="gfWorldHealth" id="gfWorldHealth">Checking external publishers…</span></div>
+      <div class="notice info" id="gfWorldNotice">Fetching source-attributed international reporting. Headlines are not independent proof or an automated trade signal.</div>
+      <div class="gfWorldFeature" id="gfWorldFeature" aria-live="polite">Checking the most recent credible market developments…</div>
+      <div class="gfWorldGrid" id="gfWorldStories"></div>
+      <details class="gfOpeningWatch" open><summary>Opening Scenarios • checklist before the Gold market reopens</summary><div id="gfWorldOpening">Do not assume MT5 LIVE means spot Gold has a current tradable tick. Revalidate the broker quote, spread and M15 closed candle.</div></details>
+      <p class="v8Footnote">Auto-check every 5 minutes while the site is open. Publisher RSS / attributed reports are separate from official economic observation periods. Website-only checking is not 24/7 background monitoring or a guaranteed breaking-news wire.</p>
+    </section>
+    <div class="gfMacroSectionTitle">OFFICIAL ECONOMIC DATA • separate from world-news headlines</div>
     <div class="v8MetricGrid" id="v8NewsRegime"></div>
     <div id="v8NewsList" class="v8NewsGrid"></div>
     <div class="v8Footnote" data-i18n="disclaimer">Market research only. This is not financial advice, a guaranteed signal or proof of past market causation. Users make their own trading decisions and bear the risks.</div>
@@ -250,6 +260,11 @@
   <div class="card">
     <div class="head"><div><small class="eyebrow">RESEARCH • INDICATOR CHANGELOG</small><h3>GoldFlow Blog & Indicator Updates</h3></div><button type="button" class="primary" id="gfBlogRefresh">Refresh Blog</button></div>
     <div id="gfBlogNote" class="notice info">Release notes, indicator methodology and verified changes. No invented performance claims.</div>
+    <section class="gfBlogJournal" aria-label="Dynamic market developments from external publishers">
+      <div class="gfWorldTop"><div><small class="eyebrow">LIVE JOURNAL • SOURCE-LINKED HEADLINES</small><h3>Important World Market Developments</h3></div><span id="gfBlogLiveStatus" class="gfWorldHealth">Checking…</span></div>
+      <div class="gfBlogLiveGrid" id="gfBlogLiveJournal">External news loading. Official GoldFlow research articles appear below.</div>
+    </section>
+    <div class="gfMacroSectionTitle">GOLDFLOW EDITORIAL RESEARCH & UPDATE LOG</div>
     <div id="gfBlogPosts" class="gfBlogPosts" aria-live="polite"></div>
     <p class="v8Footnote">Version notes describe code changes; historical backtests are separate from live forward-logged evidence. Articles are available in Malay and English; other locales use an English fallback until reviewed translations are available.</p>
   </div>
