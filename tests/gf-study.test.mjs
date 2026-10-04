@@ -78,3 +78,35 @@ test("broker ONLINE requires exact symbol + trade mode + fresh BID/ASK after UTC
  assert.equal(verifyOnline({...row,tradeMode:0},q,now,now,offset).status,"TRADE_DISABLED");
  assert.equal(verifyOnline(row,{...q,time:now+offset-90},now,now,offset).status,"OFFLINE");
 });
+
+test("BUY direction mirrors SELL: closed breakout yields BUY CONFIRMED then ASK-based READY",()=>{
+ const f=fixture();
+ const rising=candles(62,step,false);
+ const i=rising.length-2,prev=rising[i-1],o=prev.c+.15,c=prev.h+3;
+ rising[i]={...rising[i],o,c,h:c+.2,l:o-.18};
+ const one=candles(65,3600,false),four=candles(65,14400,false);
+ const base={...f,bars:rising,h1:one,h4:four,macro:macro("SUPPORTIVE")};
+ const first=evaluateStudy({...base,quote:tick(c)});
+ assert.equal(first.status,"BUY_CONFIRMED");
+ assert.equal(first.canEnter,false);
+ assert.equal(first.confirmation.direction,1);
+ const mid=(first.confirmation.entryLow+first.confirmation.entryHigh)/2;
+ const ready=evaluateStudy({...base,quote:{...tick(mid-.04),ask:mid}});
+ assert.equal(ready.status,"BUY_ENTRY_READY");
+ assert.equal(ready.entryQuoteSide,"ASK");
+ assert.equal(ready.canEnter,true);
+});
+test("a subsequent fully closed bar breaching original SL yields SELL INVALID (CLOSE)",()=>{
+ const f=fixture(),first=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
+ assert.equal(first.status,"SELL_CONFIRMED");
+ const next=structuredClone(f),x=next.bars.at(-1);
+ x.o=first.confirmation.invalidation-.5;
+ x.c=first.confirmation.invalidation+1.1;
+ x.h=x.c+.12;x.l=x.o-.2;
+ const later=now+900;
+ const invalid=evaluateStudy({...next,nowSec:later,quote:{bid:first.confirmation.entryHigh,ask:first.confirmation.entryHigh+.04,
+   tickTime:later+offset,observedAt:later}});
+ assert.equal(invalid.status,"SELL_INVALID");
+ assert.equal(invalid.invalidationBasis,"CLOSE");
+ assert.equal(invalid.canEnter,false);
+});
