@@ -51,6 +51,7 @@ jobs:
         run: |
           node --check app.js
           node --check v8.js
+          node --check study-ui.js
           find api -maxdepth 1 -name '*.js' -print0 | xargs -0 -n1 node --check
 
       - name: Python bridge syntax check
