@@ -2,7 +2,7 @@ import os, time, json, re, glob
 from typing import Optional
 from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from fastapi.concurrency import run_in_threadpool
 try:
     from .macro_sources import collect_macro_bls
@@ -10,9 +10,16 @@ except ImportError:
     from macro_sources import collect_macro_bls
 import MetaTrader5 as mt5
 
-load_dotenv()
+# Watchdog/Task Scheduler can launch from C:\\WINDOWS\\system32.
+# Read the .env adjacent to this actual script; never print or return secret values.
+_BRIDGE_ENV_FILE=os.path.join(os.path.dirname(os.path.realpath(__file__)),".env")
+load_dotenv(dotenv_path=_BRIDGE_ENV_FILE)
 APP_PORT=int(os.getenv("BRIDGE_PORT","8787"))
 BRIDGE_KEY=os.getenv("BRIDGE_KEY","").strip()
+if not BRIDGE_KEY and os.path.isfile(_BRIDGE_ENV_FILE):
+    # python-dotenv will not override an existing (but empty) process variable.
+    # Only recover the explicitly configured local secret, never make a default key.
+    BRIDGE_KEY=str(dotenv_values(_BRIDGE_ENV_FILE).get("BRIDGE_KEY") or "").strip()
 MT5_PATH=os.getenv("MT5_TERMINAL_PATH","").strip()
 BROKER_NAME=os.getenv("BROKER_NAME","Vantage").strip() or "Vantage"
 try:
