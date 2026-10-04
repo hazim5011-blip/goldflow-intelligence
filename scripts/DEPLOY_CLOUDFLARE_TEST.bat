@@ -21,8 +21,9 @@ if errorlevel 1 goto fail
 echo [4/5] Sign in to YOUR Cloudflare account (official browser OAuth).
 call npx wrangler login
 if errorlevel 1 goto fail
-echo [5/5] Deploy ONLY to separate Cloudflare test project.
-echo If project not found: create goldflow-intelligence-cf-test once in Cloudflare Pages first.
+echo [5/5] Prepare separate Cloudflare TEST project, if not already created.
+call npx wrangler pages project create goldflow-intelligence-cf-test --production-branch main
+if errorlevel 1 echo Project may already exist. Continuing to the safe test-only upload.
 call npx wrangler pages deploy dist --project-name goldflow-intelligence-cf-test --branch main
 if errorlevel 1 goto fail
 echo SUCCESS: Save the returned *.pages.dev URL.
