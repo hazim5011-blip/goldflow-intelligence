@@ -46,7 +46,9 @@ export default async function handler(req,res){
    }
   }
   await Promise.all(Array.from({length:Math.min(3,batches.length)},()=>worker()));
-  const mytDay=new Date((nowSec+8*3600)*1000).getUTCDay(),weekendMYT=mytDay===0||mytDay===6;
+  // Use UTC weekend rather than Malaysia calendar midnight: early Monday MYT is still
+  // Sunday UTC, when FX is typically shut but weekend instruments may trade.
+  const utcDay=new Date(nowSec*1000).getUTCDay(),weekendUTC=utcDay===0||utcDay===6;
   const verified=pool.filter(x=>states[x.name]?.verifiedNow).map(x=>x.name);
   const byCategory={};for(const x of pool){if(!byCategory[x.category])byCategory[x.category]={catalogTradable:0,verifiedOnline:0,unknown:0};
    byCategory[x.category].catalogTradable++;
@@ -57,8 +59,8 @@ export default async function handler(req,res){
   const matchingSynthetic=pool.filter(x=>x.category==="SYNTHETIC")
    .map(x=>({symbol:x.name,status:states[x.name]?.status||"UNKNOWN",online:!!states[x.name]?.verifiedNow}));
   return res.status(200).json({ok:true,source:"VANTAGE_MT5_TICK_AND_TRADE_MODE",asOfUTC:new Date(nowSec*1000).toISOString(),
-    verified,market24hWeekendVerified:weekendMYT?verified:[],states,sampled:successful,attempted:pool.length,tradableCatalogCount:pool.length,catalogCount:all.length,
-    byCategory,syntheticSamples:matchingSynthetic,
+    verified,market24hWeekendVerified:weekendUTC?verified:[],states,sampled:successful,attempted:pool.length,tradableCatalogCount:pool.length,catalogCount:all.length,
+    weekendBasis:"SATURDAY_OR_SUNDAY_UTC_SNAPSHOT_ONLY",byCategory,syntheticSamples:matchingSynthetic,
     examplesNotListed:requested.filter(name=>!all.some(x=>x.name.toUpperCase()===name)),
     scanErrors,partialCoverage:successful<pool.length,coverageNote:"Full tradable catalog was attempted with bounded batches; failed/unknown symbols are NOT reported offline or permanently 24/7. Exact symbol and fresh tick required.",
     definition:"ONLINE = exact resolved broker symbol + tradable tradeMode + fresh BID/ASK tick <=35s. 24H weekend verification confirms ACTIVE NOW during weekend only, not a contractual 24/7 guarantee."});
