@@ -12,6 +12,9 @@
  // a different mode/symbol/TF. No cached UI result can act as LIVE evidence.
  function invalidate(){
   state.last=null;state.context=null;
+  const m=mode();
+  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst • Strict MTF Confluence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
+  put("gfStudyModePurpose","Loading the NEW mode. Previous signal/entry plan deliberately cleared; NO ENTRY until verified.");
   put("gfStudyState","REFRESHING");if($("gfStudyState"))$("gfStudyState").className="y";
   put("gfStudyReason","Waiting for a new verified response for this symbol / timeframe / study mode.");
   put("gfEntryDecision","NO ENTRY • REFRESHING");
