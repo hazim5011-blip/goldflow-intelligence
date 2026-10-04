@@ -1,8 +1,8 @@
 {
   "product": "GoldFlow Intelligence",
   "channel": "staging-test",
-  "version": "8.1.2",
-  "mode": "V8_1_2_ADAPTIVE_AI_FULL_MARKET_SCAN_EVIDENCE_CHART_RECOVERY",
+  "version": "8.1.3",
+  "mode": "V8_1_3_LIVE_WORLD_NEWS_GOLD_OPENING_INTELLIGENCE",
   "indicators": [
     "MTF Research v1.05",
     "MTF Research v1.03",
@@ -39,7 +39,7 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "Cloudflare TEST only: AI supports transparent technical-only fallback for assets without verified fundamentals; scans complete Vantage tradable symbol catalog in bounded batches, labels synthetic only when listed; TradingView has authenticated broker chart fallback and external link; Evidence auto-loads real historical reconstruction and offers own SVG fallback, never claims forward proof.",
+  "message": "Staging only: current source-attributed international headlines via Google News and direct BBC/Guardian/Al Jazeera public RSS, honest feed health, 5-minute open-page checks, two-sided Gold/Hormuz and oil-vs-yield mechanisms, dated source-linked market editorial, independent from MT5 calendar. No fabricated prices, publisher body verification, push promises, or forward execution proof.",
   "updated": "2026-10-05",
   "features": [
     "History Pro closed-candle reconstruction",
@@ -58,6 +58,11 @@
     "Adaptive AI technical-only mode when unavailable asset-specific fundamentals (no fabricated scores)",
     "Bounded all-tradable Vantage market scan; explicit SYNTHETIC / UNKNOWN coverage",
     "First-party broker OHLC TradingView fallback + official external TradingView link",
-    "Evidence automatic historical reconstruction, first-party SVG + PNG fallback"
+    "Evidence automatic historical reconstruction, first-party SVG + PNG fallback",
+    "World News Intelligence independent of MT5/BLS with trusted publisher and feed provenance",
+    "5-minute browser-open source check and local NEW story detection",
+    "Hormuz/OPEC/G7 source-attributed Gold weekend briefs with competing yield/energy channels",
+    "Blog important dynamic world-market journal plus four substantive Oct-4 source-linked bilingual research posts",
+    "Official macro observations visually separate from international headlines"
   ]
 }
