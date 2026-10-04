@@ -42,21 +42,22 @@ test("identical Gold inputs go through genuinely separate engines, methods, entr
  assert.ok(s.structureLevels.support<s.structureLevels.resistance);
  assert.ok(s.projectedTargets?.length===3);
 });
-test("AI Gold fails closed with damaged 13/16 macro, Market Study still supplies an independent non-gating structure scenario",()=>{
+test("AI Gold downgrades to verifiable technical-only mode with incomplete 13/16 macro; Market Study remains independent",()=>{
  const f=fixture(),bad={...verified(),quality:{...verified().quality,available:13,strictPrimaryReady:false,errors:["BLS block"]}};
  const a=evaluateAILive({...f,macro:bad});
  const s=evaluateMarketStudy({...f,macro:bad});
- assert.equal(a.status,"AI_WAIT_VERIFIED_MACRO");
- assert.equal(a.canEnter,false);
+ assert.equal(a.researchScope,"TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE");
+ assert.notEqual(a.status,"AI_WAIT_VERIFIED_MACRO");
  assert.equal(s.engine,"GF_MARKET_STRUCTURE_SCENARIO_V2");
  assert.equal(s.macroContext.available,false);
  assert.ok(s.structureLevels);
  assert.equal(s.macroContext.appliedAsGate,false);
 });
-test("AI BTC cannot use general USD data to fake verified BTC fundamental or auto-ready trade",()=>{
+test("AI BTC uses valid technical candles without asserting fake BTC fundamentals",()=>{
  const f=fixture(),r=evaluateAILive({...f,symbol:"BTCUSD",macro:verified()});
- assert.equal(r.status,"AI_ASSET_FUNDAMENTAL_UNAVAILABLE");
- assert.equal(r.canEnter,false);
+ assert.notEqual(r.status,"AI_ASSET_FUNDAMENTAL_UNAVAILABLE");
+ assert.equal(r.researchScope,"TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE");
+ assert.equal(r.fundamentalApplied,false);
  assert.equal(r.macroEvidence.scope,"USD_MACRO_CONTEXT_NOT_BTC_SPECIFIC");
  assert.equal(r.macroEvidence.assetSpecific,false);
 });
