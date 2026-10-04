@@ -16,4 +16,4 @@ await build({entryPoints:[join(root,"cloudflare/worker.js")],outfile:join(dist,"
   plugin.onResolve({filter:/^\.\/_v8Ledger\.js$/},()=>({path:join(root,"cloudflare/forward-disabled.js")}));
  }
 }]});
-console.log("Cloudflare dist prepared: API includes GF Study & Market Online. Forward archive intentionally disabled.");
+console.log("Cloudflare dist prepared: API includes GF Study, Market Online and independent World News. Forward archive intentionally disabled.");
