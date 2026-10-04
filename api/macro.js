@@ -58,6 +58,46 @@ async function bls(id){
   throw Error("BLS_"+id+"_UNAVAILABLE: POST="+String(batch.__batchError||"SERIES_MISSING")+"; GET="+String(e?.message||e));
  }
 }
+// A TRANSPARENT secondary mirror, not direct BLS access. Series originate at BLS;
+// Fed St Louis re-publishes them as PAYEMS, UNRATE, CPIAUCNS (NSA CPI).
+const FRED_BLS_MIRRORS={
+ CES0000000001:"PAYEMS",
+ LNS14000000:"UNRATE",
+ CUUR0000SA0:"CPIAUCNS"
+};
+export function parseFredBlsCsv(input,fredId){
+ if(!Object.values(FRED_BLS_MIRRORS).includes(fredId))throw Error("FRED_BLS_ID_INVALID");
+ const lines=String(input||"").trim().replace(/^\uFEFF/,"").split(/\r?\n/);
+ const expected=["observation_date",fredId].join(",");
+ const actual=String(lines.shift()||"").replace(/"/g,"").replace(/\s/g,"");
+ if(actual!==expected&&actual!=="DATE,"+fredId)throw Error("FRED_BLS_HEADER_MISMATCH");
+ const result=[];
+ for(const line of lines){
+  const match=String(line).trim().match(/^(\d{4})-(\d{2})-(\d{2}),(-?\d+(?:\.\d+)?)$/);
+  if(!match)continue;
+  const [raw,yr,mm,dd,value]=match;
+  if(dd!=="01"||Number(mm)<1||Number(mm)>12)continue;
+  const val=num(value);
+  if(finite(val))result.push({date:yr+"-"+mm+"-01",value:val});
+ }
+ result.sort((a,b)=>a.date.localeCompare(b.date));
+ const unique=result.filter((x,i)=>i===0||x.date!==result[i-1].date);
+ if(unique.length<25)throw Error("FRED_BLS_HISTORY_TOO_SHORT");
+ if(unique.some((x,i)=>i&&!(x.date>unique[i-1].date)))throw Error("FRED_BLS_NONMONOTONIC");
+ return unique;
+}
+async function fredBlsMirror(blsId){
+ const id=FRED_BLS_MIRRORS[blsId];
+ if(!id)throw Error("FRED_BLS_ID_INVALID");
+ const start=(new Date().getUTCFullYear()-4)+"-01-01";
+ const url="https://fred.stlouisfed.org/graph/fredgraph.csv?id="+id+"&cosd="+start;
+ const rows=parseFredBlsCsv(await fetchText(url,9000),id);
+ const latest=last(rows);
+ if(!latest||(Date.now()-Date.parse(latest.date+"T00:00:00Z"))>81*86400000)
+  throw Error("FRED_BLS_MIRROR_STALE_"+id);
+ return {rows,url,series:id,provider:"Federal Reserve Bank of St Louis (FRED), BLS-origin mirror"};
+}
+
 async function officialCpiHeadline(){
   const pages=[
     {url:"https://www.bls.gov/news.release/cpi.nr0.htm",kind:"release"},
@@ -229,7 +269,28 @@ export default async function handler(req,res){
   res.setHeader("Cache-Control","s-maxage=300, stale-while-revalidate=1800");
   const jobs=await Promise.allSettled([beaGDP(),beaPCE(),fedIP(),bls("CES0000000001"),bls("LNS14000000"),bls("CUUR0000SA0"),treasury("daily_treasury_yield_curve","BC_2YEAR"),treasury("daily_treasury_yield_curve","BC_10YEAR"),treasury("daily_treasury_real_yield_curve","TC_10YEAR"),h41(),nyfed(),h10(),onRrp()]);
   const v=i=>jobs[i].status==="fulfilled"?jobs[i].value:null,errors=jobs.map((x,i)=>x.status==="rejected"?"source"+i+": "+String(x.reason?.message||x.reason):null).filter(Boolean);
-  const gdp=v(0),pce=v(1),ip=v(2),pay=v(3)||[],ur=v(4)||[],cp=v(5)||[],u2=v(6)||[],u10=v(7)||[],r10=v(8)||[],fed=v(9),ny=v(10)||{},usd=v(11),onrrp=v(12);
+  const gdp=v(0),pce=v(1),ip=v(2),u2=v(6)||[],u10=v(7)||[],r10=v(8)||[],fed=v(9),ny=v(10)||{},usd=v(11),onrrp=v(12);
+  const blsRows={CES0000000001:v(3)||[],LNS14000000:v(4)||[],CUUR0000SA0:v(5)||[]};
+  const secondaryBls={},fallbackErrors=[];
+  // Only request the Fed's BLS-origin mirrors for failed direct BLS series.
+  await Promise.all(Object.entries(blsRows).map(async ([id,rows])=>{
+    if(rows.length>=25)return;
+    try{
+      const mirror=await fredBlsMirror(id);
+      blsRows[id]=mirror.rows;
+      secondaryBls[id]=mirror;
+    }catch(e){fallbackErrors.push(id+": "+String(e?.message||e));}
+  }));
+  const pay=blsRows.CES0000000001,ur=blsRows.LNS14000000,cp=blsRows.CUUR0000SA0;
+  const mirrorCard=(blsId,id)=>{
+    const mirror=secondaryBls[blsId];if(!mirror)return;
+    const card=cards.find(x=>x.id===id);if(!card||!finite(card.value))return;
+    card.source="FRED / Federal Reserve Bank of St. Louis (BLS-origin mirror)";
+    card.seriesUrl=mirror.url;card.transport="Secondary FRED mirror; primary BLS request failed";
+    card.status=card.stale?"STALE":"SECONDARY_MIRROR";
+    card.primarySourceVerified=false;
+    card.secondarySeries=mirror.series;
+  };
   let cpiRelease=null;
   if(!finite(yoy(cp))){try{cpiRelease=await officialCpiHeadline()}catch(e){errors.push("CPI fallback unavailable: "+String(e.message))}}
   const payroll=delta(pay),payPrev=last(pay,1)&&last(pay,2)?last(pay,1).value-last(pay,2).value:null,unrate=last(ur)?.value,un3=delta(ur,3),cpi=finite(yoy(cp))?yoy(cp):cpiRelease?.value,cpi3=last(cp,3)?yoyAt(cp,last(cp,3).date):null;
@@ -253,6 +314,9 @@ export default async function handler(req,res){
     mk("REAL10Y","US 10Y Real Yield",real?.value,finite(real?.value)?fmt(real.value,2)+"%":null,real?.date,"U.S. Treasury","https://home.treasury.gov/resource-center/data-chart-center/interest-rates",delta(r10,5),"5-observation change",imp(delta(r10,5),false,.02),"Official 10-year real yield."),
     mk("USDBROAD","Broad USD Index",usd?.value,finite(usd?.value)?fmt(usd.value,2):null,usd?.date,"Federal Reserve H.10",usd?.url,usd?.change,"5-day change",imp(usd?.change,false,.05),"Official broad U.S. dollar index.")
   ];
+  mirrorCard("CES0000000001","PAYEMS");
+  mirrorCard("LNS14000000","UNRATE");
+  mirrorCard("CUUR0000SA0","CPI");
   const growth=clamp((score(gdp?.value,-1,5)+score(ip?.value,-3,4)+score(payroll,-100,300)+(finite(unrate)?100-score(unrate,3,6):50))/4);
   const inflation=clamp((score(cpi,1.5,4.5)+score(pce?.value,1.5,4)+score(breakeven,1.5,3))/3);
   const realPressure=score(real?.value,0,3),policy=clamp(.55*score(ny.high,2,6)+.45*realPressure),liquidity=finite(netCh)?score(netCh,-100000,100000):null,dollar=finite(usd?.change)?score(usd.change,-1.5,1.5):50;
@@ -266,6 +330,12 @@ export default async function handler(req,res){
     derived:cards.filter(x=>finite(x.value)&&x.status==="DERIVED").length,
     unavailable:cards.filter(x=>x.status==="UNAVAILABLE").map(x=>x.id),
     stale:cards.filter(x=>x.stale).map(x=>x.id),errors,
-    notes:!finite(yoy(cp))?[cpiRelease?"CPI primary BLS series unavailable; verified BLS release fallback used.":"CPI primary BLS series and release fallback unavailable; CPI remains UNAVAILABLE."]:[]};
+    notes:[...(!finite(yoy(cp))?[cpiRelease?"CPI direct BLS series unavailable; official release fallback used.":"CPI direct BLS and release fallback unavailable."]:[]),
+       ...Object.entries(secondaryBls).map(([id,m])=>id+" served via FRED BLS-origin mirror "+m.series+" (NOT verified direct BLS access)."),
+       ...fallbackErrors],
+    secondaryMirror:cards.filter(x=>x.status==="SECONDARY_MIRROR").map(x=>x.id),
+    primarySourceHealth:errors.some(x=>/source(?:3|4|5):/.test(x))?"DEGRADED":"OK",
+    strictPrimaryReady:errors.length===0&&cards.every(x=>!x.stale&&x.status!=="UNAVAILABLE"&&x.status!=="SECONDARY_MIRROR")
+  };
   return res.status(200).json({ok:true,official:true,modelDerived:true,fetchedAt:new Date().toISOString(),provider:"Direct official sources: BLS, BEA, Federal Reserve, U.S. Treasury, New York Fed",cards,scores:{growth:Math.round(growth),inflation:Math.round(inflation),policy:Math.round(policy),liquidity:finite(liquidity)?Math.round(liquidity):null,realYield:Math.round(realPressure),dollar:Math.round(dollar)},regime:{name:reg,note:({REFLATION:"Growth and inflation are both firm.",GOLDILOCKS:"Growth is firm while inflation pressure is softer.",STAGFLATION:"Growth is weak while inflation remains firm.",SLOWDOWN:"Growth and inflation are both softer."})[reg],confidence:Math.round(100*(quality.fresh/quality.total))},gold:{score:Math.round(goldScore),bias:goldBias,note:"DERIVED macro context from "+drivers.length+"/5 available components; not a trade signal, calibrated probability, or guaranteed direction."},playbook:{gold:{label:goldBias,detail:"Derived from inflation, real yields, liquidity, growth and broad USD."},usd:{label:lab(clamp(.55*dollar+.45*policy)),detail:"Official Fed broad USD momentum plus policy pressure."},treasury:{label:inflation>=60||policy>=60?"PRESSURE":"MIXED",detail:"Inflation and policy context; not a yield forecast."},equities:{label:growth>=55&&policy<60?"SUPPORTIVE":growth<45||policy>70?"PRESSURE":"MIXED",detail:"Growth versus restrictive policy."},oil:{label:reg==="REFLATION"?"SUPPORTIVE":reg==="SLOWDOWN"?"PRESSURE":"MIXED",detail:"Cyclical demand context."}},timeline,quality,methodology:{official:"Primary values are fetched directly from BLS, BEA, Federal Reserve Board, U.S. Treasury and New York Fed.",derived:"Regime, scores, 10Y breakeven and Net Liquidity Proxy are GoldFlow calculations from official inputs.",revisions:"BLS monthly history is used for the 12-month timeline; GDP/PCE may be revised by BEA.",netLiquidity:"Net Liquidity Proxy = H.4.1 Wednesday total assets - H.4.1 Wednesday TGA - latest daily NY Fed overnight Treasury RRP, after conversion to USD millions. It mixes observation dates; interpret as an approximation.",fallback:"FRED is not required for the primary path; it can be used later only as a cross-check."}});
 }
