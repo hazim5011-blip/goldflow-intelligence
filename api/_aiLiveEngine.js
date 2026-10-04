@@ -1,7 +1,7 @@
 // GF-AI LIVE: independent GOLD macro/news + multi-timeframe + pattern confluence.
 // This is auditable conditional reasoning, NOT ML training, future release prediction or execution.
 // Deliberately DOES NOT import or call Market Study or legacy evaluateStudy().
-import {context,publicFields,protective,riskLevels,rnd,isGold,volatility,pivotLevels} from "./_researchInputs.js";
+import {context,publicFields,riskLevels,rnd,isGold,val} from "./_researchInputs.js";
 import {impactForType} from "./_v8Impact.js";
 const ids=["CPI","COREPCE","PAYEMS","UNRATE","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"];
 function macroEvidence(macro,assetGold){
