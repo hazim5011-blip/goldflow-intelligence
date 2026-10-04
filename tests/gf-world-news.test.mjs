@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {classifyHeadline,makeEditorial,mechanism,parseRss,collectWorldNews,feedDefinitions} from "../api/_marketNews.js";
+import {classifyHeadline,makeEditorial,mechanism,parseRss,collectWorldNews,feedDefinitions,preOpeningNewsRisk} from "../api/_marketNews.js";
 const now=Date.parse("2026-10-04T19:00:00.000Z");
 const trusted=String.raw`<rss><channel>
 <item><title><![CDATA[Oil and Strait of Hormuz attacks intensify as tankers reroute]]></title>
@@ -77,4 +77,36 @@ test("Cloudflare world-news route / Blog and 5-minute UI monitoring do not depen
  const blog=JSON.parse(readFileSync(new URL("../blog/posts.json",import.meta.url),"utf8"));
  assert.ok(blog.posts.filter(x=>x.category==="MARKET INTELLIGENCE"||x.category==="ENERGY & MACRO").length>=2);
  assert.ok(blog.posts.filter(x=>x.dateUTC==="2026-10-04").every(x=>x.sources!==undefined));
+});
+
+test("Hormuz risk offers conditional Gold upside-gap scenario, not guaranteed BUY, with G7 counterforce",()=>{
+ const x=preOpeningNewsRisk(makeEditorial(now),now);
+ assert.equal(x.status,"SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED");
+ assert.equal(x.probability,null);
+ assert.equal(x.validatedGoldMove,false);
+ assert.equal(x.automaticEntry,false);
+ assert.equal(x.requiresFreshQuote,true);
+ assert.equal(x.requiresClosedM15,true);
+ assert.ok(x.driver?.sourceUrl?.startsWith("https://"));
+ assert.ok(x.counterforce?.sourceUrl?.startsWith("https://"));
+});
+test("a reliable easing headline is not classified as automatic safe-haven BUY",()=>{
+ const x=preOpeningNewsRisk([{
+  id:"ceasefire",category:"GEOPOLITICS",impact:"HIGH",
+  titleEN:"Ceasefire agreed and shipping resumes in Strait of Hormuz",
+  publishedAtUTC:new Date(now-60000).toISOString(),
+  sourceUrl:"https://www.reuters.com/example",publisher:"Reuters"
+ }],now);
+ assert.equal(x.status,"SAFE_HAVEN_PREMIUM_EASING_SCENARIO");
+ assert.equal(x.automaticEntry,false);
+});
+test("openingRisk is published separately from official macro, with bilingual watch reasons",async()=>{
+ const d=await collectWorldNews(async()=>{
+  throw Error("MOCK_ALL_FEEDS_FAIL");
+ },now);
+ assert.equal(d.sourceStatus,"LIVE_FEEDS_UNAVAILABLE");
+ assert.ok(d.items.length>0,"dated real-source fallback remains clearly labelled");
+ assert.equal(d.openingRisk.status,"SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED");
+ assert.ok(d.openingWatchEN.length>=3);
+ assert.equal(d.openingRisk.probability,null);
 });
