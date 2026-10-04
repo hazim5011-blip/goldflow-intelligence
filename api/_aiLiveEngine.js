@@ -89,7 +89,7 @@ export function evaluateAILive(args={}){
   targets:targetScale.map(t=>mid+d*risk*t)});
  if(!plan)return response("AI_WAIT_PATTERN",k,e,{researchScope:scope,reason:"Independent Fibonacci/structure risk geometry failed validation."});
  const explain={
-  headline:"GOLD "+(d===1?"bullish":"bearish")+" conditional macro/MTF scenario",
+  headline:(gold?"GOLD":String(args.symbol||"SYMBOL"))+" "+(d===1?"bullish":"bearish")+" "+(fullGoldEvidence?"macro/MTF":"technical-only MTF")+" scenario",
   drivers:[fullGoldEvidence?"Verified derived Gold Macro Regime: "+e.bias+" (score "+e.score+"/100; NOT win probability)":"Fundamental unavailable/insufficient for "+args.symbol+"; using VALID closed-candle technical evidence only. No fabricated fundamental.",
    "H1 trend: "+(k.h1Trend===1?"BULLISH":"BEARISH"),
    "H4 trend: "+(k.h4Trend===1?"BULLISH":"BEARISH"),
@@ -100,7 +100,7 @@ export function evaluateAILive(args={}){
  const signalClose=trigger.bar.t-args.offsetSeconds+({"M1":60,"M5":300,"M15":900,"M30":1800,"H1":3600,"H4":14400,"D1":86400}[args.tf]||900);
  const conf={...plan,direction:d,confirmationType:trigger.type,confirmationCloseUTC:new Date(signalClose*1000).toISOString(),
   signalCandleTime:trigger.bar.t,entryMethod:"AI_IMPULSE_FIB_0382_TO_0618",targetMethod:"AI_MACRO_MTF_RISK_SCALED",
-  score:Math.min(90,50+10+8+8+Math.round(10*trigger.location)),expiresAfterClosedBars:2,
+  score:Math.min(90,50+10+8+(fullGoldEvidence?8:0)+Math.round(10*trigger.location)),expiresAfterClosedBars:2,
   verifiedForecastSurprise:false,explanation:explain.drivers};
  const elapsed=n-1-trigger.index,price=d===1?k.ask:k.bid;
  const overlay={direction:d,researchScope:scope,fundamentalApplied:fullGoldEvidence,confirmation:conf,explanation:explain,entryQuote:price,entryQuoteSide:d===1?"ASK":"BID",
