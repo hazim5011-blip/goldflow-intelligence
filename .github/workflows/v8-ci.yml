@@ -72,6 +72,9 @@ jobs:
           npm run build:cloudflare
           node --check dist/_worker.js
           test -f dist/study-ui.js
+          test -f dist/ohlc-fallback.js
+          test -f dist/blog/posts.json
+          grep -q '"\/api\/news-live"' dist/_worker.js
           test -f dist/_routes.json
           test -f dist/locales/ms.json
           if grep -q 'FORWARD_STORAGE_NOT_CONFIGURED' dist/_worker.js; then echo 'Forward proof remains disabled as expected'; fi
