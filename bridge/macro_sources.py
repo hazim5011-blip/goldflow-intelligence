@@ -86,7 +86,7 @@ def _rows_bls(payload: dict[str, Any], selected: list[str]) -> dict[str, list[di
 
 def _post_bls() -> dict[str, list[dict[str, Any]]]:
     year = datetime.now(timezone.utc).year
-    body = json.dumps({"seriesid": list(BLS_TO_FRED), "startyear": str(year - 4),
+    body = json.dumps({"seriesid": list(BLS_TO_FRED), "startyear": str(year - 2),
                        "endyear": str(year)}).encode()
     raw = _fetch("https://api.bls.gov/publicAPI/v2/timeseries/data/", body, "application/json")
     return _rows_bls(json.loads(raw), list(BLS_TO_FRED))
