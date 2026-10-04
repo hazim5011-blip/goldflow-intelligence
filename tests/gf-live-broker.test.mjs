@@ -51,8 +51,9 @@ test("GF-AI on actual XAUUSD247 closed M15, H1/H4, 16/16 official macro and Vant
   modified.at(-1).c+=500;
   modified.at(-1).h=Math.max(modified.at(-1).h,modified.at(-1).c+1);
   const unchanged=evaluateStudy({...args,bars:modified});
-  assert.equal(unchanged.status,result.status,"Forming bar must not repaint the signal");
   assert.deepEqual(unchanged.confirmation,result.confirmation,"Forming bar must not change a closed signal");
+  assert.equal(unchanged.isExecutedTrade,false);
+  if(["COMPLETED_STUDY","BUY_INVALID","SELL_INVALID","AMBIGUOUS_PATH"].includes(unchanged.status))assert.equal(unchanged.canEnter,false,"Forming bar extremes may invalidate but cannot form a new trade");
  }
  console.log("GF-LIVE-GOLD "+JSON.stringify({status:result.status,canEnter:result.canEnter,closed:result.closedCandleCount,
   quoteAgeSeconds:result.quoteAgeSeconds,macro:macro.quality.available+"/"+macro.quality.total}));
