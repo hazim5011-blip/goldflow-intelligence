@@ -110,3 +110,21 @@ test("a subsequent fully closed bar breaching original SL yields SELL INVALID (C
  assert.equal(invalid.invalidationBasis,"CLOSE");
  assert.equal(invalid.canEnter,false);
 });
+
+test("a previously reached TP1 permanently retires the old confirmation, no false READY",()=>{
+ const f=fixture(),first=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
+ assert.equal(first.status,"SELL_CONFIRMED");
+ const next=structuredClone(f),last=next.bars.at(-1),start=first.confirmation.entryHigh;
+ last.o=start;last.c=start+.01;last.h=start+.3;last.l=first.confirmation.tp1-.25; // wick TP1
+ const when=now+900;
+ const d=evaluateStudy({...next,nowSec:when,quote:{bid:start,ask:start+.04,tickTime:when+offset,observedAt:when}});
+ assert.equal(d.status,"COMPLETED_STUDY");assert.equal(d.canEnter,false);
+});
+test("same OHLC candle touching both stop and TP fails closed as AMBIGUOUS_PATH",()=>{
+ const f=fixture(),first=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
+ const next=structuredClone(f),last=next.bars.at(-1),start=first.confirmation.entryHigh;
+ last.o=start;last.c=start+.01;last.h=first.confirmation.invalidation+.25;last.l=first.confirmation.tp1-.25;
+ const when=now+900;
+ const d=evaluateStudy({...next,nowSec:when,quote:{bid:start,ask:start+.04,tickTime:when+offset,observedAt:when}});
+ assert.equal(d.status,"AMBIGUOUS_PATH");assert.equal(d.canEnter,false);
+});
