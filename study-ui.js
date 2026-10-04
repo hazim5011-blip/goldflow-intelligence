@@ -69,7 +69,7 @@
   put("gfStudyModeTitle",technicalMode?"GF-Market Study Pro • Technical Entry Lifecycle":
       m==="ai"?"GF-AI Live Analyst • Strict MTF Confluence":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose",technicalMode?
-    "TECHNICAL ONLY: closed-candle breakout/rejection; H1/H4 may be neutral but cannot oppose. Retest band, bid/ask validation, SL/TP and invalidation. GOLD MACRO NOT APPLIED.":
+    "STRUCTURE-DRIVEN: closed-candle rejection/break-retest; H1/H4 may be neutral but cannot oppose. Entry comes from dynamic pivots, targets from liquidity levels; Gold macro/yields are commentary ONLY, never entry gate.":
     m==="ai"?(gold?"STRICT AI RULES: BOTH H1 and H4 must align with trigger; verified official Gold macro must not oppose. Not ML-trained or win probability.":
     "STRICT AI RULES: BOTH H1 and H4 must align. No verified asset-specific fundamental feed for this symbol; TECHNICAL-ONLY confluence, not Gold macro or trained ML."):
     "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
@@ -102,7 +102,7 @@
    ].filter(Boolean).join("\n"):
    d?.reason||"No release-time claim without a verified official calendar.");
   put("gfStudyState",st.replaceAll("_"," "));
-  $("gfStudyState").className=colors[st]||(st.endsWith("READY")?"g":"y");
+  $("gfStudyState").className=colors[st]||(st.endsWith("READY")?"g":st.endsWith("INVALID")||st==="AI_INVALIDATED"?"r":"y");
   put("gfStudyReason",d?.reason||"No verified study state.");
   put("gfStudyFresh",[d?.symbol||"",d?.tf||"",d?.closedAtUTC||"N/A",d?.quoteAgeSeconds==null?"Tick N/A":"Tick "+d.quoteAgeSeconds+" s"].filter(Boolean).join(" • "));
   put("gfConfirmTime",p?"Confirmed candle closed at "+p.confirmationCloseUTC+" • expires after "+(p.expiresAfterClosedBars||3)+" closed bars":"No confirmed closed trigger candle");
@@ -147,7 +147,7 @@
   put("gfStudyTechnical",[
     "Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
-    p?"Closed candle: "+p.confirmationType+(Number.isFinite(Number(p.score))?" • Auditable AI alignment score "+p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
+    p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Auditable AI alignment score +p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
     p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):"",
     p?"Entry model: "+String(p.entryMethod||"LEGACY")+"; targets: "+String(p.targetMethod||"derived study")+"; structural stop "+safe(p.invalidation)+".":""
   ].filter(Boolean).join("\n"));
