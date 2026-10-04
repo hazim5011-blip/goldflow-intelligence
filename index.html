@@ -104,8 +104,9 @@
 
 <section id="gfStudyPage" class="page">
   <div class="card">
-    <div class="head"><div><small class="eyebrow">BROKER-FIRST • CLOSED CANDLE STUDY</small><h3>GF-AI Analyst / Fundamental News Time / Market Study</h3></div><button id="gfStudyRefresh" type="button" class="primary">Refresh Study</button></div>
+    <div class="head"><div><small class="eyebrow">BROKER-FIRST • CLOSED CANDLE STUDY</small><h3 id="gfStudyModeTitle">Select GF study mode</h3></div><button id="gfStudyRefresh" type="button" class="primary">Refresh Study</button></div>
     <div class="notice info" id="gfStudyNote">Select one of the GF-AI / GF-News / GF-Market Study indicators to begin. Rule-based confluence; no trained AI prediction or automatic broker order.</div>
+    <div class="notice" id="gfStudyModePurpose">AI = stricter H1+H4 alignment and verified Gold macro; Market Study = technical entry/retest/SL/TP only. They use the same MT5 candle source, not the same decision policy.</div>
     <div class="grid g2">
       <div class="card"><small>CONFIRMATION STATE</small><h2 id="gfStudyState" aria-live="polite">WAIT CONFIRMATION</h2><div id="gfStudyReason" class="reason">Waiting for verified closed candles and fresh Vantage quote.</div><div class="sub" id="gfStudyFresh">—</div></div>
       <div class="card"><small>ENTRY DECISION</small><h2 id="gfEntryDecision">NO ENTRY</h2><div id="gfEntryHint" class="reason">A trade setup is NOT executed automatically.</div><div class="sub" id="gfOppositeDirection">BUY/SELL: WAIT VALIDATION</div><div class="sub" id="gfConfirmTime">—</div></div>
