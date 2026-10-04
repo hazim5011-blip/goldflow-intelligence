@@ -44,7 +44,7 @@ export const CURATED_WORLD_NEWS=[
   reportedEN:"WSJ reports a plan by G7 countries to release about 100 million barrels of oil and fuel from emergency reserves. This may offset some Hormuz supply pressure but does not remove shipping risk.",
   limitation:"Rancangan dan jumlah sebenar pelepasan boleh berubah; bukan bukti impak harga Gold yang telah berlaku."}
 ];
-const trustedNames=new Set(["reuters","associated press","ap news","bbc news","bbc","the wall street journal",
+const trustedNames=new Set(["reuters","associated press","ap news","bbc news","bbc","the wall street journal","wall street journal",
  "wsj","bloomberg","financial times","the guardian","al jazeera","al jazeera english","cnbc",
  "s&p global","the economic times","nikkei asia","marketwatch","the new york times","ukmto"]);
 const topics=[
@@ -164,7 +164,9 @@ export function feedDefinitions(){
   ...topics.map(t=>({...google(t.query),key:t.key})),
   {key:"BBC_BUSINESS",url:"https://feeds.bbci.co.uk/news/business/rss.xml",domains:["www.bbc.com","www.bbc.co.uk","bbc.com","bbc.co.uk"],publisher:"BBC News",google:false},
   {key:"GUARDIAN_WORLD",url:"https://www.theguardian.com/world/rss",domains:["www.theguardian.com","theguardian.com"],publisher:"The Guardian",google:false},
-  {key:"GUARDIAN_BUSINESS",url:"https://www.theguardian.com/business/rss",domains:["www.theguardian.com","theguardian.com"],publisher:"The Guardian",google:false}
+  {key:"GUARDIAN_BUSINESS",url:"https://www.theguardian.com/business/rss",domains:["www.theguardian.com","theguardian.com"],publisher:"The Guardian",google:false},
+  {key:"BBC_WORLD",url:"https://feeds.bbci.co.uk/news/world/rss.xml",domains:["www.bbc.com","www.bbc.co.uk","bbc.com","bbc.co.uk"],publisher:"BBC News",google:false},
+  {key:"AL_JAZEERA",url:"https://www.aljazeera.com/xml/rss/all.xml",domains:["www.aljazeera.com","aljazeera.com"],publisher:"Al Jazeera English",google:false}
  ];
 }
 export async function collectWorldNews(fetcher=fetch,now=Date.now()){
