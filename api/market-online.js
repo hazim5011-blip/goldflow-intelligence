@@ -24,22 +24,43 @@ export default async function handler(req,res){
   const catalog=await brokerGet("/catalog",{limit:5000},14000,1);
   const all=(catalog.symbols||[]).filter(x=>safe.test(x.name||""));
   // The scan prioritizes likely 24/7 instruments, but ALL sampled symbols still need fresh ticks.
-  const priority={CRYPTO:0,INDICES:1,ENERGY:2,METALS:3,FOREX:4,STOCKS:5,OTHER:6};
-  const pool=all.filter(x=>[1,2,4].includes(Number(x.tradeMode))).sort((a,b)=>(priority[a.category]??9)-(priority[b.category]??9));
-  const selected=pool.slice(0,90),states={},nowSec=Math.floor(Date.now()/1000);
-  for(let i=0;i<selected.length;i+=30){
-   const batch=selected.slice(i,i+30);
-   const snap=await brokerGet("/snapshot",{symbols:batch.map(x=>x.name).join(",")},18000,1);
-   for(const x of batch){
-    const v=verifyOnline(x,snap.data?.[x.name],snap.ts,nowSec,offset);
-    states[x.name]=v;
+  const priority={SYNTHETIC:0,OTHER:1,INDICES:2,CRYPTO:3,ENERGY:4,METALS:5,FOREX:6,STOCKS:7};
+  // NO 90-symbol cap: previously crypto exhausted the whole sample and hid
+  // other live classes. Inspect EVERY exact tradable broker catalog symbol.
+  const pool=all.filter(x=>[1,2,4].includes(Number(x.tradeMode)))
+    .sort((a,b)=>(priority[a.category]??9)-(priority[b.category]??9)||a.name.localeCompare(b.name));
+  const states={},nowSec=Math.floor(Date.now()/1000),batchSize=42,batches=[];
+  for(let i=0;i<pool.length;i+=batchSize)batches.push(pool.slice(i,i+batchSize));
+  let cursor=0,successful=0;const scanErrors=[];
+  async function worker(){
+   while(cursor<batches.length){
+    const idx=cursor++,batch=batches[idx];
+    try{
+     const snap=await brokerGet("/snapshot",{symbols:batch.map(x=>x.name).join(",")},16000,1);
+     for(const x of batch){states[x.name]=verifyOnline(x,snap.data?.[x.name],snap.ts,nowSec,offset);successful++}
+    }catch{
+     // Failed scans are UNKNOWN, NEVER falsely labelled OFFLINE.
+     for(const x of batch)states[x.name]={status:"UNKNOWN",verifiedNow:false,quoteAgeSeconds:null};
+     scanErrors.push({batchIndex:idx,symbolCount:batch.length,error:"BROKER_SNAPSHOT_UNAVAILABLE"});
+    }
    }
   }
+  await Promise.all(Array.from({length:Math.min(3,batches.length)},()=>worker()));
   const mytDay=new Date((nowSec+8*3600)*1000).getUTCDay(),weekendMYT=mytDay===0||mytDay===6;
-  const verified=selected.filter(x=>states[x.name]?.verifiedNow).map(x=>x.name);
+  const verified=pool.filter(x=>states[x.name]?.verifiedNow).map(x=>x.name);
+  const byCategory={};for(const x of pool){if(!byCategory[x.category])byCategory[x.category]={catalogTradable:0,verifiedOnline:0,unknown:0};
+   byCategory[x.category].catalogTradable++;
+   if(states[x.name]?.verifiedNow)byCategory[x.category].verifiedOnline++;
+   if(states[x.name]?.status==="UNKNOWN")byCategory[x.category].unknown++;
+  }
+  const requested=["VOL80","STEP0.5"];
+  const matchingSynthetic=pool.filter(x=>x.category==="SYNTHETIC")
+   .map(x=>({symbol:x.name,status:states[x.name]?.status||"UNKNOWN",online:!!states[x.name]?.verifiedNow}));
   return res.status(200).json({ok:true,source:"VANTAGE_MT5_TICK_AND_TRADE_MODE",asOfUTC:new Date(nowSec*1000).toISOString(),
-    verified,market24hWeekendVerified:weekendMYT?verified:[],states,sampled:selected.length,catalogCount:all.length,
-    partialCoverage:selected.length<pool.length,coverageNote:"90 tradable catalog symbols sampled in category priority; unsampled symbols are UNKNOWN, never presumed offline or 24/7.",
+    verified,market24hWeekendVerified:weekendMYT?verified:[],states,sampled:successful,attempted:pool.length,tradableCatalogCount:pool.length,catalogCount:all.length,
+    byCategory,syntheticSamples:matchingSynthetic,
+    examplesNotListed:requested.filter(name=>!all.some(x=>x.name.toUpperCase()===name)),
+    scanErrors,partialCoverage:successful<pool.length,coverageNote:"Full tradable catalog was attempted with bounded batches; failed/unknown symbols are NOT reported offline or permanently 24/7. Exact symbol and fresh tick required.",
     definition:"ONLINE = exact resolved broker symbol + tradable tradeMode + fresh BID/ASK tick <=35s. 24H weekend verification confirms ACTIVE NOW during weekend only, not a contractual 24/7 guarantee."});
  }catch(e){return res.status(200).json({ok:false,status:"MARKET_SCAN_UNAVAILABLE",verified:[],sampled:0,errorCode:String(e?.code||"BROKER_UNAVAILABLE")})}
 }
