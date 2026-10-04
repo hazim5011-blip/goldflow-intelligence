@@ -55,7 +55,10 @@ jobs:
           find api -maxdepth 1 -name '*.js' -print0 | xargs -0 -n1 node --check
 
       - name: Python bridge syntax check
-        run: python -m py_compile bridge/mt5_bridge.py
+        run: python -m py_compile bridge/mt5_bridge.py bridge/macro_sources.py bridge/test_macro_sources.py
+
+      - name: Offline authenticated Windows macro source unit tests
+        run: python -m unittest discover -s bridge -p 'test_macro_sources.py' -v
 
       - name: V8 unit and policy tests
         run: npm test
