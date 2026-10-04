@@ -43,6 +43,8 @@ def norm(s:str)->str:
 
 def classify(name:str,path:str="",desc:str=""):
     t=(name+" "+path+" "+desc).upper()
+    # Name/path classification only; do not assume an instrument is online/24h.
+    if re.match(r"^(?:VOL(?:ATILITY)?[._ -]*(?:10|25|50|75|80|100|150|200|250|300|500|1000)(?:[._ -]*(?:1S|S))?|V(?:10|25|50|75|80|100)(?:[._ -]*1S)?|STEP[._ -]*(?:0[.]?[125]|1|INDEX)?|BOOM[._ -]*[0-9]*|CRASH[._ -]*[0-9]*|JUMP[._ -]*[0-9]*|RANGE[._ -]*BREAK|DRIFT[._ -]*SWITCH)",name.upper()) or any(x in t for x in ["SYNTHETIC","DERIVED INDICES","STEP INDEX","VOLATILITY INDEX","CONTINUOUS INDEX"]): return "SYNTHETIC"
     if any(x in t for x in ["CRYPTO","BITCOIN","ETHEREUM","BTC","ETH","SOL","XRP","LTC","BCH","DOGE","ADA","DOT","AVAX","LINK"]): return "CRYPTO"
     if any(x in t for x in ["XAU","XAG","XPT","XPD","GOLD","SILVER","METAL"]): return "METALS"
     if any(x in t for x in ["WTI","BRENT","USOIL","UKOIL","XBR","XTI","NATGAS","NGAS","ENERGY","OIL"]): return "ENERGY"
