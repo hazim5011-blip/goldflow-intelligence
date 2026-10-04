@@ -184,7 +184,7 @@
     try{
       var data=await json(evidenceURL(id));state.evidence=data;renderEvidence(data);
       $("v8EvidenceRead").disabled=false;$("v8EvidenceJson").disabled=false;$("v8EvidenceCsv").disabled=false;
-      $("v8EvidencePng").disabled=!(state.evidenceChart&&typeof state.evidenceChart.takeScreenshot==="function");
+      $("v8EvidencePng").disabled=!(state.evidenceChart&&typeof state.evidenceChart.takeScreenshot==="function")&&!$("v8EvidenceChart")?.querySelector("svg");
     }catch(e){state.evidence=null;$("v8EvidenceSummary").textContent="Evidence unavailable: "+e.message+
       ". A reconstructed signal must still be present in the current broker history window; this is not proof of a forward-published trade.";
       $("v8EvidenceChart").textContent="Broker reconstruction could not be verified for this signal.";
@@ -206,13 +206,28 @@
     drawProof(data);
   }
   function downloadEvidencePng(){
-    if(!state.evidenceChart||typeof state.evidenceChart.takeScreenshot!=="function")return;
+    function save(canvas){
+      var a=document.createElement("a");a.href=canvas.toDataURL("image/png");
+      a.download="goldflow-v8-"+(state.evidence?.signalId||"evidence")+"-reconstructed-chart.png";a.click();
+    }
     try{
-      var canvas=state.evidenceChart.takeScreenshot(),a=document.createElement("a");
-      a.href=canvas.toDataURL("image/png");
-      a.download="goldflow-v8-"+(state.evidence?.signalId||"evidence")+"-marked-chart.png";
-      a.click();
-    }catch(e){window.alert("Marked chart export is unavailable in this browser.")}
+      if(state.evidenceChart&&typeof state.evidenceChart.takeScreenshot==="function"){
+       save(state.evidenceChart.takeScreenshot());return;
+      }
+      // No CDN dependency: export the OWN reconstructed SVG through a local canvas.
+      var svg=$("v8EvidenceChart")?.querySelector("svg");
+      if(!svg)throw Error("No verified broker chart to export");
+      var xml=new XMLSerializer().serializeToString(svg),url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml;charset=utf-8"}));
+      var image=new Image();
+      image.onload=function(){
+       try{var cn=document.createElement("canvas");cn.width=1440;cn.height=503;
+        cn.getContext("2d").drawImage(image,0,0,cn.width,cn.height);save(cn)}
+       catch(e){$("v8EvidenceCaption").textContent="Browser cannot export the local SVG to PNG; visual reconstruction remains available."}
+       finally{URL.revokeObjectURL(url)}
+      };
+      image.onerror=function(){URL.revokeObjectURL(url);$("v8EvidenceCaption").textContent="PNG conversion blocked; Evidence visual remains available."};
+      image.src=url;
+    }catch(e){$("v8EvidenceCaption").textContent=String(e.message||e)}
   }
   function drawProof(data){
     var el=$("v8EvidenceChart");if(!el)return;el.innerHTML="";
