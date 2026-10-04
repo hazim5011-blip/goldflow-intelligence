@@ -47,7 +47,7 @@ function targetsFromLiquidity({d,entry,atr,support,resistance,highs,lows}){
  return targets.slice(0,3);
 }
 function levelResearch(k,dir,macro){
- const px=dir===1?k.ask:k.bid,p=k.atr,sw=pivotPrice(k.c,dir,px,p);
+ const px=dir===1?k.ask:k.bid,p=k.atr,sw=pivotPrice(k.c,dir,k.last.c,p);
  const reference=dir===1?sw.low:sw.high;
  const zone=dir===1?{low:reference-.12*p,high:reference+.30*p}:
   {low:reference-.30*p,high:reference+.12*p};
@@ -64,10 +64,11 @@ function levelResearch(k,dir,macro){
   {reaction:"Bearish rejection in supply/reaction zone; a "+tf+" candle must CLOSE below the area.",
    breakdown:"Closed "+tf+" candle below prior support "+rnd(breakLevel)+", then retest broken support from underneath.",
    invalidation:"Closed "+tf+"/H1 reclaim ABOVE "+rnd(invalidationLevel)+" invalidates bearish structure. Live breach blocks entry."};
+ const projectionTargets=targetsFromLiquidity({d:dir,entry:(zone.low+zone.high)/2,atr:p,support:sw.low,resistance:sw.high,highs:sw.highs,lows:sw.lows}).map(x=>rnd(x));
  const levels={support:rnd(sw.low),resistance:rnd(sw.high),reactionZoneLow:rnd(zone.low),
   reactionZoneHigh:rnd(zone.high),breakoutLevel:rnd(breakLevel),invalidationLevel:rnd(invalidationLevel),
   referenceTimeframe:tf,triggerTimeframe:tf};
- return {scenario,levels,rules,sw,reference,zone,breakLevel,invalidationLevel,macroContext:macro,
+ return {scenario,levels,rules,sw,reference,zone,breakLevel,invalidationLevel,projectionTargets,macroContext:macro,
   commentary:(dir===1?"Bullish continuation remains a technical scenario while structure is held.":"Bearish continuation remains a technical scenario below structural resistance.")+
    " Do not chase current quote "+rnd(px)+". WAIT for verified reaction-zone rejection or closed-candle break and retest."};
 }
@@ -96,7 +97,7 @@ export function evaluateMarketStudy(args={}){
  if(!d)return output("STUDY_WAIT_STRUCTURE",k,{direction:0,reason:"H1/H4 oppose or both neutral: cannot select continuation direction.",
   macroContext:mc,scenarioNarrative:"WAIT for clear price structure. No BUY/SELL inferred."});
  const r=levelResearch(k,d,mc),p=k.atr,c=k.c,px=d===1?k.ask:k.bid;
- const base={direction:d,scenario:r.scenario,scenarioNarrative:r.commentary,structureLevels:r.levels,
+ const base={direction:d,scenario:r.scenario,scenarioNarrative:r.commentary,structureLevels:r.levels,projectedTargets:r.projectionTargets,
   confirmationRules:r.rules,macroContext:mc,technicalSource:"VANTAGE_CLOSED_CANDLES",
   caution:"Technical zones and derived fundamental context do not guarantee BUY/SELL direction."};
  // A close beyond the prior structural invalidation cancels the continuation thesis.
