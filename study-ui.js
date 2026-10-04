@@ -217,11 +217,11 @@
    }
    const px=d===1?Number(j.ask):Number(j.bid);
    if(d*(px-Number(p.invalidation))<=0){
-    render({...old,status:d===1?"BUY_INVALID":"SELL_INVALID",canEnter:false,
-     invalidationBasis:"INTRABAR_QUOTE",reason:"Fresh broker tick has breached original invalidation."});
+    render({...old,status:old.mode==="ai"?"AI_INVALIDATED":(d===1?"BUY_INVALID":"SELL_INVALID"),canEnter:false,
+     invalidationBasis:"INTRABAR_QUOTE",reason:"Fresh broker tick has breached original mode-specific invalidation."});
    }else if(px<Number(p.entryLow)||px>Number(p.entryHigh)){
-    render({...old,status:d===1?"BUY_CONFIRMED":"SELL_CONFIRMED",canEnter:false,
-     entryState:"WAIT_RETEST",reason:"Previously READY, but fresh broker quote has left the original entry band. Wait for full revalidation."});
+    render({...old,status:old.mode==="ai"?(d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED"):(d===1?"BUY_CONFIRMED":"SELL_CONFIRMED"),canEnter:false,
+     entryState:"WAIT_RETEST",reason:"Previously READY, but fresh broker quote has left the original mode-specific entry band. Wait for full revalidation."});
    }
   }catch(e){
    if(state.last===old)render({...old,status:"MARKET_OFFLINE",canEnter:false,reason:"Live tick check unavailable; previous ENTRY READY revoked."});
