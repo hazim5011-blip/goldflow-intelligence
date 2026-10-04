@@ -35,7 +35,7 @@ test("forming candle never confirms; normalized bars include only closed trigger
  assert.equal(first.status,second.status);
 });
 test("WAIT -> SELL CONFIRMED -> SELL ENTRY READY only inside verified retest and with fresh BID",()=>{
- const f=fixture(),d=evaluateStudy({...f,quote:tick(4300)});
+ const f=fixture(),d=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
  assert.equal(d.status,"SELL_CONFIRMED");
  assert.equal(d.canEnter,false);
  assert.equal(d.confirmation.direction,-1);
@@ -53,21 +53,21 @@ test("a stale broker tick fails closed, even when technical candles confirm",()=
  assert.equal(z.status,"MARKET_OFFLINE");assert.equal(z.canEnter,false);
 });
 test("opposite verified macro blocks a new directional confirmation",()=>{
- const f=fixture(),out=evaluateStudy({...f,macro:macro("SUPPORTIVE"),quote:tick(4300)});
+ const f=fixture(),out=evaluateStudy({...f,macro:macro("SUPPORTIVE"),quote:tick(f.bars.at(-2).c)});
  assert.equal(out.status,"WAIT_CONFLICT");assert.equal(out.canEnter,false);
 });
 test("news mode refuses to convert incomplete official data into news-time signal",()=>{
- const f=fixture(),out=evaluateStudy({...f,mode:"news",macro:{...macro(),quality:{available:15,total:16,errors:["source"],stale:[]}},quote:tick(4300)});
+ const f=fixture(),out=evaluateStudy({...f,mode:"news",macro:{...macro(),quality:{available:15,total:16,errors:["source"],stale:[]}},quote:tick(f.bars.at(-2).c)});
  assert.equal(out.status,"DATA_UNVERIFIED");assert.equal(out.canEnter,false);
 });
 test("SELL INVALID immediately on verified live price breach of initial invalidation",()=>{
- const f=fixture(),first=evaluateStudy({...f,quote:tick(4300)});
+ const f=fixture(),first=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
  const hit=evaluateStudy({...f,quote:tick(first.confirmation.invalidation+1)});
  assert.equal(hit.status,"SELL_INVALID");assert.equal(hit.invalidationBasis,"INTRABAR_QUOTE");
  assert.equal(hit.canEnter,false);
 });
 test("MISSED ENTRY does not chase downside move beyond intended SELL retest",()=>{
- const f=fixture(),first=evaluateStudy({...f,quote:tick(4300)});
+ const f=fixture(),first=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
  const far=evaluateStudy({...f,quote:tick(first.confirmation.entryLow-8)});
  assert.equal(far.status,"MISSED_ENTRY");assert.equal(far.canEnter,false);
 });
