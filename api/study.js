@@ -36,6 +36,7 @@ export default async function handler(req,res){
   const publicMacro=macro?{fetchedAtUTC:macro.fetchedAt,quality:macro.quality,gold:macro.gold,
    cards:(macro.cards||[]).filter(c=>["CPI","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"].includes(c.id)).map(c=>({id:c.id,name:c.name,display:c.display,value:c.value,date:c.date,status:c.status,source:c.source,stale:c.stale}))}:null;
   return res.status(200).json({...output,source:"VANTAGE_MT5",marketResearchOnly:true,autoTrading:false,news:publicMacro,
+   chartBars:(bridge.frames?.[tf]||[]).slice(-160).map(b=>({t:Number(b.t)-offset,o:b.o,h:b.h,l:b.l,c:b.c})),
    limitation:"No verified release timestamp/consensus surprise or intrabar fill proof. This is a rule-based confluence study, not ML-trained prediction."});
  }catch(e){
   return res.status(200).json({ok:false,status:"DATA_UNVERIFIED",reason:"BROKER_DATA_UNAVAILABLE",errorCode:String(e?.code||"FETCH_FAILED"),
