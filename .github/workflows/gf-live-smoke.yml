@@ -1,0 +1,26 @@
+name: GoldFlow GF Study Real Broker Smoke
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "api/_studyEngine.js"
+      - "api/study.js"
+      - "api/market-online.js"
+      - "tests/gf-live-broker.test.mjs"
+      - ".github/workflows/gf-live-smoke.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gf-real-broker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Read-only actual Vantage XAUUSD247 and BTCUSD + official Macro 16/16
+        env:
+          GF_LIVE_SMOKE: "1"
+        run: node --test tests/gf-live-broker.test.mjs
