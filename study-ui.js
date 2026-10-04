@@ -123,7 +123,7 @@
   put("gfConfirmTime",p?"Confirmed candle closed at "+p.confirmationCloseUTC+" • expires after "+(p.expiresAfterClosedBars||3)+" closed bars":"No confirmed closed trigger candle");
   let decision="NO ENTRY",hint="WAIT for a fresh confirmed candle. No broker order is sent.";
   if(d?.canEnter && ["AI_BUY_READY","AI_SELL_READY","BUY_ENTRY_READY","SELL_ENTRY_READY"].includes(st)){
-    decision=p?.side+" • ENTRY READY";hint="Verified CLOSED candle + FRESH "+d.entryQuoteSide+" inside entry area. Study ONLY; confirm your own trade.";
+    decision=p?.side+" • ENTRY READY"+(aiMode&&d.researchScope==="TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE"?" • TECHNICAL ONLY":"");hint="Verified CLOSED candle + FRESH "+d.entryQuoteSide+" inside mode-specific entry area. "+(aiMode&&d.researchScope==="TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE"?"Fundamental for this pair unavailable; decision is based ONLY on valid broker technical evidence. ":"")+"Study ONLY; confirm your own trade.";
   }else if(["AI_BUY_CONFIRMED","AI_SELL_CONFIRMED","BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)){
     decision=p?.side+" CONFIRMED • WAIT RETEST";hint="The direction has confirmed but the quote is OUTSIDE the entry range. Do not chase.";
   }else if(["AI_INVALIDATED","BUY_INVALID","SELL_INVALID"].includes(st)){
