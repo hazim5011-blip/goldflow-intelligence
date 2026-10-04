@@ -303,12 +303,56 @@ function tvSymbol(s){
 function tvInterval(tf){
   return ({M1:"1",M5:"5",M15:"15",M30:"30",H1:"60",H4:"240",D1:"D"})[tf]||"5";
 }
-function renderTradingView(){
-  var el=$("tvWrap"); if(!el||!selectedSymbol)return;
-  // Defer the chart until the TradingView tab is visible (avoids hidden iframe load).
-  if(!$("tvPage")?.classList.contains("on"))return;
-  var sym=tvSymbol(selectedSymbol),intv=tvInterval(selectedTF);
-  el.innerHTML='<iframe allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen src="https://s.tradingview.com/widgetembed/?frameElementId=tv_goldflow&symbol='+encodeURIComponent(sym)+'&interval='+encodeURIComponent(intv)+'&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=%230f2740&studies=[]&theme=dark&style=1&timezone=Asia%2FKuala_Lumpur&withdateranges=1&hideideas=1"></iframe>';
+var tvNativeChart=null,tvReqSeq=0;
+async function renderTradingView(){
+  var el=$("tvWrap");if(!el||!selectedSymbol||!$("tvPage")?.classList.contains("on"))return;
+  var token=++tvReqSeq,symbol=selectedSymbol,tf=selectedTF,sym=tvSymbol(symbol),interval=tvInterval(tf);
+  if(tvNativeChart){try{tvNativeChart.remove()}catch(e){}tvNativeChart=null}
+  // Official third-party iframe may be blocked by browser CSP, extensions or
+  // provider policies. ALWAYS display independently fetched Vantage broker chart.
+  var external="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(sym);
+  el.innerHTML='<div class="tvBar"><b>VANTAGE BROKER CHART • '+symbol.replace(/</g,"&lt;")+' • '+tf+'</b>'+
+    '<a class="primary mini" href="'+external+'" target="_blank" rel="noopener noreferrer">OPEN TRADINGVIEW ↗</a></div>'+
+    '<p class="sub" id="tvBrokerNote">Loading direct broker candles. TradingView prices may differ from Vantage.</p>'+
+    '<div class="tvBrokerChart" id="tvBrokerChart" role="img" aria-label="Vantage verified OHLC candlestick chart"></div>'+
+    '<div class="tvBar"><b>TradingView external reference</b><span class="sub">If the embed is blocked, use OPEN TRADINGVIEW above. Local chart remains operational.</span></div>'+
+    '<div id="tvEmbed" class="tvEmbed"></div>';
+  var target=$("tvEmbed"),chartNode=$("tvBrokerChart");
+  if(target&&/^(OANDA|COINBASE|FX):/.test(sym)){
+   var frame=document.createElement("iframe");
+   frame.title="TradingView external chart reference";frame.loading="lazy";frame.referrerPolicy="no-referrer-when-downgrade";
+   frame.setAttribute("allowfullscreen","");
+   frame.src="https://s.tradingview.com/widgetembed/?frameElementId=gf_tv_ref&symbol="+encodeURIComponent(sym)+
+     "&interval="+encodeURIComponent(interval)+"&theme=dark&style=1&hidesidetoolbar=0&symboledit=1&timezone=Asia%2FKuala_Lumpur";
+   target.appendChild(frame);
+  }else if(target)target.textContent="This exact Vantage symbol has no verified TradingView mapping. Use the direct Vantage chart above.";
+  try{
+   var feed=await getJson("/api/bars?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&limit=220");
+   if(token!==tvReqSeq||symbol!==selectedSymbol||tf!==selectedTF||!$("tvPage")?.classList.contains("on"))return;
+   if(!feed.ok||!Array.isArray(feed.bars)||feed.bars.length<20)throw Error(feed.error||"Insufficient broker candles");
+   var offset=Number(feed.brokerUtcOffsetSeconds);
+   if(!Number.isFinite(offset))throw Error("Broker time offset unavailable");
+   var bars=feed.bars.map(function(b){return {time:Number(b.t)-offset,open:Number(b.o),high:Number(b.h),low:Number(b.l),close:Number(b.c)}})
+     .filter(function(b){return Number.isFinite(b.time)&&[b.open,b.high,b.low,b.close].every(Number.isFinite)})
+     .sort(function(a,b){return a.time-b.time});
+   if(bars.length<20)throw Error("Insufficient valid broker OHLC");
+   $("tvBrokerNote").textContent="SOURCE: Vantage MT5 • "+(feed.symbol||symbol)+" • "+tf+
+     " • "+bars.length+" candles • direct broker data (not TradingView feed).";
+   if(typeof LightweightCharts==="undefined"){
+    chartNode.innerHTML='<p class="sub">Chart renderer blocked. Latest Vantage close: '+bars.at(-1).close+'. Open TradingView using the link above.</p>';
+    return;
+   }
+   tvNativeChart=LightweightCharts.createChart(chartNode,{height:350,width:Math.max(280,chartNode.clientWidth),
+     layout:{background:{color:"#07131c"},textColor:"#b6cbd7"},
+     grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},
+     rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true}});
+   var series=tvNativeChart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,
+     wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
+   series.setData(bars);tvNativeChart.timeScale().fitContent();
+  }catch(e){
+   if(token===tvReqSeq){$("tvBrokerNote").textContent="Broker chart unavailable: "+String(e.message||e)+
+     ". TradingView can still open in a separate tab.";if(chartNode)chartNode.textContent="Unable to load authenticated Vantage OHLC."}
+  }
 }
 
 function macroImpactClass(v){
