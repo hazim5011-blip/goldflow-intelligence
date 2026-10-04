@@ -51,26 +51,26 @@ function response(status,k,e,extra={}){
 export function evaluateAILive(args={}){
  const k=context(args),gold=isGold(args.symbol),e=macroEvidence(args.macro,gold);
  if(!k.ok)return response(k.status,k,e,{reason:k.reason});
- if(!e.available)return response("AI_WAIT_VERIFIED_MACRO",k,e,{
-  reason:"Full independently validated 16/16 Macro Regime is required by AI Live. No fabricated observations.",
-  direction:0,confirmation:null});
- if(!gold)return response("AI_ASSET_FUNDAMENTAL_UNAVAILABLE",k,e,{
-  reason:"No verified "+String(args.symbol||"")+"-specific fundamental/derivatives/on-chain feed. US macro alone cannot authorise an AI LIVE trade.",
-  technicalScenario:k.h1Trend===k.h4Trend?k.h1Trend:0,confirmation:null});
- const macroDir=macroDirection(e);
- if(!macroDir)return response("AI_WAIT_MACRO_CONFLUENCE",k,e,{reason:"Gold Macro Regime is MIXED/neutral; no directional macro confirmation.",direction:0});
- if(k.h1Trend!==macroDir||k.h4Trend!==macroDir){
-  return response("AI_WAIT_MTF_ALIGNMENT",k,e,{direction:macroDir,
-   reason:"Derived Gold macro bias and BOTH closed-candle H1/H4 structures must align. A conflicting timeframe vetoes new entry.",
-   analysis:{macroDirection:macroDir,h1Direction:k.h1Trend,h4Direction:k.h4Trend}});
- }
- const d=macroDir,c=k.c,p=k.atr,latest=c.at(-1),n=c.length;
+ // Fundamental coverage is EVIDENCE, not a universal kill-switch. If an
+ // asset-specific feed does not exist, operate transparently as TECHNICAL_ONLY.
+ // Still veto a VERIFIED directional contradiction for Gold; never invent BTC data.
+ const fullGoldEvidence=gold&&e.available;
+ const scope=fullGoldEvidence?"VERIFIED_GOLD_MACRO_PLUS_TECHNICAL":"TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE";
+ const htfDir=k.h1Trend===k.h4Trend?k.h1Trend:0;
+ if(!htfDir)return response("AI_WAIT_MTF_ALIGNMENT",k,e,{
+  researchScope:scope,direction:0,reason:"H1 AND H4 technical trends are not both aligned; await closed-candle alignment.",
+  analysis:{h1Direction:k.h1Trend,h4Direction:k.h4Trend}});
+ const macroDir=fullGoldEvidence?macroDirection(e):0;
+ if(macroDir&&macroDir!==htfDir)return response("AI_WAIT_VERIFIED_CONFLICT",k,e,{
+  researchScope:scope,direction:htfDir,reason:"Official verified Gold macro direction conflicts with current aligned H1/H4 technical trend. WAIT for a new setup.",
+  analysis:{macroDirection:macroDir,h1Direction:k.h1Trend,h4Direction:k.h4Trend}});
+ const d=htfDir,c=k.c,p=k.atr,latest=c.at(-1),n=c.length;
  let trigger=null;
  for(let i=n-1;i>=Math.max(n-3,10);i--){
   const v=pattern(c,i,d,p);if(v){trigger={...v,index:i,bar:c[i]};break}
  }
  if(!trigger)return response("AI_WAIT_PATTERN",k,e,{direction:d,
-  reason:"Macro/H1/H4 align, but no new fully CLOSED MTF impulse breakout or validated engulfing within the last three candles.",
+  researchScope:scope,reason:"Aligned H1/H4 confirmed; no new fully CLOSED breakout or validated engulfing within the last three candles. Fundamental is used ONLY if verifiable.",
   nextCandleCloseUTC:new Date((latest.t-args.offsetSeconds+2*({"M1":60,"M5":300,"M15":900,"M30":1800,"H1":3600,"H4":14400,"D1":86400}[args.tf]||900))*1000).toISOString()});
  // AI entry: independent impulse Fibonacci 38.2%-61.8% retracement, NOT legacy ATR band
  // and NOT Market Study pivot/reaction zone.
@@ -78,32 +78,32 @@ export function evaluateAILive(args={}){
  const origin=d===1?Math.min(...base.map(x=>x.l)):Math.max(...base.map(x=>x.h));
  const impulse=d*(trigger.bar.c-origin);
  if(!(impulse>=.70*p&&impulse<=9*p))return response("AI_WAIT_PATTERN",k,e,{
-  reason:"Closed impulse size is outside the ATR reliability window."});
+  researchScope:scope,reason:"Closed impulse size is outside the ATR reliability window."});
  const retraceA=trigger.bar.c-d*.618*impulse,retraceB=trigger.bar.c-d*.382*impulse;
  const stop=d===1?Math.min(origin,trigger.bar.l)-.18*p:Math.max(origin,trigger.bar.h)+.18*p;
  const entryLow=Math.min(retraceA,retraceB),entryHigh=Math.max(retraceA,retraceB);
  const mid=(entryLow+entryHigh)/2,risk=d*(mid-stop);
- const strong=Boolean(k.h1Trend===d&&k.h4Trend===d&&macroDir===d);
+ const strong=Boolean(fullGoldEvidence&&macroDir===d&&k.h1Trend===d&&k.h4Trend===d);
  const targetScale=strong?[1.25,2.2,3.2]:[1,1.75,2.6];
  const plan=riskLevels({side:d===1?"BUY":"SELL",entryLow,entryHigh,stop,
   targets:targetScale.map(t=>mid+d*risk*t)});
- if(!plan)return response("AI_WAIT_PATTERN",k,e,{reason:"Independent Fibonacci/structure risk geometry failed validation."});
+ if(!plan)return response("AI_WAIT_PATTERN",k,e,{researchScope:scope,reason:"Independent Fibonacci/structure risk geometry failed validation."});
  const explain={
   headline:"GOLD "+(d===1?"bullish":"bearish")+" conditional macro/MTF scenario",
-  drivers:["Derived Macro Regime: "+e.bias+" (score "+e.score+"/100; NOT win probability)",
+  drivers:[fullGoldEvidence?"Verified derived Gold Macro Regime: "+e.bias+" (score "+e.score+"/100; NOT win probability)":"Fundamental unavailable/insufficient for "+args.symbol+"; using VALID closed-candle technical evidence only. No fabricated fundamental.",
    "H1 trend: "+(k.h1Trend===1?"BULLISH":"BEARISH"),
    "H4 trend: "+(k.h4Trend===1?"BULLISH":"BEARISH"),
    "Last closed pattern: "+trigger.type,
    "Price confirmation is required; official CPI/NFP observation dates are NOT intraday release times."],
   releaseTimingVerified:false,newsSurpriseVerified:false,
-  basis:"Independent impulse Fibonacci retracement + pre-trigger structural invalidation"};
+  basis:"Independent impulse Fibonacci retracement + pre-trigger structural invalidation",researchScope:scope};
  const signalClose=trigger.bar.t-args.offsetSeconds+({"M1":60,"M5":300,"M15":900,"M30":1800,"H1":3600,"H4":14400,"D1":86400}[args.tf]||900);
  const conf={...plan,direction:d,confirmationType:trigger.type,confirmationCloseUTC:new Date(signalClose*1000).toISOString(),
   signalCandleTime:trigger.bar.t,entryMethod:"AI_IMPULSE_FIB_0382_TO_0618",targetMethod:"AI_MACRO_MTF_RISK_SCALED",
   score:Math.min(90,50+10+8+8+Math.round(10*trigger.location)),expiresAfterClosedBars:2,
   verifiedForecastSurprise:false,explanation:explain.drivers};
  const elapsed=n-1-trigger.index,price=d===1?k.ask:k.bid;
- const overlay={direction:d,confirmation:conf,explanation:explain,entryQuote:price,entryQuoteSide:d===1?"ASK":"BID",
+ const overlay={direction:d,researchScope:scope,fundamentalApplied:fullGoldEvidence,confirmation:conf,explanation:explain,entryQuote:price,entryQuoteSide:d===1?"ASK":"BID",
   elapsedClosedBars:elapsed};
  // OHLC can invalidate this idea, but it cannot prove fill/order inside a bar.
  const observed=(Array.isArray(args.bars)?args.bars:[]).map(x=>({t:val(x.t),h:val(x.h),l:val(x.l)}))
@@ -118,6 +118,6 @@ export function evaluateAILive(args={}){
  const chased=d===1?price>plan.entryHigh+.50*p:price<plan.entryLow-.50*p;
  return response(inside?(d===1?"AI_BUY_READY":"AI_SELL_READY"):chased?"AI_MISSED_ENTRY":d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED",k,e,{
   ...overlay,canEnter:inside,entryState:inside?"AI_FIB_RETRACE_VALIDATED":chased?"NO_CHASE":"WAIT_FIB_RETEST",
-  reason:inside?"Fresh Vantage broker quote entered independently derived AI retracement after CLOSED macro/MTF/pattern confirmation.":
+  reason:inside?"Fresh Vantage broker quote entered AI retracement after CLOSED MTF/pattern confirmation. "+(fullGoldEvidence?"Verified Gold macro agrees.":"No unavailable fundamental was invented."):
    chased?"Price advanced beyond AI retracement tolerance; no chasing.":"AI direction confirmed; wait for 38.2%-61.8% impulse pullback."});
 }
