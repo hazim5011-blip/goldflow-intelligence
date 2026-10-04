@@ -219,7 +219,13 @@
     if(state.evidenceChart){try{state.evidenceChart.remove()}catch(e){}state.evidenceChart=null}
     var rows=(data.ohlc||[]).filter(function(b){return finite(b.t)&&finite(b.o)&&finite(b.h)&&finite(b.l)&&finite(b.c)}).sort(function(a,b){return a.t-b.t});
     if(!rows.length){el.textContent=t("noArchivedCandles");return}
-    if(typeof LightweightCharts==="undefined"){el.innerHTML=rows.slice(-12).map(function(b){return '<div>'+dt(new Date(b.t*1000))+" O "+b.o+" H "+b.h+" L "+b.l+" C "+b.c+'</div>'}).join("");return}
+    if(typeof LightweightCharts==="undefined"){
+      var s=data.signal||{},lvl=[{p:s.entry,name:"ENTRY SIM"},{p:s.originalSL,name:"SL SIM"},{p:s.tp1,name:"TP1 SIM"},{p:s.exitPrice,name:"EXIT SIM"}];
+      if(window.GFOHLC?.render(el,rows,lvl)){
+        $("v8EvidenceCaption").textContent="First-party broker candlestick SVG reconstruction. Source: current Vantage OHLC; NO forward publication or broker fill proof.";
+      }else el.textContent="Broker evidence candles exist but chart fallback failed.";
+      return;
+    }
     var chart=LightweightCharts.createChart(el,{layout:{background:{color:"#07131c"},textColor:"#aab9c3"},grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true,secondsVisible:false},height:360});
     var candles=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",wickUpColor:"#31d6a4",wickDownColor:"#ff6079",borderVisible:false});
     candles.setData(rows.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
