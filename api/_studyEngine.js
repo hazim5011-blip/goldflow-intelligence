@@ -57,7 +57,7 @@ export function evaluateStudy({symbol="XAUUSD247",tf="M15",bars=[],h1=[],h4=[],q
  if(!quoteGood||!marketFresh)return result("MARKET_OFFLINE",{...base,reason:!quoteGood?"BROKER_TICK_MISSING_OR_STALE":"LATEST_CLOSED_CANDLE_STALE"});
  if(mode==="news"&&!goldSymbol(symbol))return result("DATA_UNVERIFIED",{...base,reason:"GOLD_NEWS_STUDY_ONLY"});
  const macroDir=goldSymbol(symbol)?macroDirection(macro):0;
- if(["ai","news"].includes(mode)&&goldSymbol(symbol)&&macroDir===null)return result("DATA_UNVERIFIED",{...base,reason:"OFFICIAL_MACRO_INCOMPLETE_OR_STALE"});
+ if(goldSymbol(symbol)&&macroDir===null)return result("DATA_UNVERIFIED",{...base,reason:"OFFICIAL_MACRO_INCOMPLETE_OR_STALE"});
  const h1Trend=trend(a1),h4Trend=trend(a4);
  const context={h1Trend,h4Trend,macroDir,technicalSource:"VANTAGE_CLOSED_CANDLES",fundamentalSource:macro?.provider||"UNAVAILABLE"};
  // Search last five closed trigger bars; publish only recent confirmations, never invent one from price alone.
