@@ -172,6 +172,32 @@ export function feedDefinitions(){
   {key:"AL_JAZEERA",url:"https://www.aljazeera.com/xml/rss/all.xml",domains:["www.aljazeera.com","aljazeera.com"],publisher:"Al Jazeera English",google:false}
  ];
 }
+// Pre-open research is source-backed SCENARIO classification, not model
+// probability, a confirmed direction or a proxy for the closed Gold price.
+export function preOpeningNewsRisk(items=[],now=Date.now()){
+ const recent=items.filter(x=>{
+  const t=Date.parse(x.publishedAtUTC||(x.publishedOn+"T12:00:00Z"));
+  return Number.isFinite(t)&&now-t>=0&&now-t<=72*HOURS;
+ });
+ const title=x=>(String(x.titleEN||x.title||"")+" "+String(x.reportedEN||"")).toLowerCase();
+ const isEasing=x=>/ceasefire (?:agreed|signed|holds|deal)|shipping resum|hormuz reopen|attacks? (?:stop|end)|de.escalat|tensions? eas/.test(title(x));
+ const escalation=recent.find(x=>x.category==="GEOPOLITICS"&&x.impact==="HIGH"&&!isEasing(x)&&
+  /attack|strik|projectile|hormuz|missil|drone|blockade|tanker/.test(title(x)));
+ const easing=recent.find(x=>x.category==="GEOPOLITICS"&&isEasing(x));
+ const energyCounter=recent.find(x=>x.category==="ENERGY_SUPPLY"&&/reserv|releas|add supplies|export recover/.test(title(x)));
+ const energy=recent.find(x=>x.category==="ENERGY_SUPPLY");
+ let status="NEWS_DIRECTION_UNCONFIRMED",labelMS="TIADA ARAH NEWS YANG DISAHKAN",labelEN="NEWS DIRECTION UNCONFIRMED";
+ if(escalation&&easing){status="MIXED_GEOPOLITICAL_WHIPSAW_RISK";labelMS="RISIKO GAP DUA HALA • BERITA BERCANGGAH";labelEN="TWO-SIDED GAP RISK • CONFLICTING HEADLINES"}
+ else if(escalation){status="SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED";labelMS="POTENSI GAP NAIK SAFE-HAVEN • BELUM CONFIRM";labelEN="SAFE-HAVEN UPSIDE GAP RISK • NOT CONFIRMED"}
+ else if(easing){status="SAFE_HAVEN_PREMIUM_EASING_SCENARIO";labelMS="PREMIUM SAFE-HAVEN MUNGKIN BERKURANG";labelEN="SAFE-HAVEN PREMIUM COULD EASE"}
+ else if(energy){status="TWO_WAY_ENERGY_RISK";labelMS="RISIKO MINYAK DUA HALA TERHADAP GOLD";labelEN="TWO-WAY OIL RISK TO GOLD"}
+ return {status,labelMS,labelEN,driver:escalation?{title:escalation.title,publisher:escalation.publisher,sourceUrl:escalation.sourceUrl}:
+   easing?{title:easing.title,publisher:easing.publisher,sourceUrl:easing.sourceUrl}:energy?{title:energy.title,publisher:energy.publisher,sourceUrl:energy.sourceUrl}:null,
+  counterforce:energyCounter?{title:energyCounter.title,publisher:energyCounter.publisher,sourceUrl:energyCounter.sourceUrl}:null,
+  newsAgeWindowHours:72,probability:null,validatedGoldMove:false,requiresFreshQuote:true,requiresClosedM15:true,
+  marketResearchOnly:true,automaticEntry:false,
+  limitation:"Source-attributed pre-open risk scenario only. A geopolitical headline is not a confirmed gap or price direction; USD, yields, energy and first CLOSED broker candles can contradict it."};
+}
 export async function collectWorldNews(fetcher=fetch,now=Date.now()){
  const outcomes=await Promise.all(feedDefinitions().map(f=>grab(f,fetcher,now)));
  const seenIds=new Set(),seenTitles=new Set(),items=[];
@@ -190,7 +216,7 @@ export async function collectWorldNews(fetcher=fetch,now=Date.now()){
   sourceChecks:outcomes.map(o=>({feed:o.key,status:o.ok?"FETCHED":"UNAVAILABLE",headlineCount:o.items.length,
    errorCode:o.ok?null:o.errorCode})),
   fetchedLiveHeadlines:liveItems.length,curatedCandidates:makeEditorial(now).length,
-  pollAfterSeconds:300,items:items.slice(0,45),
+  pollAfterSeconds:300,openingRisk:preOpeningNewsRisk(items,now),items:items.slice(0,45),
   openingWatch:["Tentukan sama ada XAUUSD247 benar-benar ONLINE; terminal MT5 LIVE tidak semestinya pasaran Gold dibuka.",
    "Bandingkan pembukaan Gold dan spread dengan penutupan terakhir; jangan reka fresh M15 semasa hujung minggu.",
    "Semak Brent/WTI, DXY, US2Y, US10Y dan real yields pada timestamp masing-masing.",
