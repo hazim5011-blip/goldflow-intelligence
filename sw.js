@@ -1,5 +1,5 @@
-const CACHE="goldflow-v8-8.1.1-gf-study-cloudflare";
-const SHELL=["/","/index.html","/style.css","/app.js","/v8.js","/study-ui.js","/locales/en.json","/locales/ms.json","/manifest.webmanifest"];
+const CACHE="goldflow-v8-8.1.2-market-evidence-fallback";
+const SHELL=["/","/index.html","/style.css","/app.js","/v8.js","/study-ui.js","/ohlc-fallback.js","/locales/en.json","/locales/ms.json","/manifest.webmanifest"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",event=>{
