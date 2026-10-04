@@ -91,3 +91,5 @@
 .gfOpeningNote{color:#f5b87e;font-weight:800;font-size:11px;margin:12px 0 5px}
 .gfBlogJournal .gfBlogLiveGrid .gfWorldStory p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 @media(max-width:850px){.gfWorldGrid,.gfBlogLiveGrid{grid-template-columns:minmax(0,1fr)}.gfWorldSection,.gfBlogJournal{padding:8px}.gfWorldTop h3{font-size:14px}}
+
+.gfEditorialBody{white-space:pre-line}.gfBlogSources{font-size:11px;color:#a9c9d6;line-height:1.8;margin-top:10px}.gfBlogSources b{color:#f2c75b}.gfBlogSources a{color:#91d1ff;text-decoration:underline;text-underline-offset:3px}
