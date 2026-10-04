@@ -110,7 +110,7 @@ function mechanismEN(cat){
 export function makeEditorial(now=Date.now()){
  return CURATED_WORLD_NEWS.filter(s=>{
   const t=Date.parse(s.publishedOn+"T12:00:00Z");
-  return Number.isFinite(t)&&now-t<=120*HOURS&&t<=now+24*HOURS;
+  return Number.isFinite(t)&&now-t<=120*HOURS&&t<=now; // 12:00Z internal date-only sorting, not publication timestamp
  }).map(s=>({...s,sourceMode:"CURATED_SOURCE_ATTRIBUTED",publishedAtUTC:null,
    publicationDatePrecision:"DAY",dateLabel:s.publishedOn,headlineOnly:false,
    ...mechanism(s.category),...mechanismEN(s.category),goldStudyOnly:true,priceReactionVerified:false}));
