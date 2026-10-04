@@ -32,7 +32,8 @@ test("forming candle never confirms; normalized bars include only closed trigger
  alter.bars.at(-1).c=50000;alter.bars.at(-1).h=50001;
  const second=evaluateStudy({...alter,quote:tick(4200)});
  assert.equal(first.confirmation?.signalCandleTime,second.confirmation?.signalCandleTime);
- assert.equal(first.status,second.status);
+ assert.deepEqual(first.confirmation,second.confirmation,"Forming OHLC cannot repaint the closed confirmation");
+ assert.equal(second.canEnter,false,"Forming wick can only prevent unsafe entry, never create signal");
 });
 test("WAIT -> SELL CONFIRMED -> SELL ENTRY READY only inside verified retest and with fresh BID",()=>{
  const f=fixture(),d=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
@@ -127,4 +128,26 @@ test("same OHLC candle touching both stop and TP fails closed as AMBIGUOUS_PATH"
  const when=now+900;
  const d=evaluateStudy({...next,nowSec:when,quote:{bid:start,ask:start+.04,tickTime:when+offset,observedAt:when}});
  assert.equal(d.status,"AMBIGUOUS_PATH");assert.equal(d.canEnter,false);
+});
+
+test("an observed forming-candle wick touching old SL never reactivates READY on retracement",()=>{
+ const f=fixture(),first=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
+ assert.equal(first.status,"SELL_CONFIRMED");
+ const z=structuredClone(f),b=z.bars.at(-1);
+ b.h=first.confirmation.invalidation+1;b.l=Math.min(b.l,first.confirmation.entryLow-.1);
+ b.o=first.confirmation.entryHigh;b.c=first.confirmation.entryHigh;
+ const after=evaluateStudy({...z,quote:tick((first.confirmation.entryLow+first.confirmation.entryHigh)/2)});
+ assert.equal(after.status,"SELL_INVALID");
+ assert.equal(after.invalidationBasis,"FORMING_BAR_EXTREME");
+ assert.equal(after.canEnter,false);
+ assert.deepEqual(after.confirmation,first.confirmation);
+});
+test("an observed forming-candle wick reaching TP1 retires previous entry even before candle close",()=>{
+ const f=fixture(),first=evaluateStudy({...f,quote:tick(f.bars.at(-2).c)});
+ const z=structuredClone(f),b=z.bars.at(-1),mid=(first.confirmation.entryLow+first.confirmation.entryHigh)/2;
+ b.o=mid;b.c=mid;b.h=Math.max(b.h,first.confirmation.entryHigh+.05);
+ b.l=first.confirmation.tp1-.1;
+ const after=evaluateStudy({...z,quote:tick(mid)});
+ assert.equal(after.status,"COMPLETED_STUDY");
+ assert.equal(after.canEnter,false);
 });
