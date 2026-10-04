@@ -4,10 +4,25 @@
  const $=id=>document.getElementById(id);
  const isGF=()=>/^gf-(ai|news|study)$/.test(window.selectedIndicator||$("indicatorSelect")?.value||"");
  const mode=()=>({ "gf-ai":"ai","gf-news":"news","gf-study":"study"})[window.selectedIndicator||$("indicatorSelect")?.value]||"study";
- const safe=v=>v===undefined||v===null||!Number.isFinite(Number(v))?"—":Number(v).toLocaleString("en-US",{maximumFractionDigits:5});
- const state={busy:false,last:null,seq:0};
+ const safe=v=>v===undefined||v===null||!Number.isFinite(Number(v))?"—":Number(v).toLocaleString("en-US",{maximumFractionDigits:/^(BTC|ETH|XAU|GOLD)/i.test(state.last?.symbol||"")?2:5});
+ const state={busy:false,last:null,seq:0,context:null};
  function put(id,value){if($(id))$(id).textContent=String(value??"—")}
  let studyChart=null;
+ // Never retain a previous mode's BUY/SELL marker or entry plan while selecting
+ // a different mode/symbol/TF. No cached UI result can act as LIVE evidence.
+ function invalidate(){
+  state.last=null;state.context=null;
+  put("gfStudyState","REFRESHING");if($("gfStudyState"))$("gfStudyState").className="y";
+  put("gfStudyReason","Waiting for a new verified response for this symbol / timeframe / study mode.");
+  put("gfEntryDecision","NO ENTRY • REFRESHING");
+  put("gfEntryHint","Old mode's confirmation is cleared. Never act on a previous selection.");
+  put("gfOppositeDirection","NO CURRENT VERIFIED DIRECTION");
+  put("gfConfirmTime","—");put("gfStudyFresh","—");
+  for(const id of ["gfEntryRange","gfInvalidate","gfTP1","gfTP2","gfTP3","gfStudyTechnical","gfStudyMacro"])put(id,"—");
+  if(studyChart){studyChart.remove();studyChart=null}
+  if($("gfStudyChart"))$("gfStudyChart").textContent="Waiting for broker data for the newly selected study.";
+ }
+
  function drawStudyChart(d){
   const node=$("gfStudyChart"),LW=window.LightweightCharts;
   if(!node||!$("gfStudyPage")?.classList.contains("on"))return;
@@ -45,6 +60,16 @@
  function render(d){
   state.last=d;
   const st=String(d?.status||"DATA_UNVERIFIED"),p=d?.confirmation||null;
+  const m=d?.mode||mode();
+  const technicalMode=m==="study",gold=/^(XAU|GOLD)/i.test(String(d?.symbol||""));
+  put("gfStudyModeTitle",technicalMode?"GF-Market Study Pro • Technical Entry Lifecycle":
+      m==="ai"?"GF-AI Live Analyst • Strict MTF Confluence":"GF-News Impact Pro • Gold Context Study");
+  put("gfStudyModePurpose",technicalMode?
+    "TECHNICAL ONLY: closed-candle breakout/rejection; H1/H4 may be neutral but cannot oppose. Retest band, bid/ask validation, SL/TP and invalidation. GOLD MACRO NOT APPLIED.":
+    m==="ai"?(gold?"STRICT AI RULES: BOTH H1 and H4 must align with trigger; verified official Gold macro must not oppose. Not ML-trained or win probability.":
+    "STRICT AI RULES: BOTH H1 and H4 must align. No verified asset-specific fundamental feed for this symbol; TECHNICAL-ONLY confluence, not Gold macro or trained ML."):
+    "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
+
   put("gfStudyState",st.replaceAll("_"," "));
   $("gfStudyState").className=colors[st]||"y";
   put("gfStudyReason",d?.reason||"No verified study state.");
@@ -82,7 +107,11 @@
   ].filter(Boolean).join("\n"));
   const macro=d?.news,events=macro?.cards||[],find=id=>events.find(x=>x.id===id);
   const ids=["CPI","FEDUPPER","USDBROAD","US2Y","US10Y","REAL10Y","NETLIQ"];
-  put("gfStudyMacro",macro?[
+  put("gfStudyMacro",technicalMode?
+    "GF-MARKET STUDY: fundamental data deliberately NOT used as entry gate. This is a technical execution/lifecycle study. View Macro Regime separately.":
+    !gold&&m==="ai"?
+    "No verified asset-specific fundamental, derivatives or on-chain source is connected for "+String(d?.symbol||"this symbol")+". AI is stricter H1/H4 + price-action CONFLUENCE ONLY. Gold macro is NOT applied.":
+    macro?[
     "Derived gold macro context: "+(macro.gold?.bias||"N/A")+" • Score "+safe(macro.gold?.score)+"/100 (NOT a directional guarantee)",
     "Official/derived coverage: "+safe(macro.quality?.available)+"/"+safe(macro.quality?.total)+"; source errors "+(macro.quality?.errors?.length||0),
     ...ids.map(id=>{const x=find(id);return x?id+": "+(x.display||"N/A")+" • Period "+(x.date||"N/A")+" • "+(x.status||""):""}),
@@ -94,10 +123,13 @@
  }
  async function load(){
   if(!isGF())return;
+  const symbol=window.selectedSymbol||$("symbolSelect")?.value,tf=window.selectedTF||$("tfSelect")?.value||"M15",m=mode();
+  const context=[symbol||"",tf,m].join("|");
+  if(state.context!==context){invalidate();state.context=context}
   if(state.busy){state.seq++;return}
-  const seq=++state.seq,symbol=window.selectedSymbol||$("symbolSelect")?.value,tf=window.selectedTF||$("tfSelect")?.value||"M15",m=mode();
-  if(!symbol)return;
-  state.busy=true;put("gfStudyFresh","Refreshing broker and fundamental observations...");
+  const seq=++state.seq;
+  if(!symbol){invalidate();put("gfStudyReason","Select a verified Vantage symbol first.");return}
+  state.busy=true;put("gfStudyFresh","Refreshing fresh Vantage broker observations...");
   try{
    const r=await fetch("/api/study?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&mode="+m,{cache:"no-store"});
    const d=await r.json();if(!r.ok)throw Error(d?.error||"HTTP "+r.status);
@@ -150,7 +182,7 @@
   if(!document.hidden&&isGF()&&$("gfStudyPage")?.classList.contains("on"))load();
  });
 
- window.GFStudy={load,getLast:()=>state.last};
+ window.GFStudy={load,invalidate,getLast:()=>state.last};
  if($("gfStudyRefresh"))$("gfStudyRefresh").onclick=load;
  // API returns only positive exact-symbol fresh ticks. Unsampled symbols never count as ONLINE.
  const market={last:null,at:0,attempt:0,promise:null};
