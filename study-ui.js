@@ -7,6 +7,40 @@
  const safe=v=>v===undefined||v===null||!Number.isFinite(Number(v))?"—":Number(v).toLocaleString("en-US",{maximumFractionDigits:5});
  const state={busy:false,last:null,seq:0};
  function put(id,value){if($(id))$(id).textContent=String(value??"—")}
+ let studyChart=null;
+ function drawStudyChart(d){
+  const node=$("gfStudyChart"),LW=window.LightweightCharts;
+  if(!node||!$("gfStudyPage")?.classList.contains("on"))return;
+  if(studyChart){studyChart.remove();studyChart=null}node.textContent="";
+  if(!LW||!Array.isArray(d?.chartBars)||d.chartBars.length<25){
+    node.textContent="Broker chart unavailable; never substitute synthetic candles.";
+    put("gfStudyChartNote","Chart not ready or broker data unavailable. No inferred price line.");
+    return;
+  }
+  try{
+   const rows=d.chartBars.filter(b=>Number.isFinite(Number(b.t))&&[b.o,b.h,b.l,b.c].every(x=>Number.isFinite(Number(x))))
+    .map(b=>({time:Number(b.t),open:Number(b.o),high:Number(b.h),low:Number(b.l),close:Number(b.c)})).sort((a,b)=>a.time-b.time);
+   if(rows.length<25)throw Error("Insufficient valid broker chart bars");
+   studyChart=LW.createChart(node,{width:Math.max(300,node.clientWidth),height:360,
+    layout:{background:{color:"#07131c"},textColor:"#aab9c3"},grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},
+    rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true,secondsVisible:false}});
+   const candle=studyChart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
+   candle.setData(rows);
+   const p=d.confirmation;if(p){
+    const green=p.direction>0,col=green?"#31d6a4":"#ff6079";
+    const markerTime=Number(p.signalCandleTime)-Number(d.brokerUtcOffsetSeconds);
+    if(rows.some(b=>b.time===markerTime)&&candle.setMarkers)candle.setMarkers([{time:markerTime,
+      position:green?"belowBar":"aboveBar",color:col,shape:green?"arrowUp":"arrowDown",text:(green?"BUY":"SELL")+" CLOSED CONFIRMED"}]);
+    for(const [price,name,color,lineStyle] of [[p.entryLow,"ENTRY LOW",col,2],[p.entryHigh,"ENTRY HIGH",col,2],
+     [p.invalidation,"INVALIDATION","#f2c75b",0],[p.tp1,"TP1","#71c3fa",2],[p.tp2,"TP2","#71c3fa",2],[p.tp3,"TP3","#71c3fa",2]]){
+      if(Number.isFinite(Number(price)))candle.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle,axisLabelVisible:true,title:name});
+    }
+   }
+   studyChart.timeScale().fitContent();
+   put("gfStudyChartNote","Vantage MT5 • chart times normalized from broker UTC+3 to UTC. Current forming bar may be drawn for context; the CONFIRMATION marker only uses a CLOSED candle. This is not an executed-trade record.");
+  }catch(e){if(studyChart){studyChart.remove();studyChart=null}node.textContent="Broker chart rendering unavailable.";put("gfStudyChartNote","Data visualization unavailable; trade-ready status does not depend on chart rendering.")}
+ }
+ window.addEventListener("resize",function(){if(studyChart&&$("gfStudyChart"))studyChart.applyOptions({width:Math.max(300,$("gfStudyChart").clientWidth)})});
  const colors={BUY_ENTRY_READY:"g",SELL_ENTRY_READY:"r",BUY_CONFIRMED:"g",SELL_CONFIRMED:"r",BUY_INVALID:"r",SELL_INVALID:"r",WAIT_CONFIRMATION:"y",WAIT_CONFLICT:"y",MISSED_ENTRY:"y",EXPIRED:"y",DATA_UNVERIFIED:"y",MARKET_OFFLINE:"y"};
  function render(d){
   state.last=d;
@@ -51,6 +85,7 @@
   ].filter(Boolean).join("\n"):"Macro context not verified / unavailable. AI & News modes must fail closed when required source data is incomplete.");
   $("gfStudyNote").textContent=d?.limitation||"CLOSED-CANDLE RESEARCH • A BUY/SELL CONFIRMED label does NOT mean an executed position.";
   $("gfStudyNote").className="notice "+(d?.ok?"info":"bad");
+  drawStudyChart(d);
  }
  async function load(){
   if(!isGF())return;
