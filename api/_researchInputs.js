@@ -1,7 +1,16 @@
 // Shared verified INPUT primitives only. AI and Market Study have SEPARATE decision,
 // entry, risk, target and invalidation engines. Pure functions; no orders or ML claims.
-import {normalizedClosedBars,TF_SECONDS} from "./_studyEngine.js";
-export {TF_SECONDS};
+export const TF_SECONDS=Object.freeze({M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400});
+// Independent parser: shares Vantage candle input CONTRACT, NOT the legacy
+// trigger/entry/SL/TP calculation. The currently forming bar is excluded.
+export function normalizedClosedBars(raw=[],tf="M15",nowSec=Math.floor(Date.now()/1000),offset=10800){
+ const period=TF_SECONDS[tf];if(!period||!Array.isArray(raw))return [];
+ const series=raw.map(b=>({t:val(b?.t),o:val(b?.o),h:val(b?.h),l:val(b?.l),c:val(b?.c),v:val(b?.v)}))
+  .filter(b=>[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&b.h>=Math.max(b.o,b.c,b.l)&&b.l<=Math.min(b.o,b.c))
+  .sort((a,b)=>a.t-b.t);
+ const clean=series.filter((x,i)=>!i||x.t>series[i-1].t);
+ return clean.filter(x=>x.t-offset+period<=nowSec-1);
+}
 export const val=x=>x!==undefined&&x!==null&&x!==""&&Number.isFinite(Number(x))?Number(x):null;
 export const rnd=(x,n=2)=>val(x)===null?null:Number(Number(x).toFixed(n));
 export const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
