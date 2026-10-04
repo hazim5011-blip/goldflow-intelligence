@@ -16,7 +16,8 @@
       "bodyMS": "1. Dapatkan status XAUUSD247 berdasarkan tradeMode + BID/ASK segar, bukan sekadar terminal connected.\n2. Catat gap pembukaan terhadap penutupan terakhir dan perhatikan spread.\n3. Periksa sama ada amaran UKMTO, dasar minyak dan berita Fed benar-benar baharu.\n4. Bandingkan Brent/WTI, DXY, US2Y, US10Y dan real yields dengan timestamp masing-masing.\n5. Tunggu sekurang-kurangnya candle M15 tertutup dan baca struktur H1/H4.\n6. Tunjukkan senario bullish dan bearish serta invalidation; elakkan BUY/SELL automatik daripada headline.",
       "bodyEN": "1. Confirm XAUUSD247 with fresh BID/ASK and tradeMode, not terminal-connected status alone.\n2. Measure the actual opening gap versus the last valid close and watch the spread.\n3. Check that UKMTO, energy and Fed developments are genuinely new.\n4. Compare timestamped Brent/WTI, DXY, US2Y, US10Y and real yields.\n5. Wait for at least one CLOSED M15 candle and review H1/H4 structure.\n6. Show both bullish and bearish scenarios and invalidation. Do not auto-execute from a headline.",
       "qualityNote": "Permanent procedural study, not a dated market-price forecast or broker-trade result.",
-      "sources": []
+      "sources": [],
+      "featuredRank": 4
     },
     {
       "id": "20261004-counterforce-g7",
@@ -37,7 +38,8 @@
           "label": "WSJ • 2 Oct 2026",
           "url": "https://www.wsj.com/business/energy-oil/oil-prices-fall-as-middle-east-crude-exports-recover-but-shipping-risks-remain-84ca187f"
         }
-      ]
+      ],
+      "featuredRank": 3
     },
     {
       "id": "20261004-opec-supply-gold",
@@ -58,7 +60,8 @@
           "label": "Reuters • 4 Oct 2026",
           "url": "https://www.reuters.com/business/energy/opec-agrees-principle-keep-november-oil-output-targets-steady-sources-say-2026-10-04/"
         }
-      ]
+      ],
+      "featuredRank": 2
     },
     {
       "id": "20261004-hormuz-weekend-xau",
@@ -83,7 +86,8 @@
           "label": "UKMTO • incident log",
           "url": "https://www.ukmto.org/"
         }
-      ]
+      ],
+      "featuredRank": 1
     },
     {
       "id": "v8-news-impact-categories",
