@@ -192,6 +192,10 @@ export async function collectWorldNews(fetcher=fetch,now=Date.now()){
    "Bandingkan pembukaan Gold dan spread dengan penutupan terakhir; jangan reka fresh M15 semasa hujung minggu.",
    "Semak Brent/WTI, DXY, US2Y, US10Y dan real yields pada timestamp masing-masing.",
    "Tunggu spread stabil, candle M15 sah dan H1/struktur sebelum mempertimbangkan zon BUY/SELL."],
+  openingWatchEN:["Confirm whether XAUUSD247 is really ONLINE; MT5 terminal LIVE does not mean that the Gold market is trading.",
+   "Check actual Gold opening gap, BID/ASK spread and last valid Friday close; never invent weekend M15 candles.",
+   "Check fresh, timestamped Brent/WTI, DXY, US2Y, US10Y and real yields before selecting direction.",
+   "Wait for normalized spread, a fully CLOSED M15 candle and H1 structure before considering BUY/SELL zones."],
   disclosure:"Publisher headline or source-attributed report, NOT automatic fact-check of article body, release consensus, verified market reaction or broker order. No synthetic prices.",
   fallbackNote:working?"Newest headlines are fetched when this tab is open; some providers may fail.":"External feeds are temporarily unavailable. Dated source-attributed editorial reports remain visible; DO NOT treat them as fresh live headlines."};
 }
