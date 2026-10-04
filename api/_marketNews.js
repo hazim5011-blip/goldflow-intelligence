@@ -131,12 +131,15 @@ export function parseRss(xml,feed,now=Date.now()){
   const normalized=normalizedTitle(title);
   if(normalized.length<24)continue;
   const flags=classifyHeadline(title);
+  // Direct RSS often contains an outlet-written description. Google News RSS
+  // descriptions are link collections, so do NOT infer an article summary there.
+  const publisherExcerpt=feed.google?"":tag(item,"description").slice(0,340);
   out.push({id:"feed-"+fnv(normalized+"|"+publisherId),title,titleEN:title,publisher,sourceUrl:link,
    publishedAtUTC:new Date(published).toISOString(),publishedOn:new Date(published).toISOString().slice(0,10),
    publicationDatePrecision:"RSS_FEED_TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
    dateLabel:new Date(published).toISOString(),
-   reported:"Tajuk feed penerbit: "+title+". Buka artikel sumber untuk butiran; feed ini tidak menyediakan semakan kandungan penuh oleh GoldFlow.",
-   reportedEN:"Publisher feed headline: "+title+". Open the original article for details; GoldFlow has not independently read or verified the full report.",
+   reported:publisherExcerpt?"Ringkasan pada RSS penerbit "+publisher+": "+publisherExcerpt+" (ringkasan feed, bukan pengesahan bebas).":"Tajuk feed penerbit: "+title+". Buka artikel sumber untuk butiran; kandungan penuh belum disahkan oleh GoldFlow.",
+   reportedEN:publisherExcerpt?"Publisher "+publisher+" RSS summary: "+publisherExcerpt+" (publisher-provided, not independently checked).":"Publisher feed headline: "+title+". Open the original article for details; GoldFlow has not independently read the full report.",
    verification:"PUBLISHER_HEADLINE_VIA_"+(feed.google?"GOOGLE_NEWS":"DIRECT_RSS"),
    sourceMode:feed.google?"AGGREGATOR_RSS_HEADLINE":"PUBLISHER_DIRECT_RSS_HEADLINE",
    headlineOnly:true,limitation:"Tarikh ialah masa pada feed; atribusi, angka dalam headline dan kandungan penuh belum disahkan bebas.",
