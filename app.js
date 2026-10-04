@@ -339,7 +339,8 @@ async function renderTradingView(){
    $("tvBrokerNote").textContent="SOURCE: Vantage MT5 • "+(feed.symbol||symbol)+" • "+tf+
      " • "+bars.length+" candles • direct broker data (not TradingView feed).";
    if(typeof LightweightCharts==="undefined"){
-    chartNode.innerHTML='<p class="sub">Chart renderer blocked. Latest Vantage close: '+bars.at(-1).close+'. Open TradingView using the link above.</p>';
+    if(window.GFOHLC?.render(chartNode,bars))$("tvBrokerNote").textContent+=" • First-party SVG OHLC fallback (external chart library blocked).";
+    else chartNode.textContent="Broker candles are available, but local chart rendering failed. Latest close: "+bars.at(-1).close;
     return;
    }
    tvNativeChart=LightweightCharts.createChart(chartNode,{height:350,width:Math.max(280,chartNode.clientWidth),
