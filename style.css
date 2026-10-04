@@ -93,3 +93,11 @@
 @media(max-width:850px){.gfWorldGrid,.gfBlogLiveGrid{grid-template-columns:minmax(0,1fr)}.gfWorldSection,.gfBlogJournal{padding:8px}.gfWorldTop h3{font-size:14px}}
 
 .gfEditorialBody{white-space:pre-line}.gfBlogSources{font-size:11px;color:#a9c9d6;line-height:1.8;margin-top:10px}.gfBlogSources b{color:#f2c75b}.gfBlogSources a{color:#91d1ff;text-decoration:underline;text-underline-offset:3px}
+
+/* Potential pre-open bias never replaces a closed-broker-candle trading signal. */
+.gfWorldBias{background:#0a1d28;border:1px solid #42657a;border-left:4px solid #74a9c4;border-radius:9px;padding:11px 13px;margin:10px 0 13px}
+.gfWorldBias.watch{border-left-color:#31d6a4}.gfWorldBias.conflict{border-left-color:#f2c75b}
+.gfWorldBias small{display:block;font-size:10px;font-weight:900;letter-spacing:.04em;color:#92b8cd}
+.gfWorldBias h3{font-size:18px;color:#f3d284;line-height:1.4;margin:6px 0}
+.gfWorldBias.watch h3{color:#63e3be}.gfWorldBias p{font-size:12px;line-height:1.65;color:#d7eaf0;margin:5px 0}
+.gfWorldBias .gfWorldMacroContrast{color:#e4c783;font-size:11px}
