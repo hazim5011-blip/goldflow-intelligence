@@ -50,13 +50,28 @@
     const markerTime=Number(p.signalCandleTime)-Number(d.brokerUtcOffsetSeconds);
     if(rows.some(b=>b.time===markerTime)&&candle.setMarkers)candle.setMarkers([{time:markerTime,
       position:green?"belowBar":"aboveBar",color:col,shape:green?"arrowUp":"arrowDown",text:(green?"BUY":"SELL")+" CLOSED CONFIRMED"}]);
-    for(const [price,name,color,lineStyle] of [[p.entryLow,"ENTRY LOW",col,2],[p.entryHigh,"ENTRY HIGH",col,2],
-     [p.invalidation,"INVALIDATION","#f2c75b",0],[p.tp1,"TP1","#71c3fa",2],[p.tp2,"TP2","#71c3fa",2],[p.tp3,"TP3","#71c3fa",2]]){
-      if(Number.isFinite(Number(price)))candle.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle,axisLabelVisible:true,title:name});
+    const prefix=d.mode==="ai"?"AI FIB":"PIVOT RETEST";
+    for(const [price,name,color,lineStyle] of [[p.entryLow,prefix+" LOW",col,2],[p.entryHigh,prefix+" HIGH",col,2],
+     [p.invalidation,"STRUCTURE INVALID","#f2c75b",0],[p.tp1,"TP1","#71c3fa",2],[p.tp2,"TP2","#71c3fa",2],[p.tp3,"TP3","#71c3fa",2]]){
+      if(price!==null&&price!==undefined&&Number.isFinite(Number(price)))candle.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle,axisLabelVisible:true,title:name});
+    }
+   }else if(d.mode==="study"&&d.structureLevels){
+    // Market Study must display its proposed levels WHILE WAITING, explicitly
+    // labelled as RESEARCH and never represented as an executed position.
+    const s=d.structureLevels;
+    for(const [price,name,color] of [[s.support,"SUPPORT","#31d6a4"],[s.resistance,"RESISTANCE","#ff6079"],
+     [s.reactionZoneLow,"REACTION ZONE LOW","#e2c165"],[s.reactionZoneHigh,"REACTION ZONE HIGH","#e2c165"],
+     [s.breakoutLevel,"BREAK/RETEST TRIGGER","#71c3fa"],[s.invalidationLevel,"CLOSE INVALIDATES","#f2c75b"],
+     ...(d.projectedTargets||[]).map((x,i)=>[x,"PROVISIONAL TARGET "+(i+1),"#71c3fa"])]){
+     if(price!==null&&price!==undefined&&Number.isFinite(Number(price)))
+      candle.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:name});
     }
    }
    studyChart.timeScale().fitContent();
-   put("gfStudyChartNote","Vantage MT5 • chart times normalized from broker UTC+3 to UTC. Current forming bar may be drawn for context; the CONFIRMATION marker only uses a CLOSED candle. This is not an executed-trade record.");
+   put("gfStudyChartNote",d.mode==="study"?
+    "GF-MARKET STUDY • independently derived support/resistance, dynamic pivot/retest reaction zone, breakout trigger, invalidation and provisional liquidity targets. PENDING lines are NOT entry-ready. Closed-candle confirmation only.":
+    d.mode==="ai"?"GF-AI • independent 38.2%-61.8% impulse retracement, structural invalidation and scenario targets; Macro Regime is historical observation context, not guaranteed direction.":
+    "Vantage MT5 • broker clock normalized to UTC. Confirmation uses CLOSED candles only. Never an executed trade.");
   }catch(e){if(studyChart){studyChart.remove();studyChart=null}node.textContent="Broker chart rendering unavailable.";put("gfStudyChartNote","Data visualization unavailable; trade-ready status does not depend on chart rendering.")}
  }
  window.addEventListener("resize",function(){if(studyChart&&$("gfStudyChart"))studyChart.applyOptions({width:Math.max(300,$("gfStudyChart").clientWidth)})});
@@ -145,7 +160,7 @@
   put("gfTP3",p?safe(p.tp3):technicalMode&&d.projectedTargets?.length>2?safe(d.projectedTargets[2])+" (PROJECTION)":"—");
   const h1=v=>v===1?"BULLISH":v===-1?"BEARISH":"NEUTRAL / N/A";
   put("gfStudyTechnical",[
-    "Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
+    "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
     p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Auditable AI alignment score +p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
     p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):"",
