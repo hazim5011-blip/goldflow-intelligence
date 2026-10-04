@@ -18,7 +18,10 @@ function indicatorName(v){
     "pattern132":"Pattern Tutor 1.32",
     "snd107":"SND/SNR 1.07",
     "owl101":"OWL 1.01",
-    "fund104":"Fund Structure A 1.04 • WEB STUDY"
+    "fund104":"Fund Structure A 1.04 • WEB STUDY",
+    "gf-ai":"GF-AI ANALYST • RULE-BASED",
+    "gf-news":"GF-NEWS IMPACT PRO",
+    "gf-study":"GF-MARKET STUDY PRO"
   })[v]||String(v||"ENGINE").toUpperCase();
 }
 
@@ -34,7 +37,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
 $("tfSelect").value=selectedTF;
 $("indicatorSelect").value=selectedIndicator;
 $("tfSelect").onchange=function(){selectedTF=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
-$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
+$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_indicator",selectedIndicator);if(/^gf-/.test(selectedIndicator))document.querySelector('[data-page="gfStudyPage"]')?.click();else if($("gfStudyPage").classList.contains("on"))document.querySelector('[data-page="dashboard"]')?.click();loadAnalysis()};
 $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
@@ -49,19 +52,26 @@ function categoryRank(x){return {METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,ST
 function applySymbolFilter(){
   var q=$("symbolSearch").value.trim().toUpperCase(),cat=$("category").value;
   filteredSymbols=allSymbols.filter(function(s){
-    var okCat=cat==="ALL"||s.category===cat;
+    var special=cat==="MARKET_ONLINE"||cat==="MARKET_24H";
+    var okCat=special?!!(window.GFMarket&&window.GFMarket.has(s.name,cat)):cat==="ALL"||s.category===cat;
     var hay=(s.name+" "+(s.description||"")+" "+(s.path||"")).toUpperCase();
     return okCat&&(!q||hay.indexOf(q)>=0);
   });
   renderSymbolSelect();renderSymbolCards();
+  if((cat==="MARKET_ONLINE"||cat==="MARKET_24H")&&window.GFMarket){
+    if(window.GFMarket.needsUpdate())window.GFMarket.ensure().then(function(){if($("category").value===cat)applySymbolFilter()});
+    if($("marketFilterNotice"))$("marketFilterNotice").textContent=window.GFMarket.note(cat);
+  }else if($("marketFilterNotice"))$("marketFilterNotice").textContent="Market categories are broker symbol classes; choose MARKET ONLINE for fresh MT5 verification.";
 }
 function renderCategories(){
   var cats=Array.from(new Set(allSymbols.map(function(x){return x.category||"OTHER"}))).sort(function(a,b){return categoryRank(a)-categoryRank(b)});
-  $("category").innerHTML='<option value="ALL">ALL</option>'+cats.map(function(c){return '<option value="'+c+'">'+c+'</option>'}).join("");
+  var prev=$("category").value;
+  $("category").innerHTML='<option value="ALL">ALL MARKET</option><option value="MARKET_ONLINE">● MARKET ONLINE • Verified now</option><option value="MARKET_24H">● MARKET 24H • Weekend verified</option>'+cats.map(function(c){return '<option value="'+c+'">'+c+'</option>'}).join("");
+  if(Array.from($("category").options).some(function(o){return o.value===prev}))$("category").value=prev;
 }
 function renderSymbolSelect(){
   var rows=filteredSymbols.slice(0,2000);
-  if(selectedSymbol&&!rows.some(function(x){return x.name===selectedSymbol})){
+  if(selectedSymbol&&!["MARKET_ONLINE","MARKET_24H"].includes($("category").value)&&!rows.some(function(x){return x.name===selectedSymbol})){
     var cur=allSymbols.find(function(x){return x.name===selectedSymbol});if(cur)rows.unshift(cur);
   }
   $("symbolSelect").innerHTML=rows.map(function(s){return '<option value="'+s.name.replace(/"/g,"&quot;")+'">'+s.name+' • '+s.category+'</option>'}).join("");
@@ -98,6 +108,7 @@ async function loadSymbols(force){
     if(!j.ok)throw new Error(j.error||"Symbols unavailable");
     allSymbols=(j.symbols||[]).sort(function(a,b){return categoryRank(a.category)-categoryRank(b.category)||a.name.localeCompare(b.name)});
     renderCategories();filteredSymbols=allSymbols.slice();
+    if(["MARKET_ONLINE","MARKET_24H"].includes($("category").value))applySymbolFilter();
     if(!selectedSymbol||!allSymbols.some(function(x){return x.name===selectedSymbol})){
       var pref=allSymbols.find(function(x){return /XAUUSD247/i.test(x.name)})||allSymbols.find(function(x){return /^XAUUSD/i.test(x.name)})||allSymbols[0];
       selectedSymbol=pref?pref.name:"";if(selectedSymbol)localStorage.setItem("gf_symbol",selectedSymbol);
@@ -113,7 +124,14 @@ function resetDashboard(){
   $("signal").textContent="WAIT";$("reasons").textContent="Waiting for broker analysis…";$("watch").textContent="No active zone nearby.";
 }
 async function loadAnalysis(){
-  if(!selectedSymbol||loading)return;loading=true;
+  if(!selectedSymbol||loading)return;
+  if(/^gf-/.test(selectedIndicator)){
+    lastAnalysis=null;lastLiveTick=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null);
+    chip("engineChip","warn","GF STUDY • RULE-BASED");
+    if(window.GFStudy)window.GFStudy.load();
+    return;
+  }
+  loading=true;
   var sameContext=!!(lastAnalysis?.ready&&lastAnalysis.requested===selectedSymbol&&lastAnalysis.selectedTF===selectedTF&&lastAnalysis.indicatorMode===selectedIndicator);
   if(!sameContext){lastLiveTick=null;lastAnalysis=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null)}
   try{
