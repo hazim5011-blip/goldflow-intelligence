@@ -94,6 +94,25 @@ export function evaluateStudy({symbol="XAUUSD247",tf="M15",bars=[],h1=[],h4=[],q
  const current=d===1?qAsk:qBid;
  const liveInvalid=d*(current-invalidation)<=0;
  const overlay={...base,...context,direction:d,confirmation:plan,elapsedClosedBars:elapsed,entryQuote:current,entryQuoteSide:d===1?"ASK":"BID"};
+ // The currently FORMING candle can NEVER create confirmation, but its broker high/low
+ // is valid negative evidence: if SL/TP was already touched during this bar, do not
+ // resurrect a "READY" entry just because the live BID/ASK later retraced.
+ const currentForming=(Array.isArray(bars)?bars:[]).map(b=>({t:N(b.t),h:N(b.h),l:N(b.l)}))
+  .filter(b=>b.t!==null&&b.h!==null&&b.l!==null&&b.h>=b.l&&
+    b.t>signal.t&&b.t-offsetSeconds<=nowSec&&b.t-offsetSeconds+interval>nowSec-1)
+  .sort((a,b)=>b.t-a.t)[0];
+ const terminalState=bar=>{
+  const stopped=d===1?bar.l<=invalidation:bar.h>=invalidation;
+  const targeted=d===1?bar.h>=plan.tp1:bar.l<=plan.tp1;
+  return {stopped,targeted};
+ };
+ if(currentForming){
+  const {stopped,targeted}=terminalState(currentForming);
+  if(stopped&&targeted)return result("AMBIGUOUS_PATH",{...overlay,reason:"FORMING_BAR_TOUCHED_BOTH_SL_AND_TP_ORDER_UNKNOWN"});
+  if(stopped)return result(d===1?"BUY_INVALID":"SELL_INVALID",{...overlay,
+   reason:"FORMING_BAR_WICK_BREACHED_INVALIDATION",invalidationBasis:"FORMING_BAR_EXTREME"});
+  if(targeted)return result("COMPLETED_STUDY",{...overlay,reason:"TP1_ALREADY_TOUCHED_IN_CURRENT_FORMING_BAR"});
+ }
  // Lifecycle is terminal after an observed SL/TP touch. A stale/revisited zone must
  // NEVER turn ENTRY READY after the path has already completed. When both are
  // touched in one historical OHLC candle, intrabar order is unknown: fail closed.
