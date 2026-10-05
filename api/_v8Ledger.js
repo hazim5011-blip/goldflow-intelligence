@@ -120,6 +120,42 @@ export async function storeOutcome(event){
  return put(outcomePath(event),JSON.stringify(event),{access:"private",allowOverwrite:false,
    contentType:"application/json",cacheControlMaxAge:60});
 }
+function calibrationSeg(s){return String(s||"").replace(/[^A-Za-z0-9._-]/g,"_")}
+export function calibrationSamplePath(published,event){
+ if(!published||!event)throw Error("CALIBRATION_RECORD_REQUIRED");
+ const score=xnum(published.score),scoreKey=String(Math.max(0,Math.min(1000,Math.round((score??-1)*10)))).padStart(4,"0");
+ const dir=Number(published.direction)>0?"B":"S",stamp=String(event.receivedAtUTC||event.exitTimeUTC||"").replace(/[-:.]/g,"").replace(/\.\d+Z$/,"Z");
+ return "goldflow-calibration/v1/"+calibrationSeg(published.symbolResolved)+"/"+calibrationSeg(published.indicatorId)+"/"+calibrationSeg(published.tf)+"/"+
+   stamp+"-"+scoreKey+"-"+dir+"-"+event.outcome+"-"+event.signalId+".json";
+}
+export async function storeCalibrationSample(published,event){
+ if(!forwardConfigured())throw Error("FORWARD_STORAGE_NOT_CONFIGURED");
+ if(xnum(published?.score)==null)throw Error("CALIBRATION_SCORE_REQUIRED");
+ const sample={schema:"goldflow.calibration.v1",signalId:event.signalId,symbolResolved:published.symbolResolved,indicatorId:published.indicatorId,tf:published.tf,
+   direction:published.direction,score:Number(published.score),signalCandleCloseUTC:published.signalCandleCloseUTC,
+   outcome:event.outcome,rMultiple:event.rMultiple,exitTimeUTC:event.exitTimeUTC,recordHash:published.recordHash,eventHash:event.eventHash};
+ const {put}=await import("@vercel/blob");
+ return put(calibrationSamplePath(published,event),JSON.stringify(sample),{access:"private",allowOverwrite:false,
+   contentType:"application/json",cacheControlMaxAge:60});
+}
+export async function listCalibrationSamples(symbol,indicator,tf,limit=500){
+ if(!forwardConfigured())return [];
+ if(!matchSafe.test(String(symbol||""))||!INDICATORS.has(String(indicator||"").toLowerCase())||!TF_SECONDS[String(tf||"").toUpperCase()])throw Error("INVALID_CALIBRATION_SCOPE");
+ const prefix="goldflow-calibration/v1/"+calibrationSeg(symbol)+"/"+calibrationSeg(String(indicator).toLowerCase())+"/"+calibrationSeg(String(tf).toUpperCase())+"/";
+ const {list}=await import("@vercel/blob");let cursor,rows=[],pages=0;
+ do{
+   const r=await list({prefix,cursor,limit:Math.min(1000,Math.max(100,limit))});
+   for(const b of r.blobs||[]){
+     const name=String(b.pathname||"").slice(prefix.length);
+     const m=name.match(/^(\d{8}T\d{6}Z)-(\d{4})-([BS])-([A-Z0-9_]+)-([a-f0-9]{32})\.json$/);
+     if(!m)continue;
+     rows.push({timestampKey:m[1],score:Number(m[2])/10,direction:m[3]==="B"?1:-1,outcome:m[4],signalId:m[5]});
+   }
+   cursor=r.cursor;pages++;
+   if(!r.hasMore||!cursor||rows.length>=limit||pages>=10)break;
+ }while(true);
+ return rows.sort((a,b)=>a.timestampKey.localeCompare(b.timestampKey)).slice(-limit);
+}
 export async function readForwardOutcomePrivate(date,id){
  validateLookup(date,id);
  const event=await readPrivateJson("goldflow-forward/v1/"+date+"/"+id+"/outcome.json");
