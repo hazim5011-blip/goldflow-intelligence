@@ -13,7 +13,7 @@ function zoneSupport(indicator,direction,features){
   if(direction<0&&features?.sweepUp)return {status:"PASS",reason:"Bearish liquidity sweep supports the setup."};
   return {status:"CAUTION",reason:"No directional active zone or confirmed sweep is currently available."};
 }
-export function buildDecisionFunnel({analysis,macro,features,regime,dataHealth}){
+export function buildDecisionFunnel({analysis,macro,features,regime,dataHealth,newsRisk}){
   const sig=analysis?.indicator?.latestSignal||{},direction=sign(n(sig.direction)??0),score=n(sig.score);
   const setup=sign(features?.setupTrend||0),bias=sign(features?.biasTrend||0),gold=isGoldSymbol(analysis?.symbol||analysis?.requested);
   const gates=[];
@@ -51,8 +51,17 @@ export function buildDecisionFunnel({analysis,macro,features,regime,dataHealth})
   const liq=zoneSupport(analysis?.indicator,direction,features);
   gates.push(gate("LIQUIDITY_VALID","Liquidity / zone context",direction?liq.status:"FAIL",direction?liq.reason:"No directional setup.",false,8));
 
-  // Phase 1 deliberately refuses to invent an upcoming-event calendar.
-  gates.push(gate("NEWS_RISK","Upcoming news risk","UNVERIFIED","Upcoming high-impact economic-event calendar is not yet independently verified in Smart Quant Phase 1.",false,0));
+  if(!newsRisk||newsRisk.verification!=="VERIFIED_OFFICIAL_SCHEDULES"){
+    gates.push(gate("NEWS_RISK","Upcoming news risk","UNVERIFIED","Official BLS/BEA/Fed schedule coverage is incomplete. Private releases and unscheduled shocks are not covered.",false,0));
+  }else if(newsRisk.block){
+    const e=newsRisk.nextHighImpact;
+    gates.push(gate("NEWS_RISK","Upcoming news risk","FAIL",(e?.type||"HIGH IMPACT")+" is inside the ±30 minute hard-block window.",true,0));
+  }else if(newsRisk.status==="EVENT_SOON"){
+    const e=newsRisk.nextHighImpact;
+    gates.push(gate("NEWS_RISK","Upcoming news risk","CAUTION",(e?.type||"High-impact event")+" is due in "+Math.max(0,Math.round(newsRisk.minutesToNextHigh||0))+" minutes.",false,0));
+  }else{
+    gates.push(gate("NEWS_RISK","Upcoming news risk","PASS","Official high-impact schedule is verified and outside the hard-block window.",false,0));
+  }
 
   let entryStatus="CAUTION",entryReason="Entry-distance quality unavailable.";
   if(!direction){entryStatus="FAIL";entryReason="No directional setup."}
@@ -91,7 +100,9 @@ export function buildDecisionFunnel({analysis,macro,features,regime,dataHealth})
     calibratedProbability:null,probabilityStatus:"UNVERIFIED_PHASE_1",
     gates,reasons,
     executionReady:false,
-    executionBlock:"Smart Quant Phase 1 is research-only; upcoming-news verification and calibrated probability are required before any EXECUTION_READY state.",
+    executionBlock:(gates.find(g=>g.id==="NEWS_RISK")?.status!=="PASS"
+      ?"Smart Quant remains research-only: news-risk gate is not fully clear and calibrated probability is not yet forward-verified."
+      :"Smart Quant remains research-only: calibrated probability is not yet forward-verified."),
     summary:decision==="RESEARCH_READY"?side+" research setup passed all hard Phase-1 gates.":decision==="WATCH"?side+" setup is incomplete or lower-conviction.":"WAIT until failed or conflicting gates resolve."
   };
 }
