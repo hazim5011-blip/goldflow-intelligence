@@ -45,8 +45,9 @@ export function buildSmartFeatures(analysis){
   const priorHigh=Math.max(...lookback.map(b=>b.h)),priorLow=Math.min(...lookback.map(b=>b.l));
   const range=last.h-last.l,body=Math.abs(last.c-last.o);
   const upperWick=last.h-Math.max(last.o,last.c),lowerWick=Math.min(last.o,last.c)-last.l;
-  const sweepDown=last.l<priorLow&&last.c>priorLow&&lowerWick>Math.max(body,.15*atrNow);
-  const sweepUp=last.h>priorHigh&&last.c<priorHigh&&upperWick>Math.max(body,.15*atrNow);
+  // A sweep must show rejection, not merely make a normal trend continuation high/low.
+  const sweepDown=last.l<priorLow&&last.c>priorLow&&last.c>last.o&&lowerWick>Math.max(body,.15*atrNow);
+  const sweepUp=last.h>priorHigh&&last.c<priorHigh&&last.c<last.o&&upperWick>Math.max(body,.15*atrNow);
   const breakoutUp=last.c>priorHigh&&range>=1.15*atrNow;
   const breakoutDown=last.c<priorLow&&range>=1.15*atrNow;
 
