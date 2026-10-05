@@ -3,6 +3,10 @@ import macroHandler from "./macro.js";
 import {buildSmartFeatures,assessDataHealth,isGoldSymbol} from "./_sqFeatures.js";
 import {classifySmartRegime} from "./_sqRegime.js";
 import {buildDecisionFunnel} from "./_sqDecisionFunnel.js";
+import {buildHistoricalEdge} from "./_sqHistoryEdge.js";
+import {buildDirectionalEdge} from "./_sqFairValue.js";
+import {buildRiskReference} from "./_sqRisk.js";
+import {runMonteCarlo} from "./_sqMonteCarlo.js";
 
 export const SMART_QUANT_BUILD="sq-phase1-2026-10-05";
 
@@ -74,6 +78,10 @@ export default async function handler(req,res){
     const features=buildSmartFeatures(analysis);
     const dataHealth=assessDataHealth(analysis,macro,features);
     const regime=classifySmartRegime(features,analysis);
+    const directionalEdge=buildDirectionalEdge({analysis,features,regime,macro});
+    const historicalEdge=buildHistoricalEdge(analysis);
+    const risk=buildRiskReference(historicalEdge,{hardCapPct:.50,kellyFraction:.25});
+    const monteCarlo=runMonteCarlo(historicalEdge,risk,{paths:2000,trades:100,seedKey:(analysis.symbol||symbol)+"|"+tf+"|"+indicator});
     const decision=buildDecisionFunnel({analysis,macro,features,regime,dataHealth});
 
     return res.status(200).json({
@@ -81,8 +89,8 @@ export default async function handler(req,res){
       capturedAtUTC:new Date().toISOString(),
       requested:{symbol,tf,indicator},
       analysis:slimAnalysis(analysis),
-      features,dataHealth,regime,macro,decision,
-      disclaimer:"Smart Quant Phase 1 is a research decision-support layer. Model confidence is not calibrated win probability and no broker order is placed."
+      features,dataHealth,regime,macro,directionalEdge,historicalEdge,risk,monteCarlo,decision,
+      disclaimer:"Smart Quant is a research decision-support layer. Directional Edge is not a price target, historical evidence is not forward calibration, and no broker order is placed."
     });
   }catch(e){
     res.setHeader("Cache-Control","no-store");
