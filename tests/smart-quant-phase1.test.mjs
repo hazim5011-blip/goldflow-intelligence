@@ -11,6 +11,7 @@ import {parseBlsSchedule,parseBeaSchedule,parseFomcMeetings} from "../api/_sqNew
 import {buildForwardCalibration} from "../api/_sqCalibration.js";
 import {calibrationSamplePath} from "../api/_v8Ledger.js";
 import {buildMtfMatrix,TFS as SMART_TFS} from "../api/_sqMtf.js";
+import {buildResearchTradePlan} from "../api/_sqTradePlan.js";
 
 const bar=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 function trendBars(n=140,dir=1){
@@ -85,7 +86,7 @@ test("Fresh opposing Gold macro bias can block a directional setup",()=>{
 test("Smart Quant UI contains unique critical controls and research-only warnings",()=>{
   const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
   const js=readFileSync(new URL("../smart-quant.js",import.meta.url),"utf8");
-  for(const id of ["smartQuantPage","sqRefresh","sqDecision","sqConfidence","sqProbability","sqFunnel","sqTechnical","sqMacroDrivers"]){
+  for(const id of ["smartQuantPage","sqRefresh","sqDecision","sqConfidence","sqProbability","sqTradePlan","sqFunnel","sqMtfMatrix","sqTechnical","sqMacroDrivers"]){
     assert.equal([...html.matchAll(new RegExp('id="'+id+'"',"g"))].length,1,id);
   }
   assert.ok(html.includes('src="/smart-quant.js"'));
@@ -227,4 +228,32 @@ test("Forward calibration never publishes a directional probability for WAIT",()
   const x=buildForwardCalibration(calibrationRows(160,"skill"),{score:80,direction:0});
   assert.equal(x.status,"NO_CURRENT_DIRECTION");
   assert.equal(x.calibratedProbability,null);
+});
+
+
+test("Trade plan blocks chasing and invalidated plans before showing readiness",()=>{
+  const a=analysis(1),f=buildSmartFeatures(a);
+  const d={decision:"RESEARCH_READY"};
+  const base=buildResearchTradePlan({analysis:a,features:f,decision:d,risk:{suggestedRiskPct:.25},newsRisk:{block:false}});
+  assert.ok(["READY_NEAR_ENTRY","NEAR_ENTRY_WATCH","WAIT_PULLBACK","IN_ZONE_WATCH"].includes(base.status),base.status);
+  assert.equal(base.invalidated,false);
+
+  const chaseAnalysis=analysis(1);
+  chaseAnalysis.price=chaseAnalysis.indicator.latestSignal.entry+2*f.atr14;
+  const chase=buildResearchTradePlan({analysis:chaseAnalysis,features:f,decision:d,risk:{},newsRisk:{block:false}});
+  assert.equal(chase.status,"WAIT_NO_CHASE");
+  assert.equal(chase.noChase,true);
+
+  const invalid=analysis(1);
+  invalid.price=invalid.indicator.latestSignal.invalidation-0.1;
+  const inv=buildResearchTradePlan({analysis:invalid,features:f,decision:d,risk:{},newsRisk:{block:false}});
+  assert.equal(inv.status,"INVALIDATED");
+  assert.equal(inv.invalidated,true);
+});
+
+test("Trade plan honors official news hard block",()=>{
+  const a=analysis(1),f=buildSmartFeatures(a);
+  const p=buildResearchTradePlan({analysis:a,features:f,decision:{decision:"RESEARCH_READY"},risk:{},newsRisk:{block:true}});
+  assert.equal(p.status,"BLOCK_NEWS");
+  assert.equal(p.newsBlocked,true);
 });
