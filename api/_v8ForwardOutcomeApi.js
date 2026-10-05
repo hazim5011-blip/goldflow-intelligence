@@ -1,4 +1,4 @@
-import {forwardConfigured,validateSecret,readForwardPrivate,normalizeOutcomePayload,storeOutcome} from "./_v8Ledger.js";
+import {forwardConfigured,validateSecret,readForwardPrivate,normalizeOutcomePayload,storeOutcome,storeCalibrationSample} from "./_v8Ledger.js";
 
 export default async function handler(req,res){
   res.setHeader("Cache-Control","no-store");
@@ -15,8 +15,21 @@ export default async function handler(req,res){
     if(!published)return res.status(404).json({ok:false,error:"PUBLISHED_RECORD_NOT_FOUND"});
     const event=normalizeOutcomePayload(req.body,published,new Date());
     const stored=await storeOutcome(event);
+    let calibrationIndexed=false,calibrationIndexError=null;
+    try{
+      if(published.score!=null){
+        await storeCalibrationSample(published,event);
+        calibrationIndexed=true;
+      }else calibrationIndexError="CALIBRATION_SCORE_UNAVAILABLE";
+    }catch(indexErr){
+      // Outcome immutability is primary. A secondary calibration-index failure must never
+      // turn a successfully archived outcome into a client-retry that could create conflict.
+      calibrationIndexError="CALIBRATION_INDEX_WRITE_FAILED";
+      console.error("[GoldFlow calibration index]",{signalId:event.signalId,error:String(indexErr?.message||indexErr)});
+    }
     return res.status(201).json({ok:true,mode:"FORWARD_LOGGED_OUTCOME",signalId:event.signalId,outcome:event.outcome,
       exitTimeUTC:event.exitTimeUTC,eventHash:event.eventHash,archivePath:stored.pathname,
+      calibrationIndexed,calibrationIndexError,
       verification:event.verification});
   }catch(e){
     const msg=String(e?.message||e),conflict=/already.exists|overwrite|409|conflict/i.test(msg);
