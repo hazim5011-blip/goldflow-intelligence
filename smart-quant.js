@@ -20,7 +20,7 @@
     if($("sqTechnical"))$("sqTechnical").innerHTML="";
     if($("sqMacroDrivers"))$("sqMacroDrivers").innerHTML="";
     if($("sqRegimeEvidence"))$("sqRegimeEvidence").innerHTML="";
-    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix","sqTradePlan","sqAnalyst","sqSessionRadar","sqMacroMap","sqAlertPreview"].forEach(function(id){if($(id))$(id).innerHTML=""});
+    ["sqEdge","sqHistoryEdge","sqCalibration","sqLearning","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix","sqTradePlan","sqAnalyst","sqSessionRadar","sqMacroMap","sqAlertPreview"].forEach(function(id){if($(id))$(id).innerHTML=""});
   }
 
   function renderSessionRadar(s,a){
@@ -230,6 +230,23 @@
       '<p class="v8Footnote">'+esc(cal.note||"")+'</p>';
   }
 
+  function renderLearning(x){
+    var el=$("sqLearning");if(!el)return;
+    if(!x){el.innerHTML='<div class="notice info">Forward learning monitor unavailable.</div>';return}
+    var stage=String(x.stage||"COLLECTING_FORWARD_DATA"),k=stage.indexOf("DRIFT")>=0?"bad":stage.indexOf("CALIBRATED")>=0?"good":"warn";
+    var recent=finite(x.recentWindow?.winRate)?pct(100*x.recentWindow.winRate,1):"—";
+    var prior=finite(x.priorWindow?.winRate)?pct(100*x.priorWindow.winRate,1):"—";
+    var drift=finite(x.driftPctPoints)?((x.driftPctPoints>0?"+":"")+num(x.driftPctPoints,1)+" pp"):"—";
+    el.innerHTML='<div class="sqLearningHead '+k+'"><div><small>FORWARD LEARNING STAGE</small><strong>'+esc(stage)+'</strong><span>'+esc(x.nextStep||"")+'</span></div>'+
+      '<div><small>IMMUTABLE OUTCOMES</small><strong>'+esc(x.sampleCount??0)+' / '+esc(x.minCalibrationSample??50)+'</strong><span>'+esc(x.collectionProgressPct??0)+'% to minimum calibration sample</span></div></div>'+
+      '<div class="sqLearningBar"><i style="width:'+Math.max(0,Math.min(100,Number(x.collectionProgressPct||0)))+'%"></i></div>'+
+      '<div class="sqRiskGrid"><div><small>Recent WR</small><strong>'+recent+'</strong><span>last '+esc(x.recentWindow?.count??0)+' outcomes</span></div>'+
+      '<div><small>Prior WR</small><strong>'+prior+'</strong><span>previous '+esc(x.priorWindow?.count??0)+' outcomes</span></div>'+
+      '<div><small>Drift</small><strong class="'+(x.driftWarning?"r":"g")+'">'+drift+'</strong><span>'+ (x.driftWarning?"DRIFT WARNING":"within monitor tolerance") +'</span></div>'+
+      '<div><small>Promotion</small><strong>'+(x.promotionEligible?"ELIGIBLE FOR REVIEW":"NOT ELIGIBLE")+'</strong><span>manual review only</span></div></div>'+
+      '<p class="v8Footnote">'+esc(x.promotionPolicy||"")+'</p>';
+  }
+
   function renderRisk(risk,mc){
     if($("sqRisk")){
       var suggested=finite(risk?.suggestedRiskPct)?pct(risk.suggestedRiskPct,3):"N/A";
@@ -276,7 +293,7 @@
     $("sqNotice").className="notice "+decisionCls(d.decision);
     $("sqNotice").textContent=d.summary+" "+d.executionBlock;
     $("sqUpdated").textContent=j.capturedAtUTC?"Updated "+new Date(j.capturedAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"}):"—";
-    renderSessionRadar(j.sessionLiquidity,a);renderMacroMap(j.macroMap);renderAlertPreview(j.alertPreview);renderTradePlan(j.tradePlan,a);renderAnalyst(j.analyst);renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
+    renderSessionRadar(j.sessionLiquidity,a);renderMacroMap(j.macroMap);renderAlertPreview(j.alertPreview);renderTradePlan(j.tradePlan,a);renderAnalyst(j.analyst);renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderLearning(j.learning);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
   }
 
   async function load(force){
