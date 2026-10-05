@@ -110,3 +110,7 @@
 .sqTelegramPreview{margin-top:8px;border:1px solid #24404d;background:#06131b;border-radius:9px;padding:9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;line-height:1.55;color:#b9cbd5;white-space:normal;overflow-wrap:anywhere}
 @media(max-width:900px){.grid.g3.sec{grid-template-columns:1fr}.sqSessionHero,.sqMacroMapHero,.sqAlertHero{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.sqSessionHero,.sqMacroMapHero,.sqAlertHero,.sqNearestGrid{grid-template-columns:1fr}.sqPoolRow{grid-template-columns:1fr .8fr}.sqPoolRow span,.sqPoolRow em{grid-column:2;text-align:right}.sqMacroMapRow{grid-template-columns:1fr .7fr}.sqMacroMapRow span{grid-column:2;text-align:right}}
+
+.sqLearning{margin-top:12px}.sqLearningHead{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #31566b;border-radius:10px;background:#081721;padding:10px}.sqLearningHead.good{border-left:4px solid #31d6a4}.sqLearningHead.warn{border-left:4px solid #f2c75b}.sqLearningHead.bad{border-left:4px solid #ff6079}.sqLearningHead>div{display:flex;flex-direction:column;gap:3px}.sqLearningHead small{font-size:8px;color:#8ca4b2}.sqLearningHead strong{font-size:13px;overflow-wrap:anywhere}.sqLearningHead span{font-size:9px;color:#78909e;line-height:1.4}
+.sqLearningBar{height:7px;border-radius:999px;background:#10222e;overflow:hidden;margin-top:8px}.sqLearningBar i{display:block;height:100%;background:linear-gradient(90deg,#2f89b6,#31d6a4);border-radius:999px}
+@media(max-width:650px){.sqLearningHead{grid-template-columns:1fr}}
