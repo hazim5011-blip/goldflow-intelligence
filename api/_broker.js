@@ -1,7 +1,6 @@
-// GoldFlow Production must use the stable Named Tunnel. The older Vercel env
-// may still contain an expired *.trycloudflare.com URL from V7.5.
-// Keep the existing env presence gate and BRIDGE_KEY; never route broker traffic
-// through a temporary Quick Tunnel again.
+// GoldFlow production runs on Cloudflare and must use the stable Named Tunnel.
+// BROKER_BRIDGE_URL is an explicit enable/configuration gate; broker traffic must
+// never fall back to a temporary Quick Tunnel.
 const CONFIGURED_BASE=(process.env.BROKER_BRIDGE_URL||"").trim().replace(/\/$/,"");
 const PERMANENT_BASE="https://bridge.hazim5011.com";
 const BASE=CONFIGURED_BASE?PERMANENT_BASE:"";

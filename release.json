@@ -1,8 +1,8 @@
 {
   "product": "GoldFlow Intelligence",
   "channel": "production",
-  "version": "8.1.1",
-  "mode": "V8_1_BLOG_NEWS_IMPACT_LIVE_ZONE_FUND104_WEB_STUDY",
+  "version": "8.2.0",
+  "mode": "V8_2_CLOUDFLARE_SMART_QUANT_CORE_R2",
   "indicators": [
     "MTF Research v1.05",
     "MTF Research v1.03",
@@ -39,8 +39,8 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "GoldFlow V8.1.1: retains V8.1 Blog, Live/Pending chart, Impact study and Fund104 WEB STUDY. Normalizes Vantage broker server UTC+3 to real UTC for History Pro and candle age; original broker epoch retained for audit. Not a native MQL5 parity claim.",
-  "updated": "2026-10-02",
+  "message": "GoldFlow V8.2.0: Cloudflare Workers + Static Assets production target, permanent Named Tunnel to Vantage MT5, Smart Quant Core R2, R2 forward-proof storage, independent MTF state matrix, session/liquidity radar, macro contribution map, official news timing gates, forward-only calibration and risk lab. No broker order execution.",
+  "updated": "2026-10-05",
   "features": [
     "History Pro closed-candle reconstruction",
     "Performance Analytics with strict and legacy win-rate definitions",
@@ -54,6 +54,16 @@
     "LIVE TRADE chart-view action and Pending entry ranges (no order placement)",
     "News impact class (HIGH/MEDIUM/LOW/CONTEXT) with conditional interpretation",
     "Fund Structure 1.04 closed-candle WEB STUDY subset; native parity pending",
-    "Broker server UTC+3 normalized for historical UTC labels, period windows and candle freshness"
+    "Broker server UTC+3 normalized for historical UTC labels, period windows and candle freshness",
+    "Cloudflare Workers + Static Assets production runtime",
+    "Cloudflare R2 immutable forward-proof and calibration storage",
+    "Smart Quant Core R2 decision funnel",
+    "Independent M1/M5/M15/M30/H1/H4/D1 closed-candle state matrix",
+    "DST-aware Asia/London/New York session and liquidity radar",
+    "PDH/PDL and session high/low liquidity pools",
+    "Macro contribution map and official BLS/BEA/Fed timing gate",
+    "Forward-only probability calibration with holdout reliability tests",
+    "Capped fractional Kelly research reference and Monte Carlo risk lab",
+    "Forward learning/drift monitor and Telegram-ready alert preview"
   ]
 }

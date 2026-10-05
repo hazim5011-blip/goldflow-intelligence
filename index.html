@@ -46,6 +46,7 @@
 
 <nav class="tabs">
   <button class="tab on" data-page="dashboard">Dashboard</button>
+  <button class="tab" data-page="smartQuantPage">Smart Quant</button>
   <button class="tab" data-page="chartPage">Broker Chart</button>
   <button class="tab" data-page="tvPage">TradingView</button>
   <button class="tab" data-page="v8History" data-i18n="historyPro">History Pro</button>
@@ -89,6 +90,100 @@
   <div class="card sec">
     <div class="head"><h3>OUTCOME STATS</h3><span id="statsNote" class="sub">LEGACY INDICATOR WR: TP + TRAIL + BE (incl. BE0); V8 Strict WR is in Performance</span></div>
     <div class="stats"><div><small>TOTAL</small><b id="stTotal">0</b></div><div><small>WIN</small><b id="stWin" class="g">0</b></div><div><small>LOSE</small><b id="stLose" class="r">0</b></div><div><small>PENDING</small><b id="stPending">0</b></div><div><small>WIN RATE</small><b id="stWR">—</b></div></div>
+  </div>
+</section>
+
+<section id="smartQuantPage" class="page">
+  <div class="card sqHero">
+    <div class="head">
+      <div><small class="eyebrow">BROKER-NATIVE • EVIDENCE-FIRST • RESEARCH ONLY</small><h3>Smart Quant Command Center</h3></div>
+      <div class="sqHeadActions"><span class="tag y">CORE R2</span><button type="button" id="sqRefresh" class="primary mini">Refresh Smart Quant</button></div>
+    </div>
+    <div id="sqNotice" class="notice info">Open Smart Quant to combine Vantage MT5 structure, regime, macro context and transparent decision gates.</div>
+    <div class="grid g5 sqKpis">
+      <div class="card kpi"><small>DECISION</small><strong id="sqDecision">—</strong><span id="sqSide">—</span><div class="sub">Research state, not an order.</div></div>
+      <div class="card kpi"><small>MODEL CONFIDENCE</small><strong id="sqConfidence">—</strong><span>Weighted gate confidence</span><div class="sub">Not calibrated win probability.</div></div>
+      <div class="card kpi"><small>CALIBRATED PROBABILITY</small><strong id="sqProbability">—</strong><span>Phase 1 calibration gate</span><div class="sub">No fake probability values.</div></div>
+      <div class="card kpi"><small>MARKET REGIME</small><strong id="sqRegime">—</strong><span id="sqRegimeConfidence">—</span><div class="sub">Closed-candle model.</div></div>
+      <div class="card kpi"><small>DATA HEALTH</small><strong id="sqDataHealth">—</strong><span id="sqMarketState">—</span><div id="sqUpdated" class="sub">—</div></div>
+    </div>
+  </div>
+
+  <div class="grid g3 sec">
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">ASIA • LONDON • NEW YORK</small><h3>Session & Liquidity Radar</h3></div><span id="sqSessionTag" class="tag">—</span></div>
+      <div id="sqSessionRadar"></div>
+    </div>
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">REAL YIELD • USD • YIELDS • LIQUIDITY</small><h3>Macro Contribution Map</h3></div><span id="sqMacroMapTag" class="tag">—</span></div>
+      <div id="sqMacroMap"></div>
+    </div>
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">TELEGRAM-READY • DEDUPED POLICY</small><h3>Alert Preview</h3></div><span id="sqAlertTag" class="tag">NO ALERT</span></div>
+      <div id="sqAlertPreview"></div>
+    </div>
+  </div>
+
+  <div class="card sec">
+    <div class="head"><div><small class="eyebrow">ENTRY • INVALIDATION • NO-CHASE</small><h3>Research Trade Plan</h3></div><span id="sqPlanStatus" class="tag y">WAIT</span></div>
+    <div id="sqTradePlan" class="sqTradePlan"></div>
+    <p class="v8Footnote">This panel converts the current Smart Quant research state into a manual decision plan. It never sends a broker order.</p>
+  </div>
+
+  <div class="card sec">
+    <div class="head"><div><small class="eyebrow">STRUCTURED EXPLANATION • NO OVERRIDE</small><h3>Smart Analyst</h3></div><span class="tag">RULE-BASED</span></div>
+    <div id="sqAnalyst" class="sqAnalyst"></div>
+    <p class="v8Footnote">Smart Analyst only explains the structured engine output. It cannot override broker data, probability calibration, risk gates or the decision funnel.</p>
+  </div>
+
+  <div class="grid g2 sec">
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">SCAN → VALIDATE → WAIT / READY</small><h3>Decision Funnel</h3></div><span class="tag">AUDITABLE</span></div>
+      <div id="sqFunnel" class="sqFunnel"></div>
+    </div>
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">TREND • VOLATILITY • SWEEP • BREAKOUT</small><h3>Market Regime Evidence</h3></div><span class="tag y">STATE ≠ PROBABILITY</span></div>
+      <div id="sqRegimeEvidence"></div>
+    </div>
+  </div>
+
+  <div class="card sec">
+    <div class="head"><div><small class="eyebrow">M1 • M5 • M15 • M30 • H1 • H4 • D1</small><h3>Multi-Timeframe State Matrix</h3></div><span class="tag g">INDEPENDENT CLOSED-CANDLE STATES</span></div>
+    <div id="sqMtfSummary" class="sqMtfSummary"></div>
+    <div id="sqMtfMatrix" class="sqMtfMatrix"></div>
+    <p class="v8Footnote">Each timeframe is calculated from its own Vantage closed candles. GoldFlow does not copy one timeframe signal across all timeframes.</p>
+  </div>
+
+  <div class="grid g2 sec">
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">VANTAGE CLOSED CANDLES</small><h3>Technical State</h3></div><span class="tag g">BROKER NATIVE</span></div>
+      <div id="sqTechnical" class="sqMetricGrid"></div>
+    </div>
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">FREQUENCY-AWARE CONTEXT</small><h3>Gold Macro Drivers</h3></div><span class="tag">OFFICIAL / DERIVED</span></div>
+      <div id="sqMacroDrivers"></div>
+      <div id="sqNewsRisk" class="sqNewsRisk"></div>
+    </div>
+  </div>
+
+  <div class="grid g2 sec">
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">NORMALIZED EVIDENCE • NOT PRICE TARGET</small><h3>Directional Edge & Historical Evidence</h3></div><span class="tag y">NOT CALIBRATED</span></div>
+      <div id="sqEdge"></div>
+      <div id="sqHistoryEdge" class="sqHistoryEdge"></div>\n      <div id="sqCalibration" class="sqCalibration"></div>
+      <div id="sqLearning" class="sqLearning"></div>
+    </div>
+    <div class="card">
+      <div class="head"><div><small class="eyebrow">CAPPED FRACTIONAL KELLY • BOOTSTRAP</small><h3>Risk Lab & Monte Carlo</h3></div><span class="tag y">RESEARCH REFERENCE</span></div>
+      <div id="sqRisk"></div>
+      <div id="sqMonteCarlo" class="sqMonteCarlo"></div>
+    </div>
+  </div>
+
+  <div class="card sec">
+    <div class="head"><div><small class="eyebrow">WHY NOT TRADE?</small><h3>Blocks, Warnings & Missing Verification</h3></div><span class="tag y">WAIT IS VALID</span></div>
+    <div id="sqReasons" class="sqReasons"></div>
+    <p class="v8Footnote">Smart Quant never places broker orders in this research release. RESEARCH_READY requires verified official-news timing, validated forward probability, clean broker data and all hard gates to pass.</p>
   </div>
 </section>
 
@@ -227,5 +322,6 @@
 </div>
 <script src="/app.js"></script>
 <script src="/v8.js" defer></script>
+<script src="/smart-quant.js" defer></script>
 </body>
 </html>

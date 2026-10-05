@@ -1,4 +1,4 @@
-name: GoldFlow V8 CI
+name: GoldFlow Cloudflare CI
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  v8-test:
+  goldflow-test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -26,35 +26,48 @@ jobs:
         shell: bash
         run: |
           git fetch origin main --depth=1
-          changed="$(git diff --name-only origin/main...HEAD -- \
-            api/_indicator105.js \
-            api/_indicator103.js \
-            api/_indicatorPVT102.js \
-            api/_indicatorPattern132.js \
-            api/_indicatorSND107.js \
-            api/_indicatorOWL101.js)"
+          changed="$(git diff --name-only origin/main...HEAD --             api/_indicator105.js             api/_indicator103.js             api/_indicatorPVT102.js             api/_indicatorPattern132.js             api/_indicatorSND107.js             api/_indicatorOWL101.js)"
           if [ -n "$changed" ]; then
             echo "Protected indicator engine files changed:"
             echo "$changed"
             exit 1
           fi
 
-      - name: Enforce Vercel Hobby function limit
+      - name: Reject Vercel runtime dependencies
         shell: bash
         run: |
-          count="$(find api -maxdepth 1 -type f -name '*.js' ! -name '_*' | wc -l | tr -d ' ')"
-          echo "Deployable API functions: $count"
-          test "$count" -le 12
+          if grep -R --line-number --fixed-strings "@vercel/blob" api cloudflare package.json 2>/dev/null; then
+            echo "Vercel Blob dependency must not return to the Cloudflare runtime."
+            exit 1
+          fi
+          test ! -f vercel.json
 
       - name: JavaScript syntax checks
         shell: bash
         run: |
           node --check app.js
           node --check v8.js
+          node --check smart-quant.js
+          node --check cloudflare/worker.js
+          node --check scripts/build-cloudflare.mjs
           find api -maxdepth 1 -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Build Cloudflare static assets
+        run: npm run build:cloudflare
+
+      - name: Verify safe static output
+        shell: bash
+        run: |
+          test -f dist/index.html
+          test -f dist/smart-quant.js
+          test -f dist/style.css
+          test ! -e dist/api
+          test ! -e dist/cloudflare
+          test ! -e dist/tests
+          test ! -e dist/wrangler.jsonc
 
       - name: Python bridge syntax check
         run: python -m py_compile bridge/mt5_bridge.py
 
-      - name: V8 unit and policy tests
+      - name: Unit and policy tests
         run: npm test
