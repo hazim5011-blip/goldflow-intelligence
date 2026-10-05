@@ -20,7 +20,7 @@
     if($("sqTechnical"))$("sqTechnical").innerHTML="";
     if($("sqMacroDrivers"))$("sqMacroDrivers").innerHTML="";
     if($("sqRegimeEvidence"))$("sqRegimeEvidence").innerHTML="";
-    ["sqEdge","sqHistoryEdge","sqRisk","sqMonteCarlo","sqNewsRisk"].forEach(function(id){if($(id))$(id).innerHTML=""});
+    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk"].forEach(function(id){if($(id))$(id).innerHTML=""});
   }
 
   function renderFunnel(decision){
@@ -104,6 +104,26 @@
     }
   }
 
+  function renderCalibration(cal){
+    var el=$("sqCalibration");if(!el)return;
+    if(!cal){el.innerHTML='<div class="notice info">Forward probability calibration unavailable.</div>';return}
+    var p=finite(cal.calibratedProbability)?pct(100*cal.calibratedProbability,1):"UNPUBLISHED";
+    var status=cal.status||"UNVERIFIED",klass=status==="CALIBRATED_FORWARD"?"good":status==="WEAK_FORWARD_CALIBRATION"?"warn":"info";
+    var hold=cal.holdout||{},train=cal.train||{};
+    var bins=(cal.reliabilityBins||[]).map(function(b){
+      return '<div class="sqCalBin"><span>'+Math.round(100*b.low)+'–'+Math.round(100*b.high)+'%</span><b>'+pct(100*b.predicted,0)+'</b><strong>'+pct(100*b.actual,0)+'</strong><small>n='+b.count+'</small></div>';
+    }).join("");
+    el.innerHTML='<div class="sqCalHead '+klass+'"><div><small>FORWARD CALIBRATION</small><strong>'+esc(status)+'</strong><span>'+esc(cal.sampleCount??0)+' completed forward samples • '+esc(cal.selection||"")+'</span></div>'+
+      '<div><small>CALIBRATED PROBABILITY</small><strong>'+p+'</strong><span>'+esc(cal.reason||"")+'</span></div></div>'+
+      '<div class="sqRiskGrid">'+
+        '<div><small>Train</small><strong>'+esc(train.count??"—")+'</strong><span>wins '+esc(train.wins??"—")+' • losses '+esc(train.losses??"—")+'</span></div>'+
+        '<div><small>Holdout</small><strong>'+esc(hold.count??"—")+'</strong><span>Brier '+num(hold.brier,4)+' • skill '+(finite(hold.brierSkill)?pct(100*hold.brierSkill,1):"—")+'</span></div>'+
+        '<div><small>Holdout ECE</small><strong>'+ (finite(hold.ece)?pct(100*hold.ece,1):"—") +'</strong><span>must be ≤18%</span></div>'+
+        '<div><small>Provenance</small><strong>'+esc(cal.provenance||"—")+'</strong><span>historical simulation excluded</span></div>'+
+      '</div>'+(bins?'<div class="sqCalBins"><div class="sqCalLegend"><span>Bin</span><b>Pred.</b><strong>Actual</strong><small>Count</small></div>'+bins+'</div>':"")+
+      '<p class="v8Footnote">'+esc(cal.note||"")+'</p>';
+  }
+
   function renderRisk(risk,mc){
     if($("sqRisk")){
       var suggested=finite(risk?.suggestedRiskPct)?pct(risk.suggestedRiskPct,3):"N/A";
@@ -150,7 +170,7 @@
     $("sqNotice").className="notice "+decisionCls(d.decision);
     $("sqNotice").textContent=d.summary+" "+d.executionBlock;
     $("sqUpdated").textContent=j.capturedAtUTC?"Updated "+new Date(j.capturedAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"}):"—";
-    renderFunnel(d);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
+    renderFunnel(d);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
   }
 
   async function load(force){
