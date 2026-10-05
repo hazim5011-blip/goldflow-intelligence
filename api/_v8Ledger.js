@@ -1,11 +1,12 @@
 import {createHash,timingSafeEqual} from "node:crypto";
+import {storageAvailable,storagePutImmutable,storageGetJson,storageList} from "./_storage.js";
 const TF_SECONDS={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400};
 const INDICATORS=new Set(["105","103","pvt","pattern132","snd107","owl101"]);
 const xnum=v=>v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))?Number(v):null;
 const sha256=s=>createHash("sha256").update(s).digest("hex");
 const timeIso=()=>new Date().toISOString();
 const matchSafe=/^[A-Za-z0-9._#-]{1,42}$/;
-export function forwardConfigured(){return Boolean(process.env.BLOB_READ_WRITE_TOKEN&&String(process.env.FORWARD_INGEST_SECRET||"").length>=32);}
+export function forwardConfigured(){return Boolean(storageAvailable()&&String(process.env.FORWARD_INGEST_SECRET||"").length>=32);}
 export function publicReadEnabled(){return forwardConfigured()&&process.env.FORWARD_PUBLIC_READ==="true";}
 export function validateSecret(input){
  const expected=process.env.FORWARD_INGEST_SECRET;
@@ -62,17 +63,11 @@ export function normalizePublishedPayload(body,now=new Date()){
 export function forwardPath(record){return "goldflow-forward/v1/"+record.receivedAtUTC.slice(0,10)+"/"+record.signalId+"/published.json";}
 export async function storePublished(record){
  if(!forwardConfigured())throw Error("FORWARD_STORAGE_NOT_CONFIGURED");
- const {put}=await import("@vercel/blob");
- return put(forwardPath(record),JSON.stringify(record),{access:"private",allowOverwrite:false,
-   contentType:"application/json",cacheControlMaxAge:60});
+ return storagePutImmutable(forwardPath(record),JSON.stringify(record));
 }
 async function readPrivateJson(pathname,maxBytes=300000){
- const {get}=await import("@vercel/blob");
- const r=await get(pathname,{access:"private"});
- if(!r||r.statusCode!==200||!r.stream)return null;
- let out="",decoder=new TextDecoder();
- for await(const chunk of r.stream){out+=decoder.decode(chunk,{stream:true});if(out.length>maxBytes)throw Error("ARCHIVE_TOO_LARGE")}
- out+=decoder.decode();return JSON.parse(out);
+ if(!storageAvailable())throw Error("FORWARD_STORAGE_NOT_CONFIGURED");
+ return storageGetJson(pathname,maxBytes);
 }
 function validateLookup(date,id){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^[a-f0-9]{32}$/.test(id))throw Error("INVALID_FORWARD_LOOKUP");
@@ -116,9 +111,7 @@ export function normalizeOutcomePayload(body,published,now=new Date()){
 export function outcomePath(event){return "goldflow-forward/v1/"+event.date+"/"+event.signalId+"/outcome.json";}
 export async function storeOutcome(event){
  if(!forwardConfigured())throw Error("FORWARD_STORAGE_NOT_CONFIGURED");
- const {put}=await import("@vercel/blob");
- return put(outcomePath(event),JSON.stringify(event),{access:"private",allowOverwrite:false,
-   contentType:"application/json",cacheControlMaxAge:60});
+ return storagePutImmutable(outcomePath(event),JSON.stringify(event));
 }
 function calibrationSeg(s){return String(s||"").replace(/[^A-Za-z0-9._-]/g,"_")}
 export function calibrationSamplePath(published,event){
@@ -134,18 +127,16 @@ export async function storeCalibrationSample(published,event){
  const sample={schema:"goldflow.calibration.v1",signalId:event.signalId,symbolResolved:published.symbolResolved,indicatorId:published.indicatorId,tf:published.tf,
    direction:published.direction,score:Number(published.score),signalCandleCloseUTC:published.signalCandleCloseUTC,
    outcome:event.outcome,rMultiple:event.rMultiple,exitTimeUTC:event.exitTimeUTC,recordHash:published.recordHash,eventHash:event.eventHash};
- const {put}=await import("@vercel/blob");
- return put(calibrationSamplePath(published,event),JSON.stringify(sample),{access:"private",allowOverwrite:false,
-   contentType:"application/json",cacheControlMaxAge:60});
+ return storagePutImmutable(calibrationSamplePath(published,event),JSON.stringify(sample));
 }
 export async function listCalibrationSamples(symbol,indicator,tf,limit=500){
  if(!forwardConfigured())return [];
  if(!matchSafe.test(String(symbol||""))||!INDICATORS.has(String(indicator||"").toLowerCase())||!TF_SECONDS[String(tf||"").toUpperCase()])throw Error("INVALID_CALIBRATION_SCOPE");
  const prefix="goldflow-calibration/v1/"+calibrationSeg(symbol)+"/"+calibrationSeg(String(indicator).toLowerCase())+"/"+calibrationSeg(String(tf).toUpperCase())+"/";
- const {list}=await import("@vercel/blob");let cursor,rows=[],pages=0;
+ let cursor,rows=[],pages=0;
  do{
-   const r=await list({prefix,cursor,limit:Math.min(1000,Math.max(100,limit))});
-   for(const b of r.blobs||[]){
+   const r=await storageList(prefix,{cursor,limit:Math.min(1000,Math.max(100,limit))});
+   for(const b of r.objects||[]){
      const name=String(b.pathname||"").slice(prefix.length);
      const m=name.match(/^(\d{8}T\d{6}Z)-(\d{4})-([BS])-([A-Z0-9_]+)-([a-f0-9]{32})\.json$/);
      if(!m)continue;
