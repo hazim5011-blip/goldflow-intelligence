@@ -20,7 +20,27 @@
     if($("sqTechnical"))$("sqTechnical").innerHTML="";
     if($("sqMacroDrivers"))$("sqMacroDrivers").innerHTML="";
     if($("sqRegimeEvidence"))$("sqRegimeEvidence").innerHTML="";
-    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix"].forEach(function(id){if($(id))$(id).innerHTML=""});
+    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix","sqTradePlan"].forEach(function(id){if($(id))$(id).innerHTML=""});
+  }
+
+  function renderTradePlan(p,a){
+    var el=$("sqTradePlan"),tag=$("sqPlanStatus");if(!el||!tag)return;
+    if(!p){el.innerHTML='<div class="notice info">Trade plan unavailable.</div>';tag.textContent="WAIT";return}
+    var status=p.status||"WAIT",good=status==="READY_NEAR_ENTRY",bad=status==="INVALIDATED"||status==="INVALID_PLAN"||status==="BLOCK_NEWS",warn=!good&&!bad;
+    tag.textContent=status;tag.className="tag "+(good?"g":bad?"r":"y");
+    var digits=a?.digits??2;
+    var zone=p.activeZone&&finite(p.activeZone.low)&&finite(p.activeZone.high)?price(p.activeZone.low,digits)+" – "+price(p.activeZone.high,digits):"—";
+    el.innerHTML='<div class="sqPlanHero '+(good?"good":bad?"bad":"warn")+'"><div><small>PLAN STATE</small><strong>'+esc(status)+'</strong><span>'+esc(p.action||"")+'</span></div>'+
+      '<div><small>SIDE</small><strong class="'+(Number(p.direction)>0?"g":Number(p.direction)<0?"r":"y")+'">'+esc(p.side||"WAIT")+'</strong><span>decision '+esc(p.decision||"WAIT")+'</span></div>'+
+      '<div><small>CURRENT PRICE</small><strong>'+price(p.price,digits)+'</strong><span>distance '+(finite(p.distanceToEntryAtr)?num(p.distanceToEntryAtr,2)+" ATR":"—")+'</span></div></div>'+
+      '<div class="sqPlanGrid">'+
+        '<div><small>ENTRY</small><strong>'+price(p.entry,digits)+'</strong><span>preferred model entry</span></div>'+
+        '<div><small>SL / INVALIDATION</small><strong>'+price(p.sl,digits)+'</strong><span>risk distance '+price(p.riskDistance,digits)+'</span></div>'+
+        '<div><small>TP1</small><strong>'+price(p.tp1,digits)+'</strong><span>'+(finite(p.rr?.tp1)?num(p.rr.tp1,2)+"R":"R:R N/A")+'</span></div>'+
+        '<div><small>TP2</small><strong>'+price(p.tp2,digits)+'</strong><span>'+(finite(p.rr?.tp2)?num(p.rr.tp2,2)+"R":"R:R N/A")+'</span></div>'+
+        '<div><small>TP3</small><strong>'+price(p.tp3,digits)+'</strong><span>'+(finite(p.rr?.tp3)?num(p.rr.tp3,2)+"R":"R:R N/A")+'</span></div>'+
+        '<div><small>ACTIVE ZONE</small><strong>'+esc(zone)+'</strong><span>'+ (p.noChase?"NO-CHASE active":p.newsBlocked?"NEWS BLOCK":"broker-zone context") +'</span></div>'+
+      '</div>';
   }
 
   function renderFunnel(decision){
@@ -188,7 +208,7 @@
     $("sqNotice").className="notice "+decisionCls(d.decision);
     $("sqNotice").textContent=d.summary+" "+d.executionBlock;
     $("sqUpdated").textContent=j.capturedAtUTC?"Updated "+new Date(j.capturedAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"}):"—";
-    renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
+    renderTradePlan(j.tradePlan,a);renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
   }
 
   async function load(force){
