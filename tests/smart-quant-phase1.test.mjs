@@ -4,6 +4,9 @@ import {readFileSync} from "node:fs";
 import {buildSmartFeatures,assessDataHealth} from "../api/_sqFeatures.js";
 import {classifySmartRegime} from "../api/_sqRegime.js";
 import {buildDecisionFunnel} from "../api/_sqDecisionFunnel.js";
+import {buildDirectionalEdge} from "../api/_sqFairValue.js";
+import {buildRiskReference} from "../api/_sqRisk.js";
+import {runMonteCarlo} from "../api/_sqMonteCarlo.js";
 
 const bar=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 function trendBars(n=140,dir=1){
@@ -84,4 +87,36 @@ test("Smart Quant UI contains unique critical controls and research-only warning
   assert.ok(html.includes('src="/smart-quant.js"'));
   assert.match(html,/cannot produce EXECUTION_READY/i);
   assert.match(js,/UNVERIFIED/);
+});
+
+
+test("Directional Edge Index stays separate from calibrated probability",()=>{
+  const a=analysis(1),m=macro("SUPPORTIVE"),f=buildSmartFeatures(a),r=classifySmartRegime(f,a);
+  const e=buildDirectionalEdge({analysis:a,features:f,regime:r,macro:m});
+  assert.equal(e.bias,"BULLISH");
+  assert.ok(e.directionalEdgeIndex>0);
+  assert.ok(e.coverage>=80);
+  assert.match(e.interpretation,/not a fair-value price target or calibrated probability/i);
+});
+
+test("Risk reference uses Wilson-lower probability, fractional Kelly and a hard cap",()=>{
+  const dist=Array.from({length:60},(_,i)=>i%5<3?1.5:-1);
+  const hist={sufficientForRiskModel:true,sampleCount:60,nonzeroCount:60,winRateWilson95:{low:.50},avgWinR:1.5,avgLossRAbs:1,rDistribution:dist};
+  const r=buildRiskReference(hist,{hardCapPct:.50,kellyFraction:.25});
+  assert.equal(r.status,"AVAILABLE_CONSERVATIVE");
+  assert.ok(r.suggestedRiskPct>=0&&r.suggestedRiskPct<=.50);
+  assert.equal(r.hardRiskCapPct,.50);
+  assert.match(r.probabilityBasis,/HISTORICAL_RECONSTRUCTION_ONLY/);
+});
+
+test("Monte Carlo bootstrap is deterministic and explicitly reconstruction-based",()=>{
+  const dist=Array.from({length:80},(_,i)=>i%5<3?1.4:-1);
+  const hist={rDistribution:dist};
+  const risk={suggestedRiskPct:.25};
+  const a=runMonteCarlo(hist,risk,{paths:600,trades:80,seedKey:"TEST"});
+  const b=runMonteCarlo(hist,risk,{paths:600,trades:80,seedKey:"TEST"});
+  assert.deepEqual(a,b);
+  assert.equal(a.status,"AVAILABLE_RECONSTRUCTION_BOOTSTRAP");
+  for(const k of ["dd5","dd10","dd20","ruin50","lossStreak5"])assert.ok(a.probabilities[k]>=0&&a.probabilities[k]<=100,k);
+  assert.match(a.warning,/reconstructed historical R outcomes/i);
 });
