@@ -124,7 +124,7 @@ function calibrationSeg(s){return String(s||"").replace(/[^A-Za-z0-9._-]/g,"_")}
 export function calibrationSamplePath(published,event){
  if(!published||!event)throw Error("CALIBRATION_RECORD_REQUIRED");
  const score=xnum(published.score),scoreKey=String(Math.max(0,Math.min(1000,Math.round((score??-1)*10)))).padStart(4,"0");
- const dir=Number(published.direction)>0?"B":"S",stamp=String(event.receivedAtUTC||event.exitTimeUTC||"").replace(/[-:.]/g,"").replace(/\.\d+Z$/,"Z");
+ const dir=Number(published.direction)>0?"B":"S",stamp=new Date(event.receivedAtUTC||event.exitTimeUTC).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z");
  return "goldflow-calibration/v1/"+calibrationSeg(published.symbolResolved)+"/"+calibrationSeg(published.indicatorId)+"/"+calibrationSeg(published.tf)+"/"+
    stamp+"-"+scoreKey+"-"+dir+"-"+event.outcome+"-"+event.signalId+".json";
 }
