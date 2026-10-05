@@ -17,6 +17,7 @@ import {buildSmartAnalyst} from "./_sqAnalyst.js";
 import {buildSessionLiquidity} from "./_sqSession.js";
 import {buildAlertPreview} from "./_sqAlert.js";
 import {buildMacroContributionMap} from "./_sqMacroMap.js";
+import {buildLearningMonitor} from "./_sqLearning.js";
 
 export const SMART_QUANT_BUILD="sq-phase1-2026-10-05";
 
@@ -113,6 +114,7 @@ export default async function handler(req,res){
     const calibrationSamples=await listCalibrationSamples(analysis.symbol||symbol,indicator,tf,500).catch(()=>[]);
     const currentSignal=analysis?.indicator?.latestSignal||{};
     const calibration=buildForwardCalibration(calibrationSamples,{score:currentSignal.score,direction:currentSignal.direction});
+    const learning=buildLearningMonitor(calibrationSamples,calibration);
     const macroMap=buildMacroContributionMap(macro);
     const decision=buildDecisionFunnel({analysis,macro,features,regime,dataHealth,newsRisk,calibration});
     const tradePlan=buildResearchTradePlan({analysis,features,decision,risk,newsRisk});
@@ -124,7 +126,7 @@ export default async function handler(req,res){
       capturedAtUTC:new Date().toISOString(),
       requested:{symbol,tf,indicator},
       analysis:slimAnalysis(analysis),
-      features,dataHealth,regime,mtfMatrix,sessionLiquidity,macro,macroMap,newsRisk,directionalEdge,historicalEdge,risk,monteCarlo,calibration,decision,tradePlan,alertPreview,analyst,
+      features,dataHealth,regime,mtfMatrix,sessionLiquidity,macro,macroMap,newsRisk,directionalEdge,historicalEdge,risk,monteCarlo,calibration,learning,decision,tradePlan,alertPreview,analyst,
       disclaimer:"Smart Quant is a research decision-support layer. Directional Edge is not a price target, historical evidence is not forward calibration, and no broker order is placed."
     });
   }catch(e){
