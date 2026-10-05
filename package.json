@@ -1,13 +1,13 @@
 {
   "name": "goldflow-intelligence",
-  "version": "8.1.1",
+  "version": "8.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
-  },
-  "dependencies": {
-    "@vercel/blob": "^2.3.0"
+    "test": "node --test tests/*.test.mjs",
+    "build:cloudflare": "node scripts/build-cloudflare.mjs",
+    "dev:cloudflare": "npm run build:cloudflare && npx wrangler dev",
+    "deploy:cloudflare": "npm run build:cloudflare && npx wrangler deploy"
   },
   "engines": {
     "node": ">=20"
