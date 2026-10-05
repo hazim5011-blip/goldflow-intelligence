@@ -299,6 +299,7 @@ test("Session radar is timezone/DST aware and detects London/New York overlap",(
   assert.ok(s.currentSessions.includes("NEW_YORK"));
   assert.equal(s.overlap,true);
   assert.equal(s.primarySession,"NEW_YORK");
+  assert.ok(Date.parse(s.latestClosedM5.timeUTC)<=now.getTime(),"future broker bars must be excluded");
   assert.ok(s.pools.some(x=>x.id==="PDH"));
   assert.ok(s.pools.some(x=>x.id==="PDL"));
   assert.match(s.note,/DST-aware IANA time zones/);
