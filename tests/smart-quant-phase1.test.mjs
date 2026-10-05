@@ -10,6 +10,7 @@ import {runMonteCarlo} from "../api/_sqMonteCarlo.js";
 import {parseBlsSchedule,parseBeaSchedule,parseFomcMeetings} from "../api/_sqNewsRisk.js";
 import {buildForwardCalibration} from "../api/_sqCalibration.js";
 import {calibrationSamplePath} from "../api/_v8Ledger.js";
+import {buildMtfMatrix,TFS as SMART_TFS} from "../api/_sqMtf.js";
 
 const bar=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 function trendBars(n=140,dir=1){
@@ -205,4 +206,18 @@ test("Decision funnel requires validated forward probability before RESEARCH_REA
   const pg=yes.gates.find(x=>x.id==="PROBABILITY_VALID");
   assert.equal(pg.status,"PASS");
   assert.equal(yes.calibratedProbability,.64);
+});
+
+
+test("MTF matrix calculates each timeframe independently from closed broker candles",()=>{
+  const frames={};
+  for(const [i,tf] of SMART_TFS.entries())frames[tf]=trendBars(120+i*3,i===6?-1:1);
+  const m=buildMtfMatrix(frames,0,1);
+  assert.equal(m.total,7);
+  assert.equal(m.readyCount,7);
+  assert.equal(m.rows.length,7);
+  assert.ok(m.rows.every(x=>x.ready&&x.confidenceMeaning==="STATE_CONFIDENCE_NOT_WIN_PROBABILITY"));
+  assert.equal(m.rows.find(x=>x.tf==="D1").direction,-1,"D1 is derived from its own bearish candles, not copied from M5");
+  assert.ok(m.alignment.opposed>=1);
+  assert.match(m.note,/does not reuse a lower-timeframe signal/i);
 });
