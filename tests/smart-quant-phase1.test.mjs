@@ -67,7 +67,7 @@ test("Decision funnel never fabricates probability or EXECUTION_READY in Phase 1
   const a=analysis(1),f=buildSmartFeatures(a),h=assessDataHealth(a,macro(),f),r=classifySmartRegime(f,a);
   const d=buildDecisionFunnel({analysis:a,macro:macro(),features:f,regime:r,dataHealth:h});
   assert.equal(d.calibratedProbability,null);
-  assert.equal(d.probabilityStatus,"UNVERIFIED_PHASE_1");
+  assert.equal(d.probabilityStatus,"UNVERIFIED");
   assert.equal(d.executionReady,false);
   assert.notEqual(d.decision,"EXECUTION_READY");
   assert.ok(d.gates.some(g=>g.id==="NEWS_RISK"&&g.status==="UNVERIFIED"));
@@ -88,7 +88,7 @@ test("Smart Quant UI contains unique critical controls and research-only warning
     assert.equal([...html.matchAll(new RegExp('id="'+id+'"',"g"))].length,1,id);
   }
   assert.ok(html.includes('src="/smart-quant.js"'));
-  assert.match(html,/cannot produce EXECUTION_READY/i);
+  assert.match(html,/RESEARCH_READY requires verified official-news timing, validated forward probability/i);
   assert.match(js,/UNVERIFIED/);
 });
 
