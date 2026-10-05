@@ -13,6 +13,9 @@ import {calibrationSamplePath} from "../api/_v8Ledger.js";
 import {buildMtfMatrix,TFS as SMART_TFS} from "../api/_sqMtf.js";
 import {buildResearchTradePlan} from "../api/_sqTradePlan.js";
 import {buildSmartAnalyst} from "../api/_sqAnalyst.js";
+import {buildSessionLiquidity} from "../api/_sqSession.js";
+import {buildAlertPreview} from "../api/_sqAlert.js";
+import {buildMacroContributionMap} from "../api/_sqMacroMap.js";
 
 const bar=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 function trendBars(n=140,dir=1){
@@ -87,7 +90,7 @@ test("Fresh opposing Gold macro bias can block a directional setup",()=>{
 test("Smart Quant UI contains unique critical controls and research-only warnings",()=>{
   const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
   const js=readFileSync(new URL("../smart-quant.js",import.meta.url),"utf8");
-  for(const id of ["smartQuantPage","sqRefresh","sqDecision","sqConfidence","sqProbability","sqTradePlan","sqAnalyst","sqFunnel","sqMtfMatrix","sqTechnical","sqMacroDrivers"]){
+  for(const id of ["smartQuantPage","sqRefresh","sqDecision","sqConfidence","sqProbability","sqSessionRadar","sqMacroMap","sqAlertPreview","sqTradePlan","sqAnalyst","sqFunnel","sqMtfMatrix","sqTechnical","sqMacroDrivers"]){
     assert.equal([...html.matchAll(new RegExp('id="'+id+'"',"g"))].length,1,id);
   }
   assert.ok(html.includes('src="/smart-quant.js"'));
@@ -275,4 +278,67 @@ test("Smart Analyst only summarizes structured engine evidence and cannot overri
   assert.match(analyst.headline,/WAIT/);
   assert.ok(analyst.blockers.some(x=>/probability/i.test(x)));
   assert.match(analyst.note,/cannot.*override|tidak boleh.*menukar/i);
+});
+
+
+function m5Bars(startIso,count,offsetSeconds=0,base=4100){
+  const start=Date.parse(startIso)/1000,out=[];
+  for(let i=0;i<count;i++){
+    const mid=base+i*.03;
+    out.push({t:start+i*300+offsetSeconds,o:mid,h:mid+.18,l:mid-.16,c:mid+.04,v:100});
+  }
+  return out;
+}
+
+test("Session radar is timezone/DST aware and detects London/New York overlap",()=>{
+  const now=new Date("2026-10-05T12:30:00Z");
+  const bars=m5Bars("2026-10-04T10:00:00Z",330,0,4100);
+  const s=buildSessionLiquidity({bars,brokerServerUTCOffsetSeconds:0,price:4107,atr14:2.5,now});
+  assert.equal(s.ready,true);
+  assert.ok(s.currentSessions.includes("LONDON"));
+  assert.ok(s.currentSessions.includes("NEW_YORK"));
+  assert.equal(s.overlap,true);
+  assert.equal(s.primarySession,"NEW_YORK");
+  assert.ok(s.pools.some(x=>x.id==="PDH"));
+  assert.ok(s.pools.some(x=>x.id==="PDL"));
+  assert.match(s.note,/DST-aware IANA time zones/);
+});
+
+test("Macro contribution map separates supportive and pressure drivers without claiming causation",()=>{
+  const m=buildMacroContributionMap({ok:true,drivers:[
+    {id:"REAL10Y",name:"Real yield",display:"1.8%",goldImpact:"PRESSURE",stale:false},
+    {id:"NETLIQ",name:"Net liquidity",display:"$6T",goldImpact:"SUPPORTIVE",stale:false},
+    {id:"USDBROAD",name:"USD",display:"100",goldImpact:"PRESSURE",stale:true}
+  ]});
+  assert.equal(m.ok,true);
+  assert.ok(m.pressureScore>0);
+  assert.ok(m.supportScore>0);
+  assert.ok(m.rows.find(x=>x.id==="USDBROAD").freshnessMultiplier===.5);
+  assert.match(m.note,/not a causal attribution or price forecast/i);
+});
+
+test("Alert preview is deterministic and never sends from the polling API",()=>{
+  const x=buildAlertPreview({
+    analysis:{symbol:"XAUUSD247",selectedTF:"M5"},
+    decision:{decision:"WAIT",side:"BUY",modelConfidence:71},
+    tradePlan:{status:"BLOCK_NEWS",side:"BUY",entry:4200,sl:4190,tp1:4215},
+    newsRisk:{status:"BLOCK_HIGH_IMPACT",block:true,nextHighImpact:{type:"CPI",scheduledAtUTC:"2026-10-14T12:30:00Z"}},
+    sessionLiquidity:{recentSweeps:[]},
+    calibration:{status:"INSUFFICIENT_FORWARD_SAMPLE"},
+    dataHealth:{status:"GOOD"}
+  });
+  const y=buildAlertPreview({
+    analysis:{symbol:"XAUUSD247",selectedTF:"M5"},
+    decision:{decision:"WAIT",side:"BUY",modelConfidence:71},
+    tradePlan:{status:"BLOCK_NEWS",side:"BUY",entry:4200,sl:4190,tp1:4215},
+    newsRisk:{status:"BLOCK_HIGH_IMPACT",block:true,nextHighImpact:{type:"CPI",scheduledAtUTC:"2026-10-14T12:30:00Z"}},
+    sessionLiquidity:{recentSweeps:[]},
+    calibration:{status:"INSUFFICIENT_FORWARD_SAMPLE"},
+    dataHealth:{status:"GOOD"}
+  });
+  assert.equal(x.code,"HIGH_IMPACT_NEWS_BLOCK");
+  assert.equal(x.notify,true);
+  assert.equal(x.dedupeKey,y.dedupeKey);
+  assert.match(x.policy,/Preview only/);
+  assert.match(x.telegramText,/no broker order sent/i);
 });
