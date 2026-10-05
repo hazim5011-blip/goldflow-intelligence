@@ -13,7 +13,7 @@ function zoneSupport(indicator,direction,features){
   if(direction<0&&features?.sweepUp)return {status:"PASS",reason:"Bearish liquidity sweep supports the setup."};
   return {status:"CAUTION",reason:"No directional active zone or confirmed sweep is currently available."};
 }
-export function buildDecisionFunnel({analysis,macro,features,regime,dataHealth,newsRisk}){
+export function buildDecisionFunnel({analysis,macro,features,regime,dataHealth,newsRisk,calibration}){
   const sig=analysis?.indicator?.latestSignal||{},direction=sign(n(sig.direction)??0),score=n(sig.score);
   const setup=sign(features?.setupTrend||0),bias=sign(features?.biasTrend||0),gold=isGoldSymbol(analysis?.symbol||analysis?.requested);
   const gates=[];
@@ -81,28 +81,47 @@ export function buildDecisionFunnel({analysis,macro,features,regime,dataHealth,n
   else {const rr=Math.abs((tp-entry)/(entry-sl));riskStatus=rr>=1?"PASS":"CAUTION";riskReason="Plan R:R to TP1 is "+rr.toFixed(2)+"R."}
   gates.push(gate("RISK_VALID","Risk geometry",riskStatus,riskReason,true,6));
 
+  let probStatus="UNVERIFIED",probReason="Forward-calibrated probability is unavailable.";
+  const calibrated=calibration?.status==="CALIBRATED_FORWARD"&&n(calibration?.calibratedProbability)!=null;
+  if(calibrated){
+    const p=Number(calibration.calibratedProbability);
+    if(p>=.58){probStatus="PASS";probReason="Forward-calibrated positive-outcome probability is "+Math.round(100*p)+"%."}
+    else if(p>=.52){probStatus="CAUTION";probReason="Forward-calibrated probability is only "+Math.round(100*p)+"%; edge is modest."}
+    else {probStatus="FAIL";probReason="Forward-calibrated probability is "+Math.round(100*p)+"%, below the minimum research threshold."}
+  }else if(calibration?.status==="WEAK_FORWARD_CALIBRATION"){
+    probReason="Forward samples exist but chronological holdout reliability failed.";
+  }else if(calibration?.status==="INSUFFICIENT_CLASS_BALANCE"){
+    probReason="Forward sample has insufficient win/loss balance for reliable calibration.";
+  }else if(calibration?.status==="INSUFFICIENT_FORWARD_SAMPLE"){
+    probReason="Need at least "+(calibration?.minSample||50)+" completed forward samples before probability is published.";
+  }
+  gates.push(gate("PROBABILITY_VALID","Forward probability calibration",probStatus,probReason,probStatus==="FAIL",12));
+
   const weighted=gates.filter(g=>g.weight>0),den=weighted.reduce((s,g)=>s+g.weight,0);
   const confidence=den?clamp(Math.round(100*weighted.reduce((s,g)=>s+g.weight*(points[g.status]??0),0)/den)):0;
   const hardFails=gates.filter(g=>g.hard&&g.status==="FAIL");
   const softFails=gates.filter(g=>!g.hard&&g.status==="FAIL");
   let decision="WAIT";
+  const newsGate=gates.find(g=>g.id==="NEWS_RISK"),probGate=gates.find(g=>g.id==="PROBABILITY_VALID");
   if(!hardFails.length&&direction){
-    if(confidence>=72)decision="RESEARCH_READY";
+    if(confidence>=75&&newsGate?.status==="PASS"&&probGate?.status==="PASS")decision="RESEARCH_READY";
     else if(confidence>=55)decision="WATCH";
   }
-  // Until NEWS_RISK is verified, never label the Phase-1 system EXECUTION_READY.
   const side=direction>0?"BUY":direction<0?"SELL":"WAIT";
   const reasons=[...hardFails,...softFails,gates.filter(g=>g.status==="UNVERIFIED")].map(g=>g.id+": "+g.reason);
 
   return {
     decision,side,direction,modelConfidence:confidence,
     modelConfidenceMeaning:"WEIGHTED_GATE_CONFIDENCE_NOT_CALIBRATED_WIN_PROBABILITY",
-    calibratedProbability:null,probabilityStatus:"UNVERIFIED_PHASE_1",
+    calibratedProbability:calibrated?Number(calibration.calibratedProbability):null,
+    probabilityStatus:calibration?.status||"UNVERIFIED",
     gates,reasons,
     executionReady:false,
-    executionBlock:(gates.find(g=>g.id==="NEWS_RISK")?.status!=="PASS"
-      ?"Smart Quant remains research-only: news-risk gate is not fully clear and calibrated probability is not yet forward-verified."
-      :"Smart Quant remains research-only: calibrated probability is not yet forward-verified."),
+    executionBlock:decision==="RESEARCH_READY"
+      ?"Research readiness passed, but broker order execution remains intentionally disabled."
+      :(newsGate?.status!=="PASS"?"Smart Quant remains research-only: news-risk gate is not clear."
+        :probGate?.status!=="PASS"?"Smart Quant remains research-only: forward probability gate is not validated."
+        :"Smart Quant remains research-only until all hard gates and confidence thresholds pass."),
     summary:decision==="RESEARCH_READY"?side+" research setup passed all hard Phase-1 gates.":decision==="WATCH"?side+" setup is incomplete or lower-conviction.":"WAIT until failed or conflicting gates resolve."
   };
 }
