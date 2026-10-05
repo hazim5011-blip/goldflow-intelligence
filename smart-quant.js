@@ -20,7 +20,7 @@
     if($("sqTechnical"))$("sqTechnical").innerHTML="";
     if($("sqMacroDrivers"))$("sqMacroDrivers").innerHTML="";
     if($("sqRegimeEvidence"))$("sqRegimeEvidence").innerHTML="";
-    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix","sqTradePlan"].forEach(function(id){if($(id))$(id).innerHTML=""});
+    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix","sqTradePlan","sqAnalyst"].forEach(function(id){if($(id))$(id).innerHTML=""});
   }
 
   function renderTradePlan(p,a){
@@ -41,6 +41,18 @@
         '<div><small>TP3</small><strong>'+price(p.tp3,digits)+'</strong><span>'+(finite(p.rr?.tp3)?num(p.rr.tp3,2)+"R":"R:R N/A")+'</span></div>'+
         '<div><small>ACTIVE ZONE</small><strong>'+esc(zone)+'</strong><span>'+ (p.noChase?"NO-CHASE active":p.newsBlocked?"NEWS BLOCK":"broker-zone context") +'</span></div>'+
       '</div>';
+  }
+
+  function renderAnalyst(a){
+    var el=$("sqAnalyst");if(!el)return;
+    if(!a){el.innerHTML='<div class="notice info">Smart Analyst unavailable.</div>';return}
+    function items(arr,empty){return (arr||[]).length?(arr||[]).map(function(x){return "<li>"+esc(x)+"</li>"}).join(""):"<li>"+esc(empty)+"</li>"}
+    var next=a.nextHighImpact?('<div class="sqAnalystNews"><small>NEXT HIGH IMPACT</small><strong>'+esc(a.nextHighImpact.type||a.nextHighImpact.title||"EVENT")+'</strong><span>'+new Date(a.nextHighImpact.scheduledAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})+' MYT</span></div>'):"";
+    el.innerHTML='<div class="sqAnalystHero"><strong>'+esc(a.headline||"WAIT")+'</strong><span>'+esc(a.action||"")+'</span></div>'+
+      '<div class="grid g3 sqAnalystGrid"><div><h4>Yang menyokong</h4><ul>'+items(a.support,"Belum ada sokongan utama.")+'</ul></div>'+
+      '<div><h4>Yang masih menghalang</h4><ul>'+items(a.blockers,"Tiada blocker utama yang direkodkan.")+'</ul></div>'+
+      '<div><h4>Amaran</h4><ul>'+items(a.warnings,"Tiada amaran tambahan.")+'</ul></div></div>'+
+      '<div class="sqAnalystRisk"><div><small>RISK SUMMARY</small><span>'+esc(a.riskSummary||"")+'</span></div><div><small>MONTE CARLO</small><span>'+esc(a.monteCarloSummary||"")+'</span></div>'+next+'</div>';
   }
 
   function renderFunnel(decision){
@@ -208,7 +220,7 @@
     $("sqNotice").className="notice "+decisionCls(d.decision);
     $("sqNotice").textContent=d.summary+" "+d.executionBlock;
     $("sqUpdated").textContent=j.capturedAtUTC?"Updated "+new Date(j.capturedAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"}):"—";
-    renderTradePlan(j.tradePlan,a);renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
+    renderTradePlan(j.tradePlan,a);renderAnalyst(j.analyst);renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
   }
 
   async function load(force){
