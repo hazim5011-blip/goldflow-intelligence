@@ -19,7 +19,7 @@ import {buildAlertPreview} from "./_sqAlert.js";
 import {buildMacroContributionMap} from "./_sqMacroMap.js";
 import {buildLearningMonitor} from "./_sqLearning.js";
 
-export const SMART_QUANT_BUILD="sq-phase1-2026-10-05";
+export const SMART_QUANT_BUILD="sq-core-r2-2026-10-05";
 
 function fakeResponse(){
   let payload=null,code=200;
