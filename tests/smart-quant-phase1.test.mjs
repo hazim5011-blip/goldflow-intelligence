@@ -189,7 +189,7 @@ test("Calibration index pathname is immutable, scoped and metadata-readable",()=
   const event={signalId:published.signalId,outcome:"TP1",rMultiple:1.4,exitTimeUTC:"2026-10-05T10:15:00Z",
     receivedAtUTC:"2026-10-05T10:15:02.123Z",eventHash:"e"};
   const path=calibrationSamplePath(published,event);
-  assert.match(path,/^goldflow-calibration\/v1\/XAUUSD247\/105\/M5\//);
+  assert.match(path,/^goldflow-calibration\/v1\/XAUUSD247\/105\/M5\/20261005T101502Z-/);
   assert.match(path,/-0824-B-TP1-/);
   assert.match(path,/a{32}\.json$/);
 });
