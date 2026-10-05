@@ -64,8 +64,9 @@ function base(status,samples,selection){
 export function buildForwardCalibration(samples=[],current={}){
   const all=normalize(samples),direction=Math.sign(n(current.direction)||0),score=n(current.score);
   if(score==null||score<0||score>100)return {...base("NO_CURRENT_SCORE",all,"ALL"),reason:"Current model score is unavailable."};
+  if(!direction)return {...base("NO_CURRENT_DIRECTION",all,"ALL"),reason:"No current BUY/SELL direction exists, so a directional success probability is not published."};
 
-  const same=direction?all.filter(x=>x.direction===direction):[];
+  const same=all.filter(x=>x.direction===direction);
   const selected=same.length>=50?same:all;
   const selection=same.length>=50?"SAME_DIRECTION":"ALL_DIRECTIONS";
   const outBase=base("INSUFFICIENT_FORWARD_SAMPLE",selected,selection);
