@@ -1,5 +1,6 @@
 import analyzeHandler from "./analyze.js";
 import macroHandler from "./macro.js";
+import {brokerGet,vantageBrokerUtcOffsetSeconds} from "./_broker.js";
 import {buildSmartFeatures,assessDataHealth,isGoldSymbol} from "./_sqFeatures.js";
 import {classifySmartRegime} from "./_sqRegime.js";
 import {buildDecisionFunnel} from "./_sqDecisionFunnel.js";
@@ -10,6 +11,7 @@ import {runMonteCarlo} from "./_sqMonteCarlo.js";
 import {fetchOfficialNewsRisk} from "./_sqNewsRisk.js";
 import {listCalibrationSamples} from "./_v8Ledger.js";
 import {buildForwardCalibration} from "./_sqCalibration.js";
+import {buildMtfMatrix,TFS as SMART_TFS} from "./_sqMtf.js";
 
 export const SMART_QUANT_BUILD="sq-phase1-2026-10-05";
 
@@ -79,6 +81,14 @@ export default async function handler(req,res){
     }
 
     const macro=wantsMacro?safeMacro(mResult.payload):{ok:false,error:"NOT_APPLICABLE"};
+    let mtfMatrix={rows:[],readyCount:0,total:SMART_TFS.length,unavailable:true,error:"MTF_MATRIX_UNAVAILABLE"};
+    try{
+      const batch=await brokerGet("/multi-bars",{symbol:analysis.symbol||symbol,tfs:SMART_TFS.join(","),limits:SMART_TFS.map(()=>260).join(",")},40000,2);
+      mtfMatrix=buildMtfMatrix(batch.frames||{},vantageBrokerUtcOffsetSeconds()||0,analysis?.indicator?.latestSignal?.direction||0);
+    }catch(mtfErr){
+      mtfMatrix={rows:[],readyCount:0,total:SMART_TFS.length,unavailable:true,error:String(mtfErr?.message||mtfErr),
+        note:"MTF matrix unavailable; Smart Quant does not synthesize missing timeframe data."};
+    }
     const features=buildSmartFeatures(analysis);
     const dataHealth=assessDataHealth(analysis,macro,features);
     const regime=classifySmartRegime(features,analysis);
@@ -96,7 +106,7 @@ export default async function handler(req,res){
       capturedAtUTC:new Date().toISOString(),
       requested:{symbol,tf,indicator},
       analysis:slimAnalysis(analysis),
-      features,dataHealth,regime,macro,newsRisk,directionalEdge,historicalEdge,risk,monteCarlo,calibration,decision,
+      features,dataHealth,regime,mtfMatrix,macro,newsRisk,directionalEdge,historicalEdge,risk,monteCarlo,calibration,decision,
       disclaimer:"Smart Quant is a research decision-support layer. Directional Edge is not a price target, historical evidence is not forward calibration, and no broker order is placed."
     });
   }catch(e){
