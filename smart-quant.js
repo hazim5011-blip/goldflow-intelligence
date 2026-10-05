@@ -20,7 +20,7 @@
     if($("sqTechnical"))$("sqTechnical").innerHTML="";
     if($("sqMacroDrivers"))$("sqMacroDrivers").innerHTML="";
     if($("sqRegimeEvidence"))$("sqRegimeEvidence").innerHTML="";
-    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk"].forEach(function(id){if($(id))$(id).innerHTML=""});
+    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix"].forEach(function(id){if($(id))$(id).innerHTML=""});
   }
 
   function renderFunnel(decision){
@@ -28,6 +28,24 @@
     el.innerHTML=(decision?.gates||[]).map(function(g,i){
       return '<div class="sqGate '+cls(g.status)+'"><div class="sqGateStep">'+String(i+1).padStart(2,"0")+'</div><div class="sqGateBody"><div class="sqGateTop"><b>'+esc(g.label)+'</b><span class="sqGateStatus">'+esc(g.status)+'</span></div><p>'+esc(g.reason)+'</p></div></div>';
     }).join("")||'<div class="sub">No decision gates.</div>';
+  }
+
+  function renderMtf(m){
+    var summary=$("sqMtfSummary"),el=$("sqMtfMatrix");if(!summary||!el)return;
+    if(!m||m.unavailable){
+      summary.innerHTML='<div class="notice info">MTF matrix unavailable. Missing broker timeframe data is not synthesized.</div>';el.innerHTML="";return;
+    }
+    var nd=Number(m.netDirection||0),klass=nd>0?"g":nd<0?"r":"y";
+    summary.innerHTML='<div class="sqMtfHero"><div><small>NET MTF BIAS</small><strong class="'+klass+'">'+esc(m.netBias||"MIXED")+'</strong><span>'+num(m.netScore,1)+' weighted score</span></div>'+
+      '<div><small>ALIGNMENT</small><strong>'+esc(m.alignment?.aligned??0)+' / '+esc(m.readyCount??0)+'</strong><span>aligned • opposed '+esc(m.alignment?.opposed??0)+' • neutral '+esc(m.alignment?.neutral??0)+'</span></div>'+
+      '<div><small>DATA COVERAGE</small><strong>'+esc(m.readyCount??0)+' / '+esc(m.total??7)+'</strong><span>closed-candle timeframes ready</span></div></div>';
+    el.innerHTML='<div class="sqMtfHeader"><span>TF</span><span>STATE</span><span>CONF</span><span>CLOSE</span><span>EMA20/50</span><span>STRUCTURE</span></div>'+
+      (m.rows||[]).map(function(x){
+        if(!x.ready)return '<div class="sqMtfRow unavailable"><b>'+esc(x.tf)+'</b><span>UNAVAILABLE</span><span>—</span><span>—</span><span>—</span><span>'+esc(x.reason||"")+'</span></div>';
+        var c=Number(x.direction)>0?"g":Number(x.direction)<0?"r":"y";
+        var struct=x.structure?.breakoutUp?"BREAK↑":x.structure?.breakoutDown?"BREAK↓":x.structure?.sweepLow?"SWEEP LOW":x.structure?.sweepHigh?"SWEEP HIGH":"NORMAL";
+        return '<div class="sqMtfRow"><b>'+esc(x.tf)+'</b><span class="'+c+'">'+esc(x.trend)+'</span><span>'+pct(x.confidence,0)+'</span><span>'+num(x.close,2)+'</span><span>'+num(x.ema20,2)+' / '+num(x.ema50,2)+'</span><span>'+esc(struct)+'</span></div>';
+      }).join("");
   }
 
   function renderTechnical(j){
@@ -170,7 +188,7 @@
     $("sqNotice").className="notice "+decisionCls(d.decision);
     $("sqNotice").textContent=d.summary+" "+d.executionBlock;
     $("sqUpdated").textContent=j.capturedAtUTC?"Updated "+new Date(j.capturedAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"}):"—";
-    renderFunnel(d);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
+    renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
   }
 
   async function load(force){
