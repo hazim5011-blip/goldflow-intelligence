@@ -1,0 +1,97 @@
+import {n,clamp,isGoldSymbol,sign} from "./_sqFeatures.js";
+
+const points={PASS:1,CAUTION:.55,UNVERIFIED:.25,NA:.7,FAIL:0};
+function gate(id,label,status,reason,hard=false,weight=0){return {id,label,status,reason,hard,weight}}
+function macroDirection(macro){
+  const b=String(macro?.gold?.bias||"MIXED").toUpperCase();
+  return b==="SUPPORTIVE"?1:b==="PRESSURE"?-1:0;
+}
+function zoneSupport(indicator,direction,features){
+  const z=indicator?.activeZones||{},arr=direction>0?(z.buy||[]):direction<0?(z.sell||[]):[];
+  if(arr.length)return {status:"PASS",reason:arr.length+" active directional zone(s) support the setup."};
+  if(direction>0&&features?.sweepDown)return {status:"PASS",reason:"Bullish liquidity sweep supports the setup."};
+  if(direction<0&&features?.sweepUp)return {status:"PASS",reason:"Bearish liquidity sweep supports the setup."};
+  return {status:"CAUTION",reason:"No directional active zone or confirmed sweep is currently available."};
+}
+export function buildDecisionFunnel({analysis,macro,features,regime,dataHealth}){
+  const sig=analysis?.indicator?.latestSignal||{},direction=sign(n(sig.direction)??0),score=n(sig.score);
+  const setup=sign(features?.setupTrend||0),bias=sign(features?.biasTrend||0),gold=isGoldSymbol(analysis?.symbol||analysis?.requested);
+  const gates=[];
+
+  gates.push(gate("DATA_VALID","Data integrity",dataHealth?.hardBlock?"FAIL":dataHealth?.status==="GOOD"?"PASS":"CAUTION",
+    dataHealth?.hardBlock?"Broker/candle quality has a hard blocker.":"Data-health score "+(dataHealth?.score??"N/A")+"/100.",true,18));
+
+  if(!direction)gates.push(gate("STRUCTURE_VALID","Directional structure","FAIL","No confirmed directional setup is available.",true,18));
+  else if(score!=null&&score<55)gates.push(gate("STRUCTURE_VALID","Directional structure","CAUTION","Directional setup exists but engine score is below 55.",false,18));
+  else gates.push(gate("STRUCTURE_VALID","Directional structure","PASS","Directional setup is present"+(score!=null?" with engine score "+Math.round(score):"")+".",true,18));
+
+  let mtfStatus="CAUTION",mtfReason="Higher-timeframe alignment is partial.";
+  if(direction&&setup===direction&&bias===direction){mtfStatus="PASS";mtfReason="Trigger/setup/bias direction are aligned."}
+  else if(direction&&(setup===-direction||bias===-direction)){mtfStatus="FAIL";mtfReason="At least one higher timeframe opposes the setup direction."}
+  else if(!direction){mtfStatus="FAIL";mtfReason="No directional setup to validate."}
+  gates.push(gate("MTF_VALID","Multi-timeframe alignment",mtfStatus,mtfReason,true,14));
+
+  let regStatus="CAUTION",regReason="Regime is neutral/mixed.";
+  if(!regime||regime.name==="UNKNOWN"){regStatus="UNVERIFIED";regReason="Regime could not be verified."}
+  else if(direction&&regime.direction===direction){regStatus="PASS";regReason=regime.name+" supports the setup direction."}
+  else if(direction&&regime.direction===-direction){regStatus="FAIL";regReason=regime.name+" opposes the setup direction."}
+  else if(direction===0){regStatus="FAIL";regReason="No setup direction for regime compatibility."}
+  gates.push(gate("REGIME_VALID","Market regime",regStatus,regReason,true,14));
+
+  if(!gold)gates.push(gate("MACRO_VALID","Gold macro context","NA","Gold-specific macro gate is not applied to this symbol.",false,12));
+  else if(!macro?.ok)gates.push(gate("MACRO_VALID","Gold macro context","UNVERIFIED","Macro engine unavailable; do not treat technical confidence as full-market confidence.",false,12));
+  else{
+    const md=macroDirection(macro),q=macro.quality||{},fresh=n(q.fresh)||0,total=n(q.total)||0,freshRatio=total?fresh/total:0;
+    if(md===0)gates.push(gate("MACRO_VALID","Gold macro context","CAUTION","Macro Gold bias is MIXED.",false,12));
+    else if(direction&&md===direction)gates.push(gate("MACRO_VALID","Gold macro context",freshRatio>=.5?"PASS":"CAUTION","Macro Gold bias supports the setup"+(freshRatio<.5?" but data freshness is weak.":"."),false,12));
+    else if(direction&&md===-direction)gates.push(gate("MACRO_VALID","Gold macro context",freshRatio>=.5?"FAIL":"CAUTION","Macro Gold bias opposes the setup"+(freshRatio<.5?" but freshness is insufficient for a hard block.":"."),freshRatio>=.5,12));
+    else gates.push(gate("MACRO_VALID","Gold macro context","CAUTION","No directional setup to compare with macro bias.",false,12));
+  }
+
+  const liq=zoneSupport(analysis?.indicator,direction,features);
+  gates.push(gate("LIQUIDITY_VALID","Liquidity / zone context",direction?liq.status:"FAIL",direction?liq.reason:"No directional setup.",false,8));
+
+  // Phase 1 deliberately refuses to invent an upcoming-event calendar.
+  gates.push(gate("NEWS_RISK","Upcoming news risk","UNVERIFIED","Upcoming high-impact economic-event calendar is not yet independently verified in Smart Quant Phase 1.",false,0));
+
+  let entryStatus="CAUTION",entryReason="Entry-distance quality unavailable.";
+  if(!direction){entryStatus="FAIL";entryReason="No directional setup."}
+  else if(features?.spreadToAtr!=null&&features.spreadToAtr>.35){entryStatus="FAIL";entryReason="Spread is too large relative to ATR14."}
+  else if(features?.entryDistanceAtr==null){entryStatus="CAUTION";entryReason="Signal entry is not defined; treat as research/watch only."}
+  else if(features.entryDistanceAtr<=.50){entryStatus="PASS";entryReason="Price is within 0.50 ATR of the model entry."}
+  else if(features.entryDistanceAtr<=1.0){entryStatus="CAUTION";entryReason="Price is "+features.entryDistanceAtr.toFixed(2)+" ATR from model entry."}
+  else {entryStatus="FAIL";entryReason="Price is "+features.entryDistanceAtr.toFixed(2)+" ATR from model entry; chasing is blocked."}
+  gates.push(gate("ENTRY_QUALITY_VALID","Entry quality",entryStatus,entryReason,true,10));
+
+  const entry=n(sig.entry),sl=n(sig.invalidation),tp=n(sig.tp1);
+  let riskStatus="CAUTION",riskReason="Trade-plan risk model is incomplete.";
+  if(!direction) {riskStatus="FAIL";riskReason="No directional setup."}
+  else if(entry==null||sl==null||direction*(entry-sl)<=0){riskStatus="FAIL";riskReason="Entry/SL geometry is missing or invalid."}
+  else if(tp==null){riskStatus="CAUTION";riskReason="SL is defined but this engine does not provide a verified TP1 outcome model."}
+  else if(direction*(tp-entry)<=0){riskStatus="FAIL";riskReason="TP1 geometry is invalid."}
+  else {const rr=Math.abs((tp-entry)/(entry-sl));riskStatus=rr>=1?"PASS":"CAUTION";riskReason="Plan R:R to TP1 is "+rr.toFixed(2)+"R."}
+  gates.push(gate("RISK_VALID","Risk geometry",riskStatus,riskReason,true,6));
+
+  const weighted=gates.filter(g=>g.weight>0),den=weighted.reduce((s,g)=>s+g.weight,0);
+  const confidence=den?clamp(Math.round(100*weighted.reduce((s,g)=>s+g.weight*(points[g.status]??0),0)/den)):0;
+  const hardFails=gates.filter(g=>g.hard&&g.status==="FAIL");
+  const softFails=gates.filter(g=>!g.hard&&g.status==="FAIL");
+  let decision="WAIT";
+  if(!hardFails.length&&direction){
+    if(confidence>=72)decision="RESEARCH_READY";
+    else if(confidence>=55)decision="WATCH";
+  }
+  // Until NEWS_RISK is verified, never label the Phase-1 system EXECUTION_READY.
+  const side=direction>0?"BUY":direction<0?"SELL":"WAIT";
+  const reasons=[...hardFails,...softFails,gates.filter(g=>g.status==="UNVERIFIED")].map(g=>g.id+": "+g.reason);
+
+  return {
+    decision,side,direction,modelConfidence:confidence,
+    modelConfidenceMeaning:"WEIGHTED_GATE_CONFIDENCE_NOT_CALIBRATED_WIN_PROBABILITY",
+    calibratedProbability:null,probabilityStatus:"UNVERIFIED_PHASE_1",
+    gates,reasons,
+    executionReady:false,
+    executionBlock:"Smart Quant Phase 1 is research-only; upcoming-news verification and calibrated probability are required before any EXECUTION_READY state.",
+    summary:decision==="RESEARCH_READY"?side+" research setup passed all hard Phase-1 gates.":decision==="WATCH"?side+" setup is incomplete or lower-conviction.":"WAIT until failed or conflicting gates resolve."
+  };
+}
