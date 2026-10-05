@@ -20,7 +20,63 @@
     if($("sqTechnical"))$("sqTechnical").innerHTML="";
     if($("sqMacroDrivers"))$("sqMacroDrivers").innerHTML="";
     if($("sqRegimeEvidence"))$("sqRegimeEvidence").innerHTML="";
-    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix","sqTradePlan","sqAnalyst"].forEach(function(id){if($(id))$(id).innerHTML=""});
+    ["sqEdge","sqHistoryEdge","sqCalibration","sqRisk","sqMonteCarlo","sqNewsRisk","sqMtfSummary","sqMtfMatrix","sqTradePlan","sqAnalyst","sqSessionRadar","sqMacroMap","sqAlertPreview"].forEach(function(id){if($(id))$(id).innerHTML=""});
+  }
+
+  function renderSessionRadar(s,a){
+    var el=$("sqSessionRadar"),tag=$("sqSessionTag");if(!el||!tag)return;
+    if(!s||!s.ready){
+      tag.textContent="UNAVAILABLE";tag.className="tag y";
+      el.innerHTML='<div class="notice info">Session/liquidity data unavailable. Missing broker M5 data is not synthesized.</div>';return;
+    }
+    var digits=a?.digits??2,active=(s.currentSessions||[]);
+    tag.textContent=active.length?active.join(" + "):"OFF SESSION";
+    tag.className="tag "+(s.recentSweeps?.length?"r":active.length?"g":"y");
+    var range=s.primarySessionRange||{},pos=finite(s.primarySessionPosition)?Math.round(100*s.primarySessionPosition):null;
+    var nearest=[
+      s.nearestAbove?'<div><small>NEAREST ABOVE</small><strong>'+esc(s.nearestAbove.id)+' '+price(s.nearestAbove.value,digits)+'</strong><span>'+ (finite(s.nearestAbove.distanceAtr)?num(s.nearestAbove.distanceAtr,2)+" ATR":"—") +'</span></div>':"",
+      s.nearestBelow?'<div><small>NEAREST BELOW</small><strong>'+esc(s.nearestBelow.id)+' '+price(s.nearestBelow.value,digits)+'</strong><span>'+ (finite(s.nearestBelow.distanceAtr)?num(s.nearestBelow.distanceAtr,2)+" ATR":"—") +'</span></div>':""
+    ].join("");
+    var pools=(s.pools||[]).slice(0,8).map(function(p){
+      var state=p.latestSweep?"SWEEP":p.latestBreak?"BREAK":p.side;
+      var k=p.latestSweep?"r":p.side==="ABOVE"?"y":"g";
+      return '<div class="sqPoolRow"><div><b>'+esc(p.id)+'</b><small>'+esc(p.label)+'</small></div><strong>'+price(p.value,digits)+'</strong><span>'+ (finite(p.distanceAtr)?num(p.distanceAtr,2)+" ATR":"—") +'</span><em class="'+k+'">'+esc(state)+'</em></div>';
+    }).join("");
+    var sessions=(s.sessions||[]).map(function(x){
+      var r=x.range||x.previousRange;
+      return '<div class="sqSessionChip '+(x.active?"active":"")+'"><b>'+esc(x.label)+'</b><span>'+ (r?price(r.low,digits)+" – "+price(r.high,digits):"N/A") +'</span></div>';
+    }).join("");
+    el.innerHTML='<div class="sqSessionHero"><div><small>PRIMARY SESSION</small><strong>'+esc(s.primarySession||"OFF_SESSION")+'</strong><span>'+ (s.overlap?"OVERLAP ACTIVE":"single/none") +'</span></div>'+
+      '<div><small>SESSION POSITION</small><strong>'+ (pos==null?"—":pos+"%") +'</strong><span>'+ (finite(range.low)&&finite(range.high)?price(range.low,digits)+" – "+price(range.high,digits):"range unavailable") +'</span></div></div>'+
+      '<div class="sqSessionChips">'+sessions+'</div><div class="sqNearestGrid">'+nearest+'</div>'+
+      '<div class="sqPools">'+pools+'</div>';
+  }
+
+  function renderMacroMap(m){
+    var el=$("sqMacroMap"),tag=$("sqMacroMapTag");if(!el||!tag)return;
+    if(!m||!m.ok){
+      tag.textContent="N/A";tag.className="tag y";
+      el.innerHTML='<div class="notice info">Macro contribution map is not applicable or unavailable.</div>';return;
+    }
+    var bias=m.bias||"MIXED";tag.textContent=bias;tag.className="tag "+(bias==="SUPPORTIVE"?"g":bias==="PRESSURE"?"r":"y");
+    var rows=(m.rows||[]).slice(0,9).map(function(x){
+      var c=Number(x.contribution||0),k=c>0?"g":c<0?"r":"y";
+      return '<div class="sqMacroMapRow"><div><b>'+esc(x.id)+'</b><small>'+esc(x.name)+'</small></div><strong>'+esc(x.display||"—")+'</strong><span class="'+k+'">'+(c>0?"+":"")+num(c,2)+'</span></div>';
+    }).join("");
+    el.innerHTML='<div class="sqMacroMapHero"><div><small>NET MACRO CONTEXT</small><strong class="'+(bias==="SUPPORTIVE"?"g":bias==="PRESSURE"?"r":"y")+'">'+esc(bias)+'</strong><span>'+ (m.netScore>0?"+":"")+num(m.netScore,2) +'</span></div>'+
+      '<div><small>SUPPORT / PRESSURE</small><strong>'+num(m.supportScore,2)+' / '+num(m.pressureScore,2)+'</strong><span>weighted contribution score</span></div></div>'+
+      '<div class="sqMacroMapRows">'+rows+'</div><p class="v8Footnote">'+esc(m.note||"")+'</p>';
+  }
+
+  function renderAlertPreview(x){
+    var el=$("sqAlertPreview"),tag=$("sqAlertTag");if(!el||!tag)return;
+    if(!x){tag.textContent="NO ALERT";tag.className="tag";el.innerHTML='<div class="notice info">Alert policy unavailable.</div>';return}
+    var sev=x.severity||"INFO",klass=sev==="HIGH"?"r":sev==="MEDIUM"?"y":"g";
+    tag.textContent=x.code||"NO ALERT";tag.className="tag "+klass;
+    var lines=String(x.telegramText||"").split("\n").map(function(line){return "<div>"+esc(line)+"</div>"}).join("");
+    el.innerHTML='<div class="sqAlertHero '+(sev==="HIGH"?"bad":sev==="MEDIUM"?"warn":"good")+'"><div><small>SEVERITY</small><strong>'+esc(sev)+'</strong><span>'+esc(x.reason||"")+'</span></div>'+
+      '<div><small>NOTIFY POLICY</small><strong>'+(x.notify?"YES":"NO")+'</strong><span>dedupe '+esc(x.dedupeKey||"—")+'</span></div></div>'+
+      '<div class="sqTelegramPreview">'+lines+'</div><p class="v8Footnote">'+esc(x.policy||"")+'</p>';
   }
 
   function renderTradePlan(p,a){
@@ -220,7 +276,7 @@
     $("sqNotice").className="notice "+decisionCls(d.decision);
     $("sqNotice").textContent=d.summary+" "+d.executionBlock;
     $("sqUpdated").textContent=j.capturedAtUTC?"Updated "+new Date(j.capturedAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"}):"—";
-    renderTradePlan(j.tradePlan,a);renderAnalyst(j.analyst);renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
+    renderSessionRadar(j.sessionLiquidity,a);renderMacroMap(j.macroMap);renderAlertPreview(j.alertPreview);renderTradePlan(j.tradePlan,a);renderAnalyst(j.analyst);renderFunnel(d);renderMtf(j.mtfMatrix);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderCalibration(j.calibration);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
   }
 
   async function load(force){
