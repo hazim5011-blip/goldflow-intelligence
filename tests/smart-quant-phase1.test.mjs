@@ -7,6 +7,7 @@ import {buildDecisionFunnel} from "../api/_sqDecisionFunnel.js";
 import {buildDirectionalEdge} from "../api/_sqFairValue.js";
 import {buildRiskReference} from "../api/_sqRisk.js";
 import {runMonteCarlo} from "../api/_sqMonteCarlo.js";
+import {parseBlsSchedule,parseBeaSchedule,parseFomcMeetings} from "../api/_sqNewsRisk.js";
 
 const bar=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 function trendBars(n=140,dir=1){
@@ -119,4 +120,32 @@ test("Monte Carlo bootstrap is deterministic and explicitly reconstruction-based
   assert.equal(a.status,"AVAILABLE_RECONSTRUCTION_BOOTSTRAP");
   for(const k of ["dd5","dd10","dd20","ruin50","lossStreak5"])assert.ok(a.probabilities[k]>=0&&a.probabilities[k]<=100,k);
   assert.match(a.warning,/reconstructed historical R outcomes/i);
+});
+
+
+test("Official schedule parsers normalize Eastern time without inventing event times",()=>{
+  const bls=parseBlsSchedule("Reference Month Release Date Release Time September 2026 Oct. 14, 2026 08:30 AM","CPI","Consumer Price Index","HIGH","bls");
+  assert.equal(bls.length,1);
+  assert.equal(bls[0].scheduledAtUTC,"2026-10-14T12:30:00.000Z");
+
+  const bea=parseBeaSchedule("October 29 8:30 AM News GDP (Advance Estimate), 3rd Quarter 2026 October 29 8:30 AM News Personal Income and Outlays, September 2026",2026,"bea");
+  assert.equal(bea.length,2);
+  assert.ok(bea.some(x=>x.type==="GDP"));
+  assert.ok(bea.some(x=>x.type==="PCE"));
+  assert.ok(bea.every(x=>x.scheduledAtUTC==="2026-10-29T12:30:00.000Z"));
+
+  const fed=parseFomcMeetings("2026 FOMC Meetings October 27-28 December 8-9* 2025 FOMC Meetings December 9-10*", [2026],"fed");
+  assert.equal(fed.length,2);
+  assert.equal(fed[0].scheduledAtUTC,"2026-10-28T18:00:00.000Z");
+  assert.equal(fed[1].scheduledAtUTC,"2026-12-09T19:00:00.000Z");
+});
+
+test("Verified high-impact news inside hard window blocks the decision funnel",()=>{
+  const a=analysis(1),m=macro("SUPPORTIVE"),f=buildSmartFeatures(a),h=assessDataHealth(a,m,f),r=classifySmartRegime(f,a);
+  const newsRisk={verification:"VERIFIED_OFFICIAL_SCHEDULES",status:"BLOCK_HIGH_IMPACT",block:true,nextHighImpact:{type:"CPI"},minutesToNextHigh:12};
+  const d=buildDecisionFunnel({analysis:a,macro:m,features:f,regime:r,dataHealth:h,newsRisk});
+  const g=d.gates.find(x=>x.id==="NEWS_RISK");
+  assert.equal(g.status,"FAIL");
+  assert.equal(g.hard,true);
+  assert.equal(d.decision,"WAIT");
 });
