@@ -16,6 +16,7 @@ import {buildSmartAnalyst} from "../api/_sqAnalyst.js";
 import {buildSessionLiquidity} from "../api/_sqSession.js";
 import {buildAlertPreview} from "../api/_sqAlert.js";
 import {buildMacroContributionMap} from "../api/_sqMacroMap.js";
+import {buildLearningMonitor} from "../api/_sqLearning.js";
 
 const bar=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 function trendBars(n=140,dir=1){
@@ -90,7 +91,7 @@ test("Fresh opposing Gold macro bias can block a directional setup",()=>{
 test("Smart Quant UI contains unique critical controls and research-only warnings",()=>{
   const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
   const js=readFileSync(new URL("../smart-quant.js",import.meta.url),"utf8");
-  for(const id of ["smartQuantPage","sqRefresh","sqDecision","sqConfidence","sqProbability","sqSessionRadar","sqMacroMap","sqAlertPreview","sqTradePlan","sqAnalyst","sqFunnel","sqMtfMatrix","sqTechnical","sqMacroDrivers"]){
+  for(const id of ["smartQuantPage","sqRefresh","sqDecision","sqConfidence","sqProbability","sqSessionRadar","sqMacroMap","sqAlertPreview","sqTradePlan","sqAnalyst","sqFunnel","sqMtfMatrix","sqTechnical","sqMacroDrivers","sqLearning"]){
     assert.equal([...html.matchAll(new RegExp('id="'+id+'"',"g"))].length,1,id);
   }
   assert.ok(html.includes('src="/smart-quant.js"'));
@@ -342,4 +343,49 @@ test("Alert preview is deterministic and never sends from the polling API",()=>{
   assert.equal(x.dedupeKey,y.dedupeKey);
   assert.match(x.policy,/Preview only/);
   assert.match(x.telegramText,/no broker order sent/i);
+});
+
+
+test("Learning monitor never auto-promotes and flags major recent performance drift",()=>{
+  const samples=[];
+  for(let i=0;i<120;i++){
+    const prior=i<90;
+    const win=prior?(i%5!==0):(i%4===0);
+    samples.push({
+      timestampKey:"2026"+String(i).padStart(10,"0"),
+      outcome:win?"TP1":"SL",
+      score:70,
+      direction:1,
+      signalId:String(i).padStart(32,"0")
+    });
+  }
+  const x=buildLearningMonitor(samples,{
+    status:"CALIBRATED_FORWARD",
+    holdout:{brierSkill:.08,ece:.08}
+  });
+  assert.equal(x.sampleCount,120);
+  assert.equal(x.driftWarning,true);
+  assert.equal(x.promotionEligible,false);
+  assert.match(x.promotionPolicy,/Manual review only/);
+  assert.match(x.nextStep,/drift/i);
+});
+
+test("Learning monitor can mark a stable calibrated model eligible only for manual review",()=>{
+  const samples=[];
+  for(let i=0;i<120;i++){
+    samples.push({
+      timestampKey:"2026"+String(i).padStart(10,"0"),
+      outcome:i%5<3?"TP1":"SL",
+      score:70,
+      direction:1,
+      signalId:String(i).padStart(32,"0")
+    });
+  }
+  const x=buildLearningMonitor(samples,{
+    status:"CALIBRATED_FORWARD",
+    holdout:{brierSkill:.06,ece:.08}
+  });
+  assert.equal(x.driftWarning,false);
+  assert.equal(x.promotionEligible,true);
+  assert.match(x.nextStep,/manual shadow-model review/i);
 });
