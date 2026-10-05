@@ -8,6 +8,8 @@ import {buildDirectionalEdge} from "../api/_sqFairValue.js";
 import {buildRiskReference} from "../api/_sqRisk.js";
 import {runMonteCarlo} from "../api/_sqMonteCarlo.js";
 import {parseBlsSchedule,parseBeaSchedule,parseFomcMeetings} from "../api/_sqNewsRisk.js";
+import {buildForwardCalibration} from "../api/_sqCalibration.js";
+import {calibrationSamplePath} from "../api/_v8Ledger.js";
 
 const bar=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 function trendBars(n=140,dir=1){
@@ -148,4 +150,59 @@ test("Verified high-impact news inside hard window blocks the decision funnel",(
   assert.equal(g.status,"FAIL");
   assert.equal(g.hard,true);
   assert.equal(d.decision,"WAIT");
+});
+
+
+function calibrationRows(n=120,mode="skill"){
+  const rows=[];
+  for(let i=0;i<n;i++){
+    const score=35+(i%14)*4.5;
+    let win;
+    if(mode==="skill"){
+      const threshold=(i*37%100)/100;
+      const p=Math.max(.12,Math.min(.90,.18+(score-35)/70*.68));
+      win=threshold<p;
+    }else{
+      win=(i*37%100)<55;
+    }
+    rows.push({timestampKey:"202610"+String(1+Math.floor(i/24)).padStart(2,"0")+"T"+String(i%24).padStart(2,"0")+"0000Z",
+      score,direction:1,outcome:win?"TP1":"SL",signalId:String(i).padStart(32,"0")});
+  }
+  return rows;
+}
+test("Forward calibration refuses small or unreliable samples and publishes only after holdout validation",()=>{
+  const small=buildForwardCalibration(calibrationRows(30,"skill"),{score:80,direction:1});
+  assert.equal(small.calibratedProbability,null);
+  assert.equal(small.status,"INSUFFICIENT_FORWARD_SAMPLE");
+
+  const good=buildForwardCalibration(calibrationRows(160,"skill"),{score:80,direction:1});
+  assert.equal(good.status,"CALIBRATED_FORWARD");
+  assert.ok(good.calibratedProbability>.5&&good.calibratedProbability<1);
+  assert.equal(good.provenance,"FORWARD_LOGGED_ONLY");
+  assert.ok(good.holdout.brierSkill>=.01);
+  assert.ok(good.reliabilityBins.length>0);
+});
+
+test("Calibration index pathname is immutable, scoped and metadata-readable",()=>{
+  const published={signalId:"a".repeat(32),symbolResolved:"XAUUSD247",indicatorId:"105",tf:"M5",direction:1,score:82.4,
+    signalCandleCloseUTC:"2026-10-05T10:00:00Z",recordHash:"r"};
+  const event={signalId:published.signalId,outcome:"TP1",rMultiple:1.4,exitTimeUTC:"2026-10-05T10:15:00Z",
+    receivedAtUTC:"2026-10-05T10:15:02.123Z",eventHash:"e"};
+  const path=calibrationSamplePath(published,event);
+  assert.match(path,/^goldflow-calibration\/v1\/XAUUSD247\/105\/M5\//);
+  assert.match(path,/-0824-B-TP1-/);
+  assert.match(path,/a{32}\.json$/);
+});
+
+test("Decision funnel requires validated forward probability before RESEARCH_READY",()=>{
+  const a=analysis(1),m=macro("SUPPORTIVE"),f=buildSmartFeatures(a),h=assessDataHealth(a,m,f),r=classifySmartRegime(f,a);
+  const newsRisk={verification:"VERIFIED_OFFICIAL_SCHEDULES",status:"CLEAR",block:false,nextHighImpact:null};
+  const noCal=buildDecisionFunnel({analysis:a,macro:m,features:f,regime:r,dataHealth:h,newsRisk,calibration:{status:"INSUFFICIENT_FORWARD_SAMPLE",minSample:50}});
+  assert.notEqual(noCal.decision,"RESEARCH_READY");
+  assert.equal(noCal.calibratedProbability,null);
+  const cal={status:"CALIBRATED_FORWARD",calibratedProbability:.64};
+  const yes=buildDecisionFunnel({analysis:a,macro:m,features:f,regime:r,dataHealth:h,newsRisk,calibration:cal});
+  const pg=yes.gates.find(x=>x.id==="PROBABILITY_VALID");
+  assert.equal(pg.status,"PASS");
+  assert.equal(yes.calibratedProbability,.64);
 });
