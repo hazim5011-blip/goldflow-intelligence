@@ -20,6 +20,7 @@
     if($("sqTechnical"))$("sqTechnical").innerHTML="";
     if($("sqMacroDrivers"))$("sqMacroDrivers").innerHTML="";
     if($("sqRegimeEvidence"))$("sqRegimeEvidence").innerHTML="";
+    ["sqEdge","sqHistoryEdge","sqRisk","sqMonteCarlo"].forEach(function(id){if($(id))$(id).innerHTML=""});
   }
 
   function renderFunnel(decision){
@@ -65,6 +66,54 @@
     el.innerHTML='<div class="sqConditions">'+conditions+'</div><div class="grid g2"><div><h4>Supporting evidence</h4><ul class="sqList">'+support+'</ul></div><div><h4>Opposing / risk evidence</h4><ul class="sqList">'+opposition+'</ul></div></div>';
   }
 
+  function renderEdge(edge,hist){
+    if($("sqEdge")){
+      var comps=(edge?.components||[]).map(function(x){
+        var c=Number(x.contribution||0),klass=c>0?"g":c<0?"r":"y";
+        return '<div class="sqEdgeRow"><div><b>'+esc(x.label)+'</b><small>'+esc(x.detail||"")+'</small></div><strong class="'+klass+'">'+(c>0?"+":"")+num(c,1)+'</strong></div>';
+      }).join("");
+      $("sqEdge").innerHTML='<div class="sqEdgeHero"><div><small>DIRECTIONAL EDGE INDEX</small><strong class="'+(edge?.bias==="BULLISH"?"g":edge?.bias==="BEARISH"?"r":"y")+'">'+esc(edge?.directionalEdgeIndex??"—")+'</strong><span>'+esc(edge?.bias||"MIXED")+' • coverage '+esc(edge?.coverage??"—")+'%</span></div><p>'+esc(edge?.interpretation||"")+'</p></div><div class="sqEdgeRows">'+comps+'</div>';
+    }
+    if($("sqHistoryEdge")){
+      if(!hist){$("sqHistoryEdge").innerHTML='<div class="notice info">Historical evidence unavailable.</div>';return}
+      var lo=hist.winRateWilson95?.low,hi=hist.winRateWilson95?.high;
+      var wr=finite(hist.winRate)?pct(100*hist.winRate,1):"—";
+      var ci=finite(lo)&&finite(hi)?pct(100*lo,1)+" – "+pct(100*hi,1):"—";
+      $("sqHistoryEdge").innerHTML='<div class="sqRiskGrid">'+
+        '<div><small>Comparable sample</small><strong>'+esc(hist.sampleCount??0)+'</strong><span>'+esc(hist.selection||"")+'</span></div>'+
+        '<div><small>Historical WR</small><strong>'+wr+'</strong><span>Wilson 95% '+ci+'</span></div>'+
+        '<div><small>Mean R</small><strong>'+num(hist.meanR,2)+'R</strong><span>reconstructed outcomes</span></div>'+
+        '<div><small>Profit Factor (R)</small><strong>'+num(hist.profitFactorR,2)+'</strong><span>not forward proof</span></div>'+
+      '</div><p class="v8Footnote">'+esc(hist.warning||"")+'</p>';
+    }
+  }
+
+  function renderRisk(risk,mc){
+    if($("sqRisk")){
+      var suggested=finite(risk?.suggestedRiskPct)?pct(risk.suggestedRiskPct,3):"N/A";
+      $("sqRisk").innerHTML='<div class="sqRiskGrid">'+
+        '<div><small>Status</small><strong>'+esc(risk?.status||"—")+'</strong><span>'+esc(risk?.method||"")+'</span></div>'+
+        '<div><small>Suggested risk</small><strong>'+suggested+'</strong><span>hard cap '+esc(risk?.hardRiskCapPct??"—")+'%</span></div>'+
+        '<div><small>Full Kelly</small><strong>'+ (finite(risk?.fullKellyPct)?pct(risk.fullKellyPct,3):"N/A") +'</strong><span>not used directly</span></div>'+
+        '<div><small>Fractional Kelly</small><strong>'+ (finite(risk?.fractionalKellyPct)?pct(risk.fractionalKellyPct,3):"N/A") +'</strong><span>fraction '+esc(risk?.kellyFraction??"—")+'</span></div>'+
+      '</div><p class="v8Footnote">'+esc(risk?.warning||"")+'</p>';
+    }
+    if($("sqMonteCarlo")){
+      if(!mc||mc.status==="INSUFFICIENT_SAMPLE"){
+        $("sqMonteCarlo").innerHTML='<div class="notice info">Monte Carlo unavailable: '+esc(mc?.sampleCount??0)+' resolved R samples; minimum '+esc(mc?.minSample??20)+'.</div>';return;
+      }
+      $("sqMonteCarlo").innerHTML='<div class="sqMcHead"><b>'+esc(mc.paths)+' paths × '+esc(mc.trades)+' trades</b><span>Risk used '+pct(mc.riskPctUsed,3)+' • '+esc(mc.riskBasis)+'</span></div>'+
+        '<div class="sqRiskGrid">'+
+        '<div><small>P(DD ≥5%)</small><strong>'+pct(mc.probabilities?.dd5,2)+'</strong><span>bootstrap</span></div>'+
+        '<div><small>P(DD ≥10%)</small><strong>'+pct(mc.probabilities?.dd10,2)+'</strong><span>bootstrap</span></div>'+
+        '<div><small>P(DD ≥20%)</small><strong>'+pct(mc.probabilities?.dd20,2)+'</strong><span>bootstrap</span></div>'+
+        '<div><small>P(5-loss streak)</small><strong>'+pct(mc.probabilities?.lossStreak5,2)+'</strong><span>within '+esc(mc.trades)+' trades</span></div>'+
+        '<div><small>Median max DD</small><strong>'+pct(mc.maxDrawdownPct?.p50,2)+'</strong><span>P95 '+pct(mc.maxDrawdownPct?.p95,2)+'</span></div>'+
+        '<div><small>Ending return</small><strong>'+num(mc.endingReturnPct?.median,2)+'%</strong><span>P05 '+num(mc.endingReturnPct?.p05,2)+'% • P95 '+num(mc.endingReturnPct?.p95,2)+'%</span></div>'+
+        '</div><p class="v8Footnote">'+esc(mc.warning||"")+'</p>';
+    }
+  }
+
   function renderReasons(decision){
     var el=$("sqReasons");if(!el)return;
     var a=decision?.reasons||[];
@@ -85,7 +134,7 @@
     $("sqNotice").className="notice "+decisionCls(d.decision);
     $("sqNotice").textContent=d.summary+" "+d.executionBlock;
     $("sqUpdated").textContent=j.capturedAtUTC?"Updated "+new Date(j.capturedAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"}):"—";
-    renderFunnel(d);renderTechnical(j);renderMacro(j.macro);renderRegime(r);renderReasons(d);
+    renderFunnel(d);renderTechnical(j);renderMacro(j.macro);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
   }
 
   async function load(force){
