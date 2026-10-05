@@ -46,3 +46,24 @@
 .zoneAction{width:100%;background:#113927;border:1px solid #2a8f67;color:#9cf5cc;font-size:10px;font-weight:900;padding:7px;border-radius:7px;cursor:pointer;margin:6px 0}.zoneAction:hover{background:#1b5037}.zoneStatus.offline{color:#d1d8df;border-color:#486273;background:#13212d;animation:none}
 
 .zoneStatus.watch{color:#ffdd79;border-color:#8a6d24;background:#2a240f;animation:none}
+
+
+/* Smart Quant Phase 1 — evidence-first command center */
+.sqHero{border-color:#31566b;background:linear-gradient(180deg,#0b1b26,#08131a)}
+.sqHeadActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sqKpis>.card{background:#07151e}
+.sqFunnel{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.sqGate{display:grid;grid-template-columns:42px 1fr;gap:10px;border:1px solid #294451;border-radius:10px;background:#081721;overflow:hidden}
+.sqGate.good{border-left:4px solid #31d6a4}.sqGate.warn{border-left:4px solid #f2c75b}.sqGate.bad{border-left:4px solid #ff6079}.sqGate.info{border-left:4px solid #6c8493}
+.sqGateStep{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#7893a2;background:#0b1c27}
+.sqGateBody{padding:10px 11px 10px 0}.sqGateTop{display:flex;justify-content:space-between;gap:10px;align-items:center}.sqGateTop b{font-size:12px}.sqGateStatus{font-size:9px;font-weight:900;letter-spacing:.05em;color:#c8d9e3}
+.sqGate p{margin:5px 0 0;color:#9eb3bf;font-size:11px;line-height:1.45}
+.sqMetricGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.sqMetric{display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:9px;border:1px solid #24404d;background:#081721;min-width:0}
+.sqMetric small{font-size:9px;color:#8fa8b6;text-transform:uppercase;letter-spacing:.04em}.sqMetric strong{font-size:15px;overflow-wrap:anywhere}.sqMetric span{font-size:10px;color:#718997}
+.sqConditions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}.sqList{margin:8px 0 0;padding-left:18px;color:#c4d5df;font-size:12px;line-height:1.6}.sqList li{margin:4px 0}
+.sqMacroSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}.sqMacroSummary>div{display:flex;flex-direction:column;gap:4px;border:1px solid #25414e;background:#081721;border-radius:9px;padding:10px}.sqMacroSummary small{font-size:9px;color:#8ca4b2}.sqMacroSummary strong{font-size:15px}.sqMacroSummary span{font-size:10px;color:#78909e}
+.sqDrivers{display:flex;flex-direction:column;gap:7px}.sqDriver{display:grid;grid-template-columns:1.4fr .7fr .65fr;gap:8px;align-items:center;border-bottom:1px solid #1d3440;padding:8px 4px}.sqDriver b,.sqDriver small{display:block}.sqDriver b{font-size:11px}.sqDriver small{font-size:9px;color:#78909e;margin-top:3px}.sqDriver>strong{font-size:12px}.sqDriver>span{font-size:10px;font-weight:900;text-align:right}.sqDriver.stale{opacity:.62}
+.sqReasons{display:grid;gap:8px;margin-top:10px}.sqReason{border:1px solid #5c5024;background:#211d0c;color:#f2d982;padding:10px;border-radius:9px;font-size:11px;line-height:1.5}.sqReason.good{border-color:#27705a;background:#0a281f;color:#9cf5cc}
+@media(max-width:850px){.sqMacroSummary{grid-template-columns:1fr}.sqDriver{grid-template-columns:1fr .7fr}.sqDriver>span{grid-column:2;text-align:right}.sqMetricGrid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.sqMetricGrid{grid-template-columns:1fr}.sqGate{grid-template-columns:34px 1fr}.sqDriver{grid-template-columns:1fr}.sqDriver>span{grid-column:auto;text-align:left}}
