@@ -12,6 +12,7 @@ import {buildForwardCalibration} from "../api/_sqCalibration.js";
 import {calibrationSamplePath} from "../api/_v8Ledger.js";
 import {buildMtfMatrix,TFS as SMART_TFS} from "../api/_sqMtf.js";
 import {buildResearchTradePlan} from "../api/_sqTradePlan.js";
+import {buildSmartAnalyst} from "../api/_sqAnalyst.js";
 
 const bar=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 function trendBars(n=140,dir=1){
@@ -86,7 +87,7 @@ test("Fresh opposing Gold macro bias can block a directional setup",()=>{
 test("Smart Quant UI contains unique critical controls and research-only warnings",()=>{
   const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
   const js=readFileSync(new URL("../smart-quant.js",import.meta.url),"utf8");
-  for(const id of ["smartQuantPage","sqRefresh","sqDecision","sqConfidence","sqProbability","sqTradePlan","sqFunnel","sqMtfMatrix","sqTechnical","sqMacroDrivers"]){
+  for(const id of ["smartQuantPage","sqRefresh","sqDecision","sqConfidence","sqProbability","sqTradePlan","sqAnalyst","sqFunnel","sqMtfMatrix","sqTechnical","sqMacroDrivers"]){
     assert.equal([...html.matchAll(new RegExp('id="'+id+'"',"g"))].length,1,id);
   }
   assert.ok(html.includes('src="/smart-quant.js"'));
@@ -256,4 +257,22 @@ test("Trade plan honors official news hard block",()=>{
   const p=buildResearchTradePlan({analysis:a,features:f,decision:{decision:"RESEARCH_READY"},risk:{},newsRisk:{block:true}});
   assert.equal(p.status,"BLOCK_NEWS");
   assert.equal(p.newsBlocked,true);
+});
+
+
+test("Smart Analyst only summarizes structured engine evidence and cannot override decision",()=>{
+  const analyst=buildSmartAnalyst({
+    decision:{decision:"WAIT",side:"BUY",gates:[{label:"Forward probability calibration",status:"UNVERIFIED",reason:"Need more samples"}]},
+    regime:{name:"TREND_BULL",confidence:72},
+    mtfMatrix:{readyCount:7,netBias:"BULLISH",netScore:48,alignment:{aligned:5,opposed:2}},
+    directionalEdge:{bias:"BULLISH",directionalEdgeIndex:55,coverage:100},
+    calibration:{status:"INSUFFICIENT_FORWARD_SAMPLE",sampleCount:20},
+    tradePlan:{status:"WAIT_PULLBACK",action:"Wait for pullback.",noChase:false,invalidated:false},
+    risk:{suggestedRiskPct:null},monteCarlo:{status:"INSUFFICIENT_SAMPLE"},
+    newsRisk:{status:"CLEAR",nextHighImpact:null},dataHealth:{status:"GOOD",score:96}
+  });
+  assert.equal(analyst.kind,"RULE_BASED_STRUCTURED_ANALYST_NOT_LLM");
+  assert.match(analyst.headline,/WAIT/);
+  assert.ok(analyst.blockers.some(x=>/probability/i.test(x)));
+  assert.match(analyst.note,/cannot.*override|tidak boleh.*menukar/i);
 });
