@@ -221,3 +221,10 @@ test("MTF matrix calculates each timeframe independently from closed broker cand
   assert.ok(m.alignment.opposed>=1);
   assert.match(m.note,/does not reuse a lower-timeframe signal/i);
 });
+
+
+test("Forward calibration never publishes a directional probability for WAIT",()=>{
+  const x=buildForwardCalibration(calibrationRows(160,"skill"),{score:80,direction:0});
+  assert.equal(x.status,"NO_CURRENT_DIRECTION");
+  assert.equal(x.calibratedProbability,null);
+});
