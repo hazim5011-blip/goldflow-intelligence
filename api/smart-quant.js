@@ -14,6 +14,9 @@ import {buildForwardCalibration} from "./_sqCalibration.js";
 import {buildMtfMatrix,TFS as SMART_TFS} from "./_sqMtf.js";
 import {buildResearchTradePlan} from "./_sqTradePlan.js";
 import {buildSmartAnalyst} from "./_sqAnalyst.js";
+import {buildSessionLiquidity} from "./_sqSession.js";
+import {buildAlertPreview} from "./_sqAlert.js";
+import {buildMacroContributionMap} from "./_sqMacroMap.js";
 
 export const SMART_QUANT_BUILD="sq-phase1-2026-10-05";
 
@@ -84,14 +87,23 @@ export default async function handler(req,res){
 
     const macro=wantsMacro?safeMacro(mResult.payload):{ok:false,error:"NOT_APPLICABLE"};
     let mtfMatrix={rows:[],readyCount:0,total:SMART_TFS.length,unavailable:true,error:"MTF_MATRIX_UNAVAILABLE"};
+    let sessionBars=[],sessionLiquidity={ready:false,reason:"SESSION_LIQUIDITY_UNAVAILABLE"};
     try{
-      const batch=await brokerGet("/multi-bars",{symbol:analysis.symbol||symbol,tfs:SMART_TFS.join(","),limits:SMART_TFS.map(()=>260).join(",")},40000,2);
-      mtfMatrix=buildMtfMatrix(batch.frames||{},vantageBrokerUtcOffsetSeconds()||0,analysis?.indicator?.latestSignal?.direction||0);
+      const smartLimits={M1:360,M5:600,M15:360,M30:320,H1:300,H4:260,D1:260};
+      const batch=await brokerGet("/multi-bars",{symbol:analysis.symbol||symbol,tfs:SMART_TFS.join(","),limits:SMART_TFS.map(tf=>smartLimits[tf]||260).join(",")},45000,2);
+      const offset=vantageBrokerUtcOffsetSeconds()||0;
+      mtfMatrix=buildMtfMatrix(batch.frames||{},offset,analysis?.indicator?.latestSignal?.direction||0);
+      sessionBars=Array.isArray(batch.frames?.M5)?batch.frames.M5:[];
     }catch(mtfErr){
-      mtfMatrix={rows:[],readyCount:0,total:SMART_TFS.length,unavailable:true,error:String(mtfErr?.message||mtfErr),
+      const msg=String(mtfErr?.message||mtfErr);
+      mtfMatrix={rows:[],readyCount:0,total:SMART_TFS.length,unavailable:true,error:msg,
         note:"MTF matrix unavailable; Smart Quant does not synthesize missing timeframe data."};
+      sessionLiquidity={ready:false,reason:msg};
     }
     const features=buildSmartFeatures(analysis);
+    if(sessionBars.length){
+      sessionLiquidity=buildSessionLiquidity({bars:sessionBars,brokerServerUTCOffsetSeconds:vantageBrokerUtcOffsetSeconds()||0,price:analysis.price,atr14:features?.atr14,now:new Date()});
+    }
     const dataHealth=assessDataHealth(analysis,macro,features);
     const regime=classifySmartRegime(features,analysis);
     const directionalEdge=buildDirectionalEdge({analysis,features,regime,macro});
@@ -101,8 +113,10 @@ export default async function handler(req,res){
     const calibrationSamples=await listCalibrationSamples(analysis.symbol||symbol,indicator,tf,500).catch(()=>[]);
     const currentSignal=analysis?.indicator?.latestSignal||{};
     const calibration=buildForwardCalibration(calibrationSamples,{score:currentSignal.score,direction:currentSignal.direction});
+    const macroMap=buildMacroContributionMap(macro);
     const decision=buildDecisionFunnel({analysis,macro,features,regime,dataHealth,newsRisk,calibration});
     const tradePlan=buildResearchTradePlan({analysis,features,decision,risk,newsRisk});
+    const alertPreview=buildAlertPreview({analysis:slimAnalysis(analysis),decision,tradePlan,newsRisk,sessionLiquidity,calibration,dataHealth});
     const analyst=buildSmartAnalyst({decision,regime,mtfMatrix,directionalEdge,calibration,tradePlan,risk,monteCarlo,newsRisk,dataHealth});
 
     return res.status(200).json({
@@ -110,7 +124,7 @@ export default async function handler(req,res){
       capturedAtUTC:new Date().toISOString(),
       requested:{symbol,tf,indicator},
       analysis:slimAnalysis(analysis),
-      features,dataHealth,regime,mtfMatrix,macro,newsRisk,directionalEdge,historicalEdge,risk,monteCarlo,calibration,decision,tradePlan,analyst,
+      features,dataHealth,regime,mtfMatrix,sessionLiquidity,macro,macroMap,newsRisk,directionalEdge,historicalEdge,risk,monteCarlo,calibration,decision,tradePlan,alertPreview,analyst,
       disclaimer:"Smart Quant is a research decision-support layer. Directional Edge is not a price target, historical evidence is not forward calibration, and no broker order is placed."
     });
   }catch(e){
