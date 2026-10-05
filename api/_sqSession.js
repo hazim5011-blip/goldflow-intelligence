@@ -43,15 +43,16 @@ function brokerDayKeyFromRawT(t){return new Date(Number(t)*1000).toISOString().s
 function round(v,d=4){return n(v)==null?null:Number(Number(v).toFixed(d))}
 
 export function buildSessionLiquidity({bars=[],brokerServerUTCOffsetSeconds=0,price=null,atr14=null,now=new Date()}={}){
+  const nowMs=now.getTime();
   const clean=bars.filter(validBar).map(b=>({
     t:Number(b.t),o:Number(b.o),h:Number(b.h),l:Number(b.l),c:Number(b.c),v:n(b.v),
     utc:utcMsFromBrokerBar(b,brokerServerUTCOffsetSeconds),
     brokerDate:brokerDayKeyFromRawT(b.t)
-  })).sort((a,b)=>a.utc-b.utc);
+  })).filter(b=>b.utc<=nowMs+60000).sort((a,b)=>a.utc-b.utc);
   const closed=clean.length>1?clean.slice(0,-1):[];
   if(closed.length<40)return {ready:false,reason:"INSUFFICIENT_M5_BARS",bars:closed.length};
 
-  const nowMs=now.getTime(),last=closed.at(-1),lastPrice=n(price)??last.c,atr=n(atr14);
+  const last=closed.at(-1),lastPrice=n(price)??last.c,atr=n(atr14);
   const currentSessions=[],sessionRows=[];
   for(const s of SESSIONS){
     const currentDate=sessionDateNow(now,s),previousDate=priorDateKey(currentDate);
