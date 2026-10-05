@@ -7,6 +7,7 @@ import {buildHistoricalEdge} from "./_sqHistoryEdge.js";
 import {buildDirectionalEdge} from "./_sqFairValue.js";
 import {buildRiskReference} from "./_sqRisk.js";
 import {runMonteCarlo} from "./_sqMonteCarlo.js";
+import {fetchOfficialNewsRisk} from "./_sqNewsRisk.js";
 
 export const SMART_QUANT_BUILD="sq-phase1-2026-10-05";
 
@@ -67,7 +68,8 @@ export default async function handler(req,res){
     const analyzePromise=callHandler(analyzeHandler,{method:"GET",query:{symbol,tf,indicator}});
     const wantsMacro=isGoldSymbol(symbol);
     const macroPromise=wantsMacro?callHandler(macroHandler,{method:"GET",query:{}}):Promise.resolve({code:200,payload:{ok:false,error:"NOT_APPLICABLE"}});
-    const [aResult,mResult]=await Promise.all([analyzePromise,macroPromise]);
+    const newsPromise=fetchOfficialNewsRisk(new Date()).catch(e=>({ok:false,verification:"PARTIAL_UNVERIFIED",status:"PARTIAL_UNVERIFIED",block:false,error:String(e?.message||e),upcoming:[],sources:[]}));
+    const [aResult,mResult,newsRisk]=await Promise.all([analyzePromise,macroPromise,newsPromise]);
     const analysis=aResult.payload;
     if(aResult.code>=400||!analysis?.ok||!analysis?.ready){
       return res.status(200).json({ok:false,ready:false,build:SMART_QUANT_BUILD,error:analysis?.error||"BROKER_ANALYSIS_NOT_READY",
@@ -82,14 +84,14 @@ export default async function handler(req,res){
     const historicalEdge=buildHistoricalEdge(analysis);
     const risk=buildRiskReference(historicalEdge,{hardCapPct:.50,kellyFraction:.25});
     const monteCarlo=runMonteCarlo(historicalEdge,risk,{paths:2000,trades:100,seedKey:(analysis.symbol||symbol)+"|"+tf+"|"+indicator});
-    const decision=buildDecisionFunnel({analysis,macro,features,regime,dataHealth});
+    const decision=buildDecisionFunnel({analysis,macro,features,regime,dataHealth,newsRisk});
 
     return res.status(200).json({
       ok:true,ready:true,build:SMART_QUANT_BUILD,researchOnly:true,
       capturedAtUTC:new Date().toISOString(),
       requested:{symbol,tf,indicator},
       analysis:slimAnalysis(analysis),
-      features,dataHealth,regime,macro,directionalEdge,historicalEdge,risk,monteCarlo,decision,
+      features,dataHealth,regime,macro,newsRisk,directionalEdge,historicalEdge,risk,monteCarlo,decision,
       disclaimer:"Smart Quant is a research decision-support layer. Directional Edge is not a price target, historical evidence is not forward calibration, and no broker order is placed."
     });
   }catch(e){
