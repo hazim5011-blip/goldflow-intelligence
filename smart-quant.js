@@ -20,7 +20,7 @@
     if($("sqTechnical"))$("sqTechnical").innerHTML="";
     if($("sqMacroDrivers"))$("sqMacroDrivers").innerHTML="";
     if($("sqRegimeEvidence"))$("sqRegimeEvidence").innerHTML="";
-    ["sqEdge","sqHistoryEdge","sqRisk","sqMonteCarlo"].forEach(function(id){if($(id))$(id).innerHTML=""});
+    ["sqEdge","sqHistoryEdge","sqRisk","sqMonteCarlo","sqNewsRisk"].forEach(function(id){if($(id))$(id).innerHTML=""});
   }
 
   function renderFunnel(decision){
@@ -64,6 +64,22 @@
     var opposition=(r?.opposition||[]).map(function(x){return "<li>"+esc(x)+"</li>"}).join("")||"<li>No major opposition recorded.</li>";
     var conditions=(r?.conditions||[]).map(function(x){return '<span class="tag">'+esc(x)+'</span>'}).join(" ");
     el.innerHTML='<div class="sqConditions">'+conditions+'</div><div class="grid g2"><div><h4>Supporting evidence</h4><ul class="sqList">'+support+'</ul></div><div><h4>Opposing / risk evidence</h4><ul class="sqList">'+opposition+'</ul></div></div>';
+  }
+
+  function renderNewsRisk(news){
+    var el=$("sqNewsRisk");if(!el)return;
+    if(!news||news.verification!=="VERIFIED_OFFICIAL_SCHEDULES"){
+      el.innerHTML='<div class="sqNewsBox warn"><div><small>UPCOMING NEWS RISK</small><strong>UNVERIFIED / PARTIAL</strong></div><p>Official schedule coverage is incomplete. Smart Quant will not treat news risk as clear.</p></div>';return;
+    }
+    var next=news.nextHighImpact,mins=Number(news.minutesToNextHigh);
+    var label=news.status==="BLOCK_HIGH_IMPACT"?"BLOCK":news.status==="EVENT_SOON"?"CAUTION":"CLEAR";
+    var klass=label==="BLOCK"?"bad":label==="CAUTION"?"warn":"good";
+    var nextText=next?next.type+" • "+new Date(next.scheduledAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"No high-impact event in available horizon";
+    var rows=(news.upcoming||[]).slice(0,6).map(function(x){
+      var when=new Date(x.scheduledAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+      return '<div class="sqNewsRow"><div><b>'+esc(x.type)+'</b><small>'+esc(x.source)+'</small></div><strong>'+esc(when)+'</strong><span class="'+(x.impact==="HIGH"?"r":"y")+'">'+esc(x.impact)+'</span></div>';
+    }).join("");
+    el.innerHTML='<div class="sqNewsBox '+klass+'"><div><small>UPCOMING NEWS RISK</small><strong>'+label+'</strong><span>'+esc(nextText)+(finite(mins)&&mins>0?" • "+Math.round(mins)+" min":"")+'</span></div><p>'+esc(news.note||"")+'</p></div><div class="sqNewsRows">'+rows+'</div>';
   }
 
   function renderEdge(edge,hist){
@@ -134,7 +150,7 @@
     $("sqNotice").className="notice "+decisionCls(d.decision);
     $("sqNotice").textContent=d.summary+" "+d.executionBlock;
     $("sqUpdated").textContent=j.capturedAtUTC?"Updated "+new Date(j.capturedAtUTC).toLocaleString("en-MY",{timeZone:"Asia/Kuala_Lumpur"}):"—";
-    renderFunnel(d);renderTechnical(j);renderMacro(j.macro);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
+    renderFunnel(d);renderTechnical(j);renderMacro(j.macro);renderNewsRisk(j.newsRisk);renderRegime(r);renderEdge(j.directionalEdge,j.historicalEdge);renderRisk(j.risk,j.monteCarlo);renderReasons(d);
   }
 
   async function load(force){
