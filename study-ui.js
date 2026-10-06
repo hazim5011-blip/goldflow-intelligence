@@ -177,7 +177,7 @@
   else if(st==="COMPLETED_STUDY"){decision="TARGET ALREADY TOUCHED • NO ENTRY";hint="TP1 was touched after confirmation. Never reactivate a completed old setup."}
   else if(st==="AMBIGUOUS_PATH"){decision="AMBIGUOUS HISTORY • NO ENTRY";hint="TP and SL touched within the same OHLC candle; the order is unknown."}
   else if(st==="EXPIRED"){decision="EXPIRED • NO ENTRY";hint="Three closed trigger candles passed; a new setup must be confirmed."}
-  else if(st==="MARKET_OFFLINE"){decision="OFFLINE • NO ENTRY";hint="No verified fresh broker quote or closed-candle feed."}
+  else if(st==="MARKET_OFFLINE"){const stale=String(d?.reason||"")==="BROKER_TICK_MISSING_OR_STALE";decision=stale?"SYMBOL QUOTE STALE • NO ENTRY":"SELECTED TF DATA STALE • NO ENTRY";hint=stale?"Vantage terminal/bridge may still be LIVE, but this selected symbol has no fresh BID/ASK tick. This commonly occurs during a symbol-specific pause or daily rollover; no entry is allowed until the tick becomes fresh.":"The latest fully closed candle for this selected symbol/timeframe is stale. No entry is allowed until fresh broker candles resume."}
   else if(st==="WAIT_CONFLICT"){decision="CONFLICT • WAIT";hint="Pattern disagrees with higher timeframe/fundamental context."}
   else if(["STUDY_WAIT_BUY_CONFIRMATION","STUDY_WAIT_SELL_CONFIRMATION","STUDY_WAIT_STRUCTURE"].includes(st)){
    if(activeLifecycle?.state==="ACTIVE_VALID"){
@@ -215,6 +215,8 @@
   put("gfStudyTechnical",[
     "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
+    aiMode&&d?.aiPolicy?"AI ENTRY GATES: H1+H4 must align • accepted pattern in last "+d.aiPolicy.triggerLookbackClosedBars+" CLOSED candles • Fib 38.2–61.8 retest • expires after "+d.aiPolicy.entryExpiryClosedBars+" CLOSED bars.":"",
+    aiMode&&d?.aiPolicy&&!d.aiPolicy.persistent24hSignalArchive?"24H AI HISTORY: NOT ARCHIVED YET — current WAIT cannot prove there was no transient setup earlier in the day.":"",
     technicalMode?(d?.structureFlip?.type?"SBR/RBS: "+d.structureFlip.type+" • "+d.structureFlip.stage+" @ "+safe(d.structureFlip.level):d?.structureFlipWatch?.type?"SBR/RBS: "+d.structureFlipWatch.type+" WATCH @ "+safe(d.structureFlipWatch.level):"SBR/RBS: no confirmed flip"):"",
     p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Auditable AI alignment score "+p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
     p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):"",
