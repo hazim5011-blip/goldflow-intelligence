@@ -344,12 +344,24 @@ function renderHistory(rows){
   }).join("")||'<div class="sub">No completed signal history for this symbol/TF yet.</div>';
 }
 function clearChart(){if(chart){chart.remove();chart=null;candleSeries=null}$("chart").innerHTML=""}
+function mountBrokerChartTools(){
+  if(!window.GFChartTools||!$("brokerChartTools"))return;
+  GFChartTools.render("broker",$("brokerChartTools"),{
+    timeframes:["M1","M5","M15","M30","H1","H4","D1"],currentTF:selectedTF,redraw:drawChart,
+    onTF:function(tf){
+      if(tf===selectedTF)return;
+      selectedTF=tf;localStorage.setItem("gf_tf",selectedTF);$("tfSelect").value=selectedTF;
+      focusedZone=null;lastLiveTick=null;window.GFStudy?.invalidate?.();loadAnalysis();
+    }
+  });
+}
 function drawChart(){
   clearChart();if(!lastAnalysis||!lastAnalysis.ready||!(lastAnalysis.chartBars||[]).length){$("chartInfo").textContent="No broker bars.";return}
   var bars=lastAnalysis.chartBars,ind=lastAnalysis.indicator||{};
+  mountBrokerChartTools();
   chart=LightweightCharts.createChart($("chart"),{layout:{background:{color:"#07131c"},textColor:"#aab9c3"},grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true,secondsVisible:false}});
-  candleSeries=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
-  candleSeries.setData(bars.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
+  candleSeries=window.GFChartTools?GFChartTools.createMainSeries("broker",chart,bars):chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
+  if(!window.GFChartTools)candleSeries.setData(bars.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
   if(lastAnalysis.gfStudy){
     var d=lastAnalysis.studyData||{},p=d.confirmation||null,dir=gfDir(d),current=finite(lastAnalysis.price)?Number(lastAnalysis.price):bars[bars.length-1].c,lv=[];
     function addGFLevel(price,short,color,style){if(finite(price))lv.push({price:Number(price),short:short,color:color,style:style==null?2:style})}
@@ -366,6 +378,7 @@ function drawChart(){
     lv.forEach(function(x){var rank=ranked.indexOf(x),show=chartLabelMode==="all"||(chartLabelMode==="nearest"&&rank<2);candleSeries.createPriceLine({price:x.price,color:x.color,lineWidth:1,lineStyle:x.style,axisLabelVisible:show,title:show?x.short:""})});
     var markers=[];if(p&&finite(p.signalCandleTime)){var mt=Number(p.signalCandleTime)-Number(d.brokerUtcOffsetSeconds||0);if(bars.some(function(b){return Number(b.t)===mt}))markers.push({time:mt,position:dir>0?"belowBar":"aboveBar",color:dir>0?"#31d6a4":"#ff6079",shape:dir>0?"arrowUp":"arrowDown",text:d.structureFlip?.type?d.structureFlip.type+" BREAK":dir>0?"BUY CONFIRMED":"SELL CONFIRMED"})}
     if(candleSeries.setMarkers)candleSeries.setMarkers(markers);chart.timeScale().fitContent();
+    if(window.GFChartTools)GFChartTools.register("broker",{chart:chart,main:candleSeries,bars:bars,tf:selectedTF,contextKey:(lastAnalysis.symbol||selectedSymbol)+"|"+selectedTF});
     $("chartInfo").textContent=(d.symbol||selectedSymbol)+" • "+d.tf+" • "+indicatorName(selectedIndicator)+" • Vantage MT5 • "+String(d.status||"WAIT").replaceAll("_"," ")+" • all lines retained; nearest labels only";
     return;
   }
@@ -386,7 +399,7 @@ function drawChart(){
     markers.push({time:bars[bars.length-1].t,position:focusedZone.currentDirection>0?"belowBar":"aboveBar",color:focusedZone.currentDirection>0?"#31d6a4":"#ff6079",shape:"circle",text:"LIVE ENTRY • PRICE IN ZONE (NOT EXECUTED)"});
   }
   if(candleSeries.setMarkers)candleSeries.setMarkers(markers.sort(function(a,b){return a.time-b.time}));
-  chart.timeScale().fitContent();$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+" • PENDING = entry area; LIVE = current quote within area, NOT broker order";
+  chart.timeScale().fitContent();if(window.GFChartTools)GFChartTools.register("broker",{chart:chart,main:candleSeries,bars:bars,tf:selectedTF,contextKey:(lastAnalysis.symbol||selectedSymbol)+"|"+selectedTF});$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+" • PENDING = entry area; LIVE = current quote within area, NOT broker order";
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
@@ -414,22 +427,25 @@ function tvInterval(tf){
   return ({M1:"1",M5:"5",M15:"15",M30:"30",H1:"60",H4:"240",D1:"D"})[tf]||"5";
 }
 var tvNativeChart=null,tvReqSeq=0;
-async function renderTradingView(){
+async function renderTradingView(tfOverride){
   var el=$("tvWrap");if(!el||!selectedSymbol||!$("tvPage")?.classList.contains("on"))return;
-  var token=++tvReqSeq,symbol=selectedSymbol,tf=selectedTF,sym=tvSymbol(symbol),interval=tvInterval(tf);
+  var tf=tfOverride||localStorage.getItem("gf_tv_chart_tf")||selectedTF;if(!["M1","M5","M15","M30","H1","H4","D1","W1","MN1"].includes(tf))tf=selectedTF;localStorage.setItem("gf_tv_chart_tf",tf);
+  var token=++tvReqSeq,symbol=selectedSymbol,sym=tvSymbol(symbol),interval=tvInterval(tf);
   if(tvNativeChart){try{tvNativeChart.remove()}catch(e){}tvNativeChart=null}
   // Official third-party iframe may be blocked by browser CSP, extensions or
   // provider policies. ALWAYS display independently fetched Vantage broker chart.
   var external="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(sym);
   el.innerHTML='<div class="tvBar"><b>VANTAGE BROKER CHART • '+symbol.replace(/</g,"&lt;")+' • '+tf+'</b>'+
     '<a class="primary mini" href="'+external+'" target="_blank" rel="noopener noreferrer">OPEN TRADINGVIEW ↗</a></div>'+
+    '<div id="tvChartTools"></div>'+
     '<p class="sub" id="tvBrokerNote">Loading direct broker candles. TradingView prices may differ from Vantage.</p>'+
     '<div class="tvBrokerChart" id="tvBrokerChart" role="img" aria-label="Vantage verified OHLC candlestick chart"></div>'+
     '<div class="notice info tvExternalNotice"><b>TradingView external reference</b> • The embedded TradingView iframe is intentionally not shown because browsers/provider policy can render it as a blank box. Use OPEN TRADINGVIEW above. GoldFlow calculations continue to use Vantage MT5 only.</div>';
   var chartNode=$("tvBrokerChart");
+  if(window.GFChartTools&&$("tvChartTools"))GFChartTools.render("tv",$("tvChartTools"),{timeframes:["M1","M5","M15","M30","H1","H4","D1","W1","MN1"],currentTF:tf,redraw:function(){renderTradingView(tf)},onTF:function(nextTf){renderTradingView(nextTf)}});
   try{
-   var feed=await getJson("/api/bars?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&limit=220");
-   if(token!==tvReqSeq||symbol!==selectedSymbol||tf!==selectedTF||!$("tvPage")?.classList.contains("on"))return;
+   var feed=await getJson("/api/bars?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&limit=1500");
+   if(token!==tvReqSeq||symbol!==selectedSymbol||tf!==(localStorage.getItem("gf_tv_chart_tf")||selectedTF)||!$("tvPage")?.classList.contains("on"))return;
    if(!feed.ok||!Array.isArray(feed.bars)||feed.bars.length<20)throw Error(feed.error||"Insufficient broker candles");
    var offset=Number(feed.brokerUtcOffsetSeconds);
    if(!Number.isFinite(offset))throw Error("Broker time offset unavailable");
@@ -448,9 +464,10 @@ async function renderTradingView(){
      layout:{background:{color:"#07131c"},textColor:"#b6cbd7"},
      grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},
      rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true}});
-   var series=tvNativeChart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,
+   var series=window.GFChartTools?GFChartTools.createMainSeries("tv",tvNativeChart,bars):tvNativeChart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,
      wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
-   series.setData(bars);tvNativeChart.timeScale().fitContent();
+   if(!window.GFChartTools)series.setData(bars);tvNativeChart.timeScale().fitContent();
+   if(window.GFChartTools)GFChartTools.register("tv",{chart:tvNativeChart,main:series,bars:bars,tf:tf,contextKey:symbol+"|"+tf});
   }catch(e){
    if(token===tvReqSeq){$("tvBrokerNote").textContent="Broker chart unavailable: "+String(e.message||e)+
      ". TradingView can still open in a separate tab.";if(chartNode)chartNode.textContent="Unable to load authenticated Vantage OHLC."}

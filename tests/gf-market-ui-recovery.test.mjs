@@ -171,3 +171,30 @@ test("TradingView Hybrid fallback computes common technical indicators from brok
  assert.ok(x.info.some(r=>r.name==="ATR (14)"&&Number.isFinite(r.value)));
  assert.ok(["BUY","SELL","NEUTRAL"].includes(x.summaries.overall.action));
 });
+
+test("Broker and TradingView charts expose first-party chart tools and indicator settings",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const toolsCode=readFileSync(new URL("../chart-tools.js",import.meta.url),"utf8");
+ const build=readFileSync(new URL("../cloudflare/build.mjs",import.meta.url),"utf8");
+ assert.ok(html.includes('id="brokerChartTools"'));
+ assert.ok(html.includes('<script src="/chart-tools.js"></script>'));
+ assert.ok(app.includes('GFChartTools.render("broker"'));
+ assert.ok(app.includes('GFChartTools.render("tv"'));
+ assert.ok(app.includes('timeframes:["M1","M5","M15","M30","H1","H4","D1","W1","MN1"]'));
+ assert.ok(toolsCode.includes('Horizontal line price'));
+ assert.ok(toolsCode.includes('Trendline: click first point on chart'));
+ assert.ok(toolsCode.includes('SMA20'));
+ assert.ok(toolsCode.includes('EMA200'));
+ assert.ok(toolsCode.includes('BB20'));
+ assert.ok(build.includes("chart-tools.js"));
+});
+test("Chart tool indicators compute overlays from broker closes without changing signal engines",()=>{
+ const code=readFileSync(new URL("../chart-tools.js",import.meta.url),"utf8");
+ assert.ok(code.includes("function smaData"));
+ assert.ok(code.includes("function emaData"));
+ assert.ok(code.includes("function bbData"));
+ assert.ok(code.includes("createMainSeries"));
+ assert.ok(!code.includes("/api/analyze"));
+ assert.ok(!code.includes("/api/study"));
+});
