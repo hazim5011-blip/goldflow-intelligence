@@ -59,10 +59,10 @@ function levelResearch(k,dir,macro){
  const tf=k.tf;
  const rules=dir===1?
   {reaction:"Bullish rejection near demand zone; closed "+tf+" candle must hold above zone.",
-   breakdown:"Closed "+tf+" candle above prior resistance "+rnd(breakLevel)+", then retest the broken level.",
+   breakdown:"RBS: closed "+tf+" candle above prior resistance "+rnd(breakLevel)+", then retest that broken resistance as support.",
    invalidation:"Closed "+tf+"/H1 reclaim BELOW "+rnd(invalidationLevel)+" invalidates bullish structure. Live breach blocks entry."}:
   {reaction:"Bearish rejection in supply/reaction zone; a "+tf+" candle must CLOSE below the area.",
-   breakdown:"Closed "+tf+" candle below prior support "+rnd(breakLevel)+", then retest broken support from underneath.",
+   breakdown:"SBR: closed "+tf+" candle below prior support "+rnd(breakLevel)+", then retest that broken support as resistance.",
    invalidation:"Closed "+tf+"/H1 reclaim ABOVE "+rnd(invalidationLevel)+" invalidates bearish structure. Live breach blocks entry."};
  const projectionTargets=targetsFromLiquidity({d:dir,entry:(zone.low+zone.high)/2,atr:p,support:sw.low,resistance:sw.high,highs:sw.highs,lows:sw.lows}).map(x=>rnd(x));
  const levels={support:rnd(sw.low),resistance:rnd(sw.high),reactionZoneLow:rnd(zone.low),
@@ -114,8 +114,9 @@ export function evaluateMarketStudy(args={}){
   const rejection=directionalRejection(bar,d,r.zone,p);
   const breakout=brokenSupport(bar,d,oldBreak,p);
   if(!rejection&&!breakout)continue;
-  const kind=rejection?"STRUCTURAL_ZONE_REJECTION":"CLOSED_BREAK_AND_RETEST";
-  // Supply/demand reaction and break-retest use STRUCTURE levels, NOT AI Fib levels.
+  const flip=breakout?{type:d===1?"RBS":"SBR",level:rnd(oldBreak),from:d===1?"RESISTANCE":"SUPPORT",to:d===1?"SUPPORT":"RESISTANCE"}:null;
+  const kind=rejection?"STRUCTURAL_ZONE_REJECTION":d===1?"RBS_BREAK_CONFIRMED":"SBR_BREAK_CONFIRMED";
+  // Supply/demand reaction and SBR/RBS break-retest use STRUCTURE levels, NOT AI Fib levels.
   const anchor=rejection?r.reference:oldBreak;
   const low=rejection?r.zone.low:anchor-.13*p,high=rejection?r.zone.high:anchor+.13*p;
   const stop=d===1?Math.min(bar.l,r.invalidationLevel,anchor-.40*p)-.07*p:
@@ -131,18 +132,21 @@ export function evaluateMarketStudy(args={}){
     signalCandleTime:bar.t,expiresAfterClosedBars:3,
     entryMethod:rejection?"SUPPLY_DEMAND_REJECTION_ZONE":"BROKEN_PIVOT_RETEST",
     targetMethod:"INDEPENDENT_NEXT_SWING_LIQUIDITY_LEVELS_THEN_DISCLOSED_ATR_EXTENSION",
-    score:null,verifiedForecastSurprise:false},kind};break;
+    score:null,verifiedForecastSurprise:false},kind,flip};break;
  }
  if(!event){
   const stance=d===1?"STUDY_WAIT_BUY_CONFIRMATION":"STUDY_WAIT_SELL_CONFIRMATION";
-  return output(stance,k,{...base,reason:"Continuation is a SCENARIO, not permission to enter. Await CLOSED "+k.tf+" rejection in reaction zone OR break of "+rnd(r.breakLevel)+" followed by retest.",
-   entryState:"WAIT_CLOSED_CANDLE_CONFIRMATION",confirmation:null,
+  const flipWatch={type:d===1?"RBS":"SBR",level:rnd(r.breakLevel),stage:"WATCH_BREAK_THEN_RETEST",
+   meaning:d===1?"Resistance must break, then hold as support.":"Support must break, then reject as resistance."};
+  return output(stance,k,{...base,
+   reason:"Continuation is a SCENARIO, not permission to enter. "+flipWatch.type+" WATCH @ "+rnd(r.breakLevel)+": "+flipWatch.meaning+" Alternative: CLOSED "+k.tf+" rejection in the reaction zone.",
+   entryState:"WAIT_CLOSED_CANDLE_CONFIRMATION",confirmation:null,structureFlipWatch:flipWatch,
    reactionZone:{low:r.levels.reactionZoneLow,high:r.levels.reactionZoneHigh},
    nextCandleCloseUTC:new Date((k.last.t-k.brokerUtcOffsetSeconds+2*tfSecs[k.tf])*1000).toISOString()});
  }
  const plan=event.plan,elapsed=c.length-1-event.i;
  const overlay={...base,confirmation:plan,entryQuote:px,entryQuoteSide:d===1?"ASK":"BID",
-  elapsedClosedBars:elapsed,
+  elapsedClosedBars:elapsed,structureFlip:event.flip,
   explanation:{headline:(d===1?"BULLISH":"BEARISH")+" continuation confirmed by "+event.kind,
    detail:r.commentary,trigger:plan.confirmationType,levels:r.levels,rules:r.rules,
    targetType:plan.targetMethod,
@@ -168,8 +172,10 @@ export function evaluateMarketStudy(args={}){
  const moved=d===1?px>plan.entryHigh+.55*p:px<plan.entryLow-.55*p;
  const status=inside?(d===1?"BUY_ENTRY_READY":"SELL_ENTRY_READY"):moved?"STUDY_MISSED_ENTRY":
   d===1?"BUY_CONFIRMED":"SELL_CONFIRMED";
- return output(status,k,{...overlay,canEnter:inside,
+ const flipState=event.flip?{...event.flip,stage:inside?"RETEST_CONFIRMED":moved?"MISSED_RETEST":"BREAK_CONFIRMED_WAIT_RETEST"}:null;
+ return output(status,k,{...overlay,structureFlip:flipState,canEnter:inside,
   entryState:inside?"STRUCTURE_ZONE_RETEST_AND_CLOSED_CONFIRMATION":moved?"DO_NOT_CHASE":"WAIT_REACTION_ZONE_RETEST",
-  reason:inside?"Verified CLOSED structural confirmation and fresh bid/ask in independent pivot reaction/retest zone.":
-   moved?"Market moved away from structural retest band; do not chase.":"Direction confirmed but current price is outside structural retest range. WAIT reaction."},inside);
+  reason:inside?(event.flip?event.flip.type+" CONFIRMED: former "+event.flip.from.toLowerCase()+" "+rnd(event.flip.level)+" retested as "+event.flip.to.toLowerCase()+" with fresh broker price in the entry zone.":"Verified CLOSED structural rejection and fresh bid/ask in independent pivot reaction zone."):
+   moved?(event.flip?event.flip.type+" break was confirmed but price moved beyond the retest band; do not chase.":"Market moved away from structural retest band; do not chase."):
+   (event.flip?event.flip.type+" BREAK CONFIRMED @ "+rnd(event.flip.level)+" • WAIT RETEST as "+event.flip.to+".":"Direction confirmed but current price is outside structural retest range. WAIT reaction.")},inside);
 }
