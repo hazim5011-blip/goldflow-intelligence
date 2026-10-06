@@ -1,0 +1,14 @@
+# GoldFlow: keep local secrets and generated deployments outside source control.
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.env.example
+!bridge/.env.example
+*.log
+*.pyc
+__pycache__/
+.DS_Store

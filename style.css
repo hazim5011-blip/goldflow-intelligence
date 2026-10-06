@@ -7,7 +7,7 @@
 @media(max-width:1000px){.g5{grid-template-columns:repeat(2,1fr)}.symbolGrid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.wrap{padding:8px}.top{align-items:flex-start}.brand h1{font-size:15px}.brand small{font-size:9px}.logo{width:40px;height:40px}.statusRow{max-width:48%}.toolbar{display:grid;grid-template-columns:1fr 1fr}.field.grow,.field.symbolField{grid-column:1/3}.toolbar .primary{grid-column:1/3}.g5,.g2{grid-template-columns:1fr}.plan{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.symbolGrid{grid-template-columns:1fr 1fr}.hist{grid-template-columns:1fr 1fr}.hist>div:nth-child(3),.hist>div:nth-child(5){grid-column:1/3}.chart{height:430px}}
 
-.tvwrap{height:620px;border-radius:12px;overflow:hidden;background:#07131c}.tvwrap iframe{width:100%;height:100%;border:0}@media(max-width:700px){.tvwrap{height:500px}}
+.tvwrap{height:auto;min-height:620px;border-radius:12px;overflow:hidden;background:#07131c}.tvBar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid #25404d;border-radius:8px;margin:8px 0}.tvBar b{font-size:12px}.tvBar a{text-decoration:none;display:inline-block}.tvBrokerChart{height:350px;min-height:350px;width:100%;background:#07131c}.tvEmbed{height:485px;width:100%;border:1px solid #203948;border-radius:8px;overflow:hidden}.tvEmbed iframe{width:100%;height:100%;border:0}@media(max-width:700px){.tvwrap{min-height:600px}.tvEmbed{height:420px}.tvBrokerChart{height:300px;min-height:300px}}
 
 /* V7.5 Macro Regime */
 .eyebrow{display:block;color:#7ea3ba;font-size:10px;font-weight:800;letter-spacing:.12em;margin-bottom:3px}.macroHero{margin-top:2px}.macroHeadRight{display:flex;align-items:center;gap:7px}.primary.mini{padding:6px 9px;font-size:10px}.macroCards{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}.macroCard{background:#08131a;border:1px solid #1e3340;border-radius:11px;padding:11px;min-height:155px;position:relative}.macroCard.stale{border-color:#6a5624}.macroCard .mcTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.macroCard .mcName{font-weight:800;font-size:12px}.macroCard .mcDot{width:7px;height:7px;border-radius:50%;background:var(--g);margin-top:4px;flex:0 0 auto}.macroCard.stale .mcDot{background:var(--y)}.macroCard .mcValue{font-size:27px;font-weight:900;line-height:1.05;margin:7px 0 4px}.macroCard .mcChange{font-size:10px;margin-bottom:7px}.macroCard .mcDetail{color:var(--muted);font-size:10px;line-height:1.4;min-height:28px}.macroCard .mcFoot{margin-top:9px;padding-top:8px;border-top:1px solid #172a35;font-size:9px;color:#7790a1;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.macroCard .mcImpact{font-weight:800}.regimeBig{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:8px 0}.regimeBig strong{font-size:46px;line-height:1;font-weight:950}.regimeBig span{color:var(--muted);font-size:12px}.macroScoreGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.macroScoreGrid>div{background:#08131a;border:1px solid #1e3340;border-radius:9px;padding:8px}.macroScoreGrid small{color:var(--muted);font-size:9px}.macroScoreGrid b{float:right;font-size:17px}.scoreBar{clear:both;height:6px;border-radius:999px;background:#20313c;margin-top:8px;overflow:hidden}.scoreBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5ab0ff,#31d6a4);border-radius:999px;transition:width .3s}.goldMacroScore{display:flex;align-items:end;gap:5px;margin:12px 0}.goldMacroScore strong{font-size:72px;line-height:.9}.goldMacroScore span{color:var(--muted);font-size:13px}.macroDisclaimer{margin-top:10px;padding:8px;border-radius:8px;background:#0a151d;border:1px solid #203640;color:#8096a6;font-size:9px;line-height:1.45}.playbook{display:grid;gap:0}.pbRow{display:grid;grid-template-columns:95px 90px 1fr;gap:8px;padding:9px 0;border-bottom:1px solid #1a2d38;align-items:center}.pbRow:last-child{border-bottom:0}.pbAsset{font-weight:800}.pbLabel{font-size:9px;font-weight:900}.pbText{font-size:10px;color:#8aa0af;line-height:1.4}.timeline{display:flex;gap:5px;align-items:flex-end;min-height:145px;overflow:auto;padding:8px 0}.tlItem{min-width:64px;text-align:center}.tlBar{height:62px;border-radius:5px;border:1px solid #27414f;background:#122532;display:flex;align-items:flex-end;justify-content:center;padding:3px}.tlBar span{display:block;width:100%;border-radius:3px;height:50%;background:#5ab0ff}.tlItem.reflation .tlBar span{background:#f2c75b}.tlItem.goldilocks .tlBar span{background:#31d6a4}.tlItem.stagflation .tlBar span{background:#ff6079}.tlItem.slowdown .tlBar span{background:#5ab0ff}.tlMonth{font-size:8px;color:#8096a6;margin-top:5px}.tlRegime{font-size:8px;font-weight:800;margin-top:2px}.methodGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.methodBox{background:#08131a;border:1px solid #1e3340;border-radius:9px;padding:9px;font-size:10px;line-height:1.5;color:#9ab0be}.methodBox b{display:block;color:#dceaf2;margin-bottom:3px}.macroLink{color:#86c8ff;text-decoration:none}.macroLink:hover{text-decoration:underline}
@@ -46,3 +46,58 @@
 .zoneAction{width:100%;background:#113927;border:1px solid #2a8f67;color:#9cf5cc;font-size:10px;font-weight:900;padding:7px;border-radius:7px;cursor:pointer;margin:6px 0}.zoneAction:hover{background:#1b5037}.zoneStatus.offline{color:#d1d8df;border-color:#486273;background:#13212d;animation:none}
 
 .zoneStatus.watch{color:#ffdd79;border-color:#8a6d24;background:#2a240f;animation:none}
+
+/* GF AI Study v1.00 — additive styling, existing indicator themes unchanged */
+#marketFilterNotice{padding:4px 12px;font-size:11px;line-height:1.55;color:#8bb7c6;min-height:22px}
+#gfStudyPage .grid{margin-top:12px}
+#gfStudyPage h2{font-size:clamp(19px,2.6vw,28px);margin:9px 0;letter-spacing:.015em;overflow-wrap:anywhere}
+#gfStudyPage .reason{white-space:pre-line;line-height:1.6}
+#gfStudyPage .kpi strong{font-size:clamp(12px,1.8vw,19px);overflow-wrap:anywhere}
+#gfStudyPage .card{min-width:0}
+#gfStudyState.g,#gfEntryDecision.g{color:#31d6a4}
+#gfStudyState.r,#gfEntryDecision.r{color:#ff6079}
+#gfStudyState.y,#gfEntryDecision.y{color:#f2c75b}
+#gfStudyTechnical,#gfStudyMacro{min-height:110px}
+@media(max-width:650px){#gfStudyPage .g5{grid-template-columns:repeat(2,minmax(0,1fr))}#gfStudyPage .g2{grid-template-columns:minmax(0,1fr)}}
+
+
+/* GF World Intelligence • evidence-first global news, kept separate from economic observations. */
+.gfWorldSection,.gfBlogJournal{margin:13px 0 18px;padding:13px;background:#081c28;border:1px solid #264554;border-radius:12px}
+.gfWorldTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+.gfWorldTop h3{font-size:16px;line-height:1.38;margin:3px 0 0;color:#eef7ff}
+.gfWorldHealth{color:#a5cadd;background:#0e2937;border:1px solid #365669;border-radius:16px;font-weight:700;letter-spacing:.025em;font-size:10px;padding:6px 10px}
+.gfWorldFeature{border:1px solid #3e6878;border-radius:10px;background:#0d2431;padding:11px;margin:12px 0}
+.gfFeatureEyebrow,.gfMacroSectionTitle{font-weight:900;letter-spacing:.055em;font-size:10px;color:#f2c75b;margin:8px 0}
+.gfMacroSectionTitle{border-top:1px solid #355262;padding-top:11px;margin-top:20px}
+.gfWorldGrid,.gfBlogLiveGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.gfWorldStory{display:flex;flex-direction:column;gap:8px;min-width:0;padding:13px;background:#091620;border:1px solid #2c4553;border-left:4px solid #608799;border-radius:10px;overflow-wrap:anywhere}
+.gfWorldStory.impact-HIGH{border-left-color:#fb6781}
+.gfWorldStory.impact-MEDIUM{border-left-color:#f2c75b}
+.gfWorldStory.impact-LOW,.gfWorldStory.impact-CONTEXT{border-left-color:#6da4bf}
+.gfWorldStory h4{font-size:14px;line-height:1.5;margin:0;color:#f2f8fb}
+.gfWorldStory p{color:#c5dae4;font-size:12px;line-height:1.65;margin:2px 0}
+.gfWorldStory .gfWorldFact{font-size:13px;color:#e5f2f7;font-weight:550}
+.gfWorldStory p b{font-size:11px;color:#f2c75b}
+.gfWorldStory small{font-size:10px;color:#b9cbd6;line-height:1.55}
+.gfWorldStory a{margin-top:auto;font-size:11px;color:#91cfff;text-decoration:underline;text-underline-offset:3px}
+.gfWorldMeta{display:flex;align-items:center;gap:7px;justify-content:space-between;flex-wrap:wrap}
+.gfWorldImpact{font-size:10px;font-weight:900;color:#f2c75b}
+.gfWorldNew{background:#173c42;color:#71eed1;border:1px solid #299a84;border-radius:7px;padding:2px 7px;font-size:10px;font-weight:850}
+.gfWorldSource{font-size:10px;color:#98b7c8;line-height:1.6}
+.gfFeatureDisclaimer{font-size:11px;color:#e6c778;line-height:1.6}
+.gfOpeningWatch{margin-top:10px;background:#0a1922;border:1px solid #284657;border-radius:9px;padding:10px 13px}
+.gfOpeningWatch summary{font-weight:750;font-size:12px;color:#f2d98c;cursor:pointer}
+.gfOpeningWatch ol{padding-left:20px;font-size:12px;line-height:1.75;color:#c9dce7;margin:9px 0 0}
+.gfOpeningNote{color:#f5b87e;font-weight:800;font-size:11px;margin:12px 0 5px}
+.gfBlogJournal .gfBlogLiveGrid .gfWorldStory p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+@media(max-width:850px){.gfWorldGrid,.gfBlogLiveGrid{grid-template-columns:minmax(0,1fr)}.gfWorldSection,.gfBlogJournal{padding:8px}.gfWorldTop h3{font-size:14px}}
+
+.gfEditorialBody{white-space:pre-line}.gfBlogSources{font-size:11px;color:#a9c9d6;line-height:1.8;margin-top:10px}.gfBlogSources b{color:#f2c75b}.gfBlogSources a{color:#91d1ff;text-decoration:underline;text-underline-offset:3px}
+
+/* Potential pre-open bias never replaces a closed-broker-candle trading signal. */
+.gfWorldBias{background:#0a1d28;border:1px solid #42657a;border-left:4px solid #74a9c4;border-radius:9px;padding:11px 13px;margin:10px 0 13px}
+.gfWorldBias.watch{border-left-color:#31d6a4}.gfWorldBias.conflict{border-left-color:#f2c75b}
+.gfWorldBias small{display:block;font-size:10px;font-weight:900;letter-spacing:.04em;color:#92b8cd}
+.gfWorldBias h3{font-size:18px;color:#f3d284;line-height:1.4;margin:6px 0}
+.gfWorldBias.watch h3{color:#63e3be}.gfWorldBias p{font-size:12px;line-height:1.65;color:#d7eaf0;margin:5px 0}
+.gfWorldBias .gfWorldMacroContrast{color:#e4c783;font-size:11px}

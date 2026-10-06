@@ -2,12 +2,24 @@ import os, time, json, re, glob
 from typing import Optional
 from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
+from fastapi.concurrency import run_in_threadpool
+try:
+    from .macro_sources import collect_macro_bls
+except ImportError:
+    from macro_sources import collect_macro_bls
 import MetaTrader5 as mt5
 
-load_dotenv()
+# Watchdog/Task Scheduler can launch from C:\\WINDOWS\\system32.
+# Read the .env adjacent to this actual script; never print or return secret values.
+_BRIDGE_ENV_FILE=os.path.join(os.path.dirname(os.path.realpath(__file__)),".env")
+load_dotenv(dotenv_path=_BRIDGE_ENV_FILE)
 APP_PORT=int(os.getenv("BRIDGE_PORT","8787"))
 BRIDGE_KEY=os.getenv("BRIDGE_KEY","").strip()
+if not BRIDGE_KEY and os.path.isfile(_BRIDGE_ENV_FILE):
+    # python-dotenv will not override an existing (but empty) process variable.
+    # Only recover the explicitly configured local secret, never make a default key.
+    BRIDGE_KEY=str(dotenv_values(_BRIDGE_ENV_FILE).get("BRIDGE_KEY") or "").strip()
 MT5_PATH=os.getenv("MT5_TERMINAL_PATH","").strip()
 BROKER_NAME=os.getenv("BROKER_NAME","Vantage").strip() or "Vantage"
 try:
@@ -31,6 +43,8 @@ def norm(s:str)->str:
 
 def classify(name:str,path:str="",desc:str=""):
     t=(name+" "+path+" "+desc).upper()
+    # Name/path classification only; do not assume an instrument is online/24h.
+    if re.match(r"^(?:VOL(?:ATILITY)?[._ -]*(?:10|25|50|75|80|100|150|200|250|300|500|1000)(?:[._ -]*(?:1S|S))?|V(?:10|25|50|75|80|100)(?:[._ -]*1S)?|(?:FIXED[._ -]*)?STEP[._ -]*(?:0[.]?[1-5]|1|INDEX)?|BOOM[._ -]*[0-9]*|CRASH[._ -]*[0-9]*|JUMP[._ -]*[0-9]*|RANGE[._ -]*BREAK|DRIFT[._ -]*SWITCH)",name.upper()) or any(x in t for x in ["SYNTHETIC","DERIVED INDICES","STEP INDEX","FIXEDSTEP","FIXED STEP","VOLATILITY INDEX","CONTINUOUS INDEX"]): return "SYNTHETIC"
     if any(x in t for x in ["CRYPTO","BITCOIN","ETHEREUM","BTC","ETH","SOL","XRP","LTC","BCH","DOGE","ADA","DOT","AVAX","LINK"]): return "CRYPTO"
     if any(x in t for x in ["XAU","XAG","XPT","XPD","GOLD","SILVER","METAL"]): return "METALS"
     if any(x in t for x in ["WTI","BRENT","USOIL","UKOIL","XBR","XTI","NATGAS","NGAS","ENERGY","OIL"]): return "ENERGY"
@@ -128,6 +142,18 @@ def health(x_bridge_key:Optional[str]=Header(default=None)):
             "server":getattr(ai,"server",None) if ai else None,
             "tradeAllowed":bool(getattr(ti,"trade_allowed",False)) if ti else False,
             "time":int(time.time()),"version":"3.0.0"}
+
+@app.get("/macro/bls")
+async def macro_bls(x_bridge_key:Optional[str]=Header(default=None)):
+    # Unlike legacy local endpoints, macro transport must never become public
+    # if BRIDGE_KEY is missing. The named tunnel uses the same existing key.
+    if not BRIDGE_KEY:
+        raise HTTPException(status_code=503,detail="BRIDGE_KEY_REQUIRED_FOR_MACRO")
+    auth(x_bridge_key)
+    try:
+        return await run_in_threadpool(collect_macro_bls)
+    except Exception:
+        raise HTTPException(status_code=503,detail="MACRO_LOCAL_COLLECTOR_UNAVAILABLE")
 
 @app.get("/symbols")
 def symbols(filter:str="",limit:int=Query(500,ge=1,le=5000),x_bridge_key:Optional[str]=Header(default=None)):

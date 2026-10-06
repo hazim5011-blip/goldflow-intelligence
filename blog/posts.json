@@ -1,7 +1,94 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "disclaimer": "GoldFlow blog is research documentation; never proof of executed trades.",
   "posts": [
+    {
+      "id": "20261004-gold-weekend-operational-check",
+      "published": true,
+      "dateUTC": "2026-10-04",
+      "category": "TRADING SAFETY & RESEARCH",
+      "version": "GF World News V1",
+      "changeType": "Reopening checklist",
+      "titleMS": "Gold weekend watch: 6 pengesahan sebelum membuat kajian entry pembukaan",
+      "titleEN": "Gold weekend watch: six checks before studying an opening entry",
+      "summaryMS": "Laman MT5 LIVE bukan bukti spot Gold sedang mempunyai candle atau BID/ASK baharu. Semak harga broker dahulu sebelum entry.",
+      "summaryEN": "MT5 LIVE does not guarantee a fresh tradable Gold tick. Confirm broker quote conditions before planning an opening trade.",
+      "bodyMS": "1. Dapatkan status XAUUSD247 berdasarkan tradeMode + BID/ASK segar, bukan sekadar terminal connected.\n2. Catat gap pembukaan terhadap penutupan terakhir dan perhatikan spread.\n3. Periksa sama ada amaran UKMTO, dasar minyak dan berita Fed benar-benar baharu.\n4. Bandingkan Brent/WTI, DXY, US2Y, US10Y dan real yields dengan timestamp masing-masing.\n5. Tunggu sekurang-kurangnya candle M15 tertutup dan baca struktur H1/H4.\n6. Tunjukkan senario bullish dan bearish serta invalidation; elakkan BUY/SELL automatik daripada headline.",
+      "bodyEN": "1. Confirm XAUUSD247 with fresh BID/ASK and tradeMode, not terminal-connected status alone.\n2. Measure the actual opening gap versus the last valid close and watch the spread.\n3. Check that UKMTO, energy and Fed developments are genuinely new.\n4. Compare timestamped Brent/WTI, DXY, US2Y, US10Y and real yields.\n5. Wait for at least one CLOSED M15 candle and review H1/H4 structure.\n6. Show both bullish and bearish scenarios and invalidation. Do not auto-execute from a headline.",
+      "qualityNote": "Permanent procedural study, not a dated market-price forecast or broker-trade result.",
+      "sources": [],
+      "featuredRank": 4
+    },
+    {
+      "id": "20261004-counterforce-g7",
+      "published": true,
+      "dateUTC": "2026-10-04",
+      "category": "TWO-SIDED RISK STUDY",
+      "version": "GF World News V1",
+      "changeType": "Counter-risk analysis",
+      "titleMS": "Jangan baca berita Hormuz sebelah sahaja: pelepasan rizab bahan api G7 ialah faktor pengimbang",
+      "titleEN": "Do not interpret Hormuz one-sidedly: G7 reserve-release plans are a counterforce",
+      "summaryMS": "Ancaman bekalan boleh menaikkan premium Gold, namun pelan bantuan rizab bahan api boleh mengehadkan tekanan minyak; arah pasaran bergantung kepada tindak balas sebenar.",
+      "summaryEN": "Supply risk could bolster Gold risk premium, while proposed reserve releases may ease energy pressure. The net effect depends on actual market repricing.",
+      "bodyMS": "WSJ melaporkan pelan G7 melepaskan sekitar 100 juta tong rizab minyak/produk bahan api bagi meredakan kejutan bekalan. Ini tidak bermaksud insiden perkapalan tamat.\nSENARIO 1: risiko keselamatan kekal tinggi dan USD/yields stabil → Gold berpotensi disokong.\nSENARIO 2: pelepasan rizab berjaya mengurangkan premium minyak, atau USD/yields naik → sokongan safe-haven Gold boleh lemah.\nTINDAKAN KAJIAN: tunggu data segar Brent, DXY, yields dan candle XAUUSD; tiada arah pasti daripada satu tajuk.",
+      "bodyEN": "WSJ reports a G7 plan to release about 100 million barrels of emergency oil and fuel reserves to mitigate the supply shock. This does not end maritime security risks.\nSCENARIO 1: sustained security risk with steady USD/yields could support Gold.\nSCENARIO 2: supply relief or rising USD/yields could weaken Gold's safe-haven response.\nRESEARCH CHECK: wait for fresh Brent, DXY, yields and XAUUSD candles; one headline is not directional proof.",
+      "qualityNote": "Conditional research; cited oil plan is publisher-reported, not proof of final release amounts or an executed trade.",
+      "sources": [
+        {
+          "label": "WSJ • 2 Oct 2026",
+          "url": "https://www.wsj.com/business/energy-oil/oil-prices-fall-as-middle-east-crude-exports-recover-but-shipping-risks-remain-84ca187f"
+        }
+      ],
+      "featuredRank": 3
+    },
+    {
+      "id": "20261004-opec-supply-gold",
+      "published": true,
+      "dateUTC": "2026-10-04",
+      "category": "ENERGY & MACRO",
+      "version": "GF World News V1",
+      "changeType": "Oil supply study",
+      "titleMS": "OPEC+ kekalkan sasaran November: mengapa ini belum bermaksud tekanan minyak berakhir",
+      "titleEN": "OPEC+ holds November targets: why the physical oil squeeze may persist",
+      "summaryMS": "Kekangan eksport sebenar dan sasaran output atas kertas berbeza. Semak Brent dan real yields sebelum menganggap berita ini bullish Gold.",
+      "summaryEN": "Physical export constraints differ from formal production targets. Watch Brent and real yields before assuming a directional Gold response.",
+      "bodyMS": "Reuters melaporkan OPEC+ mengekalkan sasaran pengeluaran November. Walaupun angka kuota tidak berubah, gangguan laluan eksport boleh mengekalkan bekalan fizikal ketat.\nSALURAN GOLD: risiko bekalan boleh mengangkat premium geopolitik/safe-haven, tetapi inflasi bahan api juga boleh menaikkan kadar sebenar dan USD.\nPENGESAHAN: bandingkan Brent, WTI, US10Y, real yield, DXY dan reaksi XAUUSD selepas pasaran dibuka. Jangan anggap headline output sebagai bacaan minyak live.",
+      "bodyEN": "Reuters reports OPEC+ kept November production targets unchanged. A quota decision cannot by itself reverse disrupted Gulf exports.\nGOLD CHANNEL: supply risk can boost safe-haven interest; fuel inflation can also strengthen real yields or USD.\nVERIFY: compare fresh Brent, WTI, US10Y, real yields, DXY and the actual XAUUSD response after reopening. A quota headline is not a live oil-price tick.",
+      "qualityNote": "Attributed Reuters report. No measured XAUUSD reaction or verified exact trade entry is claimed.",
+      "sources": [
+        {
+          "label": "Reuters • 4 Oct 2026",
+          "url": "https://www.reuters.com/business/energy/opec-agrees-principle-keep-november-oil-output-targets-steady-sources-say-2026-10-04/"
+        }
+      ],
+      "featuredRank": 2
+    },
+    {
+      "id": "20261004-hormuz-weekend-xau",
+      "published": true,
+      "dateUTC": "2026-10-04",
+      "category": "MARKET INTELLIGENCE",
+      "version": "GF World News V1",
+      "changeType": "Geopolitical weekend study",
+      "titleMS": "Hormuz: risiko perkapalan berulang, tetapi Gold belum mempunyai pengesahan pembukaan",
+      "titleEN": "Hormuz: repeated maritime disruptions, with Gold opening confirmation still pending",
+      "summaryMS": "WSJ melaporkan tujuh serangan baharu sejak 28 September; amaran UKMTO mengesahkan siri kejadian maritim. Gold berpotensi gap, tetapi arah sebenar belum disahkan.",
+      "summaryEN": "WSJ reports seven renewed strikes since September 28, with multiple UKMTO maritime notices. A Gold gap is possible, but not a verified directional outcome.",
+      "bodyMS": "FAKTA SUMBER: WSJ melaporkan tujuh serangan baharu direkod UKMTO sejak 28 September, dengan anggaran pengurangan eksport minyak 2–3 juta tong sehari. UKMTO menerbitkan insiden berulang hingga 2 Oktober; sumber serangan individu masih disiasat.\nIMPLIKASI XAUUSD: ancaman bekalan dan perkapalan boleh mendorong permintaan safe-haven serta gap semasa pembukaan.\nFAKTOR LAWAN: harga minyak yang tinggi juga boleh meningkatkan jangkaan inflasi, DXY dan Treasury/real yields, lalu menekan Gold.\nCHECKLIST: semak XAUUSD247 ONLINE, gap sebenar, spread, Brent/WTI, USDX, US2Y/US10Y dan candle M15 pertama yang sudah ditutup. Jangan reka zon baharu ketika Gold tutup.",
+      "bodyEN": "SOURCE REPORTS: WSJ says UKMTO recorded seven renewed strikes since September 28, with cited estimates of a 2–3 million barrel-per-day reduction in recovering oil flows. UKMTO published repeated warnings through October 2; responsibility for individual incidents remains under investigation.\nGOLD PATH: a sustained supply/shipping threat could encourage safe-haven demand or a price gap when markets reopen.\nCOUNTER-RISK: higher oil can also lift inflation expectations, DXY and Treasury/real yields, limiting Gold upside.\nVERIFY FIRST: actual XAUUSD247 opening quote, spread, Brent/WTI, USDX, US2Y/US10Y and the first CLOSED M15 candle. Do not manufacture new price levels during closure.",
+      "qualityNote": "Source-attributed geopolitical research, not an independently established perpetrator, guaranteed Gold gap, or trading signal.",
+      "sources": [
+        {
+          "label": "WSJ • 4 Oct 2026",
+          "url": "https://www.wsj.com/world/middle-east/oil-was-pouring-through-the-strait-of-hormuz-again-then-attacks-on-shipping-resurged-fe9f0dd9"
+        },
+        {
+          "label": "UKMTO • incident log",
+          "url": "https://www.ukmto.org/"
+        }
+      ],
+      "featuredRank": 1
+    },
     {
       "id": "v8-news-impact-categories",
       "published": true,

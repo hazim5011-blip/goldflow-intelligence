@@ -11,7 +11,16 @@
   function signed(v,d){if(!finite(v))return "N/A";return (Number(v)>0?"+":"")+number(v,d==null?2:d)}
   function money(v){return finite(v)?signed(v,2)+" USD":"N/A"}
   function dt(v){if(!v)return "N/A";var x=new Date(v);return Number.isNaN(x.getTime())?"N/A":new Intl.DateTimeFormat(state.locale,{timeZone:"Asia/Kuala_Lumpur",year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(x)+" MYT"}
-  function uri(params){return "symbol="+encodeURIComponent(window.selectedSymbol||document.getElementById("symbolSelect")?.value||"XAUUSD")+"&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(window.selectedIndicator||"105")+(params||"")}
+  function historyIndicator(){
+    // GF AI/News/Market Study are read-only conditional research, not the legacy
+    // forward/history engine. Never mislabel a legacy reconstruction as AI proof.
+    var sel=String(window.selectedIndicator||"105").toLowerCase();
+    return ["105","103","pvt","pvt102","pattern132","snd107","owl101","fund104"].includes(sel)?sel:"105";
+  }
+  function historyContext(){
+    return [window.selectedSymbol||$("symbolSelect")?.value||"XAUUSD",window.selectedTF||"M5",historyIndicator()].join("|");
+  }
+  function uri(params){return "symbol="+encodeURIComponent(window.selectedSymbol||document.getElementById("symbolSelect")?.value||"XAUUSD")+"&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(historyIndicator())+(params||"")}
   async function json(url){var r=await fetch(url,{cache:"no-store"}),j=await r.json();if(!r.ok||j.ok===false)throw Error(j.error||("HTTP "+r.status));return j}
   function notice(id,msg,bad){if($(id)){$(id).className=bad?"notice bad":"notice info";$(id).textContent=msg}}
   function stat(label,value,detail){
@@ -71,6 +80,7 @@
     if(state.history)renderHistory(state.history);
     if(state.performance)renderPerformance(state.performance);
     if(state.news)renderNews(state.news);
+    if(liveNewsCache)renderWorldNews(liveNewsCache);
     if(blogCache)renderBlog();
     if(state.evidence)renderEvidence(state.evidence);
   }
@@ -91,7 +101,7 @@
       if($("v8End").value)params+="&to="+encodeURIComponent($("v8End").value);
       params+="&direction="+encodeURIComponent($("v8Direction").value);
       var data=await json("/api/history?"+uri(params));
-      state.history=data;renderHistory(data);
+      state.history=data;state.historyContext=historyContext();renderHistory(data);
       fillEvidenceChoices(data.rows||[]);
     }catch(e){state.history=null;rows.innerHTML="";$("v8Summary").innerHTML="";notice("v8HistoryStatus",e.message,true)}
   }
@@ -163,13 +173,24 @@
   }
   async function loadEvidence(id){
     if(!id)id=$("v8EvidenceSelect")?.value;
-    if(!id){$("v8EvidenceSummary").textContent=t("selectSignal");return}
+    if(!id){$("v8EvidenceSummary").textContent="No validated historical signal in the current broker candle window. Select another symbol, timeframe or original research indicator in History Pro.";
+      $("v8EvidenceChart").textContent="No evidence reconstruction is available for this selection.";
+      $("v8EvidenceDetails").textContent="Forward publication and broker fill proof are not configured for GF-AI.";
+      ["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true});return}
+    state.evidence=null;
     $("v8EvidenceSummary").textContent=t("loadingBroker");
+    $("v8EvidenceChart").textContent="Fetching historical Vantage candle reconstruction...";
+    $("v8EvidenceDetails").textContent="";
+    ["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true});
     try{
       var data=await json(evidenceURL(id));state.evidence=data;renderEvidence(data);
       $("v8EvidenceRead").disabled=false;$("v8EvidenceJson").disabled=false;$("v8EvidenceCsv").disabled=false;
-      $("v8EvidencePng").disabled=!(state.evidenceChart&&typeof state.evidenceChart.takeScreenshot==="function");
-    }catch(e){state.evidence=null;$("v8EvidenceSummary").textContent=e.message;["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true})}
+      $("v8EvidencePng").disabled=!(state.evidenceChart&&typeof state.evidenceChart.takeScreenshot==="function")&&!$("v8EvidenceChart")?.querySelector("svg");
+    }catch(e){state.evidence=null;$("v8EvidenceSummary").textContent="Evidence unavailable: "+e.message+
+      ". A reconstructed signal must still be present in the current broker history window; this is not proof of a forward-published trade.";
+      $("v8EvidenceChart").textContent="Broker reconstruction could not be verified for this signal.";
+      $("v8EvidenceDetails").textContent="Refresh History Pro to obtain a valid signal ID; no image or execution record is invented.";
+      ["v8EvidenceRead","v8EvidencePng","v8EvidenceJson","v8EvidenceCsv"].forEach(function(x){$(x).disabled=true})}
   }
   function renderEvidence(data){
     if(!data)return;
@@ -186,20 +207,41 @@
     drawProof(data);
   }
   function downloadEvidencePng(){
-    if(!state.evidenceChart||typeof state.evidenceChart.takeScreenshot!=="function")return;
+    function save(canvas){
+      var a=document.createElement("a");a.href=canvas.toDataURL("image/png");
+      a.download="goldflow-v8-"+(state.evidence?.signalId||"evidence")+"-reconstructed-chart.png";a.click();
+    }
     try{
-      var canvas=state.evidenceChart.takeScreenshot(),a=document.createElement("a");
-      a.href=canvas.toDataURL("image/png");
-      a.download="goldflow-v8-"+(state.evidence?.signalId||"evidence")+"-marked-chart.png";
-      a.click();
-    }catch(e){window.alert("Marked chart export is unavailable in this browser.")}
+      if(state.evidenceChart&&typeof state.evidenceChart.takeScreenshot==="function"){
+       save(state.evidenceChart.takeScreenshot());return;
+      }
+      // No CDN dependency: export the OWN reconstructed SVG through a local canvas.
+      var svg=$("v8EvidenceChart")?.querySelector("svg");
+      if(!svg)throw Error("No verified broker chart to export");
+      var xml=new XMLSerializer().serializeToString(svg),url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml;charset=utf-8"}));
+      var image=new Image();
+      image.onload=function(){
+       try{var cn=document.createElement("canvas");cn.width=1440;cn.height=503;
+        cn.getContext("2d").drawImage(image,0,0,cn.width,cn.height);save(cn)}
+       catch(e){$("v8EvidenceCaption").textContent="Browser cannot export the local SVG to PNG; visual reconstruction remains available."}
+       finally{URL.revokeObjectURL(url)}
+      };
+      image.onerror=function(){URL.revokeObjectURL(url);$("v8EvidenceCaption").textContent="PNG conversion blocked; Evidence visual remains available."};
+      image.src=url;
+    }catch(e){$("v8EvidenceCaption").textContent=String(e.message||e)}
   }
   function drawProof(data){
     var el=$("v8EvidenceChart");if(!el)return;el.innerHTML="";
     if(state.evidenceChart){try{state.evidenceChart.remove()}catch(e){}state.evidenceChart=null}
     var rows=(data.ohlc||[]).filter(function(b){return finite(b.t)&&finite(b.o)&&finite(b.h)&&finite(b.l)&&finite(b.c)}).sort(function(a,b){return a.t-b.t});
     if(!rows.length){el.textContent=t("noArchivedCandles");return}
-    if(typeof LightweightCharts==="undefined"){el.innerHTML=rows.slice(-12).map(function(b){return '<div>'+dt(new Date(b.t*1000))+" O "+b.o+" H "+b.h+" L "+b.l+" C "+b.c+'</div>'}).join("");return}
+    if(typeof LightweightCharts==="undefined"){
+      var s=data.signal||{},lvl=[{p:s.entry,name:"ENTRY SIM"},{p:s.originalSL,name:"SL SIM"},{p:s.tp1,name:"TP1 SIM"},{p:s.exitPrice,name:"EXIT SIM"}];
+      if(window.GFOHLC?.render(el,rows,lvl)){
+        $("v8EvidenceCaption").textContent="First-party broker candlestick SVG reconstruction. Source: current Vantage OHLC; NO forward publication or broker fill proof.";
+      }else el.textContent="Broker evidence candles exist but chart fallback failed.";
+      return;
+    }
     var chart=LightweightCharts.createChart(el,{layout:{background:{color:"#07131c"},textColor:"#aab9c3"},grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true,secondsVisible:false},height:360});
     var candles=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",wickUpColor:"#31d6a4",wickDownColor:"#ff6079",borderVisible:false});
     candles.setData(rows.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
@@ -212,7 +254,147 @@
     if(candles.setMarkers)candles.setMarkers([marker]);
     chart.timeScale().fitContent();state.evidenceChart=chart;
   }
+  // World news is independent from /api/news-context (economic observations).
+  // Only authenticated broker data can validate actual Gold price, never a headline.
+  var liveNewsCache=null,liveNewsAt=0,liveNewsPromise=null,worldNewIds=new Set();
+  var SEEN_KEY="gf_world_news_seen_v1";
+  function newsIsMS(){return ["ms","id"].includes(state.locale)}
+  function safeNewsLink(url){
+    try{var x=new URL(String(url));return x.protocol==="https:"&&!x.username&&!x.password?safe(x.href):"#"}
+    catch(e){return "#"}
+  }
+  function liveTime(x){
+    if(x.publishedAtUTC)return dt(x.publishedAtUTC)+" • RSS feed time, not release verification";
+    return safe(x.publishedOn||"N/A")+" • SOURCE DATE ONLY";
+  }
+  function newsNarrative(x){
+    var ms=newsIsMS();
+    return {title:ms?x.title:x.titleEN||x.title,
+      reported:ms?x.reported:x.reportedEN||x.reported,
+      pathway:ms?x.pathway:x.pathwayEN||x.pathway,
+      opposing:ms?x.opposing:x.opposingEN||x.opposing};
+  }
+  function newStoryCount(){
+    var tab=document.querySelector('nav [data-page="v8News"]');
+    if(tab)tab.textContent=t("newsStudy")+(worldNewIds.size?" • "+worldNewIds.size+" NEW":"");
+  }
+  function recordWorldSeen(){
+    if(!liveNewsCache?.items)return;
+    try{
+      var previous=JSON.parse(localStorage.getItem(SEEN_KEY)||"[]");
+      if(!Array.isArray(previous))previous=[];
+      localStorage.setItem(SEEN_KEY,JSON.stringify(Array.from(new Set([...liveNewsCache.items.map(function(x){return x.id}),...previous])).slice(0,250)));
+      worldNewIds.clear();newStoryCount();
+    }catch(e){}
+  }
+  function worldCard(item,compact){
+    var p=newsNarrative(item),time=liveTime(item),newFlag=worldNewIds.has(item.id);
+    var sourceStatus=item.headlineOnly?"HEADLINE ONLY • CHECK ARTICLE":"SOURCE-ATTRIBUTED REPORT";
+    return '<article class="gfWorldStory impact-'+safe(item.impact||"LOW")+'">'+
+      '<div class="gfWorldMeta"><span class="gfWorldImpact">'+safe(item.impact)+" POTENTIAL • "+safe(item.category)+'</span>'+
+      (newFlag?'<span class="gfWorldNew">NEW</span>':"")+'</div>'+
+      '<h4>'+safe(p.title)+'</h4><div class="gfWorldSource">'+safe(item.publisher)+" • "+time+" • "+safe(sourceStatus)+'</div>'+
+      (compact?'<p>'+safe(p.reported)+'</p>':
+        '<p class="gfWorldFact">'+safe(p.reported)+'</p>'+
+        '<p><b>GOLD • CONDITIONAL SUPPORT:</b> '+safe(p.pathway)+'</p>'+
+        '<p><b>COUNTER-RISK / WHIPSAW:</b> '+safe(p.opposing)+'</p>'+
+        '<small>'+safe(newsIsMS()?(item.limitation||"Laporan penerbit, belum disahkan secara bebas."):(item.limitationEN||"Source reporting only; article details, exact time and independent attribution remain unverified."))+'</small>')+
+      '<a href="'+safeNewsLink(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer">SOURCE • '+safe(item.publisher)+' ↗</a>'+
+      '</article>';
+  }
+  function renderOpeningRisk(data){
+    var el=$("gfWorldBias");if(!el)return;
+    var research=data?.openingRisk||{},up=research.status==="SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED";
+    var m=state.news?.macro,q=m?.quality,now=Date.parse(data?.updatedAtUTC)||Date.now(),
+      fetched=Date.parse(m?.fetchedAtUTC||"");
+    var macroGood=!!(q&&Number(q.available)>0&&Number(q.available)===Number(q.total)&&
+      !(q.errors||[]).length&&!(q.stale||[]).length&&Number.isFinite(fetched)&&now-fetched>=-60000&&now-fetched<=3600000);
+    var macroBias=macroGood?String(m?.gold?.bias||"UNAVAILABLE"):"UNVERIFIED";
+    var contradiction=up&&macroBias==="PRESSURE",ms=newsIsMS();
+    el.className="gfWorldBias"+(contradiction?" conflict":up?" watch":"");
+    var outcome=contradiction?
+      (ms?"KONFLIK: berita geopolitik berpotensi gap naik, tetapi Macro Regime Gold menunjukkan PRESSURE. Tunggu pembukaan sebenar.":"CONFLICT: geopolitical news creates upside-gap risk while verified Gold Macro shows PRESSURE. Wait for actual market opening."):
+      up?(ms?"RISIKO SELAMAT: potensi safe-haven, tetapi bukan BUY sebelum tick segar dan candle M15 tutup.":"WATCH: potential safe-haven upside risk, but NOT a BUY before fresh ticks and a CLOSED M15 candle."):
+      (ms?"Berita masih bersifat dua hala atau tiada arah yang dapat disahkan.":"News impact remains two-sided or has no verified directional conclusion.");
+    el.innerHTML='<small>NEWS-ONLY PRE-OPEN SCENARIO • NO AUTO ENTRY / NO WIN PROBABILITY</small>'+
+      '<h3>'+safe((ms?research.labelMS:research.labelEN)||"WAIT • EVIDENCE INCOMPLETE")+'</h3>'+
+      '<p>'+safe(outcome)+'</p>'+
+      '<p class="gfWorldMacroContrast">Macro Gold: '+safe(macroBias)+
+      (macroGood?" • current source-quality gate passed":" • current synchronized macro quality not verified")+
+      ' • XAUUSD fresh quote/M15: NOT ESTABLISHED BY NEWS</p>';
+  }
+  function renderWorldNews(data){
+    if(!data||!data.ok)return;
+    var all=data.items||[],asOf=Date.parse(data.updatedAtUTC)||Date.now(),
+      high=all.find(function(x){var t=Date.parse(x.publishedAtUTC||((x.publishedOn||"")+"T12:00:00Z"));
+        return x.impact==="HIGH"&&Number.isFinite(t)&&asOf-t>=0&&asOf-t<=36*3600000
+      }),lead=high||all[0];
+    var healthy=(data.sourceChecks||[]).filter(function(x){return x.status==="FETCHED"}).length,total=(data.sourceChecks||[]).length;
+    if($("gfWorldHealth"))$("gfWorldHealth").textContent="CHECKED "+dt(data.updatedAtUTC)+" • FEEDS "+healthy+"/"+total;
+    var status="External sources: "+safe(data.sourceStatus)+" • "+data.fetchedLiveHeadlines+" publisher headlines / "+
+      data.curatedCandidates+" dated source-attributed reports. "+data.fallbackNote;
+    if($("gfWorldNotice")){ $("gfWorldNotice").className="notice "+(healthy?"info":"bad");
+      $("gfWorldNotice").textContent=status; }
+    renderOpeningRisk(data);
+    if($("gfWorldFeature")){
+      $("gfWorldFeature").innerHTML=lead?
+       '<div class="gfFeatureEyebrow">IMPORTANT DEVELOPMENTS • SOURCE-ATTRIBUTED, NOT A TRADE SIGNAL</div>'+
+       worldCard(lead,false)+
+       '<p class="gfFeatureDisclaimer">No newly verified XAUUSD opening quote, gap, price target or causal move is inferred from this news item. Different news drivers can offset each other.</p>':
+       '<p>No credible recent publisher headlines were obtained; never fabricate breaking news.</p>';
+    }
+    if($("gfWorldStories"))$("gfWorldStories").innerHTML=all.filter(function(x){return !lead||x.id!==lead.id})
+      .slice(0,18).map(function(x){return worldCard(x,false)}).join("")||
+      '<p class="sub">No additional qualifying developments. Recheck the external sources later.</p>';
+    if($("gfWorldOpening"))$("gfWorldOpening").innerHTML=
+      '<div class="gfOpeningNote">POSSIBLE OPENING GAP ≠ CONFIRMED BUY/SELL. OIL/INFLATION/YIELDS MAY OPPOSE SAFE-HAVEN FLOWS.</div>'+
+      '<ol>'+((newsIsMS()?data.openingWatch:data.openingWatchEN)||data.openingWatch||[]).map(function(x){return "<li>"+safe(x)+"</li>"}).join("")+'</ol>';
+    var blog=$("gfBlogLiveJournal");
+    if(blog)blog.innerHTML=all.slice(0,8).map(function(x){return worldCard(x,true)}).join("")||
+      '<p>Live world-news providers have no qualifying recent article at the moment. Dated editorial research remains below.</p>';
+    if($("gfBlogLiveStatus"))$("gfBlogLiveStatus").textContent=
+      "FEED "+safe(data.sourceStatus)+" • "+dt(data.updatedAtUTC);
+    newStoryCount();
+  }
+  function computeWorldNew(data){
+    try{
+      var saved=JSON.parse(localStorage.getItem(SEEN_KEY)||"null");
+      if(!Array.isArray(saved)){
+        saved=(data.items||[]).map(function(x){return x.id});
+        localStorage.setItem(SEEN_KEY,JSON.stringify(saved.slice(0,200)));
+      }
+      var seen=new Set(saved);
+      worldNewIds=new Set((data.items||[]).filter(function(x){return !seen.has(x.id)}).map(function(x){return x.id}));
+    }catch(e){worldNewIds=new Set()}
+  }
+  async function loadWorldNews(force){
+    if(liveNewsPromise)return liveNewsPromise;
+    if(!force&&liveNewsCache&&Date.now()-liveNewsAt<180000){renderWorldNews(liveNewsCache);return liveNewsCache}
+    liveNewsPromise=(async function(){
+      try{
+        var d=await json("/api/news-live"+(force?"?force=1":""));
+        if(!d||!d.ok)throw Error("NO_VERIFIABLE_WORLD_NEWS_DATA");
+        liveNewsCache=d;liveNewsAt=Date.now();computeWorldNew(d);renderWorldNews(d);
+        if($("v8News")?.classList.contains("on"))recordWorldSeen();
+        return d;
+      }catch(e){
+        var msg="Live publisher feed unavailable: "+String(e.message||e);
+        if($("gfWorldNotice")){$("gfWorldNotice").className="notice bad";$("gfWorldNotice").textContent=msg}
+        if(!liveNewsCache){
+          if($("gfWorldHealth"))$("gfWorldHealth").textContent="SOURCE UNAVAILABLE";
+          if($("gfWorldFeature"))$("gfWorldFeature").textContent="No verified fresh report. Check the linked official/publication sources; no substitute headline has been invented.";
+          if($("gfBlogLiveStatus"))$("gfBlogLiveStatus").textContent="EXTERNAL FEED UNAVAILABLE";
+        }else{
+          if($("gfWorldHealth"))$("gfWorldHealth").textContent="LAST CHECKED "+dt(liveNewsCache.updatedAtUTC)+" • STALE";
+          if($("gfBlogLiveStatus"))$("gfBlogLiveStatus").textContent="LAST FETCH "+dt(liveNewsCache.updatedAtUTC)+" • STALE";
+        }
+        return null;
+      }finally{liveNewsPromise=null}
+    })();
+    return liveNewsPromise;
+  }
   async function loadNews(force){
+    loadWorldNews(!!force);
     notice("v8NewsNotice",t("loadingOfficial"));
     try{state.news=await json("/api/news-context?"+(force?"v="+Date.now():""));renderNews(state.news)}
     catch(e){state.news=null;notice("v8NewsNotice",e.message,true);$("v8NewsRegime").innerHTML="";$("v8NewsList").innerHTML=""}
@@ -243,6 +425,7 @@
     else html+='<div class="v8Footnote">'+safe(t("noVerifiedReleases"))+'</div>';
     if(observations.length)html+='<div class="v8Footnote">'+safe(t("macroObservationNote"))+'</div>'+observations.map(function(ev){return newsCard(ev,false)}).join("");
     $("v8NewsList").innerHTML=html||"<p>"+t("noOfficialData")+"</p>";
+    if(liveNewsCache)renderOpeningRisk(liveNewsCache);
   }
 
   var blogCache=null;
@@ -251,8 +434,12 @@
     var ms=["ms","id"].includes(state.locale);
     el.innerHTML=blogCache.map(function(p){
       var title=ms?p.titleMS:p.titleEN,summary=ms?p.summaryMS:p.summaryEN,body=ms?p.bodyMS:p.bodyEN;
+      var links=(p.sources||[]).filter(function(s){return safeNewsLink(s.url)!=="#"}).map(function(s){
+         return '<a href="'+safeNewsLink(s.url)+'" target="_blank" rel="noopener noreferrer">'+safe(s.label||"Publisher source")+' ↗</a>'
+        }).join(" • ");
       return '<details class="gfBlogPost"><summary><span class="gfBlogCategory">'+safe(p.category)+'</span><b>'+safe(title)+'</b><small>'+safe(p.dateUTC)+' • '+safe(p.version)+' • '+safe(p.changeType)+'</small><p>'+safe(summary)+'</p></summary><div class="gfBlogBody">'+
-        '<p>'+safe(body)+'</p><p class="v8Footnote">'+safe(p.qualityNote||"")+'</p></div></details>';
+        '<p class="gfEditorialBody">'+safe(body)+'</p><p class="v8Footnote">'+safe(p.qualityNote||"")+'</p>'+
+        (links?'<div class="gfBlogSources"><b>SOURCE REFERENCES:</b> '+links+'</div>':"")+'</div></details>';
     }).join("")||"<p>No published articles yet.</p>";
   }
   async function loadBlog(){
@@ -261,8 +448,8 @@
     try{
       var r=await fetch("/blog/posts.json",{cache:"no-store"}),j=await r.json();
       if(!r.ok||!Array.isArray(j.posts))throw Error("BLOG_FEED_UNAVAILABLE");
-      blogCache=j.posts.filter(function(p){return p&&p.published===true}).sort(function(a,b){return b.dateUTC.localeCompare(a.dateUTC)});
-      renderBlog();$("gfBlogNote").textContent="Verified release notes and methodology. No claims of executed trades without forward proof.";
+      blogCache=j.posts.filter(function(p){return p&&p.published===true}).sort(function(a,b){return b.dateUTC.localeCompare(a.dateUTC)||(Number(a.featuredRank??99)-Number(b.featuredRank??99))});
+      renderBlog();loadWorldNews(false);$("gfBlogNote").textContent="Current source-attributed market journal above; dated research articles below. None is proof of a broker trade.";
     }catch(e){el.textContent="Blog is temporarily unavailable.";$("gfBlogNote").textContent=e.message}
   }
   function loadTVTools(){
@@ -298,7 +485,7 @@
     $("v8EvidenceJson").onclick=function(){if(state.evidence)downloadJSON(state.evidence,"goldflow-v8-"+state.evidence.signalId+".json")};
     $("v8EvidenceCsv").onclick=function(){if(state.evidence)window.location.href=evidenceURL(state.evidence.signalId,"csv")};
     $("v8NewsRefresh").onclick=function(){loadNews(true)};
-    $("gfBlogRefresh").onclick=loadBlog;
+    $("gfBlogRefresh").onclick=function(){loadBlog();loadWorldNews(true)};
     ["symbolSelect","tfSelect"].forEach(function(id){
       $(id)?.addEventListener("change",function(){
         state.tvReady=false;
@@ -308,11 +495,33 @@
     document.querySelectorAll("nav .tab").forEach(function(b){b.addEventListener("click",function(){
       if(b.dataset.page==="v8History")loadHistory();
       if(b.dataset.page==="v8Performance")loadPerformance();
-      if(b.dataset.page==="v8Evidence"&&!state.history)loadHistory().then(function(){fillEvidenceChoices(state.history?.rows||[])});
-      if(b.dataset.page==="v8News")loadNews();
-      if(b.dataset.page==="blogPage")loadBlog();
+      if(b.dataset.page==="v8Evidence"){
+        (async function(){
+          var context=historyContext();
+          if(!state.history||state.historyContext!==context)await loadHistory(true);
+          var rows=state.history?.rows||[];
+          fillEvidenceChoices(rows);
+          if($("v8EvidenceContext")){
+           $("v8EvidenceContext").textContent=/^gf-/.test(String(window.selectedIndicator||""))?
+             "GF-AI/News/Market Study have no forward-published evidence archive yet. Below is an explicitly labelled HISTORICAL RECONSTRUCTION using original MTF Research v1.05, not GF-AI proof.":
+             "Historical reconstruction • "+context+". The report is generated from currently available broker candles, NOT a forward-published signal.";
+          }
+          var first=rows[0]?.signalId;
+          if(first){$("v8EvidenceSelect").value=first;await loadEvidence(first)}
+          else await loadEvidence("");
+        })().catch(function(e){$("v8EvidenceSummary").textContent="Evidence loading failed: "+String(e.message||e)});
+      }
+      if(b.dataset.page==="v8News"){loadNews();recordWorldSeen();}
+      if(b.dataset.page==="blogPage"){loadBlog();loadWorldNews(false)};
       if(b.dataset.page==="tvPage")loadTVTools();
     })});
   }
+  // Open-page monitoring: latest publisher headlines every ~5 minutes.
+  // Background browser tabs may throttle polling; visibility restores freshness.
+  setInterval(function(){if(!document.hidden)loadWorldNews(false)},300000);
+  document.addEventListener("visibilitychange",function(){
+   if(!document.hidden)loadWorldNews(false);
+  });
   attach();initLocale();
+  setTimeout(function(){if(!document.hidden)loadWorldNews(false)},2200); // check NEW stories soon after site open, not only after visiting News tab
 })();

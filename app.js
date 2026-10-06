@@ -18,23 +18,28 @@ function indicatorName(v){
     "pattern132":"Pattern Tutor 1.32",
     "snd107":"SND/SNR 1.07",
     "owl101":"OWL 1.01",
-    "fund104":"Fund Structure A 1.04 • WEB STUDY"
+    "fund104":"Fund Structure A 1.04 • WEB STUDY",
+    "gf-ai":"GF-AI ANALYST • RULE-BASED",
+    "gf-news":"GF-NEWS IMPACT PRO",
+    "gf-study":"GF-MARKET STUDY PRO"
   })[v]||String(v||"ENGINE").toUpperCase();
 }
 
 document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
+  if(b.dataset.page==="chartPage"&&/^gf-/.test(selectedIndicator)){document.querySelector('[data-page="gfStudyPage"]')?.click();return}
   document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
   document.querySelectorAll(".page").forEach(function(x){x.classList.remove("on")});
   b.classList.add("on");$(b.dataset.page).classList.add("on");
   if(b.dataset.page==="chartPage")setTimeout(function(){drawChart();refreshLiveZoneEntry()},50);
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
+  if(b.dataset.page==="gfStudyPage"&&/^gf-/.test(selectedIndicator))setTimeout(function(){window.GFStudy?.load()},50);
 }});
 
 $("tfSelect").value=selectedTF;
 $("indicatorSelect").value=selectedIndicator;
 $("tfSelect").onchange=function(){selectedTF=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
-$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_indicator",selectedIndicator);loadAnalysis()};
+$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;window.GFStudy?.invalidate?.();localStorage.setItem("gf_indicator",selectedIndicator);if(/^gf-/.test(selectedIndicator))document.querySelector('[data-page="gfStudyPage"]')?.click();else if($("gfStudyPage").classList.contains("on"))document.querySelector('[data-page="dashboard"]')?.click();loadAnalysis()};
 $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
@@ -45,23 +50,35 @@ function selectSymbol(s){
   if(!s)return;focusedZone=null;lastLiveTick=null;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
   $("symbolSelect").value=s;renderSymbolCards();loadAnalysis();renderTradingView();
 }
-function categoryRank(x){return {METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7}[x]||9}
+function categoryRank(x){return {SYNTHETIC:0,METALS:1,FOREX:2,CRYPTO:3,INDICES:4,ENERGY:5,STOCKS:6,OTHER:7}[x]??9}
 function applySymbolFilter(){
   var q=$("symbolSearch").value.trim().toUpperCase(),cat=$("category").value;
   filteredSymbols=allSymbols.filter(function(s){
-    var okCat=cat==="ALL"||s.category===cat;
+    var special=cat==="MARKET_ONLINE"||cat==="MARKET_24H";
+    var okCat=special?!!(window.GFMarket&&window.GFMarket.has(s.name,cat)):cat==="ALL"||s.category===cat;
     var hay=(s.name+" "+(s.description||"")+" "+(s.path||"")).toUpperCase();
     return okCat&&(!q||hay.indexOf(q)>=0);
   });
+  if((cat==="MARKET_ONLINE"||cat==="MARKET_24H")&&filteredSymbols.length&&!filteredSymbols.some(function(s){return s.name===selectedSymbol})){
+    // Auto-focus the first VERIFIED active instrument, never a guessed crypto alias.
+    selectedSymbol=filteredSymbols[0].name;localStorage.setItem("gf_symbol",selectedSymbol);
+    loadAnalysis();renderTradingView();
+  }
   renderSymbolSelect();renderSymbolCards();
+  if((cat==="MARKET_ONLINE"||cat==="MARKET_24H")&&window.GFMarket){
+    if(window.GFMarket.needsUpdate())window.GFMarket.ensure().then(function(){if($("category").value===cat)applySymbolFilter()});
+    if($("marketFilterNotice"))$("marketFilterNotice").textContent=window.GFMarket.note(cat);
+  }else if($("marketFilterNotice"))$("marketFilterNotice").textContent="Market categories are broker symbol classes; choose MARKET ONLINE for fresh MT5 verification.";
 }
 function renderCategories(){
   var cats=Array.from(new Set(allSymbols.map(function(x){return x.category||"OTHER"}))).sort(function(a,b){return categoryRank(a)-categoryRank(b)});
-  $("category").innerHTML='<option value="ALL">ALL</option>'+cats.map(function(c){return '<option value="'+c+'">'+c+'</option>'}).join("");
+  var prev=$("category").value;
+  $("category").innerHTML='<option value="ALL">ALL MARKET</option><option value="MARKET_ONLINE">● MARKET ONLINE • Verified now</option><option value="MARKET_24H">● MARKET 24H • Weekend verified</option>'+cats.map(function(c){return '<option value="'+c+'">'+c+'</option>'}).join("");
+  if(Array.from($("category").options).some(function(o){return o.value===prev}))$("category").value=prev;
 }
 function renderSymbolSelect(){
   var rows=filteredSymbols.slice(0,2000);
-  if(selectedSymbol&&!rows.some(function(x){return x.name===selectedSymbol})){
+  if(selectedSymbol&&!["MARKET_ONLINE","MARKET_24H"].includes($("category").value)&&!rows.some(function(x){return x.name===selectedSymbol})){
     var cur=allSymbols.find(function(x){return x.name===selectedSymbol});if(cur)rows.unshift(cur);
   }
   $("symbolSelect").innerHTML=rows.map(function(s){return '<option value="'+s.name.replace(/"/g,"&quot;")+'">'+s.name+' • '+s.category+'</option>'}).join("");
@@ -98,6 +115,7 @@ async function loadSymbols(force){
     if(!j.ok)throw new Error(j.error||"Symbols unavailable");
     allSymbols=(j.symbols||[]).sort(function(a,b){return categoryRank(a.category)-categoryRank(b.category)||a.name.localeCompare(b.name)});
     renderCategories();filteredSymbols=allSymbols.slice();
+    if(["MARKET_ONLINE","MARKET_24H"].includes($("category").value))applySymbolFilter();
     if(!selectedSymbol||!allSymbols.some(function(x){return x.name===selectedSymbol})){
       var pref=allSymbols.find(function(x){return /XAUUSD247/i.test(x.name)})||allSymbols.find(function(x){return /^XAUUSD/i.test(x.name)})||allSymbols[0];
       selectedSymbol=pref?pref.name:"";if(selectedSymbol)localStorage.setItem("gf_symbol",selectedSymbol);
@@ -113,7 +131,14 @@ function resetDashboard(){
   $("signal").textContent="WAIT";$("reasons").textContent="Waiting for broker analysis…";$("watch").textContent="No active zone nearby.";
 }
 async function loadAnalysis(){
-  if(!selectedSymbol||loading)return;loading=true;
+  if(!selectedSymbol||loading)return;
+  if(/^gf-/.test(selectedIndicator)){
+    lastAnalysis=null;lastLiveTick=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null);
+    chip("engineChip","warn","GF STUDY • RULE-BASED");
+    if(window.GFStudy)window.GFStudy.load();
+    return;
+  }
+  loading=true;
   var sameContext=!!(lastAnalysis?.ready&&lastAnalysis.requested===selectedSymbol&&lastAnalysis.selectedTF===selectedTF&&lastAnalysis.indicatorMode===selectedIndicator);
   if(!sameContext){lastLiveTick=null;lastAnalysis=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null)}
   try{
@@ -260,7 +285,7 @@ async function init(){
   document.addEventListener("visibilitychange",function(){if(!document.hidden)refreshLiveZoneEntry()});
   setInterval(function(){
     // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
-    var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on");
+    var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on,#gfStudyPage.on");
     if(selectedSymbol&&!v8Active)loadAnalysis();
   },30000);
 }
@@ -278,12 +303,57 @@ function tvSymbol(s){
 function tvInterval(tf){
   return ({M1:"1",M5:"5",M15:"15",M30:"30",H1:"60",H4:"240",D1:"D"})[tf]||"5";
 }
-function renderTradingView(){
-  var el=$("tvWrap"); if(!el||!selectedSymbol)return;
-  // Defer the chart until the TradingView tab is visible (avoids hidden iframe load).
-  if(!$("tvPage")?.classList.contains("on"))return;
-  var sym=tvSymbol(selectedSymbol),intv=tvInterval(selectedTF);
-  el.innerHTML='<iframe allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen src="https://s.tradingview.com/widgetembed/?frameElementId=tv_goldflow&symbol='+encodeURIComponent(sym)+'&interval='+encodeURIComponent(intv)+'&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=%230f2740&studies=[]&theme=dark&style=1&timezone=Asia%2FKuala_Lumpur&withdateranges=1&hideideas=1"></iframe>';
+var tvNativeChart=null,tvReqSeq=0;
+async function renderTradingView(){
+  var el=$("tvWrap");if(!el||!selectedSymbol||!$("tvPage")?.classList.contains("on"))return;
+  var token=++tvReqSeq,symbol=selectedSymbol,tf=selectedTF,sym=tvSymbol(symbol),interval=tvInterval(tf);
+  if(tvNativeChart){try{tvNativeChart.remove()}catch(e){}tvNativeChart=null}
+  // Official third-party iframe may be blocked by browser CSP, extensions or
+  // provider policies. ALWAYS display independently fetched Vantage broker chart.
+  var external="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(sym);
+  el.innerHTML='<div class="tvBar"><b>VANTAGE BROKER CHART • '+symbol.replace(/</g,"&lt;")+' • '+tf+'</b>'+
+    '<a class="primary mini" href="'+external+'" target="_blank" rel="noopener noreferrer">OPEN TRADINGVIEW ↗</a></div>'+
+    '<p class="sub" id="tvBrokerNote">Loading direct broker candles. TradingView prices may differ from Vantage.</p>'+
+    '<div class="tvBrokerChart" id="tvBrokerChart" role="img" aria-label="Vantage verified OHLC candlestick chart"></div>'+
+    '<div class="tvBar"><b>TradingView external reference</b><span class="sub">If the embed is blocked, use OPEN TRADINGVIEW above. Local chart remains operational.</span></div>'+
+    '<div id="tvEmbed" class="tvEmbed"></div>';
+  var target=$("tvEmbed"),chartNode=$("tvBrokerChart");
+  if(target&&/^(OANDA|COINBASE|FX):/.test(sym)){
+   var frame=document.createElement("iframe");
+   frame.title="TradingView external chart reference";frame.loading="lazy";frame.referrerPolicy="no-referrer-when-downgrade";
+   frame.setAttribute("allowfullscreen","");
+   frame.src="https://s.tradingview.com/widgetembed/?frameElementId=gf_tv_ref&symbol="+encodeURIComponent(sym)+
+     "&interval="+encodeURIComponent(interval)+"&theme=dark&style=1&hidesidetoolbar=0&symboledit=1&timezone=Asia%2FKuala_Lumpur";
+   target.appendChild(frame);
+  }else if(target)target.textContent="This exact Vantage symbol has no verified TradingView mapping. Use the direct Vantage chart above.";
+  try{
+   var feed=await getJson("/api/bars?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&limit=220");
+   if(token!==tvReqSeq||symbol!==selectedSymbol||tf!==selectedTF||!$("tvPage")?.classList.contains("on"))return;
+   if(!feed.ok||!Array.isArray(feed.bars)||feed.bars.length<20)throw Error(feed.error||"Insufficient broker candles");
+   var offset=Number(feed.brokerUtcOffsetSeconds);
+   if(!Number.isFinite(offset))throw Error("Broker time offset unavailable");
+   var bars=feed.bars.map(function(b){return {time:Number(b.t)-offset,open:Number(b.o),high:Number(b.h),low:Number(b.l),close:Number(b.c)}})
+     .filter(function(b){return Number.isFinite(b.time)&&[b.open,b.high,b.low,b.close].every(Number.isFinite)})
+     .sort(function(a,b){return a.time-b.time});
+   if(bars.length<20)throw Error("Insufficient valid broker OHLC");
+   $("tvBrokerNote").textContent="SOURCE: Vantage MT5 • "+(feed.symbol||symbol)+" • "+tf+
+     " • "+bars.length+" candles • direct broker data (not TradingView feed).";
+   if(typeof LightweightCharts==="undefined"){
+    if(window.GFOHLC?.render(chartNode,bars))$("tvBrokerNote").textContent+=" • First-party SVG OHLC fallback (external chart library blocked).";
+    else chartNode.textContent="Broker candles are available, but local chart rendering failed. Latest close: "+bars.at(-1).close;
+    return;
+   }
+   tvNativeChart=LightweightCharts.createChart(chartNode,{height:350,width:Math.max(280,chartNode.clientWidth),
+     layout:{background:{color:"#07131c"},textColor:"#b6cbd7"},
+     grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},
+     rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true}});
+   var series=tvNativeChart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,
+     wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
+   series.setData(bars);tvNativeChart.timeScale().fitContent();
+  }catch(e){
+   if(token===tvReqSeq){$("tvBrokerNote").textContent="Broker chart unavailable: "+String(e.message||e)+
+     ". TradingView can still open in a separate tab.";if(chartNode)chartNode.textContent="Unable to load authenticated Vantage OHLC."}
+  }
 }
 
 function macroImpactClass(v){
@@ -297,6 +367,7 @@ function macroChangeText(c){
 function macroStatusTag(card){
   if(card.status==="UNAVAILABLE")return '<span class="r">UNAVAILABLE</span>';
   if(card.stale)return '<span class="y">STALE / DATE UNCONFIRMED</span>';
+  if(card.status==="SECONDARY_MIRROR")return '<span class="y">BLS DATA VIA FRED MIRROR</span>';
   if(card.status==="DERIVED")return '<span class="y">DERIVED MODEL</span>';
   return '<span class="g">OFFICIAL DATA</span>';
 }
@@ -355,13 +426,15 @@ async function loadMacro(force){
     if(!j.ok)throw new Error(j.error||"Macro data unavailable");
     lastMacro=j;macroLoaded=true;
     renderMacroCards(j.cards||[]);
-    $("macroQuality").textContent=(j.quality?.available||0)+"/"+(j.quality?.total||0)+" VALID • "+(j.quality?.fresh||0)+" FRESH";
-    $("macroQuality").className="tag "+((j.quality?.fresh||0)===(j.quality?.total||0)?"g":"y");
+    var primaryReady=j.quality?.strictPrimaryReady!==undefined?j.quality.strictPrimaryReady:(j.quality?.fresh===j.quality?.total&&!(j.quality?.errors||[]).length);
+    $("macroQuality").textContent=(j.quality?.available||0)+"/"+(j.quality?.total||0)+" AVAILABLE • "+(j.quality?.fresh||0)+" FRESH"+(primaryReady?" • PRIMARY OK":" • PRIMARY DEGRADED");
+    $("macroQuality").className="tag "+(primaryReady?"g":"y");
     var issues=[...(j.quality?.errors||[]),...(j.quality?.notes||[])];
+    if(j.quality?.secondaryMirror?.length)issues.unshift("SECONDARY MIRROR: "+j.quality.secondaryMirror.join(", ")+" supplied through FRED (BLS-origin data; DIRECT BLS REMAINS BLOCKED). Not primary-source verified.");
     if(j.quality?.unavailable?.length)issues.push("Unavailable: "+j.quality.unavailable.join(", "));
     if(j.quality?.stale?.length)issues.push("Stale / date unavailable: "+j.quality.stale.join(", "));
     $("macroNotice").className=issues.length?"notice info":"notice good";
-    $("macroNotice").textContent=(issues.length?"PARTIAL DATA • ":"OFFICIAL DATA VERIFIED • ")+
+    $("macroNotice").textContent=(primaryReady?(j.quality?.primarySourceHealth==="RECOVERED_OFFICIAL_VIA_LOCAL_BRIDGE"?"OFFICIAL BLS RECOVERED VIA LOCAL PC • ":"OFFICIAL DATA VERIFIED • "):"PARTIAL / PRIMARY DEGRADED • ")+
       "Source: BLS, BEA, Federal Reserve, Treasury and NY Fed. Scores, regime and gold impact are DERIVED, not guaranteed directions."+
       (issues.length?" "+issues.join(" | "):"");
     $("macroRegime").textContent=j.regime?.name||"—";

@@ -73,6 +73,9 @@ export function apiError(res,error,status=200,extra={}){
 export function classifySymbol(name="",path="",description=""){
   const n=String(name).toUpperCase();
   const p=(String(path)+" "+String(description)).toUpperCase();
+  // Classification only: NEVER infer ONLINE/24H from these name patterns.
+  // Exact availability requires /catalog tradeMode and a fresh exact-symbol tick.
+  if(/^(?:VOL(?:ATILITY)?[._ -]*(?:10|25|50|75|80|100|150|200|250|300|500|1000)(?:[._ -]*(?:1S|S))?|V(?:10|25|50|75|80|100)(?:[._ -]*1S)?|(?:FIXED[._ -]*)?STEP[._ -]*(?:0[.]?[1-5]|1|INDEX)?|BOOM[._ -]*[0-9]*|CRASH[._ -]*[0-9]*|JUMP[._ -]*[0-9]*|RANGE[._ -]*BREAK|DRIFT[._ -]*SWITCH)/i.test(n)||/SYNTHETIC|DERIVED INDICES|STEP INDEX|FIXEDSTEP|FIXED STEP|VOLATILITY INDEX|CONTINUOUS INDEX/.test(p))return "SYNTHETIC";
   if(/CRYPTO|BITCOIN|ETHEREUM|BTC|ETH|SOL|XRP|LTC|BCH|DOGE|ADA|DOT|AVAX|LINK/.test(n+" "+p)) return "CRYPTO";
   if(/XAU|XAG|XPT|XPD|GOLD|SILVER|METAL/.test(n+" "+p)) return "METALS";
   if(/WTI|BRENT|USOIL|UKOIL|XBR|XTI|NATGAS|NGAS|ENERGY|OIL/.test(n+" "+p)) return "ENERGY";

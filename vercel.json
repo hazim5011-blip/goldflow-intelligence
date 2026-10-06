@@ -44,7 +44,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "staging/v8-history-performance": false
+      "staging/v8-history-performance": false,
+      "staging/v8-1-ai-confirmation-market-online": false
     }
   },
   "rewrites": [

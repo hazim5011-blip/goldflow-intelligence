@@ -1,8 +1,8 @@
 {
   "product": "GoldFlow Intelligence",
   "channel": "production",
-  "version": "8.1.1",
-  "mode": "V8_1_BLOG_NEWS_IMPACT_LIVE_ZONE_FUND104_WEB_STUDY",
+  "version": "8.1.3",
+  "mode": "V8_1_3_LIVE_WORLD_NEWS_GOLD_OPENING_INTELLIGENCE",
   "indicators": [
     "MTF Research v1.05",
     "MTF Research v1.03",
@@ -39,8 +39,8 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "GoldFlow V8.1.1: retains V8.1 Blog, Live/Pending chart, Impact study and Fund104 WEB STUDY. Normalizes Vantage broker server UTC+3 to real UTC for History Pro and candle age; original broker epoch retained for audit. Not a native MQL5 parity claim.",
-  "updated": "2026-10-02",
+  "message": "Production release: source-attributed international headlines, honest feed health, 5-minute open-page checks, Vantage XAUUSD247 broker-first market research, separate GF-AI and GF-Market Study engines, and source-linked macro/news context. No fabricated prices, no automatic MT5 order execution, and no forward-execution proof unless the durable archive is explicitly configured.",
+  "updated": "2026-10-07",
   "features": [
     "History Pro closed-candle reconstruction",
     "Performance Analytics with strict and legacy win-rate definitions",
@@ -54,6 +54,16 @@
     "LIVE TRADE chart-view action and Pending entry ranges (no order placement)",
     "News impact class (HIGH/MEDIUM/LOW/CONTEXT) with conditional interpretation",
     "Fund Structure 1.04 closed-candle WEB STUDY subset; native parity pending",
-    "Broker server UTC+3 normalized for historical UTC labels, period windows and candle freshness"
+    "Broker server UTC+3 normalized for historical UTC labels, period windows and candle freshness",
+    "Adaptive AI technical-only mode when unavailable asset-specific fundamentals (no fabricated scores)",
+    "Bounded all-tradable Vantage market scan; explicit SYNTHETIC / UNKNOWN coverage",
+    "First-party broker OHLC TradingView fallback + official external TradingView link",
+    "Evidence automatic historical reconstruction, first-party SVG + PNG fallback",
+    "World News Intelligence independent of MT5/BLS with trusted publisher and feed provenance",
+    "5-minute browser-open source check and local NEW story detection",
+    "Hormuz/OPEC/G7 source-attributed Gold weekend briefs with competing yield/energy channels",
+    "Blog important dynamic world-market journal plus four substantive Oct-4 source-linked bilingual research posts",
+    "Official macro observations visually separate from international headlines",
+    "Optional fail-closed Cloudflare R2 forward archive adapter; disabled unless explicitly configured"
   ]
 }

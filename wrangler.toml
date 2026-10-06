@@ -1,0 +1,8 @@
+# TEST project only. Never store passwords, bridge keys or API tokens in GitHub.
+name = "goldflow-intelligence-cf-test"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-10-04"
+# Node compat and process.env populated by default for post-2026-08-04 compatibility dates.
+# Set BROKER_BRIDGE_URL, BROKER_BRIDGE_KEY (encrypted), VANTAGE_TICK_UTC_OFFSET_SECONDS
+# in Cloudflare Pages Dashboard > Settings > Variables and Secrets (Production AND Preview).
+# No BLOB_READ_WRITE_TOKEN or FORWARD_INGEST_SECRET until audited R2 parity.

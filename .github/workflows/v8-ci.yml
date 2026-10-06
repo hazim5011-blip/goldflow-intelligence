@@ -1,6 +1,9 @@
 name: GoldFlow V8 CI
 
 on:
+  push:
+    branches:
+      - staging/v8-1-ai-confirmation-market-online
   pull_request:
     branches: [main]
 
@@ -51,10 +54,31 @@ jobs:
         run: |
           node --check app.js
           node --check v8.js
+          node --check study-ui.js
           find api -maxdepth 1 -name '*.js' -print0 | xargs -0 -n1 node --check
 
       - name: Python bridge syntax check
-        run: python -m py_compile bridge/mt5_bridge.py
+        run: python -m py_compile bridge/mt5_bridge.py bridge/macro_sources.py bridge/test_macro_sources.py
+
+      - name: Offline authenticated Windows macro source unit tests
+        run: python -m unittest discover -s bridge -p 'test_macro_sources.py' -v
 
       - name: V8 unit and policy tests
         run: npm test
+
+      - name: Cloudflare build dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Cloudflare adapter tests and build (NO DEPLOYMENT)
+        run: |
+          npm run test:cloudflare
+          npm run build:cloudflare
+          node --check dist/_worker.js
+          test -f dist/study-ui.js
+          test -f dist/ohlc-fallback.js
+          test -f dist/blog/posts.json
+          grep -q '"\/api\/news-live"' dist/_worker.js
+          test -f dist/_routes.json
+          test -f dist/locales/ms.json
+          if grep -q 'FORWARD_STORAGE_NOT_CONFIGURED' dist/_worker.js; then echo 'Forward proof remains disabled as expected'; fi
+          if grep -q 'BLOB_READ_WRITE_TOKEN.*put(' dist/_worker.js; then echo 'Unexpected Vercel storage in CF bundle'; exit 1; fi

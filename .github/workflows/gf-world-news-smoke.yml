@@ -1,0 +1,40 @@
+name: GoldFlow World News Provider Smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "api/_marketNews.js"
+      - "api/news-live.js"
+      - "cloudflare/worker.js"
+      - ".github/workflows/gf-world-news-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-world-news-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Best-effort real RSS provider check (no broker secrets)
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {collectWorldNews} from "./api/_marketNews.js";
+          const d=await collectWorldNews();
+          console.log("SOURCE STATUS: "+d.sourceStatus);
+          console.log("RSS PROVIDERS: "+JSON.stringify(d.sourceChecks));
+          console.log("FRESH PUBLISHER HEADLINES: "+d.fetchedLiveHeadlines);
+          console.log("CURATED DATED REPORTS: "+d.curatedCandidates);
+          if(!d.ok||!Array.isArray(d.items))process.exit(1);
+          if(d.sourceStatus==="LIVE_FEEDS_UNAVAILABLE"){
+            console.log("WARNING: RSS blocked from this GitHub runner. Website must honestly show dated curated sources and UNAVAILABLE, never fake live coverage.");
+          }
+          console.log("NO TRADING, NO MT5, NO SECRETS.");
+          JS

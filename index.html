@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#061018">
-<title>GoldFlow Intelligence V8.1</title>
+<title>GoldFlow Intelligence V8.1.3</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -12,7 +12,7 @@
 <body>
 <div class="wrap">
 <header class="top">
-  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V8.1</h1><small>V8.1 PRODUCTION • 6 ORIGINAL ENGINES + FUND 1.04 WEB STUDY • VANTAGE MT5</small></div></div>
+  <div class="brand"><div class="logo">GF</div><div><h1>GoldFlow Intelligence V8.1.3</h1><small>PRODUCTION • WORLD NEWS INTELLIGENCE • SOURCE-LINKED MARKET BRIEFS • ORIGINAL MT5 & MACRO ENGINES</small></div></div>
   <div class="statusRow"><span id="bridgeChip" class="chip warn">BRIDGE…</span><span id="engineChip" class="chip warn">ENGINE…</span><span id="marketChip" class="chip warn">MARKET…</span></div>
   <div class="v8Global">
     <label class="v8InlineLabel" for="gfLocale" data-i18n="language">Language</label>
@@ -37,16 +37,21 @@
     <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
     <option value="owl101">OWL Style Research v1.01</option>
     <option value="fund104">Fund Structure A v1.04 — Web Study</option>
+    <option value="gf-ai">GF-AI Live Analyst v1.00 • Rule-Based</option>
+    <option value="gf-news">GF-News Impact Pro v1.00 • Gold</option>
+    <option value="gf-study">GF-Market Study Pro v1.00</option>
   </select></div>
   <div class="field"><label>Signal TF</label><select id="tfSelect"><option>M1</option><option selected>M5</option><option>M15</option><option>M30</option><option>H1</option><option>H4</option><option>D1</option></select></div>
   <button id="refreshBtn" class="primary">Refresh</button>
 </section>
 
+<div id="marketFilterNotice" class="sub" aria-live="polite">Market ONLINE and weekend-active categories are verified from Vantage trade mode and fresh tick, not inferred from symbol names.</div>
 <div id="connectionNotice" class="notice info">Checking Vantage MT5 Bridge…</div>
 
 <nav class="tabs">
   <button class="tab on" data-page="dashboard">Dashboard</button>
   <button class="tab" data-page="chartPage">Broker Chart</button>
+  <button class="tab" data-page="gfStudyPage">AI Study / News Time</button>
   <button class="tab" data-page="tvPage">TradingView</button>
   <button class="tab" data-page="v8History" data-i18n="historyPro">History Pro</button>
   <button class="tab" data-page="v8Performance" data-i18n="performance">Performance</button>
@@ -94,6 +99,33 @@
 
 <section id="chartPage" class="page">
   <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><span id="chartTag" class="tag">—</span></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div><div class="sub">Pending: dashed entry-range boundary lines. Live setup: solid entry range + marker. No automatic trade execution.</div></div>
+</section>
+
+
+<section id="gfStudyPage" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">BROKER-FIRST • CLOSED CANDLE STUDY</small><h3 id="gfStudyModeTitle">Select GF study mode</h3></div><button id="gfStudyRefresh" type="button" class="primary">Refresh Study</button></div>
+    <div class="notice info" id="gfStudyNote">Select one of the GF-AI / GF-News / GF-Market Study indicators to begin. Rule-based confluence; no trained AI prediction or automatic broker order.</div>
+    <div class="notice" id="gfStudyModePurpose">AI = stricter H1+H4 alignment and verified Gold macro; Market Study = technical entry/retest/SL/TP only. They use the same MT5 candle source, not the same decision policy.</div>
+    <div class="grid g2">
+      <div class="card"><small>CONFIRMATION STATE</small><h2 id="gfStudyState" aria-live="polite">WAIT CONFIRMATION</h2><div id="gfStudyReason" class="reason">Waiting for verified closed candles and fresh Vantage quote.</div><div class="sub" id="gfStudyFresh">—</div></div>
+      <div class="card"><small>ENTRY DECISION</small><h2 id="gfEntryDecision">NO ENTRY</h2><div id="gfEntryHint" class="reason">A trade setup is NOT executed automatically.</div><div class="sub" id="gfOppositeDirection">BUY/SELL: WAIT VALIDATION</div><div class="sub" id="gfConfirmTime">—</div></div>
+    </div>
+    <div class="grid g5 sec">
+      <div class="card kpi"><small>ENTRY RANGE</small><strong id="gfEntryRange">—</strong></div>
+      <div class="card kpi"><small>INVALIDATION / SL STUDY</small><strong id="gfInvalidate">—</strong></div>
+      <div class="card kpi"><small>TP1 STUDY</small><strong id="gfTP1">—</strong></div>
+      <div class="card kpi"><small>TP2 STUDY</small><strong id="gfTP2">—</strong></div>
+      <div class="card kpi"><small>TP3 STUDY</small><strong id="gfTP3">—</strong></div>
+    </div>
+    <div class="card sec"><div class="head"><h3 id="gfScenarioTitle">Live Research / Scenario</h3><span class="tag y" id="gfScenarioBadge">RESEARCH • NOT EXECUTED</span></div><div class="reason" id="gfScenarioNarrative">Select a study mode to see its own technical scenario, confirmation levels and sourced macro/news context.</div></div>
+    <div class="grid g2 sec">
+      <div class="card"><div class="head"><h3>Technical Confirmation</h3><span class="tag y">VANTAGE MT5</span></div><div id="gfStudyTechnical" class="reason">—</div></div>
+      <div class="card"><div class="head"><h3>Fundamental / News Impact</h3><span class="tag y">OFFICIAL VS DERIVED</span></div><div id="gfStudyMacro" class="reason">—</div></div>
+    </div>
+<div class="card sec"><div class="head"><h3>GF Study • Vantage Broker Chart</h3><span class="tag y">CONFIRMATION MARKER • NOT EXECUTED</span></div><div id="gfStudyChart" class="chart" role="img" aria-label="Vantage MT5 candles with closed-candle BUY or SELL study confirmation, entry band, invalidation and TP levels"></div><div class="sub" id="gfStudyChartNote">Study chart receives real Vantage candles when the new API is available. Confirmation markers always reference CLOSED candles only.</div></div>
+        <div class="macroDisclaimer">WAIT becomes BUY/SELL CONFIRMED only on a verified closed trigger candle. ENTRY READY additionally requires a fresh broker BID/ASK inside the studied entry range. If invalidated, expired, already moved away or news quality fails, no entry prompt is issued. The AI label describes transparent rule-based research, NOT a trained ML model, trade execution, guaranteed direction, or win probability.</div>
+  </div>
 </section>
 
 <section id="tvPage" class="page">
@@ -192,6 +224,7 @@
   <div class="card">
     <div class="head"><div><small class="eyebrow">TRACEABLE HISTORICAL REPLAY</small><h3 data-i18n="evidence">Evidence / Proof</h3></div><span class="tag y" id="v8EvidenceStatus">NOT FORWARD VERIFIED</span></div>
     <div class="notice info">A reconstruction hash verifies the current API response only. It does NOT prove that the signal was recorded before the market moved. Durable forward logging requires a separately configured archive.</div>
+    <div class="notice info" id="v8EvidenceContext">Loading selected broker history. This is a reconstructed study, NOT forward publication or executed trade proof.</div>
     <div class="v8Filters">
       <div class="grow"><label for="v8EvidenceSelect" data-i18n="selectSignal">Select historical signal</label><select id="v8EvidenceSelect"><option>Load History Pro first</option></select></div>
       <button type="button" id="v8EvidenceLoad" class="primary" data-i18n="viewEvidence">View Evidence</button>
@@ -208,6 +241,17 @@
   <div class="card">
     <div class="head"><div><small class="eyebrow">OFFICIAL ACTUAL • CONDITIONAL INTERPRETATION</small><h3 data-i18n="newsStudy">Macro & News Study</h3></div><button type="button" id="v8NewsRefresh" class="primary" data-i18n="refreshNews">Refresh News Study</button></div>
     <div class="notice info" id="v8NewsNotice">Only reported official observations are displayed. If market consensus or exact release timestamp is unavailable, it is explicitly N/A.</div>
+    <section class="gfWorldSection" id="gfWorldSection" aria-label="Live world news and Gold market interpretation">
+      <div class="gfWorldTop"><div><small class="eyebrow">LIVE GLOBAL SOURCES • NOT MT5 CALENDAR</small><h3>World News Intelligence — XAUUSD Weekend & Opening Watch</h3></div>
+      <span class="gfWorldHealth" id="gfWorldHealth">Checking external publishers…</span></div>
+      <div class="notice info" id="gfWorldNotice">Fetching source-attributed international reporting. Headlines are not independent proof or an automated trade signal.</div>
+      <div class="gfWorldBias" id="gfWorldBias" aria-live="polite">PRE-OPEN NEWS RISK • Waiting for credible source evidence; not an entry instruction.</div>
+      <div class="gfWorldFeature" id="gfWorldFeature" aria-live="polite">Checking the most recent credible market developments…</div>
+      <div class="gfWorldGrid" id="gfWorldStories"></div>
+      <details class="gfOpeningWatch" open><summary>Opening Scenarios • checklist before the Gold market reopens</summary><div id="gfWorldOpening">Do not assume MT5 LIVE means spot Gold has a current tradable tick. Revalidate the broker quote, spread and M15 closed candle.</div></details>
+      <p class="v8Footnote">Auto-check every 5 minutes while the site is open. Publisher RSS / attributed reports are separate from official economic observation periods. Website-only checking is not 24/7 background monitoring or a guaranteed breaking-news wire.</p>
+    </section>
+    <div class="gfMacroSectionTitle">OFFICIAL ECONOMIC DATA • separate from world-news headlines</div>
     <div class="v8MetricGrid" id="v8NewsRegime"></div>
     <div id="v8NewsList" class="v8NewsGrid"></div>
     <div class="v8Footnote" data-i18n="disclaimer">Market research only. This is not financial advice, a guaranteed signal or proof of past market causation. Users make their own trading decisions and bear the risks.</div>
@@ -217,6 +261,11 @@
   <div class="card">
     <div class="head"><div><small class="eyebrow">RESEARCH • INDICATOR CHANGELOG</small><h3>GoldFlow Blog & Indicator Updates</h3></div><button type="button" class="primary" id="gfBlogRefresh">Refresh Blog</button></div>
     <div id="gfBlogNote" class="notice info">Release notes, indicator methodology and verified changes. No invented performance claims.</div>
+    <section class="gfBlogJournal" aria-label="Dynamic market developments from external publishers">
+      <div class="gfWorldTop"><div><small class="eyebrow">LIVE JOURNAL • SOURCE-LINKED HEADLINES</small><h3>Important World Market Developments</h3></div><span id="gfBlogLiveStatus" class="gfWorldHealth">Checking…</span></div>
+      <div class="gfBlogLiveGrid" id="gfBlogLiveJournal">External news loading. Official GoldFlow research articles appear below.</div>
+    </section>
+    <div class="gfMacroSectionTitle">GOLDFLOW EDITORIAL RESEARCH & UPDATE LOG</div>
     <div id="gfBlogPosts" class="gfBlogPosts" aria-live="polite"></div>
     <p class="v8Footnote">Version notes describe code changes; historical backtests are separate from live forward-logged evidence. Articles are available in Malay and English; other locales use an English fallback until reviewed translations are available.</p>
   </div>
@@ -225,7 +274,9 @@
 
 <footer>GoldFlow research tool • Broker prices can differ across servers/accounts • No signal guarantees profit.</footer>
 </div>
+<script src="/ohlc-fallback.js"></script>
 <script src="/app.js"></script>
 <script src="/v8.js" defer></script>
+<script src="/study-ui.js" defer></script>
 </body>
 </html>
