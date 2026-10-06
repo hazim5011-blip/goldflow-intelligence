@@ -416,7 +416,7 @@ init();
 
 function tvSymbol(s){
   var r=rootSymbol(s).toUpperCase();
-  if(r==="XAUUSD247")return "OANDA:XAUUSD"; // TradingView independent reference, NOT Vantage native quote.
+  if(r==="XAUUSD247")return "THINKMARKETS:XAUUSD247"; // TradingView independent ThinkMarkets reference requested by user; NOT the Vantage signal feed.
   if(r==="XAUUSD")return "OANDA:XAUUSD";
   if(r==="XAGUSD")return "OANDA:XAGUSD";
   if(/^(BTC|ETH|SOL|XRP|LTC|BCH)USD$/.test(r))return "COINBASE:"+r;
@@ -440,7 +440,7 @@ async function renderTradingView(tfOverride){
     '<div id="tvChartTools"></div>'+
     '<p class="sub" id="tvBrokerNote">Loading direct broker candles. TradingView prices may differ from Vantage.</p>'+
     '<div class="tvBrokerChart" id="tvBrokerChart" role="img" aria-label="Vantage verified OHLC candlestick chart"></div>'+
-    '<div class="notice info tvExternalNotice"><b>TradingView external reference</b> • The embedded TradingView iframe is intentionally not shown because browsers/provider policy can render it as a blank box. Use OPEN TRADINGVIEW above. GoldFlow calculations continue to use Vantage MT5 only.</div>';
+    '<div class="notice info tvExternalNotice"><b>TradingView reference: '+sym.replace(/</g,"&lt;")+'</b> • For XAUUSD247 this is ThinkMarkets Spot Gold Continuous. The embedded TradingView iframe is intentionally not shown because browser/provider policy can render it as a blank box. OPEN TRADINGVIEW uses the same reference symbol. GoldFlow calculations and signals continue to use Vantage MT5 only.</div>';
   var chartNode=$("tvBrokerChart");
   if(window.GFChartTools&&$("tvChartTools"))GFChartTools.render("tv",$("tvChartTools"),{timeframes:["M1","M5","M15","M30","H1","H4","D1","W1","MN1"],currentTF:tf,redraw:function(){renderTradingView(tf)},onTF:function(nextTf){renderTradingView(nextTf)}});
   try{

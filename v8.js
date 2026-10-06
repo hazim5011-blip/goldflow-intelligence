@@ -522,9 +522,8 @@
     var selectedTf=window.selectedTF||$("tfSelect")?.value||"M15";
     if(state.tvReady&&state.tvSymbol===sym&&state.tvSelectedTF===selectedTf)return;
     state.tvReady=true;state.tvSymbol=sym;state.tvSelectedTF=selectedTf;state.tvHybridTF=selectedTf;
-    if(/THINKMARKETS:XAUUSD247/.test(sym))sym="OANDA:XAUUSD";
     var generation=(state.tvWidgetGeneration||0)+1;state.tvWidgetGeneration=generation;
-    $("v8TVNote").textContent="Trying TradingView reference widgets for "+sym+" • Vantage MT5 remains the only GoldFlow signal source.";
+    $("v8TVNote").textContent="TradingView reference: "+sym+" • XAUUSD247 uses ThinkMarkets Spot Gold Continuous. Vantage MT5 remains the only GoldFlow signal source.";
     function embed(id,src,config,fallback){
       var el=$(id);if(!el)return;el.innerHTML='<div class="tvHybridLoading">Loading TradingView reference widget…</div>';
       var box=document.createElement("div");box.className="tradingview-widget-container";box.style.height="100%";box.style.width="100%";
@@ -539,7 +538,7 @@
       function(){renderTVTechnicalFallback(selectedTf)});
     embed("v8TVMarket","https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js",
       {colorTheme:"dark",dateRange:"1D",showChart:true,locale:"en",largeChartUrl:"",isTransparent:true,showSymbolLogo:true,showFloatingTooltip:true,width:"100%",height:"460",
-       tabs:[{title:"Macro references",symbols:[{s:"OANDA:XAUUSD",d:"Gold ref."},{s:"TVC:DXY",d:"USD Index"},{s:"TVC:US10Y",d:"US10Y"},{s:"COINBASE:BTCUSD",d:"BTCUSD"}]}]},
+       tabs:[{title:"Macro references",symbols:[{s:"THINKMARKETS:XAUUSD247",d:"Gold • ThinkMarkets XAUUSD247"},{s:"TVC:DXY",d:"USD Index"},{s:"TVC:US10Y",d:"US10Y"},{s:"COINBASE:BTCUSD",d:"BTCUSD"}]}]},
       renderTVMarketFallback);
   }
   function attach(){
