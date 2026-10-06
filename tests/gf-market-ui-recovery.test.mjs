@@ -144,3 +144,30 @@ test("Fund104 Performance explains validation-only N/A rather than implying miss
  assert.ok(v.includes("FUND 1.04 WEB STUDY is validation-only"));
  assert.ok(v.includes("WR/R/P&L remain N/A"));
 });
+
+test("TradingView Hybrid Tools have a tested Vantage fallback instead of blank cards",()=>{
+ const v=readFileSync(new URL("../v8.js",import.meta.url),"utf8");
+ const calc=readFileSync(new URL("../tv-hybrid.js",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const build=readFileSync(new URL("../cloudflare/build.mjs",import.meta.url),"utf8");
+ assert.ok(v.includes("renderTVTechnicalFallback"));
+ assert.ok(v.includes("renderTVMarketFallback"));
+ assert.ok(v.includes("TradingView widget blocked/unavailable"));
+ assert.ok(calc.includes('row("SMA ("'));
+ assert.ok(v.includes("VANTAGE MULTI-TIMEFRAME OVERVIEW"));
+ assert.ok(html.includes('<script src="/tv-hybrid.js"></script>'));
+ assert.ok(build.includes("tv-hybrid.js"));
+});
+test("TradingView Hybrid fallback computes common technical indicators from broker OHLC",()=>{
+ const code=readFileSync(new URL("../tv-hybrid.js",import.meta.url),"utf8"),ctx={};
+ vm.runInNewContext(code,ctx);
+ const bars=Array.from({length:220},(_,i)=>{const c=4100+i*.25+Math.sin(i/4)*2;return {t:1700000000+i*300,o:c-.4,h:c+1.1,l:c-1,c,v:100+i}});
+ const x=ctx.GFTVHybrid.calc(bars);
+ assert.equal(x.ok,true);assert.equal(x.count,220);
+ assert.ok(x.movingAverages.some(r=>r.name==="SMA (200)"&&Number.isFinite(r.value)));
+ assert.ok(x.movingAverages.some(r=>r.name==="EMA (50)"&&Number.isFinite(r.value)));
+ assert.ok(x.oscillators.some(r=>r.name==="RSI (14)"&&Number.isFinite(r.value)));
+ assert.ok(x.oscillators.some(r=>r.name==="MACD Hist (12,26,9)"&&Number.isFinite(r.value)));
+ assert.ok(x.info.some(r=>r.name==="ATR (14)"&&Number.isFinite(r.value)));
+ assert.ok(["BUY","SELL","NEUTRAL"].includes(x.summaries.overall.action));
+});

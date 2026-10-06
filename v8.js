@@ -452,24 +452,95 @@
       renderBlog();loadWorldNews(false);$("gfBlogNote").textContent="Current source-attributed market journal above; dated research articles below. None is proof of a broker trade.";
     }catch(e){el.textContent="Blog is temporarily unavailable.";$("gfBlogNote").textContent=e.message}
   }
+  function tvHybridActionClass(a){return a==="BUY"?"g":a==="SELL"?"r":"y"}
+  function tvHybridFmt(v){
+    if(v===null||v===undefined||!Number.isFinite(Number(v)))return "N/A";
+    var n=Number(v),a=Math.abs(n);return a>=1000?n.toLocaleString(undefined,{maximumFractionDigits:2}):a>=10?n.toFixed(2):n.toFixed(4);
+  }
+  function tvHybridSummaryCard(title,s){
+    s=s||{};return '<div class="tvHybridSummary"><small>'+safe(title)+'</small><strong class="'+tvHybridActionClass(s.action)+'">'+safe(s.action||"N/A")+'</strong>'+
+      '<span><b class="g">'+Number(s.BUY||0)+' Buy</b> • <b class="y">'+Number(s.NEUTRAL||0)+' Neutral</b> • <b class="r">'+Number(s.SELL||0)+' Sell</b></span></div>';
+  }
+  function tvHybridRows(rows){
+    return '<div class="tvHybridTableWrap"><table class="tvHybridTable"><thead><tr><th>Indicator</th><th>Value</th><th>Action</th></tr></thead><tbody>'+
+      (rows||[]).map(function(r){return '<tr><td><b>'+safe(r.name)+'</b>'+(r.detail?'<small>'+safe(r.detail)+'</small>':"")+'</td><td>'+tvHybridFmt(r.value)+'</td><td class="'+tvHybridActionClass(r.action)+'"><b>'+safe(r.action)+'</b></td></tr>'}).join("")+
+      '</tbody></table></div>';
+  }
+  async function tvBars(symbol,tf){
+    return json("/api/bars?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&limit=220&t="+Date.now());
+  }
+  async function renderTVTechnicalFallback(tfOverride){
+    var el=$("v8TVTechnical"),engine=window.GFTVHybrid;if(!el||!engine)return;
+    var symbol=window.selectedSymbol||$("symbolSelect")?.value||"XAUUSD247",tf=tfOverride||state.tvHybridTF||window.selectedTF||"M15";
+    state.tvHybridTF=tf;
+    el.innerHTML='<div class="tvHybridLoading">Loading Vantage technical indicators • '+safe(symbol)+' • '+safe(tf)+'…</div>';
+    try{
+      var feed=await tvBars(symbol,tf),calc=engine.calc(feed.bars||[]);
+      if(!calc.ok)throw Error(calc.error||"INSUFFICIENT_BARS");
+      var ext="https://www.tradingview.com/chart/?symbol="+encodeURIComponent((window.tvSymbol?window.tvSymbol(symbol):symbol)||symbol);
+      var tfs=["M1","M5","M15","M30","H1","H4","D1"];
+      el.innerHTML='<div class="tvHybridHead"><div><small>TRADINGVIEW-STYLE TECHNICAL FALLBACK</small><b>'+safe(symbol)+' • '+safe(tf)+'</b></div>'+
+       '<a href="'+ext+'" target="_blank" rel="noopener noreferrer">OPEN TRADINGVIEW ↗</a></div>'+
+       '<div class="tvTfButtons">'+tfs.map(function(x){return '<button type="button" data-tvhybrid-tf="'+x+'" class="'+(x===tf?"on":"")+'">'+x+'</button>'}).join("")+'</div>'+
+       '<div class="tvHybridSummaries">'+tvHybridSummaryCard("Summary",calc.summaries.overall)+tvHybridSummaryCard("Oscillators",calc.summaries.oscillators)+tvHybridSummaryCard("Moving Averages",calc.summaries.movingAverages)+'</div>'+
+       '<div class="tvHybridSpot"><span>Last <b>'+tvHybridFmt(calc.last)+'</b></span><span>1-bar <b class="'+(Number(calc.changePct)>0?"g":Number(calc.changePct)<0?"r":"y")+'">'+(Number.isFinite(Number(calc.changePct))?(Number(calc.changePct)>0?"+":"")+Number(calc.changePct).toFixed(3)+"%":"N/A")+'</b></span><span>'+calc.count+' broker candles</span></div>'+
+       '<h4>Oscillators</h4>'+tvHybridRows(calc.oscillators)+'<h4>Moving Averages</h4>'+tvHybridRows(calc.movingAverages)+
+       '<h4>Volatility / Bands</h4>'+tvHybridRows(calc.info)+
+       '<p class="v8Footnote">Fallback is calculated from Vantage MT5 candles when the TradingView widget is blocked. It mirrors common TradingView-style indicators but is NOT TradingView feed or exact TradingView proprietary recommendation parity.</p>';
+      el.querySelectorAll("[data-tvhybrid-tf]").forEach(function(b){b.onclick=function(){renderTVTechnicalFallback(this.dataset.tvhybridTf)}});
+    }catch(e){
+      el.innerHTML='<div class="notice bad">Technical fallback unavailable: '+safe(e.message||e)+'. Vantage broker data was not replaced with synthetic values.</div>';
+    }
+  }
+  async function renderTVMarketFallback(){
+    var el=$("v8TVMarket"),engine=window.GFTVHybrid;if(!el||!engine)return;
+    var symbol=window.selectedSymbol||$("symbolSelect")?.value||"XAUUSD247",tfs=["M1","M5","M15","M30","H1","H4","D1"];
+    el.innerHTML='<div class="tvHybridLoading">Loading multi-timeframe Vantage overview • '+safe(symbol)+'…</div>';
+    var rows=await Promise.all(tfs.map(async function(tf){
+      try{var feed=await tvBars(symbol,tf),c=engine.calc(feed.bars||[]);return {tf,ok:c.ok,calc:c,error:c.error||null}}
+      catch(e){return {tf,ok:false,error:String(e.message||e)}}
+    }));
+    var ok=rows.filter(x=>x.ok);
+    if(!ok.length){el.innerHTML='<div class="notice bad">Multi-timeframe broker overview unavailable. No synthetic market state was substituted.</div>';return}
+    var alignedBuy=ok.filter(x=>x.calc.summaries.overall.action==="BUY").length,alignedSell=ok.filter(x=>x.calc.summaries.overall.action==="SELL").length;
+    var broad=alignedBuy>alignedSell?"BUY":alignedSell>alignedBuy?"SELL":"NEUTRAL";
+    el.innerHTML='<div class="tvHybridHead"><div><small>VANTAGE MULTI-TIMEFRAME OVERVIEW</small><b>'+safe(symbol)+'</b></div><span class="tag '+tvHybridActionClass(broad)+'">'+safe(broad)+'</span></div>'+
+      '<div class="tvHybridBreadth"><span><b class="g">'+alignedBuy+'</b> BUY TF</span><span><b class="y">'+ok.filter(x=>x.calc.summaries.overall.action==="NEUTRAL").length+'</b> NEUTRAL TF</span><span><b class="r">'+alignedSell+'</b> SELL TF</span></div>'+
+      '<div class="tvHybridTableWrap"><table class="tvHybridTable"><thead><tr><th>TF</th><th>Last</th><th>1-bar</th><th>Osc.</th><th>MA</th><th>Summary</th></tr></thead><tbody>'+
+      rows.map(function(x){
+       if(!x.ok)return '<tr><td><b>'+x.tf+'</b></td><td colspan="5" class="y">DATA UNAVAILABLE</td></tr>';
+       var c=x.calc,s=c.summaries;return '<tr><td><b>'+x.tf+'</b></td><td>'+tvHybridFmt(c.last)+'</td><td class="'+(Number(c.changePct)>0?"g":Number(c.changePct)<0?"r":"y")+'">'+(Number.isFinite(Number(c.changePct))?(Number(c.changePct)>0?"+":"")+Number(c.changePct).toFixed(3)+"%":"N/A")+'</td>'+
+        '<td class="'+tvHybridActionClass(s.oscillators.action)+'"><b>'+s.oscillators.action+'</b></td><td class="'+tvHybridActionClass(s.movingAverages.action)+'"><b>'+s.movingAverages.action+'</b></td><td class="'+tvHybridActionClass(s.overall.action)+'"><b>'+s.overall.action+'</b></td></tr>';
+      }).join("")+'</tbody></table></div>'+
+      '<p class="v8Footnote">This fallback is a Vantage MT5 multi-timeframe technical overview. It is independent of GoldFlow signal engines and does not claim to be TradingView market data.</p>';
+  }
+  function markTVFallback(reason){
+    var n=$("v8TVNote");if(n)n.textContent="TradingView widget blocked/unavailable ("+reason+"). Vantage MT5 Hybrid fallback is active below. GoldFlow signals still use the broker bridge only.";
+  }
   function loadTVTools(){
     var sym=(window.tvSymbol&&window.selectedSymbol)?window.tvSymbol(window.selectedSymbol):"OANDA:XAUUSD";
-    if(state.tvReady&&state.tvSymbol===sym)return;
-    state.tvReady=true;state.tvSymbol=sym;
+    var selectedTf=window.selectedTF||$("tfSelect")?.value||"M15";
+    if(state.tvReady&&state.tvSymbol===sym&&state.tvSelectedTF===selectedTf)return;
+    state.tvReady=true;state.tvSymbol=sym;state.tvSelectedTF=selectedTf;state.tvHybridTF=selectedTf;
     if(/THINKMARKETS:XAUUSD247/.test(sym))sym="OANDA:XAUUSD";
-    $("v8TVNote").textContent="Reference provider: "+sym+" • Vantage MT5 remains the only signal source. Differences in spread, symbol and timing are normal.";
-    function embed(id,src,config){
-      var el=$(id);if(!el)return;el.innerHTML="";
+    var generation=(state.tvWidgetGeneration||0)+1;state.tvWidgetGeneration=generation;
+    $("v8TVNote").textContent="Trying TradingView reference widgets for "+sym+" • Vantage MT5 remains the only GoldFlow signal source.";
+    function embed(id,src,config,fallback){
+      var el=$(id);if(!el)return;el.innerHTML='<div class="tvHybridLoading">Loading TradingView reference widget…</div>';
       var box=document.createElement("div");box.className="tradingview-widget-container";box.style.height="100%";box.style.width="100%";
-      var script=document.createElement("script");script.type="text/javascript";script.async=true;script.src=src;script.textContent=JSON.stringify(config);
-      script.onerror=function(){el.innerHTML='<p class="sub" style="padding:10px">TradingView reference widget unavailable. Use the broker chart for Vantage candles.</p>'};
-      box.appendChild(script);el.appendChild(box);
+      var script=document.createElement("script"),settled=false;script.type="text/javascript";script.async=true;script.src=src;script.textContent=JSON.stringify(config);
+      function fail(reason){if(settled||generation!==state.tvWidgetGeneration)return;settled=true;markTVFallback(reason);fallback()}
+      script.onerror=function(){fail("provider/script blocked")};
+      box.appendChild(script);el.innerHTML="";el.appendChild(box);
+      setTimeout(function(){if(generation!==state.tvWidgetGeneration)return;if(el.querySelector("iframe"))settled=true;else fail("widget did not render")},5000);
     }
     embed("v8TVTechnical","https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js",
-      {interval:"1h",width:"100%",height:"330",symbol:sym,showIntervalTabs:true,displayMode:"single",locale:"en",colorTheme:"dark",isTransparent:true});
+      {interval:"1h",width:"100%",height:"460",symbol:sym,showIntervalTabs:true,displayMode:"single",locale:"en",colorTheme:"dark",isTransparent:true},
+      function(){renderTVTechnicalFallback(selectedTf)});
     embed("v8TVMarket","https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js",
-      {colorTheme:"dark",dateRange:"1D",showChart:true,locale:"en",largeChartUrl:"",isTransparent:true,showSymbolLogo:true,showFloatingTooltip:true,width:"100%",height:"330",
-       tabs:[{title:"Macro references",symbols:[{s:"OANDA:XAUUSD",d:"Gold ref."},{s:"TVC:DXY",d:"USD Index"},{s:"TVC:US10Y",d:"US10Y"},{s:"COINBASE:BTCUSD",d:"BTCUSD"}]}]});
+      {colorTheme:"dark",dateRange:"1D",showChart:true,locale:"en",largeChartUrl:"",isTransparent:true,showSymbolLogo:true,showFloatingTooltip:true,width:"100%",height:"460",
+       tabs:[{title:"Macro references",symbols:[{s:"OANDA:XAUUSD",d:"Gold ref."},{s:"TVC:DXY",d:"USD Index"},{s:"TVC:US10Y",d:"US10Y"},{s:"COINBASE:BTCUSD",d:"BTCUSD"}]}]},
+      renderTVMarketFallback);
   }
   function attach(){
     $("gfLocale").onchange=function(){applyLocale(this.value)};
