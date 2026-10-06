@@ -198,3 +198,13 @@ test("Chart tool indicators compute overlays from broker closes without changing
  assert.ok(!code.includes("/api/analyze"));
  assert.ok(!code.includes("/api/study"));
 });
+
+test("TradingView Gold reference uses ThinkMarkets XAUUSD247 and is not silently remapped to OANDA",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ const v8=readFileSync(new URL("../v8.js",import.meta.url),"utf8");
+ assert.ok(app.includes('return "THINKMARKETS:XAUUSD247"'));
+ assert.ok(!app.includes('if(r==="XAUUSD247")return "OANDA:XAUUSD"'));
+ assert.ok(!v8.includes('if(/THINKMARKETS:XAUUSD247/.test(sym))sym="OANDA:XAUUSD"'));
+ assert.ok(v8.includes('{s:"THINKMARKETS:XAUUSD247",d:"Gold • ThinkMarkets XAUUSD247"}'));
+ assert.ok(v8.includes("XAUUSD247 uses ThinkMarkets Spot Gold Continuous"));
+});
