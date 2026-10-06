@@ -1,6 +1,6 @@
 {
   "product": "GoldFlow Intelligence",
-  "channel": "staging-test",
+  "channel": "production",
   "version": "8.1.3",
   "mode": "V8_1_3_LIVE_WORLD_NEWS_GOLD_OPENING_INTELLIGENCE",
   "indicators": [
@@ -39,8 +39,8 @@
     "note": "Official observations are separated from GoldFlow-derived context labels."
   },
   "autoUpdate": true,
-  "message": "Staging only: current source-attributed international headlines via Google News and direct BBC/Guardian/Al Jazeera public RSS, honest feed health, 5-minute open-page checks, two-sided Gold/Hormuz and oil-vs-yield mechanisms, dated source-linked market editorial, independent from MT5 calendar. No fabricated prices, publisher body verification, push promises, or forward execution proof.",
-  "updated": "2026-10-05",
+  "message": "Production release: source-attributed international headlines, honest feed health, 5-minute open-page checks, Vantage XAUUSD247 broker-first market research, separate GF-AI and GF-Market Study engines, and source-linked macro/news context. No fabricated prices, no automatic MT5 order execution, and no forward-execution proof unless the durable archive is explicitly configured.",
+  "updated": "2026-10-07",
   "features": [
     "History Pro closed-candle reconstruction",
     "Performance Analytics with strict and legacy win-rate definitions",
@@ -63,6 +63,7 @@
     "5-minute browser-open source check and local NEW story detection",
     "Hormuz/OPEC/G7 source-attributed Gold weekend briefs with competing yield/energy channels",
     "Blog important dynamic world-market journal plus four substantive Oct-4 source-linked bilingual research posts",
-    "Official macro observations visually separate from international headlines"
+    "Official macro observations visually separate from international headlines",
+    "Optional fail-closed Cloudflare R2 forward archive adapter; disabled unless explicitly configured"
   ]
 }
