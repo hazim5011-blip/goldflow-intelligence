@@ -98,7 +98,7 @@
 </section>
 
 <section id="chartPage" class="page">
-  <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><span id="chartTag" class="tag">—</span></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div><div class="sub">Pending: dashed entry-range boundary lines. Live setup: solid entry range + marker. No automatic trade execution.</div></div>
+  <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><div class="chartHeadTools"><label for="chartLabelMode">Level labels</label><select id="chartLabelMode" aria-label="Broker chart level labels"><option value="nearest">Nearest only</option><option value="all">Show all</option><option value="hide">Hide labels</option></select><span id="chartTag" class="tag">—</span></div></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div><div class="sub">Default: only the nearest two zones use short B/S L/H labels so the live price remains visible. All zone lines remain on-chart. No automatic trade execution.</div></div>
 </section>
 
 
@@ -117,6 +117,16 @@
       <div class="card kpi"><small>TP1 STUDY</small><strong id="gfTP1">—</strong></div>
       <div class="card kpi"><small>TP2 STUDY</small><strong id="gfTP2">—</strong></div>
       <div class="card kpi"><small>TP3 STUDY</small><strong id="gfTP3">—</strong></div>
+    </div>
+    <div class="card sec" id="gfActiveSetupCard" hidden>
+      <div class="head"><div><small class="eyebrow">OBSERVED ENTRY LIFECYCLE • NOT A BROKER POSITION</small><h3>Last / Active Market Study Setup</h3></div><div class="gfActiveActions"><span id="gfActiveSetupBadge" class="tag">NONE</span><button type="button" id="gfActiveSetupClear" class="studyClearBtn">Clear</button></div></div>
+      <div class="plan">
+        <div><small>SIDE</small><b id="gfActiveSide">—</b></div>
+        <div><small>ENTRY OBSERVED</small><b id="gfActiveEntry">—</b></div>
+        <div><small>SL / INVALIDATION</small><b id="gfActiveSL">—</b></div>
+        <div><small>TP1</small><b id="gfActiveTP1">—</b></div>
+      </div>
+      <div id="gfActiveSetupNote" class="reason">No Market Study setup has been observed inside its verified entry zone in this browser.</div>
     </div>
     <div class="card sec"><div class="head"><h3 id="gfScenarioTitle">Live Research / Scenario</h3><span class="tag y" id="gfScenarioBadge">RESEARCH • NOT EXECUTED</span></div><div class="reason" id="gfScenarioNarrative">Select a study mode to see its own technical scenario, confirmation levels and sourced macro/news context.</div></div>
     <div class="grid g2 sec">
@@ -275,6 +285,7 @@
 <footer>GoldFlow research tool • Broker prices can differ across servers/accounts • No signal guarantees profit.</footer>
 </div>
 <script src="/ohlc-fallback.js"></script>
+<script src="/study-lifecycle.js"></script>
 <script src="/app.js"></script>
 <script src="/v8.js" defer></script>
 <script src="/study-ui.js" defer></script>
