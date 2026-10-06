@@ -1,6 +1,9 @@
 name: GoldFlow V8 CI
 
 on:
+  push:
+    branches:
+      - staging/v8-1-ai-confirmation-market-online
   pull_request:
     branches: [main]
 
