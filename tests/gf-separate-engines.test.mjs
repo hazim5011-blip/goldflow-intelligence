@@ -33,6 +33,8 @@ test("identical Gold inputs go through genuinely separate engines, methods, entr
  assert.ok(s.confirmation,JSON.stringify({status:s.status,reason:s.reason}));
  assert.equal(a.confirmation.entryMethod,"AI_IMPULSE_FIB_0382_TO_0618");
  assert.equal(s.confirmation.entryMethod,"BROKEN_PIVOT_RETEST");
+ assert.equal(s.structureFlip?.type,"RBS");
+ assert.match(s.confirmation.confirmationType,/^RBS_/);
  assert.notEqual(a.confirmation.entryLow,s.confirmation.entryLow);
  assert.notDeepEqual(
   [a.confirmation.entryLow,a.confirmation.entryHigh,a.confirmation.invalidation,a.confirmation.tp1,a.confirmation.tp2,a.confirmation.tp3],
@@ -41,6 +43,18 @@ test("identical Gold inputs go through genuinely separate engines, methods, entr
  assert.equal(s.macroContext.appliedAsGate,false);
  assert.ok(s.structureLevels.support<s.structureLevels.resistance);
  assert.ok(s.projectedTargets?.length===3);
+});
+test("bearish Market Study names broken support retest as SBR",()=>{
+ const bars=feed(95,900,-.13),last=bars.at(-2),prior=bars.at(-3);
+ last.o=prior.c-.15;last.c=prior.l-2.1;last.h=last.o+.23;last.l=last.c-.30;
+ const px=last.c-.10;
+ const f={symbol:"XAUUSD247",tf:"M15",bars,h1:feed(95,3600,-.13),h4:feed(95,14400,-.13),
+  quote:{bid:px-.05,ask:px,tickTime:now+offset,observedAt:now},offsetSeconds:offset,macro:verified(),nowSec:now};
+ const s=evaluateMarketStudy(f);
+ assert.ok(s.confirmation,JSON.stringify({status:s.status,reason:s.reason}));
+ assert.equal(s.confirmation.entryMethod,"BROKEN_PIVOT_RETEST");
+ assert.equal(s.structureFlip?.type,"SBR");
+ assert.match(s.confirmation.confirmationType,/^SBR_/);
 });
 test("AI Gold downgrades to verifiable technical-only mode with incomplete 13/16 macro; Market Study remains independent",()=>{
  const f=fixture(),bad={...verified(),quality:{...verified().quality,available:13,strictPrimaryReady:false,errors:["BLS block"]}};
