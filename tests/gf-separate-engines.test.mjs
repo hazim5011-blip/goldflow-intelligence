@@ -28,6 +28,10 @@ function fixture(){
 test("identical Gold inputs go through genuinely separate engines, methods, entries and target construction",()=>{
  const f=fixture(),a=evaluateAILive(f),s=evaluateMarketStudy(f);
  assert.equal(a.engine,"GF_AI_LIVE_MACRO_MTF_V2");
+ assert.equal(a.aiPolicy.requiresH1H4Alignment,true);
+ assert.equal(a.aiPolicy.triggerLookbackClosedBars,3);
+ assert.equal(a.aiPolicy.entryExpiryClosedBars,2);
+ assert.equal(a.aiPolicy.persistent24hSignalArchive,false);
  assert.equal(s.engine,"GF_MARKET_STRUCTURE_SCENARIO_V2");
  assert.ok(a.confirmation,JSON.stringify({status:a.status,reason:a.reason}));
  assert.ok(s.confirmation,JSON.stringify({status:s.status,reason:s.reason}));

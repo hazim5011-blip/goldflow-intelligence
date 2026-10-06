@@ -425,17 +425,8 @@ async function renderTradingView(){
     '<a class="primary mini" href="'+external+'" target="_blank" rel="noopener noreferrer">OPEN TRADINGVIEW ↗</a></div>'+
     '<p class="sub" id="tvBrokerNote">Loading direct broker candles. TradingView prices may differ from Vantage.</p>'+
     '<div class="tvBrokerChart" id="tvBrokerChart" role="img" aria-label="Vantage verified OHLC candlestick chart"></div>'+
-    '<div class="tvBar"><b>TradingView external reference</b><span class="sub">If the embed is blocked, use OPEN TRADINGVIEW above. Local chart remains operational.</span></div>'+
-    '<div id="tvEmbed" class="tvEmbed"></div>';
-  var target=$("tvEmbed"),chartNode=$("tvBrokerChart");
-  if(target&&/^(OANDA|COINBASE|FX):/.test(sym)){
-   var frame=document.createElement("iframe");
-   frame.title="TradingView external chart reference";frame.loading="lazy";frame.referrerPolicy="no-referrer-when-downgrade";
-   frame.setAttribute("allowfullscreen","");
-   frame.src="https://s.tradingview.com/widgetembed/?frameElementId=gf_tv_ref&symbol="+encodeURIComponent(sym)+
-     "&interval="+encodeURIComponent(interval)+"&theme=dark&style=1&hidesidetoolbar=0&symboledit=1&timezone=Asia%2FKuala_Lumpur";
-   target.appendChild(frame);
-  }else if(target)target.textContent="This exact Vantage symbol has no verified TradingView mapping. Use the direct Vantage chart above.";
+    '<div class="notice info tvExternalNotice"><b>TradingView external reference</b> • The embedded TradingView iframe is intentionally not shown because browsers/provider policy can render it as a blank box. Use OPEN TRADINGVIEW above. GoldFlow calculations continue to use Vantage MT5 only.</div>';
+  var chartNode=$("tvBrokerChart");
   try{
    var feed=await getJson("/api/bars?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&limit=220");
    if(token!==tvReqSeq||symbol!==selectedSymbol||tf!==selectedTF||!$("tvPage")?.classList.contains("on"))return;
