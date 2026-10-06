@@ -58,3 +58,38 @@ test("own broker OHLC SVG renders chart safely without any external TradingView 
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  assert.ok(html.includes('<script src="/ohlc-fallback.js"></script>'));
 });
+
+test("broker chart defaults to nearest-only short labels and offers all/hide controls",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ assert.ok(app.includes('gf_chart_labels'));
+ assert.ok(app.includes('chartLabelMode==="nearest"&&i<2'));
+ assert.ok(app.includes('live+side+" L"'));
+ assert.ok(app.includes('live+side+" H"'));
+ assert.ok(html.includes('id="chartLabelMode"'));
+ assert.ok(html.includes('value="nearest"'));
+ assert.ok(html.includes('value="hide"'));
+});
+test("Market Study active lifecycle survives a later WAIT until TP1 or invalidation",()=>{
+ const code=readFileSync(new URL("../study-lifecycle.js",import.meta.url),"utf8"),ctx={};
+ vm.runInNewContext(code,ctx);
+ const life=ctx.GFStudyLifecycle;
+ const ready={mode:"study",status:"BUY_ENTRY_READY",canEnter:true,symbol:"XAUUSD.crp",tf:"M1",updatedAtUTC:"2026-10-07T01:00:00Z",
+  entryQuote:4175.8,bid:4175.7,ask:4175.8,quoteAgeSeconds:0,
+  confirmation:{direction:1,entryLow:4175.35,entryHigh:4176.15,invalidation:4175.24,tp1:4176.76,tp2:4184.35,tp3:4186.26,signalCandleTime:1900000000,confirmationCloseUTC:"2026-10-07T00:59:00Z"}};
+ const active=life.candidate(ready);assert.equal(active.side,"BUY");
+ const wait={...ready,status:"STUDY_WAIT_BUY_CONFIRMATION",canEnter:false,confirmation:null,bid:4176.2,ask:4176.3};
+ assert.equal(life.evaluate(active,wait).state,"ACTIVE_VALID");
+ assert.equal(life.evaluate(active,{...wait,bid:4175.2,ask:4175.3}).state,"INVALIDATED");
+ assert.equal(life.evaluate(active,{...wait,bid:4176.8,ask:4176.9}).state,"COMPLETED_TP1");
+ assert.equal(life.evaluate(active,{...wait,quoteAgeSeconds:90}).state,"ACTIVE_QUOTE_OFFLINE");
+});
+test("Market Study UI separates current WAIT from an earlier active observed setup",()=>{
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ assert.ok(ui.includes("NEW SIGNAL WAIT • "));
+ assert.ok(ui.includes("remains ACTIVE until its stored SL/invalidation or TP1 is reached"));
+ assert.ok(ui.includes("Browser lifecycle only; NOT proof that an MT5/broker position was opened."));
+ assert.ok(html.includes('id="gfActiveSetupCard"'));
+ assert.ok(html.includes("OBSERVED ENTRY LIFECYCLE"));
+});
