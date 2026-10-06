@@ -152,7 +152,7 @@
   }
   function renderPerformance(data){
     if(!data)return;
-    notice("v8PerformanceStatus",safe(data.symbol)+" • "+data.indicator+" • "+data.tf+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC));
+    var perfMsg=safe(data.symbol)+" • "+data.indicator+" • "+data.tf+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC);if(String(data.indicator).toLowerCase()==="fund104")perfMsg+=" • FUND 1.04 WEB STUDY is validation-only: native TP/SL outcome semantics are not defined, therefore WR/R/P&L remain N/A unless validated outcome rules exist.";notice("v8PerformanceStatus",perfMsg);
     $("v8PerformanceSummary").innerHTML=resultStats(data.summary);
     $("v8MonthComparison").innerHTML=renderComparison(data.comparison);
     var arr=data.groups||[];
