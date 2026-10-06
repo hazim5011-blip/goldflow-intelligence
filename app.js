@@ -1,4 +1,5 @@
 var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5", selectedIndicator=localStorage.getItem("gf_indicator")||"105";
+var chartLabelMode=localStorage.getItem("gf_chart_labels")||"nearest";
 var focusedZone=null, lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
 function $(id){return document.getElementById(id)}
 function finite(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}
@@ -45,6 +46,11 @@ $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
 $("symbolSelect").onchange=function(){selectSymbol(this.value)};
 if($("macroRefresh"))$("macroRefresh").onclick=function(){loadMacro(true)};
+if($("chartLabelMode")){
+  if(!["nearest","all","hide"].includes(chartLabelMode))chartLabelMode="nearest";
+  $("chartLabelMode").value=chartLabelMode;
+  $("chartLabelMode").onchange=function(){chartLabelMode=["nearest","all","hide"].includes(this.value)?this.value:"nearest";localStorage.setItem("gf_chart_labels",chartLabelMode);if($("chartPage")?.classList.contains("on"))drawChart()};
+}
 
 function selectSymbol(s){
   if(!s)return;focusedZone=null;lastLiveTick=null;selectedSymbol=s;localStorage.setItem("gf_symbol",s);
@@ -263,12 +269,15 @@ function drawChart(){
   candleSeries=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
   candleSeries.setData(bars.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
   var allZones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
-  var zones=focusedZone?[focusedZone]:allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)}).slice(0,10);
-  zones.forEach(function(z){
+  var sortedZones=allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)});
+  var zones=focusedZone?[focusedZone]:sortedZones.slice(0,10);
+  zones.forEach(function(z,i){
     var d=z.currentDirection||z.direction||1,st=zoneEntryState(z,d,lastLiveTick),col=d>0?"#31d6a4":"#ff6079";
-    var label=st.live?"LIVE SETUP":st.inZone?"WATCH IN ZONE":st.ready?"PENDING":"OFFLINE";
-    candleSeries.createPriceLine({price:Number(z.low),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:true,title:label+" "+(d>0?"BUY":"SELL")+" ENTRY LOW"});
-    candleSeries.createPriceLine({price:Number(z.high),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:true,title:label+" "+(d>0?"BUY":"SELL")+" ENTRY HIGH"});
+    // Default: label only the two nearest zones, using short B/S L/H titles so the live price stays readable.
+    var showLabel=!!focusedZone||chartLabelMode==="all"||(chartLabelMode==="nearest"&&i<2);
+    var side=d>0?"B":"S",live=st.live?"LIVE ":"";
+    candleSeries.createPriceLine({price:Number(z.low),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:showLabel,title:showLabel?live+side+" L":""});
+    candleSeries.createPriceLine({price:Number(z.high),color:col,lineWidth:focusedZone?2:1,lineStyle:st.live?0:2,axisLabelVisible:showLabel,title:showLabel?live+side+" H":""});
   });
   var barTimes=new Set(bars.map(function(b){return b.t}));
   var markers=(ind.history||[]).filter(function(x){return barTimes.has(x.time)}).slice(-80).map(function(x){return {time:x.time,position:x.direction>0?"belowBar":"aboveBar",color:x.direction>0?"#f2c75b":"#ff6079",shape:x.direction>0?"arrowUp":"arrowDown",text:x.code+" "+Math.round(x.score)+"%"}});
