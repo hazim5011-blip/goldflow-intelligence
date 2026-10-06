@@ -6,6 +6,49 @@
  const mode=()=>({ "gf-ai":"ai","gf-news":"news","gf-study":"study"})[window.selectedIndicator||$("indicatorSelect")?.value]||"study";
  const safe=v=>v===undefined||v===null||!Number.isFinite(Number(v))?"—":Number(v).toLocaleString("en-US",{maximumFractionDigits:/^(BTC|ETH|XAU|GOLD)/i.test(state.last?.symbol||"")?2:5});
  const state={busy:false,last:null,seq:0,context:null};
+ const ACTIVE_PREFIX="gf_active_study_v1:";
+ function activeContext(d){
+  const symbol=String(d?.symbol||window.selectedSymbol||$("symbolSelect")?.value||"");
+  const tf=String(d?.tf||window.selectedTF||$("tfSelect")?.value||"M15");
+  return {symbol,tf,key:ACTIVE_PREFIX+symbol+"|"+tf};
+ }
+ function readActive(d){try{const c=activeContext(d),x=JSON.parse(localStorage.getItem(c.key)||"null");return x&&x.symbol===c.symbol&&x.tf===c.tf?x:null}catch(e){return null}}
+ function saveActive(a){if(!a)return;try{localStorage.setItem(ACTIVE_PREFIX+a.symbol+"|"+a.tf,JSON.stringify(a))}catch(e){}}
+ function removeActive(d){try{localStorage.removeItem(activeContext(d).key)}catch(e){}}
+ function activeText(v){return v==null?"—":safe(v)}
+ function renderActiveLifecycle(d){
+  const card=$("gfActiveSetupCard"),life=window.GFStudyLifecycle;
+  if(!card||!life)return null;
+  const technical=(d?.mode||mode())==="study";card.hidden=!technical;if(!technical)return null;
+  let active=readActive(d),assessment=life.evaluate(active,d),candidate=life.candidate(d);
+  if(candidate&&(!active||(life.isTerminal(assessment.state)&&candidate.id!==active.id))){
+   active=candidate;saveActive(active);assessment=life.evaluate(active,d);
+  }
+  if(active&&assessment.terminal&&!active.terminalState){
+   active={...active,terminalState:assessment.state,terminalReason:assessment.reason,terminalAtUTC:d?.updatedAtUTC||new Date().toISOString()};
+   saveActive(active);assessment=life.evaluate(active,d);
+  }
+  state.active=active;
+  const badge=$("gfActiveSetupBadge");
+  if(!active){
+   put("gfActiveSetupBadge","NONE");if(badge)badge.className="tag";
+   put("gfActiveSide","—");put("gfActiveEntry","—");put("gfActiveSL","—");put("gfActiveTP1","—");
+   put("gfActiveSetupNote","No Market Study setup has been observed inside its verified entry zone in this browser.");
+   return assessment;
+  }
+  const label=assessment.state==="ACTIVE_VALID"?active.side+" ACTIVE • VALID":
+   assessment.state==="ACTIVE_QUOTE_OFFLINE"?active.side+" ACTIVE • QUOTE OFFLINE":
+   assessment.state==="COMPLETED_TP1"?active.side+" COMPLETED • TP1":
+   assessment.state==="INVALIDATED"?active.side+" INVALIDATED":
+   assessment.state==="AMBIGUOUS_PATH"?"AMBIGUOUS PATH":assessment.state.replaceAll("_"," ");
+  put("gfActiveSetupBadge",label);
+  if(badge)badge.className="tag "+(assessment.terminal?"terminal":active.direction>0?"active-buy":"active-sell");
+  put("gfActiveSide",active.side);put("gfActiveEntry",activeText(active.observedEntryPrice));
+  put("gfActiveSL",activeText(active.invalidation));put("gfActiveTP1",activeText(active.tp1));
+  const extras="TP2 "+activeText(active.tp2)+" • TP3 "+activeText(active.tp3)+" • observed "+(active.observedAtUTC||"N/A");
+  put("gfActiveSetupNote",assessment.reason+" "+extras+" Browser lifecycle only; NOT proof that an MT5/broker position was opened.");
+  return {...assessment,setup:active};
+ }
  function put(id,value){if($(id))$(id).textContent=String(value??"—")}
  let studyChart=null;
  // Never retain a previous mode's BUY/SELL marker or entry plan while selecting
@@ -81,6 +124,7 @@
   const st=String(d?.status||"DATA_UNVERIFIED"),p=d?.confirmation||null;
   const m=d?.mode||mode();
   const technicalMode=m==="study",gold=/^(XAU|GOLD)/i.test(String(d?.symbol||""));
+  const activeLifecycle=technicalMode?renderActiveLifecycle(d):null;
   put("gfStudyModeTitle",technicalMode?"GF-Market Study Pro • Technical Entry Lifecycle":
       m==="ai"?"GF-AI Live Analyst • Strict MTF Confluence":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose",technicalMode?
@@ -135,7 +179,15 @@
   else if(st==="MARKET_OFFLINE"){decision="OFFLINE • NO ENTRY";hint="No verified fresh broker quote or closed-candle feed."}
   else if(st==="WAIT_CONFLICT"){decision="CONFLICT • WAIT";hint="Pattern disagrees with higher timeframe/fundamental context."}
   else if(["STUDY_WAIT_BUY_CONFIRMATION","STUDY_WAIT_SELL_CONFIRMATION","STUDY_WAIT_STRUCTURE"].includes(st)){
-   decision="STRUCTURE SCENARIO • WAIT CLOSED CANDLE";hint="Reaction zone and provisional targets are research only. WAIT for a new verified close and retest.";
+   if(activeLifecycle?.state==="ACTIVE_VALID"){
+    decision="NEW SIGNAL WAIT • "+activeLifecycle.setup.side+" ACTIVE";
+    hint="WAIT applies to a NEW confirmation only. The earlier observed "+activeLifecycle.setup.side+" setup remains ACTIVE until its stored SL/invalidation or TP1 is reached.";
+   }else if(activeLifecycle?.state==="ACTIVE_QUOTE_OFFLINE"){
+    decision="NEW SIGNAL WAIT • ACTIVE SETUP QUOTE OFFLINE";
+    hint="The earlier observed setup is retained, but a fresh broker exit-side quote is unavailable. Do not assume TP, SL or cancellation.";
+   }else{
+    decision="STRUCTURE SCENARIO • WAIT CLOSED CANDLE";hint="Reaction zone and provisional targets are research only. WAIT for a new verified close and retest.";
+   }
   }else if(["AI_WAIT_VERIFIED_MACRO","AI_ASSET_FUNDAMENTAL_UNAVAILABLE","AI_WAIT_MACRO_CONFLUENCE","AI_WAIT_MTF_ALIGNMENT","AI_WAIT_PATTERN"].includes(st)){
    decision="AI CONFLUENCE INCOMPLETE • NO ENTRY";hint="One or more independent AI evidence gates are not verified; never reuse a previous mode's signal.";
   }else if(["AI_MISSED_ENTRY","STUDY_MISSED_ENTRY"].includes(st)){
@@ -250,8 +302,9 @@
   if(!document.hidden&&isGF()&&$("gfStudyPage")?.classList.contains("on"))load();
  });
 
- window.GFStudy={load,invalidate,getLast:()=>state.last};
+ window.GFStudy={load,invalidate,getLast:()=>state.last,getActive:()=>state.active};
  if($("gfStudyRefresh"))$("gfStudyRefresh").onclick=load;
+ if($("gfActiveSetupClear"))$("gfActiveSetupClear").onclick=function(){removeActive(state.last||{});state.active=null;if(state.last)renderActiveLifecycle(state.last)};
  // API returns only positive exact-symbol fresh ticks. Unsampled symbols never count as ONLINE.
  const market={last:null,at:0,attempt:0,promise:null};
  function needsUpdate(){return !market.promise&&Date.now()-market.at>25000&&Date.now()-market.attempt>20000}
