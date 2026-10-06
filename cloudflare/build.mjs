@@ -3,10 +3,10 @@ import {build} from "esbuild";
 import {cp,mkdir,rm,writeFile,access} from "node:fs/promises";
 import {resolve,join,basename} from "node:path";
 const root=resolve(process.cwd()),dist=join(root,"dist");
-for(const need of ["index.html","app.js","v8.js","study-ui.js","ohlc-fallback.js","style.css","release.json",
+for(const need of ["index.html","app.js","v8.js","study-lifecycle.js","study-ui.js","ohlc-fallback.js","style.css","release.json",
  "api/_studyEngine.js","api/market-online.js","api/news-live.js","cloudflare/worker.js"])await access(join(root,need));
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
-for(const f of ["index.html","app.js","v8.js","study-ui.js","ohlc-fallback.js","style.css","release.json",
+for(const f of ["index.html","app.js","v8.js","study-lifecycle.js","study-ui.js","ohlc-fallback.js","style.css","release.json",
  "sw.js","manifest.webmanifest"])await cp(join(root,f),join(dist,basename(f)));
 for(const dir of ["blog","locales"])await cp(join(root,dir),join(dist,dir),{recursive:true});
 await writeFile(join(dist,"_routes.json"),JSON.stringify({version:1,include:["/api/*"],exclude:[]},null,2)+"\n");
