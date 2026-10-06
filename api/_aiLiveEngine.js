@@ -42,9 +42,19 @@ function macroDirection(e){
  return e.bias==="PRESSURE"?-1:e.bias==="SUPPORTIVE"?1:0;
 }
 function response(status,k,e,extra={}){
+ const aiPolicy={
+  entryPolicy:"STRICT_CURRENT_STATE",
+  requiresH1H4Alignment:true,
+  acceptedClosedPatterns:["CLOSED_IMPULSE_BREAKOUT","ENGULFING_MTF_CONFIRMATION"],
+  triggerLookbackClosedBars:3,
+  entryRetest:"IMPULSE_FIB_0382_TO_0618",
+  entryExpiryClosedBars:2,
+  persistent24hSignalArchive:false,
+  note:"This endpoint reports the CURRENT strict AI state only. It does not prove that no transient AI setup appeared earlier in the last 24 hours."
+ };
  return {ok:true,engine:"GF_AI_LIVE_MACRO_MTF_V2",mode:"ai",modeProfile:"MACRO_NEWS_PATTERN_CONFLUENCE",
   modelType:"AUDITABLE_MULTI_FACTOR_RULES_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
-  source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,
+  source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,aiPolicy,
   caution:"Macro score is contextual, not guaranteed Gold direction, news surprise or calibrated win probability.",
   status,...extra};
 }
