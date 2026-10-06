@@ -440,7 +440,7 @@ async function renderTradingView(tfOverride){
     '<div id="tvChartTools"></div>'+
     '<p class="sub" id="tvBrokerNote">Loading direct broker candles. TradingView prices may differ from Vantage.</p>'+
     '<div class="tvBrokerChart" id="tvBrokerChart" role="img" aria-label="Vantage verified OHLC candlestick chart"></div>'+
-    '<div class="notice info tvExternalNotice"><b>TradingView reference: '+sym.replace(/</g,"&lt;")+'</b> • For XAUUSD247 this is ThinkMarkets Spot Gold Continuous. OPEN TRADINGVIEW uses the same reference symbol. GoldFlow calculations and signals continue to use Vantage MT5 only.</div>';
+    '<div class="notice info tvExternalNotice"><b>TradingView reference: '+sym.replace(/</g,"&lt;")+'</b> • For XAUUSD247 this is ThinkMarkets Spot Gold Continuous. The embedded TradingView iframe is intentionally not shown because browser/provider policy can render it as a blank box. OPEN TRADINGVIEW uses the same reference symbol. GoldFlow calculations and signals continue to use Vantage MT5 only.</div>';
   var chartNode=$("tvBrokerChart");
   if(window.GFChartTools&&$("tvChartTools"))GFChartTools.render("tv",$("tvChartTools"),{timeframes:["M1","M5","M15","M30","H1","H4","D1","W1","MN1"],currentTF:tf,redraw:function(){renderTradingView(tf)},onTF:function(nextTf){renderTradingView(nextTf)}});
   try{
