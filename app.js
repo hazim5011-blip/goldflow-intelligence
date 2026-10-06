@@ -427,22 +427,25 @@ function tvInterval(tf){
   return ({M1:"1",M5:"5",M15:"15",M30:"30",H1:"60",H4:"240",D1:"D"})[tf]||"5";
 }
 var tvNativeChart=null,tvReqSeq=0;
-async function renderTradingView(){
+async function renderTradingView(tfOverride){
   var el=$("tvWrap");if(!el||!selectedSymbol||!$("tvPage")?.classList.contains("on"))return;
-  var token=++tvReqSeq,symbol=selectedSymbol,tf=selectedTF,sym=tvSymbol(symbol),interval=tvInterval(tf);
+  var tf=tfOverride||localStorage.getItem("gf_tv_chart_tf")||selectedTF;if(!["M1","M5","M15","M30","H1","H4","D1","W1","MN1"].includes(tf))tf=selectedTF;localStorage.setItem("gf_tv_chart_tf",tf);
+  var token=++tvReqSeq,symbol=selectedSymbol,sym=tvSymbol(symbol),interval=tvInterval(tf);
   if(tvNativeChart){try{tvNativeChart.remove()}catch(e){}tvNativeChart=null}
   // Official third-party iframe may be blocked by browser CSP, extensions or
   // provider policies. ALWAYS display independently fetched Vantage broker chart.
   var external="https://www.tradingview.com/chart/?symbol="+encodeURIComponent(sym);
   el.innerHTML='<div class="tvBar"><b>VANTAGE BROKER CHART • '+symbol.replace(/</g,"&lt;")+' • '+tf+'</b>'+
     '<a class="primary mini" href="'+external+'" target="_blank" rel="noopener noreferrer">OPEN TRADINGVIEW ↗</a></div>'+
+    '<div id="tvChartTools"></div>'+
     '<p class="sub" id="tvBrokerNote">Loading direct broker candles. TradingView prices may differ from Vantage.</p>'+
     '<div class="tvBrokerChart" id="tvBrokerChart" role="img" aria-label="Vantage verified OHLC candlestick chart"></div>'+
     '<div class="notice info tvExternalNotice"><b>TradingView external reference</b> • The embedded TradingView iframe is intentionally not shown because browsers/provider policy can render it as a blank box. Use OPEN TRADINGVIEW above. GoldFlow calculations continue to use Vantage MT5 only.</div>';
   var chartNode=$("tvBrokerChart");
+  if(window.GFChartTools&&$("tvChartTools"))GFChartTools.render("tv",$("tvChartTools"),{timeframes:["M1","M5","M15","M30","H1","H4","D1","W1","MN1"],currentTF:tf,redraw:function(){renderTradingView(tf)},onTF:function(nextTf){renderTradingView(nextTf)}});
   try{
-   var feed=await getJson("/api/bars?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&limit=220");
-   if(token!==tvReqSeq||symbol!==selectedSymbol||tf!==selectedTF||!$("tvPage")?.classList.contains("on"))return;
+   var feed=await getJson("/api/bars?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&limit=1500");
+   if(token!==tvReqSeq||symbol!==selectedSymbol||tf!==(localStorage.getItem("gf_tv_chart_tf")||selectedTF)||!$("tvPage")?.classList.contains("on"))return;
    if(!feed.ok||!Array.isArray(feed.bars)||feed.bars.length<20)throw Error(feed.error||"Insufficient broker candles");
    var offset=Number(feed.brokerUtcOffsetSeconds);
    if(!Number.isFinite(offset))throw Error("Broker time offset unavailable");
@@ -461,9 +464,10 @@ async function renderTradingView(){
      layout:{background:{color:"#07131c"},textColor:"#b6cbd7"},
      grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},
      rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true}});
-   var series=tvNativeChart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,
+   var series=window.GFChartTools?GFChartTools.createMainSeries("tv",tvNativeChart,bars):tvNativeChart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,
      wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
-   series.setData(bars);tvNativeChart.timeScale().fitContent();
+   if(!window.GFChartTools)series.setData(bars);tvNativeChart.timeScale().fitContent();
+   if(window.GFChartTools)GFChartTools.register("tv",{chart:tvNativeChart,main:series,bars:bars,tf:tf,contextKey:symbol+"|"+tf});
   }catch(e){
    if(token===tvReqSeq){$("tvBrokerNote").textContent="Broker chart unavailable: "+String(e.message||e)+
      ". TradingView can still open in a separate tab.";if(chartNode)chartNode.textContent="Unable to load authenticated Vantage OHLC."}
