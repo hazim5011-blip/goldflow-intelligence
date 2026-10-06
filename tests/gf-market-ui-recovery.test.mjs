@@ -147,12 +147,13 @@ test("Fund104 Performance explains validation-only N/A rather than implying miss
 
 test("TradingView Hybrid Tools have a tested Vantage fallback instead of blank cards",()=>{
  const v=readFileSync(new URL("../v8.js",import.meta.url),"utf8");
+ const calc=readFileSync(new URL("../tv-hybrid.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const build=readFileSync(new URL("../cloudflare/build.mjs",import.meta.url),"utf8");
  assert.ok(v.includes("renderTVTechnicalFallback"));
  assert.ok(v.includes("renderTVMarketFallback"));
  assert.ok(v.includes("TradingView widget blocked/unavailable"));
- assert.ok(v.includes("SMA ("));
+ assert.ok(calc.includes('row("SMA ("'));
  assert.ok(v.includes("VANTAGE MULTI-TIMEFRAME OVERVIEW"));
  assert.ok(html.includes('<script src="/tv-hybrid.js"></script>'));
  assert.ok(build.includes("tv-hybrid.js"));
