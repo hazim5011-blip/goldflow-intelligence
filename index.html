@@ -98,7 +98,7 @@
 </section>
 
 <section id="chartPage" class="page">
-  <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><div class="chartHeadTools"><label for="chartLabelMode">Level labels</label><select id="chartLabelMode" aria-label="Broker chart level labels"><option value="nearest">Nearest only</option><option value="all">Show all</option><option value="hide">Hide labels</option></select><span id="chartTag" class="tag">—</span></div></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div><div class="sub">Default: only the nearest two zones use short B/S L/H labels so the live price remains visible. All zone lines remain on-chart. No automatic trade execution.</div></div>
+  <div class="card"><div class="head"><h3 id="chartTitle">VANTAGE BROKER CHART</h3><div class="chartHeadTools"><label for="chartLabelMode">Level labels</label><select id="chartLabelMode" aria-label="Broker chart level labels"><option value="nearest">Nearest only</option><option value="all">Show all</option><option value="hide">Hide labels</option></select><span id="chartTag" class="tag">—</span></div></div><div id="brokerChartTools"></div><div id="chart" class="chart"></div><div id="chartInfo" class="sub chartInfo">—</div><div class="sub">Default: only the nearest two zones use short B/S L/H labels so the live price remains visible. All zone lines remain on-chart. No automatic trade execution.</div></div>
 </section>
 
 
@@ -287,6 +287,7 @@
 <script src="/ohlc-fallback.js"></script>
 <script src="/study-lifecycle.js"></script>
 <script src="/tv-hybrid.js"></script>
+<script src="/chart-tools.js"></script>
 <script src="/app.js"></script>
 <script src="/v8.js" defer></script>
 <script src="/study-ui.js" defer></script>
