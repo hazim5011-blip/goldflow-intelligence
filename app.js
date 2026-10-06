@@ -27,7 +27,6 @@ function indicatorName(v){
 }
 
 document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
-  if(b.dataset.page==="chartPage"&&/^gf-/.test(selectedIndicator)){document.querySelector('[data-page="gfStudyPage"]')?.click();return}
   document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
   document.querySelectorAll(".page").forEach(function(x){x.classList.remove("on")});
   b.classList.add("on");$(b.dataset.page).classList.add("on");
@@ -40,7 +39,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
 $("tfSelect").value=selectedTF;
 $("indicatorSelect").value=selectedIndicator;
 $("tfSelect").onchange=function(){selectedTF=this.value;focusedZone=null;lastLiveTick=null;localStorage.setItem("gf_tf",selectedTF);loadAnalysis();renderTradingView()};
-$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;window.GFStudy?.invalidate?.();localStorage.setItem("gf_indicator",selectedIndicator);if(/^gf-/.test(selectedIndicator))document.querySelector('[data-page="gfStudyPage"]')?.click();else if($("gfStudyPage").classList.contains("on"))document.querySelector('[data-page="dashboard"]')?.click();loadAnalysis()};
+$("indicatorSelect").onchange=function(){selectedIndicator=this.value;focusedZone=null;lastLiveTick=null;window.GFStudy?.invalidate?.();localStorage.setItem("gf_indicator",selectedIndicator);if(!/^gf-/.test(selectedIndicator)&&$("gfStudyPage").classList.contains("on"))document.querySelector('[data-page="dashboard"]')?.click();loadAnalysis();if(/^gf-/.test(selectedIndicator)&&$("gfStudyPage").classList.contains("on"))window.GFStudy?.load()};
 $("refreshBtn").onclick=function(){loadSymbols(true);loadAnalysis()};
 $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
@@ -134,14 +133,95 @@ async function loadSymbols(force){
 }
 function resetDashboard(){
   ["price","spread","signalScore","signalStatus","biasState","biasStrength","biasEvent","setupState","setupStrength","setupEvent","profile","lastAge","resolvedSymbol","entry","sl","tp1","tp2","pdHigh","pdEq","pdLow","pdPos"].forEach(function(id){$(id).textContent="—"});
+  if($("pdTitle"))$("pdTitle").textContent="PREMIUM / DISCOUNT";
   $("signal").textContent="WAIT";$("reasons").textContent="Waiting for broker analysis…";$("watch").textContent="No active zone nearby.";
+}
+
+function gfMode(){return ({"gf-ai":"ai","gf-news":"news","gf-study":"study"})[selectedIndicator]||null}
+function gfDir(d){var p=d&&d.confirmation;return Number(p&&p.direction)||Number(d&&d.direction)||0}
+function gfStatusLabel(st){st=String(st||"DATA_UNVERIFIED");return st.replace(/^AI_/,"").replace(/^STUDY_/,"").replaceAll("_"," ")}
+function gfZones(d){
+  var out={buy:[],sell:[]},dir=gfDir(d),p=d&&d.confirmation,lo=null,hi=null,source="",eligible=!!(d&&d.canEnter);
+  if(p&&finite(p.entryLow)&&finite(p.entryHigh)){lo=Number(p.entryLow);hi=Number(p.entryHigh)}
+  else if(d&&d.mode==="study"&&d.structureLevels&&finite(d.structureLevels.reactionZoneLow)&&finite(d.structureLevels.reactionZoneHigh)){
+    lo=Number(d.structureLevels.reactionZoneLow);hi=Number(d.structureLevels.reactionZoneHigh);eligible=false;
+  }
+  if(!dir||!finite(lo)||!finite(hi))return out;
+  if(d.mode==="study"){
+    if(d.structureFlip&&d.structureFlip.type)source=d.structureFlip.type+" "+(d.structureFlip.stage==="RETEST_CONFIRMED"?"CONFIRMED":"BREAK / RETEST");
+    else if(d.structureFlipWatch&&d.structureFlipWatch.type)source=d.structureFlipWatch.type+" WATCH";
+    else if(p&&p.confirmationType==="STRUCTURAL_ZONE_REJECTION")source=dir>0?"DEMAND REJECTION":"SUPPLY REJECTION";
+    else source=dir>0?"DEMAND / RBS WATCH":"SUPPLY / SBR WATCH";
+  }else if(d.mode==="ai")source="AI FIB RETEST";
+  else source="NEWS TECHNICAL RETEST";
+  var zone={low:Math.min(lo,hi),high:Math.max(lo,hi),currentDirection:dir,direction:dir,sourceEvent:source,
+    currentRetests:null,baseScore:p&&finite(p.score)?Number(p.score):null,gfStudy:true,gfEligible:eligible};
+  (dir>0?out.buy:out.sell).push(zone);return out;
+}
+function gfContextPosition(d){
+  var q=d&&d.structureLevels,price=finite(d&&d.bid)?Number(d.bid):finite(d&&d.ask)?Number(d.ask):null;
+  if(!q||!finite(q.support)||!finite(q.resistance)||price===null)return null;
+  var hi=Number(q.resistance),lo=Number(q.support),eq=(hi+lo)/2;
+  return {high:hi,low:lo,eq:eq,position:price>eq?"PREMIUM":price<eq?"DISCOUNT":"EQUILIBRIUM"};
+}
+function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
+  var dir=gfDir(d),p=d&&d.confirmation,zones=gfZones(d),price=finite(d&&d.bid)?Number(d.bid):finite(d&&d.ask)?Number(d.ask):null;
+  var quoteFresh=finite(d&&d.bid)&&finite(d&&d.ask)&&finite(d&&d.quoteAgeSeconds)&&Number(d.quoteAgeSeconds)>=-20&&Number(d.quoteAgeSeconds)<=35;
+  lastLiveTick=quoteFresh?{bid:Number(d.bid),ask:Number(d.ask),seenAtMs:Date.now()}:null;
+  lastAnalysis={ready:!!d.ok,gfStudy:true,studyData:d,requested:requestedSymbol,selectedTF:requestedTF,indicatorMode:requestedIndicator,
+    symbol:d.symbol||requestedSymbol,triggerTF:requestedTF,setupTF:"H1",biasTF:"H4",chartBars:Array.isArray(d.chartBars)?d.chartBars:[],
+    price,marketState:quoteFresh?"MT5 LIVE":"QUOTE UNVERIFIED",indicator:{activeZones:zones,history:[],stats:{total:0,wins:0,losses:0,pending:0}}};
+  var eng=indicatorName(requestedIndicator);
+  chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip",d.ok?"good":"warn","● "+eng);chip("marketChip",quoteFresh?"good":"warn",quoteFresh?"MT5 LIVE":"QUOTE CHECK");
+  $("connectionNotice").className="notice "+(d.ok?"good":"bad");
+  $("connectionNotice").innerHTML="<b>"+(d.symbol||requestedSymbol)+"</b> • "+eng+" • "+requestedTF+" • direct Vantage MT5 closed candles • "+(d.modelType||"RULE-BASED");
+  $("price").textContent=finite(price)?px(price):"—";$("spread").textContent=finite(d.bid)&&finite(d.ask)?"Spread "+px(Number(d.ask)-Number(d.bid)):"—";
+  $("source").textContent="Vantage • "+(d.symbol||requestedSymbol)+" • MT5_BRIDGE";
+  $("signal").textContent=gfStatusLabel(d.status);$("signal").className=clsDir(dir);
+  $("signalScore").textContent=p&&finite(p.score)?fmt(p.score,0)+"%":"RULE-BASED";$("signalStatus").textContent=d.canEnter?"ENTRY CONDITIONS MET":String(d.status||"WAIT");
+  var h1=Number(d.h1Trend)||0,h4=Number(d.h4Trend)||0,bias=h1&&h1===h4?h1:0;
+  $("biasState").textContent=bias?stateText(bias):(h1===0&&h4===0?"NEUTRAL":"MIXED");$("biasState").className=clsDir(bias);
+  $("biasStrength").textContent="H1 "+stateText(h1)+" • H4 "+stateText(h4);
+  $("biasEvent").textContent=d.mode==="ai"?(d.researchScope||d.macroBias||"AI CONTEXT"):d.mode==="news"?(d.macroBias||"NEWS CONTEXT"):"STRUCTURE ONLY";
+  $("setupState").textContent=dir?stateText(dir):"WAIT";$("setupState").className=clsDir(dir);$("setupStrength").textContent=d.canEnter?"ENTRY READY":"WAIT";
+  $("setupEvent").textContent=d.structureFlip?.type?(d.structureFlip.type+" • "+d.structureFlip.stage):d.structureFlipWatch?.type?(d.structureFlipWatch.type+" WATCH"):p?.confirmationType||"NO CLOSED TRIGGER";
+  $("profile").textContent=requestedTF+" • H1 • H4";$("lastAge").textContent=finite(d.quoteAgeSeconds)?"Tick "+fmt(d.quoteAgeSeconds,0)+" s":"Tick N/A";$("resolvedSymbol").textContent=d.symbol||requestedSymbol;
+  var entryLo=p&&finite(p.entryLow)?Number(p.entryLow):d.mode==="study"&&finite(d.structureLevels?.reactionZoneLow)?Number(d.structureLevels.reactionZoneLow):null;
+  var entryHi=p&&finite(p.entryHigh)?Number(p.entryHigh):d.mode==="study"&&finite(d.structureLevels?.reactionZoneHigh)?Number(d.structureLevels.reactionZoneHigh):null;
+  $("entry").textContent=finite(entryLo)&&finite(entryHi)?px(entryLo)+" — "+px(entryHi):"—";
+  $("sl").textContent=p&&finite(p.invalidation)?px(p.invalidation):d.mode==="study"&&finite(d.structureLevels?.invalidationLevel)?px(d.structureLevels.invalidationLevel):"—";
+  var t1=p&&finite(p.tp1)?p.tp1:d.projectedTargets?.[0],t2=p&&finite(p.tp2)?p.tp2:d.projectedTargets?.[1];
+  $("tp1").textContent=finite(t1)?px(t1):"—";$("tp2").textContent=finite(t2)?px(t2):"—";
+  $("planBadge").textContent=d.canEnter?(dir>0?"BUY READY":"SELL READY"):"WAIT";$("planBadge").className="tag "+clsDir(d.canEnter?dir:0);$("reasons").textContent=d.reason||"Wait for verified mode-specific confirmation.";
+  var ctx=gfContextPosition(d);if($("pdTitle"))$("pdTitle").textContent=d.mode==="study"?"STRUCTURE RANGE":"ENTRY / CONTEXT";
+  if(ctx){$("pdHigh").textContent=px(ctx.high);$("pdEq").textContent=px(ctx.eq);$("pdLow").textContent=px(ctx.low);$("pdPos").textContent=ctx.position}
+  else if(p){$("pdHigh").textContent=px(p.entryHigh);$("pdEq").textContent=px((Number(p.entryLow)+Number(p.entryHigh))/2);$("pdLow").textContent=px(p.entryLow);$("pdPos").textContent=d.canEnter?"IN ENTRY ZONE":"OUTSIDE ENTRY ZONE"}
+  else{$("pdHigh").textContent=$("pdEq").textContent=$("pdLow").textContent=$("pdPos").textContent="—"}
+  $("watch").textContent=d.structureFlipWatch?.type?(d.structureFlipWatch.type+" WATCH @ "+px(d.structureFlipWatch.level)+" • "+d.structureFlipWatch.meaning):
+    d.structureFlip?.type?(d.structureFlip.type+" "+d.structureFlip.stage+" @ "+px(d.structureFlip.level)):d.mode==="ai"?(d.macroEvidence?.explanation||d.reason||"AI confluence watch"):d.reason||"No active mode-specific zone.";
+  renderZones(zones,lastLiveTick);renderStats({total:0,wins:0,losses:0,pending:0});
+  if($("statsNote"))$("statsNote").textContent="GF LIVE STUDY • Current-state research only. Historical/forward performance is not inherited from legacy indicators.";
+  $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(requestedSymbol));
+  $("chartTitle").textContent=(d.symbol||requestedSymbol)+" • "+eng+" • VANTAGE MT5";$("chartTag").textContent=requestedTF;
+  if($("chartPage").classList.contains("on"))drawChart();
+}
+async function loadGFAnalysis(){
+  var requestedSymbol=selectedSymbol,requestedTF=selectedTF,requestedIndicator=selectedIndicator,mode=gfMode();if(!mode)return;
+  try{
+    var d=await getJson("/api/study?symbol="+encodeURIComponent(requestedSymbol)+"&tf="+encodeURIComponent(requestedTF)+"&mode="+encodeURIComponent(mode));
+    if(requestedSymbol!==selectedSymbol||requestedTF!==selectedTF||requestedIndicator!==selectedIndicator){setTimeout(loadAnalysis,0);return}
+    renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator);
+  }catch(e){
+    lastAnalysis=null;lastLiveTick=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null);renderStats({});
+    if($("statsNote"))$("statsNote").textContent="GF LIVE STUDY • Data unavailable; no legacy result is substituted.";
+    chip("engineChip","bad","GF STUDY ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;clearChart();
+  }
 }
 async function loadAnalysis(){
   if(!selectedSymbol||loading)return;
   if(/^gf-/.test(selectedIndicator)){
-    lastAnalysis=null;lastLiveTick=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null);
-    chip("engineChip","warn","GF STUDY • RULE-BASED");
-    if(window.GFStudy)window.GFStudy.load();
+    loading=true;try{await loadGFAnalysis()}finally{loading=false}
+    if($("gfStudyPage").classList.contains("on")&&window.GFStudy)window.GFStudy.load();
     return;
   }
   loading=true;
@@ -197,6 +277,7 @@ function quoteForZone(d,tick){
 }
 function zoneTradeEligible(x,d){
   var event=String(x&&x.sourceEvent||"").toUpperCase();
+  if(x&&x.gfStudy)return x.gfEligible===true;
   if(/\bWATCH\b/.test(event))return false;
   if(selectedIndicator==="fund104"){
     var sig=lastAnalysis&&lastAnalysis.indicator&&lastAnalysis.indicator.latestSignal;
@@ -217,7 +298,8 @@ function renderZones(z,tick){
   function html(a,d){return a.length?a.map(function(x,i){
     var st=zoneEntryState(x,d,tick),side=d>0?"buy":"sell";
     var action=st.live?'<button class="zoneAction" type="button" data-side="'+side+'" data-index="'+i+'" aria-label="View live entry setup on broker chart">LIVE TRADE • VIEW CHART ↗</button>':"";
-    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.inZone?"watch":st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span><span class="sub">Retest '+x.currentRetests+'</span></div>'+action+'<div class="sub">Base score '+fmt(x.baseScore,0)+'%</div></div>';
+    var retest=finite(x.currentRetests)?'<span class="sub">Retest '+x.currentRetests+'</span>':"";var score=finite(x.baseScore)?'<div class="sub">Score '+fmt(x.baseScore,0)+'%</div>':"";
+    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.inZone?"watch":st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span>'+retest+'</div>'+action+score+'</div>';
   }).join(""):'<div class="sub">No active zone.</div>'}
   $("buyZones").innerHTML=html(buy,1);$("sellZones").innerHTML=html(sell,-1);
   document.querySelectorAll(".zoneAction").forEach(function(b){b.onclick=function(){
@@ -268,6 +350,25 @@ function drawChart(){
   chart=LightweightCharts.createChart($("chart"),{layout:{background:{color:"#07131c"},textColor:"#aab9c3"},grid:{vertLines:{color:"#10222e"},horzLines:{color:"#10222e"}},rightPriceScale:{borderColor:"#24404e"},timeScale:{borderColor:"#24404e",timeVisible:true,secondsVisible:false}});
   candleSeries=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});
   candleSeries.setData(bars.map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c}}));
+  if(lastAnalysis.gfStudy){
+    var d=lastAnalysis.studyData||{},p=d.confirmation||null,dir=gfDir(d),current=finite(lastAnalysis.price)?Number(lastAnalysis.price):bars[bars.length-1].c,lv=[];
+    function addGFLevel(price,short,color,style){if(finite(price))lv.push({price:Number(price),short:short,color:color,style:style==null?2:style})}
+    if(p){
+      var col=dir>0?"#31d6a4":"#ff6079",prefix=d.mode==="ai"?"AI":d.mode==="news"?"NEWS":d.structureFlip?.type||"ENTRY";
+      addGFLevel(p.entryLow,prefix+" L",col,2);addGFLevel(p.entryHigh,prefix+" H",col,2);addGFLevel(p.invalidation,"SL","#f2c75b",0);
+      addGFLevel(p.tp1,"TP1","#71c3fa",2);addGFLevel(p.tp2,"TP2","#71c3fa",2);addGFLevel(p.tp3,"TP3","#71c3fa",2);
+    }else if(d.mode==="study"&&d.structureLevels){
+      var q=d.structureLevels,flip=d.structureFlipWatch?.type||"FLIP";
+      addGFLevel(q.support,"SUP","#31d6a4",2);addGFLevel(q.resistance,"RES","#ff6079",2);addGFLevel(q.reactionZoneLow,"RX L","#e2c165",2);addGFLevel(q.reactionZoneHigh,"RX H","#e2c165",2);
+      addGFLevel(q.breakoutLevel,flip+" WATCH","#71c3fa",2);addGFLevel(q.invalidationLevel,"INV","#f2c75b",0);(d.projectedTargets||[]).forEach(function(x,i){addGFLevel(x,"TP"+(i+1),"#71c3fa",2)});
+    }
+    var ranked=lv.slice().sort(function(a,b){return Math.abs(a.price-current)-Math.abs(b.price-current)});
+    lv.forEach(function(x){var rank=ranked.indexOf(x),show=chartLabelMode==="all"||(chartLabelMode==="nearest"&&rank<2);candleSeries.createPriceLine({price:x.price,color:x.color,lineWidth:1,lineStyle:x.style,axisLabelVisible:show,title:show?x.short:""})});
+    var markers=[];if(p&&finite(p.signalCandleTime)){var mt=Number(p.signalCandleTime)-Number(d.brokerUtcOffsetSeconds||0);if(bars.some(function(b){return Number(b.t)===mt}))markers.push({time:mt,position:dir>0?"belowBar":"aboveBar",color:dir>0?"#31d6a4":"#ff6079",shape:dir>0?"arrowUp":"arrowDown",text:d.structureFlip?.type?d.structureFlip.type+" BREAK":dir>0?"BUY CONFIRMED":"SELL CONFIRMED"})}
+    if(candleSeries.setMarkers)candleSeries.setMarkers(markers);chart.timeScale().fitContent();
+    $("chartInfo").textContent=(d.symbol||selectedSymbol)+" • "+d.tf+" • "+indicatorName(selectedIndicator)+" • Vantage MT5 • "+String(d.status||"WAIT").replaceAll("_"," ")+" • all lines retained; nearest labels only";
+    return;
+  }
   var allZones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
   var sortedZones=allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)});
   var zones=focusedZone?[focusedZone]:sortedZones.slice(0,10);

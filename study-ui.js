@@ -93,7 +93,7 @@
     const markerTime=Number(p.signalCandleTime)-Number(d.brokerUtcOffsetSeconds);
     if(rows.some(b=>b.time===markerTime)&&candle.setMarkers)candle.setMarkers([{time:markerTime,
       position:green?"belowBar":"aboveBar",color:col,shape:green?"arrowUp":"arrowDown",text:(green?"BUY":"SELL")+" CLOSED CONFIRMED"}]);
-    const prefix=d.mode==="ai"?"AI FIB":"PIVOT RETEST";
+    const prefix=d.mode==="ai"?"AI FIB":d.mode==="study"&&d.structureFlip?.type?d.structureFlip.type+" RETEST":"PIVOT RETEST";
     for(const [price,name,color,lineStyle] of [[p.entryLow,prefix+" LOW",col,2],[p.entryHigh,prefix+" HIGH",col,2],
      [p.invalidation,"STRUCTURE INVALID","#f2c75b",0],[p.tp1,"TP1","#71c3fa",2],[p.tp2,"TP2","#71c3fa",2],[p.tp3,"TP3","#71c3fa",2]]){
       if(price!==null&&price!==undefined&&Number.isFinite(Number(price)))candle.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle,axisLabelVisible:true,title:name});
@@ -104,7 +104,7 @@
     const s=d.structureLevels;
     for(const [price,name,color] of [[s.support,"SUPPORT","#31d6a4"],[s.resistance,"RESISTANCE","#ff6079"],
      [s.reactionZoneLow,"REACTION ZONE LOW","#e2c165"],[s.reactionZoneHigh,"REACTION ZONE HIGH","#e2c165"],
-     [s.breakoutLevel,"BREAK/RETEST TRIGGER","#71c3fa"],[s.invalidationLevel,"CLOSE INVALIDATES","#f2c75b"],
+     [s.breakoutLevel,(d.structureFlipWatch?.type||"SBR/RBS")+" WATCH","#71c3fa"],[s.invalidationLevel,"CLOSE INVALIDATES","#f2c75b"],
      ...(d.projectedTargets||[]).map((x,i)=>[x,"PROVISIONAL TARGET "+(i+1),"#71c3fa"])]){
      if(price!==null&&price!==undefined&&Number.isFinite(Number(price)))
       candle.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:name});
@@ -112,7 +112,7 @@
    }
    studyChart.timeScale().fitContent();
    put("gfStudyChartNote",d.mode==="study"?
-    "GF-MARKET STUDY • independently derived support/resistance, dynamic pivot/retest reaction zone, breakout trigger, invalidation and provisional liquidity targets. PENDING lines are NOT entry-ready. Closed-candle confirmation only.":
+    "GF-MARKET STUDY • support/resistance + explicit SBR/RBS break/retest lifecycle. RBS = broken resistance retested as support; SBR = broken support retested as resistance. PENDING/WATCH lines are NOT entry-ready. Closed-candle confirmation only.":
     d.mode==="ai"?"GF-AI • independent 38.2%-61.8% impulse retracement, structural invalidation and scenario targets; Macro Regime is historical observation context, not guaranteed direction.":
     "Vantage MT5 • broker clock normalized to UTC. Confirmation uses CLOSED candles only. Never an executed trade.");
   }catch(e){if(studyChart){studyChart.remove();studyChart=null}node.textContent="Broker chart rendering unavailable.";put("gfStudyChartNote","Data visualization unavailable; trade-ready status does not depend on chart rendering.")}
@@ -151,7 +151,8 @@
     d?.scenarioNarrative||"Wait for verified structural levels.",
     "SUPPORT: "+safe(structure?.support)+"  |  RESISTANCE: "+safe(structure?.resistance),
     "REACTION ZONE: "+safe(structure?.reactionZoneLow)+" — "+safe(structure?.reactionZoneHigh),
-    "BREAK/RETEST TRIGGER: "+safe(structure?.breakoutLevel)+" on CLOSED "+(d?.tf||"selected")+" candle.",
+    "SBR/RBS: "+(d?.structureFlip?.type?(d.structureFlip.type+" • "+d.structureFlip.stage+" @ "+safe(d.structureFlip.level)):(d?.structureFlipWatch?.type?(d.structureFlipWatch.type+" WATCH @ "+safe(d.structureFlipWatch.level)+" • "+d.structureFlipWatch.meaning):"No structure flip confirmed yet.")),
+    "BREAK/RETEST LEVEL: "+safe(structure?.breakoutLevel)+" on CLOSED "+(d?.tf||"selected")+" candle.",
     "CONDITION A: "+(d?.confirmationRules?.reaction||""),
     "CONDITION B: "+(d?.confirmationRules?.breakdown||""),
     "INVALIDATION: "+(d?.confirmationRules?.invalidation||""),
@@ -214,6 +215,7 @@
   put("gfStudyTechnical",[
     "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
+    technicalMode?(d?.structureFlip?.type?"SBR/RBS: "+d.structureFlip.type+" • "+d.structureFlip.stage+" @ "+safe(d.structureFlip.level):d?.structureFlipWatch?.type?"SBR/RBS: "+d.structureFlipWatch.type+" WATCH @ "+safe(d.structureFlipWatch.level):"SBR/RBS: no confirmed flip"):"",
     p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Auditable AI alignment score "+p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
     p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):"",
     p?"Entry model: "+String(p.entryMethod||"LEGACY")+"; targets: "+String(p.targetMethod||"derived study")+"; structural stop "+safe(p.invalidation)+".":""

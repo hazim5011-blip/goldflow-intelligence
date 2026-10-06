@@ -93,3 +93,26 @@ test("Market Study UI separates current WAIT from an earlier active observed set
  assert.ok(html.includes('id="gfActiveSetupCard"'));
  assert.ok(html.includes("OBSERVED ENTRY LIFECYCLE"));
 });
+
+test("GF AI/News/Market Study populate Dashboard and Broker Chart instead of being hidden or redirected",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ assert.ok(app.includes('async function loadGFAnalysis()'));
+ assert.ok(app.includes('/api/study?symbol='));
+ assert.ok(app.includes('renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator)'));
+ assert.ok(app.includes('if(lastAnalysis.gfStudy)'));
+ assert.ok(app.includes('GF LIVE STUDY • Current-state research only.'));
+ assert.ok(!app.includes('b.dataset.page==="chartPage"&&/^gf-/.test(selectedIndicator)'));
+ assert.ok(!app.includes('if(/^gf-/.test(selectedIndicator))document.querySelector(\'[data-page="gfStudyPage"]\')?.click()'));
+});
+test("GF Market Study dashboard uses SBR/RBS labels without importing the protected SND/SNR engine",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ const engine=readFileSync(new URL("../api/_marketStudyEngine.js",import.meta.url),"utf8");
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ assert.ok(app.includes('source=d.structureFlip.type'));
+ assert.ok(app.includes('d.structureFlipWatch.type+" WATCH"'));
+ assert.ok(engine.includes('"RBS_BREAK_CONFIRMED"'));
+ assert.ok(engine.includes('"SBR_BREAK_CONFIRMED"'));
+ assert.ok(engine.includes('structureFlipWatch:flipWatch'));
+ assert.ok(ui.includes('"SBR/RBS: "'));
+ assert.ok(!engine.includes('_indicatorSnd'));
+});
