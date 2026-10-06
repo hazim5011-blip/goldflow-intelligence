@@ -28,6 +28,6 @@ export default {
    fn=v8;request=new Request(u.toString(),request);}
   if(!fn)return new Response(JSON.stringify({ok:false,error:"UNKNOWN_API_ROUTE"}),
    {status:404,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
-  return runLegacy(fn,request);
+  return runLegacy(fn,request,env);
  }
 };

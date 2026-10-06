@@ -18,6 +18,12 @@ test("maps application/json payload and rejects invalid JSON before handler",asy
  const response=await runLegacy(()=>{throw Error("SHOULD_NOT_REACH_HANDLER")},bad);
  assert.equal(response.status,400);assert.equal((await response.json()).error,"INVALID_JSON");
 });
+test("passes Cloudflare bindings to handlers without making them enumerable",async()=>{
+ const env={GF_FORWARD_R2:{marker:true},FORWARD_INGEST_SECRET:"x".repeat(40)};
+ const out=await runLegacy((req,res)=>res.status(200).json({same:req.cfEnv===env,enumerable:Object.keys(req).includes("cfEnv")}),
+  new Request("https://test.pages.dev/api/forward-ingest"),env);
+ assert.deepEqual(await out.json(),{same:true,enumerable:false});
+});
 test("GET/OPTIONS routing and errors fail closed without exposing exception detail",async()=>{
  const fn=(req,res)=>res.status(200).json({ok:true,method:req.method});
  const get=await runLegacy(fn,new Request("https://test.pages.dev/api/health"));

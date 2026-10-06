@@ -27,10 +27,11 @@ export function responseAdapter(){
  };
  return res;
 }
-export async function runLegacy(handler,request){
+export async function runLegacy(handler,request,env){
  if(request.method==="OPTIONS")return new Response(null,{status:204,headers:{"Access-Control-Allow-Origin":"*",
   "Access-Control-Allow-Methods":"GET, POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type, X-GF-Forward-Key"}});
  const req=toRequest(request),res=responseAdapter();
+ Object.defineProperty(req,"cfEnv",{value:env||null,enumerable:false,writable:false,configurable:false});
  try{await populateBody(req,request);await handler(req,res);return res.response()}
  catch(e){let code=e?.status===413?413:e?.status===400?400:500;
   console.error("[GoldFlow Cloudflare API]",String(e?.message||e));

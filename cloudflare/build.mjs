@@ -12,8 +12,8 @@ for(const dir of ["blog","locales"])await cp(join(root,dir),join(dist,dir),{recu
 await writeFile(join(dist,"_routes.json"),JSON.stringify({version:1,include:["/api/*"],exclude:[]},null,2)+"\n");
 await build({entryPoints:[join(root,"cloudflare/worker.js")],outfile:join(dist,"_worker.js"),
  bundle:true,format:"esm",platform:"neutral",target:"es2022",external:["node:crypto"],logLevel:"info",plugins:[{
- name:"block-unconfigured-vercel-blob",setup(plugin){
-  plugin.onResolve({filter:/^\.\/_v8Ledger\.js$/},()=>({path:join(root,"cloudflare/forward-disabled.js")}));
+ name:"cloudflare-r2-forward-ledger",setup(plugin){
+  plugin.onResolve({filter:/^\.\/_v8Ledger\.js$/},()=>({path:join(root,"cloudflare/forward-r2.js")}));
  }
 }]});
-console.log("Cloudflare dist prepared: API includes GF Study, Market Online and independent World News. Forward archive intentionally disabled.");
+console.log("Cloudflare dist prepared: GF Study, Market Online, World News, and optional fail-closed R2 forward archive adapter.");
