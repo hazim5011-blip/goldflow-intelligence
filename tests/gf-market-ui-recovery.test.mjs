@@ -116,3 +116,31 @@ test("GF Market Study dashboard uses SBR/RBS labels without importing the protec
  assert.ok(ui.includes('"SBR/RBS: "'));
  assert.ok(!engine.includes('_indicatorSnd'));
 });
+
+test("TradingView page no longer renders a blank cross-origin iframe box",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ assert.ok(app.includes("embedded TradingView iframe is intentionally not shown"));
+ assert.ok(!app.includes('document.createElement("iframe")'));
+ assert.ok(app.includes("OPEN TRADINGVIEW ↗"));
+ assert.ok(app.includes('tvNativeChart=LightweightCharts.createChart'));
+});
+test("GF News/AI UI distinguishes stale selected-symbol quote from whole-market offline",()=>{
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ assert.ok(ui.includes("SYMBOL QUOTE STALE • NO ENTRY"));
+ assert.ok(ui.includes("Vantage terminal/bridge may still be LIVE"));
+ assert.ok(ui.includes("daily rollover"));
+});
+test("AI UI exposes strict gates and states that 24h signals are not yet archived",()=>{
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ const engine=readFileSync(new URL("../api/_aiLiveEngine.js",import.meta.url),"utf8");
+ assert.ok(engine.includes('persistent24hSignalArchive:false'));
+ assert.ok(engine.includes('triggerLookbackClosedBars:3'));
+ assert.ok(engine.includes('entryExpiryClosedBars:2'));
+ assert.ok(ui.includes("AI ENTRY GATES: H1+H4 must align"));
+ assert.ok(ui.includes("24H AI HISTORY: NOT ARCHIVED YET"));
+});
+test("Fund104 Performance explains validation-only N/A rather than implying missing data",()=>{
+ const v=readFileSync(new URL("../v8.js",import.meta.url),"utf8");
+ assert.ok(v.includes("FUND 1.04 WEB STUDY is validation-only"));
+ assert.ok(v.includes("WR/R/P&L remain N/A"));
+});
