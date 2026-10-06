@@ -133,6 +133,7 @@ async function loadSymbols(force){
 }
 function resetDashboard(){
   ["price","spread","signalScore","signalStatus","biasState","biasStrength","biasEvent","setupState","setupStrength","setupEvent","profile","lastAge","resolvedSymbol","entry","sl","tp1","tp2","pdHigh","pdEq","pdLow","pdPos"].forEach(function(id){$(id).textContent="—"});
+  if($("pdTitle"))$("pdTitle").textContent="PREMIUM / DISCOUNT";
   $("signal").textContent="WAIT";$("reasons").textContent="Waiting for broker analysis…";$("watch").textContent="No active zone nearby.";
 }
 
