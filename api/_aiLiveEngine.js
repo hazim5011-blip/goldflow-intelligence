@@ -196,14 +196,11 @@ export function evaluateAILive(args={}){
  if(elapsed>expiry)return response("AI_EXPIRED",k,e,{...overlay,reason:"Market-driven retest window expired after "+expiry+" closed candles. Wait for new structure."});
  const inside=entryPx>=plan.entryLow&&entryPx<=plan.entryHigh,far=d===1?entryPx>plan.entryHigh+.75*selected.atr:entryPx<plan.entryLow-.75*selected.atr;
  if(far)return response("AI_MISSED_ENTRY",k,e,{...overlay,reason:"Price has moved too far beyond the selected market-structure retest zone. Do not chase."});
- const ready=inside&&confluence>=limits.ready&&!macroHeadwind;
- if(macroHeadwind&&inside&&confluence>=limits.ready){
-  return response(d===1?"AI_BUY_WATCH":"AI_SELL_WATCH",k,e,{...overlay,
-   reason:"Price reached the technical entry zone, but verified Gold macro remains a headwind. AI does not upgrade to ENTRY READY until macro conflict clears or a new stronger thesis forms."});
- }
+ const ready=inside&&confluence>=limits.ready;
  return response(ready?(d===1?"AI_BUY_READY":"AI_SELL_READY"):d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED",k,e,{
   ...overlay,canEnter:ready,entryState:ready?"MARKET_INTELLIGENCE_ENTRY_ZONE_VALIDATED":"WAIT_MARKET_DRIVEN_RETEST",
   reason:ready?
-   side(d)+" ENTRY READY: market structure/liquidity/pattern thesis is confirmed and fresh Vantage price is inside the selected "+plan.entryMethod+" zone.":
+   side(d)+" ENTRY READY: market structure/liquidity/pattern thesis is confirmed and fresh Vantage price is inside the selected "+plan.entryMethod+" zone."+
+    (macroHeadwind?" Macro is a verified headwind, so the higher counter-macro threshold was required and passed.":""):
    side(d)+" thesis is CONFIRMED by "+trigger.type+". Wait for the market-driven "+plan.entryMethod+" zone; Fibonacci is optional only."});
 }
