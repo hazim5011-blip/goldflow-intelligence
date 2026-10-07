@@ -1,12 +1,14 @@
-// GF-AI LIVE ANALYST v1.21 • ALL-TF MARKET INTELLIGENCE
-// Reads M1/M5/M15/M30/H1/H4/D1 closed Vantage candles as one hierarchy.
+// GF-AI LIVE ANALYST v1.30 • REASONING + SCENARIO + LEARNING
+// Reads M1/M5/M15/M30/H1/H4/D1 as one hierarchy, then compares BUY/SELL/NO_TRADE scenarios.
 // Selected TF owns the entry trigger/zone; every other TF is contextual evidence.
 // Market structure, BOS/CHOCH, liquidity, SND/SNR/SBR/RBS, OB/FVG,
 // chart/candle patterns and macro context are combined audibly.
-// Fibonacci is OPTIONAL overlap evidence only. No trained-ML or execution claims.
+// Retrospective Experience Learning is capped and descriptive only. Fibonacci remains optional. No trained-ML or execution claims.
 import {context,publicFields,rnd,isGold,val,clamp,normalizedClosedBars,trend,TF_SECONDS} from "./_researchInputs.js";
 import {impactForType} from "./_v8Impact.js";
 import {readMarketBrain,buildMarketPlan} from "./_aiMarketBrain.js";
+import {learnFromClosedBars} from "./_aiLearningBrain.js";
+import {buildReasoningBrain} from "./_aiReasoningBrain.js";
 
 const ids=["CPI","COREPCE","PAYEMS","UNRATE","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"];
 const ALL_TFS=["M1","M5","M15","M30","H1","H4","D1"];
@@ -152,18 +154,20 @@ function observedSince(args,k,t){
 }
 function response(status,k,e,extra={}){
  const expiry=EXPIRY[k?.tf]||5;
- const aiPolicy={version:"1.21",entryPolicy:"ALL_TF_MARKET_INTELLIGENCE",timeframes:ALL_TFS,selectedTfOwnsEntry:true,
-  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT","MACRO_CONTEXT"],
+ const aiPolicy={version:"1.30",entryPolicy:"REASONING_SCENARIO_LEARNING_MARKET_INTELLIGENCE",timeframes:ALL_TFS,selectedTfOwnsEntry:true,
+  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT","MACRO_CONTEXT","SCENARIO_REASONING","EXPERIENCE_CALIBRATION"],
+  reasoningModel:{scenarios:["BUY","SELL","NO_TRADE"],primaryAlternative:true,whatWouldChangeMyMind:true,evidenceVsContradiction:true},
+  learningModel:{type:"RETROSPECTIVE_DIRECTIONAL_FOLLOW_THROUGH",trainedML:false,maxScoreAdjustment:5,minDecidableSamples:5,persistentLongTermMemory:false},
   chartPatterns:["DOUBLE_TOP_BOTTOM","HEAD_AND_SHOULDERS","INVERSE_HEAD_AND_SHOULDERS","ASCENDING_DESCENDING_TRIANGLE"],
   entryModels:["BOS_RBS_SBR_RETEST","CHOCH_STRUCTURE_RETEST","LIQUIDITY_SWEEP_ZONE_RETEST","PATTERN_NECKLINE_RETEST","ORDER_BLOCK_RETEST","FVG_REBALANCE","SUPPLY_DEMAND_REACTION"],
   fibonacciRole:"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED",scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",persistent24hSignalArchive:false,
-  hardSafety:["STALE_BROKER_DATA","STRUCTURE_INVALIDATION","TARGET_ALREADY_REACHED","AMBIGUOUS_OHLC_PATH"],
+  hardSafety:["STALE_BROKER_DATA","STRUCTURE_INVALIDATION","TARGET_ALREADY_REACHED","AMBIGUOUS_OHLC_PATH","LOW_TF_COVERAGE"],
   // Backward compatibility for browser clients that still have v1.10 UI cached.
   requiresH1H4Alignment:false,acceptedClosedPatterns:["BOS","CHOCH","LIQUIDITY_SWEEP","CHART_PATTERN","CANDLE_FORENSICS"],
   triggerLookbackClosedBars:6,entryExpiryClosedBars:expiry,entryRetest:"MARKET_DRIVEN",scoreThresholdAligned:66,scoreThresholdPartialMTF:74,
-  note:"Every decision reads M1→D1. Selected TF creates the entry; other TFs supply context. Fibonacci never creates the setup."};
- return {ok:true,engine:"GF_AI_ALL_TF_MARKET_INTELLIGENCE_V5",mode:"ai",modeProfile:"ALL_TF_STRUCTURE_LIQUIDITY_PATTERN_MACRO",
-  modelType:"AUDITABLE_MARKET_INTELLIGENCE_RULES_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
+  note:"AI compares BUY, SELL and NO_TRADE. M1→D1 context, scenario reasoning and capped broker-history calibration are auditable. Fibonacci never creates the setup."};
+ return {ok:true,engine:"GF_AI_REASONING_SCENARIO_LEARNING_V6",mode:"ai",modeProfile:"ALL_TF_REASONING_SCENARIO_LEARNING",
+  modelType:"AUDITABLE_REASONING_RULES_PLUS_EXPERIENCE_CALIBRATION_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
   source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,fundamentalApplied:!!(e.assetSpecific&&e.available),aiPolicy,
   caution:"Confluence score is not win probability and cannot guarantee direction.",status,...extra};
 }
@@ -173,15 +177,27 @@ export function evaluateAILive(args={}){
  const price=(k.bid+k.ask)/2,rows=buildAllTf(args,k,price);rows.__selectedTf=k.tf;
  const selectedRow=rows[k.tf],selected=selectedRow?.brain;
  if(!selectedRow?.available||!selected)return response("DATA_UNVERIFIED",k,e,{reason:"SELECTED_TF_MARKET_BRAIN_UNAVAILABLE"});
- const fullGold=gold&&e.available,scores=allTfScores(rows,k.tf,e,fullGold),pick=chooseDirection(scores);
+ const fullGold=gold&&e.available,scores=allTfScores(rows,k.tf,e,fullGold),experience=learnFromClosedBars(selectedRow.bars,k.tf);
+ if(experience?.ok){
+  scores.buy=clamp(scores.buy+(Number(experience.buyAdjustment)||0),0,100);
+  scores.sell=clamp(scores.sell+(Number(experience.sellAdjustment)||0),0,100);
+  scores.consensus={...scores.consensus,buy:rnd(scores.buy,1),sell:rnd(scores.sell,1),gap:rnd(Math.abs(scores.buy-scores.sell),1),
+   direction:scores.buy-scores.sell>=6?1:scores.sell-scores.buy>=6?-1:0};
+ }
+ const pick=chooseDirection(scores);
  const compactFrames={};for(const tf of ALL_TFS)compactFrames[tf]=rows[tf]?.available?compactBrain(rows[tf].brain):{ok:false,reason:rows[tf]?.reason||"UNAVAILABLE"};
  const map={selectedTf:k.tf,selected:compactBrain(selected),allTimeframes:compactFrames,coverage:{available:scores.coverage,total:scores.total,missing:scores.missing}};
- if(scores.coverage<4)return response("DATA_UNVERIFIED",k,e,{reason:"ALL_TF_COVERAGE_TOO_LOW",marketBrain:map,
+ if(scores.coverage<4)return response("DATA_UNVERIFIED",k,e,{reason:"ALL_TF_COVERAGE_TOO_LOW",marketBrain:map,experienceLearning:experience,
   analysis:{timeframeMatrix:scores.matrix,allTfConsensus:scores.consensus,blockers:["TF_COVERAGE_"+scores.coverage+"_OF_"+scores.total]}});
- if(!pick.direction)return response("AI_MARKET_BALANCED",k,e,{direction:0,researchScope:fullGold?"VERIFIED_GOLD_MACRO_PLUS_ALL_TF_MARKET_BRAIN":"ALL_TF_TECHNICAL_MARKET_BRAIN",
-  reason:pick.reason==="BUY_SELL_EVIDENCE_TOO_CLOSE"?"BUY and SELL evidence are too balanced across M1→D1. AI will not force a trade.":"All-TF evidence is too weak for a directional thesis.",
-  marketBrain:map,analysis:{buyScore:rnd(scores.buy,1),sellScore:rnd(scores.sell,1),directionScore:rnd(pick.score,1),scoreGap:pick.gap,
-   scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",timeframeMatrix:scores.matrix,allTfConsensus:scores.consensus,blockers:[pick.reason]}});
+ const buyPlan=buildMarketPlan(selectedRow.bars,selected,1,k.ask),sellPlan=buildMarketPlan(selectedRow.bars,selected,-1,k.bid);
+ const reasoning=buildReasoningBrain({symbol:args.symbol,selectedTf:k.tf,selected,matrix:scores.matrix,consensus:scores.consensus,
+  coverage:map.coverage,buyScore:scores.buy,sellScore:scores.sell,buyPlan,sellPlan,currentPrice:price,macroEvidence:e,
+  macroDirection:scores.macroDirection,learning:experience,nowSec:k.nowSec});
+ if(!pick.direction||reasoning.primaryScenario==="NO_TRADE")return response("AI_MARKET_BALANCED",k,e,{direction:0,researchScope:fullGold?"VERIFIED_GOLD_MACRO_PLUS_ALL_TF_MARKET_BRAIN":"ALL_TF_TECHNICAL_MARKET_BRAIN",
+  reason:reasoning.decisionSummary?.whyPrimary||(pick.reason==="BUY_SELL_EVIDENCE_TOO_CLOSE"?"BUY and SELL evidence are too balanced across M1→D1. AI will not force a trade.":"All-TF evidence is too weak for a directional thesis."),
+  marketBrain:map,experienceLearning:experience,reasoning,
+  analysis:{buyScore:rnd(scores.buy,1),sellScore:rnd(scores.sell,1),directionScore:rnd(pick.score,1),scoreGap:pick.gap,
+   scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",timeframeMatrix:scores.matrix,allTfConsensus:scores.consensus,blockers:[pick.reason||"NO_TRADE_REASONING"]}});
  const d=pick.direction,th=thesis(selected,d,rows),trigger=triggerFor(selected,d),macroDir=scores.macroDirection,
   macroHeadwind=Boolean(macroDir&&macroDir!==d),higher=contextualOpposition(rows,k.tf,d),rev=reversalException(selected,rows,k.tf,d),
   counterTrend=higher.counterTrend&&!rev.strong,limits=thresholds(th.type,macroHeadwind,counterTrend,scores.coverage);
@@ -192,7 +208,7 @@ export function evaluateAILive(args={}){
   for(const x of evi.slice(0,3))allEvidence.push({tf:row.tf,points:x.points,text:x.text});
  }
  let confluence=pick.score;if(trigger)confluence+=trigger.rank>=94?7:trigger.rank>=85?5:3;if(macroHeadwind)confluence-=5;if(counterTrend)confluence-=7;
- const plan=buildMarketPlan(selectedRow.bars,selected,d,d===1?k.ask:k.bid);
+ const plan=d===1?buyPlan:sellPlan;
  if(plan?.fibConfluence?.overlap)confluence+=4;confluence=clamp(confluence,0,100);
  const blockers=[];if(!trigger)blockers.push("NO_SELECTED_TF_STRUCTURAL_TRIGGER");if(!plan)blockers.push("NO_VALID_MARKET_DRIVEN_RETEST_ZONE");
  if(counterTrend)blockers.push(...higher.flags);if(macroHeadwind)blockers.push("VERIFIED_GOLD_MACRO_HEADWIND");
@@ -202,10 +218,11 @@ export function evaluateAILive(args={}){
   macroHeadwind,counterTrend,higherContext:higher,reversalException:rev,strongReversalOverride:rev.strong,
   timeframeMatrix:scores.matrix,allTfConsensus:scores.consensus,tfCoverage:{available:scores.coverage,total:scores.total,missing:scores.missing},
   selectedEvidence:Array.isArray(selectedEvidence?.evidence)?selectedEvidence.evidence:[],allTfEvidence:allEvidence.slice(0,18),blockers,entryModel:plan?.entryMethod||null,
-  fibonacci:plan?.fibConfluence||{overlap:false,bonus:0,role:"OPTIONAL_ONLY"},marketRegime:selected.regime};
+  fibonacci:plan?.fibConfluence||{overlap:false,bonus:0,role:"OPTIONAL_ONLY"},marketRegime:selected.regime,
+  experienceAdjustment:d===1?(experience?.buyAdjustment||0):(experience?.sellAdjustment||0),reasoningPrimary:reasoning.primaryScenario};
  const scope=fullGold?"VERIFIED_GOLD_MACRO_PLUS_ALL_TF_MARKET_BRAIN":"ALL_TF_TECHNICAL_MARKET_BRAIN";
  if(!trigger||!plan||confluence<limits.confirm||counterTrend){
-  return response(d===1?"AI_BUY_WATCH":"AI_SELL_WATCH",k,e,{direction:d,researchScope:scope,marketBrain:map,analysis,
+  return response(d===1?"AI_BUY_WATCH":"AI_SELL_WATCH",k,e,{direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,
    candidatePlan:plan?{...plan,researchOnly:true,status:"WATCH_NOT_ENTRY_READY"}:null,
    reason:counterTrend?side(d)+" evidence exists, but weighted higher-timeframe structure still opposes it. AI keeps WATCH until structural transition strengthens.":
     !trigger?side(d)+" thesis exists across M1→D1, but selected "+k.tf+" has no fresh BOS/CHOCH/liquidity/pattern/candle trigger yet.":
@@ -217,14 +234,16 @@ export function evaluateAILive(args={}){
   closeEpoch=triggerBar.t-k.brokerUtcOffsetSeconds+(TF_SECONDS[k.tf]||900),expiry=EXPIRY[k.tf]||5;
  const conf={...plan,direction:d,confirmationType:trigger.type,confirmationCloseUTC:new Date(closeEpoch*1000).toISOString(),signalCandleTime:triggerBar.t,
   targetMethod:plan.targetMethod,score:rnd(confluence,1),expiresAfterClosedBars:expiry,verifiedForecastSurprise:false,
-  explanation:["All-TF consensus: BUY "+rnd(scores.buy,1)+" / SELL "+rnd(scores.sell,1)+" • coverage "+scores.coverage+"/"+scores.total,
+  explanation:["Primary scenario: "+reasoning.primaryScenario+" • Alternative: "+reasoning.alternativeScenario,
+   "All-TF consensus: BUY "+rnd(scores.buy,1)+" / SELL "+rnd(scores.sell,1)+" • coverage "+scores.coverage+"/"+scores.total,
+   experience?.ok?"Experience calibration: BUY "+(experience.buyAdjustment>=0?"+":"")+experience.buyAdjustment+" / SELL "+(experience.sellAdjustment>=0?"+":"")+experience.sellAdjustment+" points (capped; not win probability)":null,
    "Thesis: "+th.type+" • "+th.reason,"Selected "+k.tf+" structure: "+selected.structure.highClass+"/"+selected.structure.lowClass,
    selected.breakEvent?"Selected structure event: "+selected.breakEvent.label+" @ "+selected.breakEvent.level:null,
    selected.liquidity?.sweep?"Liquidity: "+selected.liquidity.sweep.type+" @ "+selected.liquidity.sweep.level:null,
    selected.chartPattern?"Chart pattern: "+selected.chartPattern.type+" • "+selected.chartPattern.state:null,
    "Entry model: "+plan.entryMethod,plan.fibConfluence?.overlap?"Fibonacci overlaps chosen market zone (+4 only).":"Fibonacci not required.",
    "Confluence "+rnd(confluence,1)+"/100 (NOT win probability)"].filter(Boolean)};
- const elapsed=selectedRow.bars.length-1-triggerIndex,entryPx=d===1?k.ask:k.bid,overlay={direction:d,researchScope:scope,marketBrain:map,analysis,confirmation:conf,
+ const elapsed=selectedRow.bars.length-1-triggerIndex,entryPx=d===1?k.ask:k.bid,overlay={direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,confirmation:conf,
   entryQuote:entryPx,entryQuoteSide:d===1?"ASK":"BID",elapsedClosedBars:elapsed,
   explanation:{headline:(gold?"GOLD":String(args.symbol||"SYMBOL"))+" "+side(d)+" • "+th.type,drivers:conf.explanation,basis:plan.entryMethod,researchScope:scope}};
  const later=observedSince(args,k,triggerBar.t),stopped=later.some(x=>d===1?x.l<=plan.invalidation:x.h>=plan.invalidation),reached=later.some(x=>d===1?x.h>=plan.tp1:x.l<=plan.tp1);
@@ -236,7 +255,7 @@ export function evaluateAILive(args={}){
  if(far)return response("AI_MISSED_ENTRY",k,e,{...overlay,reason:"Price moved too far beyond the selected-TF retest zone. Do not chase."});
  const ready=inside&&confluence>=limits.ready;
  return response(ready?(d===1?"AI_BUY_READY":"AI_SELL_READY"):d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED",k,e,{...overlay,canEnter:ready,
-  entryState:ready?"ALL_TF_MARKET_INTELLIGENCE_ENTRY_VALIDATED":"WAIT_MARKET_DRIVEN_RETEST",
+  entryState:ready?"REASONING_SCENARIO_ENTRY_VALIDATED":"WAIT_MARKET_DRIVEN_RETEST",
   reason:ready?side(d)+" ENTRY READY: all-TF context supports the selected "+k.tf+" thesis and Vantage price is inside "+plan.entryMethod+"."+
    (macroHeadwind?" Macro headwind exists; the higher threshold was required and passed.":""):
    side(d)+" thesis is CONFIRMED on "+k.tf+" by "+trigger.type+". Wait for "+plan.entryMethod+"; all other TFs remain context, not separate entries."});
