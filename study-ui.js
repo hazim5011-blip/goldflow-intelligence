@@ -56,7 +56,7 @@
  function invalidate(){
   state.last=null;state.context=null;state.seq++;
   const m=mode();
-  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.20 • Market Intelligence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
+  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.21 • All-TF Market Intelligence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose","Loading the NEW mode. Previous signal/entry plan deliberately cleared; NO ENTRY until verified.");
   put("gfStudyState","REFRESHING");if($("gfStudyState"))$("gfStudyState").className="y";
   put("gfStudyReason","Waiting for a new verified response for this symbol / timeframe / study mode.");
@@ -135,11 +135,11 @@
   const technicalMode=m==="study",gold=/^(XAU|GOLD)/i.test(String(d?.symbol||""));
   const activeLifecycle=technicalMode?renderActiveLifecycle(d):null;
   put("gfStudyModeTitle",technicalMode?"GF-Market Study Pro • Technical Entry Lifecycle":
-      m==="ai"?"GF-AI Live Analyst v1.20 • Market Intelligence":"GF-News Impact Pro • Gold Context Study");
+      m==="ai"?"GF-AI Live Analyst v1.21 • All-TF Market Intelligence":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose",technicalMode?
     "STRUCTURE-DRIVEN: closed-candle rejection/break-retest; H1/H4 may be neutral but cannot oppose. Entry comes from dynamic pivots, targets from liquidity levels; Gold macro/yields are commentary ONLY, never entry gate.":
-    m==="ai"?(gold?"MARKET INTELLIGENCE: AI reads HH/HL/LH/LL, BOS/CHOCH, liquidity sweeps/equal highs-lows, SND/SNR/SBR/RBS, order blocks, FVG, chart patterns, candle behaviour, MTF structure and verified Gold macro. It chooses the entry model that fits the market. Fibonacci is optional overlap only, never the core setup. Score is NOT win probability.":
-    "MARKET INTELLIGENCE TECHNICAL AI: structure, liquidity, BOS/CHOCH, supply/demand, SBR/RBS, order blocks, FVG, chart/candle patterns and MTF context. No fabricated asset fundamental and no trained-ML probability."):
+    m==="ai"?(gold?"ALL-TF MARKET INTELLIGENCE: AI reads M1/M5/M15/M30/H1/H4/D1 together — HH/HL/LH/LL, BOS/CHOCH, liquidity, SND/SNR/SBR/RBS, OB/FVG, chart/candle patterns and macro. The selected TF owns the entry; all others are context. Fibonacci is optional only. Score is NOT win probability.":
+    "ALL-TF TECHNICAL AI: M1→D1 structure, liquidity, BOS/CHOCH, SND/SNR/SBR/RBS, OB/FVG and chart/candle patterns. No fabricated asset fundamental and no trained-ML probability."):
     "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
 
   const aiMode=m==="ai",research=d?.macroEvidence,structure=d?.structureLevels,scenario=d?.explanation;
@@ -211,7 +211,7 @@
    decision=(st.includes("BUY")?"BUY":"SELL")+" SETUP • MACRO CONFLICT • NO ENTRY";
    hint="Technical setup exists, but verified Gold macro points the opposite way. AI keeps the setup visible for study and blocks entry.";
   }else if(st==="AI_WAIT_MTF_CONFLICT"){
-   decision="H1 / H4 CONFLICT • NO ENTRY";hint="H1 and H4 are opposite. Adaptive AI will not force a direction.";
+   decision="HIGHER-TF CONFLICT • NO FORCED ENTRY";hint="Weighted higher-timeframe structure opposes the selected-TF thesis. AI keeps WATCH until structure improves."
   }else if(st==="AI_WAIT_DIRECTION"){
    decision="NO STABLE DIRECTION • WAIT";hint="AI has no stable MTF/local direction yet. It will form BUY/SELL WATCH before ENTRY READY.";
   }else if(st==="AI_MARKET_BALANCED"){
@@ -246,8 +246,9 @@
   const h1=v=>v===1?"BULLISH":v===-1?"BEARISH":"NEUTRAL / N/A";
   put("gfStudyTechnical",[
     "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
-    "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
-    aiMode&&d?.aiPolicy?"AI MARKET BRAIN: "+d.aiPolicy.primaryEngines.join(" • ")+" | ENTRY MODELS: "+d.aiPolicy.entryModels.join(" • ")+" | FIB: "+d.aiPolicy.fibonacciRole+"." :"",
+    aiMode&&Array.isArray(d?.analysis?.timeframeMatrix)?"ALL TF MATRIX: "+d.analysis.timeframeMatrix.map(x=>x.available?x.tf+" "+(x.structure===1?"BULL":x.structure===-1?"BEAR":"NEUT")+" "+safe(x.buyScore)+"/"+safe(x.sellScore):x.tf+" N/A").join(" • "):"H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
+    aiMode&&d?.analysis?.allTfConsensus?"ALL TF CONSENSUS: BUY "+safe(d.analysis.allTfConsensus.buy)+" • SELL "+safe(d.analysis.allTfConsensus.sell)+" • gap "+safe(d.analysis.allTfConsensus.gap)+" • coverage "+safe(d.analysis.tfCoverage?.available)+"/"+safe(d.analysis.tfCoverage?.total):"",
+    aiMode&&d?.aiPolicy?"AI MARKET BRAIN: "+(Array.isArray(d.aiPolicy.primaryEngines)?d.aiPolicy.primaryEngines.join(" • "):"UNAVAILABLE")+" | ENTRY MODELS: "+(Array.isArray(d.aiPolicy.entryModels)?d.aiPolicy.entryModels.join(" • "):"UNAVAILABLE")+" | FIB: "+(d.aiPolicy.fibonacciRole||"OPTIONAL")+"." :"",
     aiMode&&d?.aiPolicy&&!d.aiPolicy.persistent24hSignalArchive?"24H AI HISTORY: NOT ARCHIVED YET — current WAIT cannot prove there was no transient setup earlier in the day.":"",
     technicalMode?(d?.structureFlip?.type?"SBR/RBS: "+d.structureFlip.type+" • "+d.structureFlip.stage+" @ "+safe(d.structureFlip.level):d?.structureFlipWatch?.type?"SBR/RBS: "+d.structureFlipWatch.type+" WATCH @ "+safe(d.structureFlipWatch.level):"SBR/RBS: no confirmed flip"):"",
     p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Market-intelligence confluence "+p.score+"/100 (NOT win probability)":" • Structure-derived confirmation"):(aiMode&&d?.analysis?.directionScore!==undefined?"Directional WATCH "+safe(d.analysis.directionScore)+"/100 • "+(d.analysis.thesis?.type||"MARKET THESIS")+" • no entry-ready trigger/retest yet":"No validated signal candle"),
