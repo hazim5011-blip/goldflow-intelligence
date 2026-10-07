@@ -297,7 +297,7 @@ test("GF-AI v1.30 UI proves M1-to-D1 hierarchy and guards mixed-version policy f
  assert.ok(ui.includes("ALL TF MATRIX:"));
  assert.ok(ui.includes("ALL TF CONSENSUS:"));
  assert.ok(ui.includes("Array.isArray(d.aiPolicy.primaryEngines)"));
- assert.ok(app.includes('ALL TF • M1→D1 • Entry '));
+ assert.ok(app.includes('REASONING v1.30 • M1→D1 • Entry '));
  assert.ok(app.includes("d.analysis?.allTfConsensus"));
 });
 
