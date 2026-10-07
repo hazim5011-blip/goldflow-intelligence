@@ -1,18 +1,21 @@
-// GF-AI LIVE ADAPTIVE v1.10:
-// auditable multi-timeframe + momentum + structure/pattern + macro confluence.
-// This is adaptive RULE-BASED reasoning, NOT trained ML, future prediction or execution.
-// It deliberately does not import/call Market Study or legacy evaluateStudy().
-import {context,publicFields,riskLevels,rnd,isGold,val,clamp} from "./_researchInputs.js";
+// GF-AI LIVE ANALYST v1.20 • MARKET INTELLIGENCE
+// Multi-engine market reader: market structure, BOS/CHOCH, liquidity sweeps,
+// SND/SNR/SBR/RBS, order blocks, FVG, chart/candle patterns, MTF and macro.
+// Fibonacci is OPTIONAL overlap evidence only; it is never the primary brain.
+// Auditable rule-based market research, NOT trained ML and NOT broker execution.
+import {context,publicFields,rnd,isGold,val,clamp} from "./_researchInputs.js";
 import {impactForType} from "./_v8Impact.js";
+import {readMarketBrain,buildMarketPlan} from "./_aiMarketBrain.js";
 
 const ids=["CPI","COREPCE","PAYEMS","UNRATE","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"];
 const TFSEC={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400};
-const EXPIRY={M1:6,M5:5,M15:5,M30:4,H1:4,H4:3,D1:3};
+const EXPIRY={M1:7,M5:6,M15:5,M30:5,H1:4,H4:3,D1:3};
+const side=d=>d===1?"BUY":d===-1?"SELL":"NEUTRAL";
 
 function macroEvidence(macro,assetGold){
  const q=macro?.quality||null;
  const complete=!!q&&q.total===16&&q.available===16&&!q.errors?.length&&!q.stale?.length&&
-   q.strictPrimaryReady!==false&&!q.secondaryMirror?.length;
+  q.strictPrimaryReady!==false&&!q.secondaryMirror?.length;
  const cards=(macro?.cards||[]).filter(x=>ids.includes(x.id)).map(x=>{
   const impact=impactForType(x.id);
   return {id:x.id,display:x.display||null,period:x.date||null,source:x.source||null,status:x.status||"UNKNOWN",
@@ -25,254 +28,179 @@ function macroEvidence(macro,assetGold){
   observations:cards,releaseTimeVerified:false,forecastSurpriseVerified:false,
   sourceHealth:q?.primarySourceHealth||"UNAVAILABLE",
   explanation:assetGold?
-   "Gold macro is a derived context from official observations; cannot guarantee direction. Published data-period is not a release timestamp.":
-   "Available US macro can be relevant to USD/risk appetite, but is NOT an authenticated BTC/crypto-specific fundamental, derivatives or on-chain feed."};
+   "Gold macro is derived context from verified observations. It modifies conviction/risk but does not replace price structure.":
+   "Available US macro is cross-asset context only; no fake asset-specific fundamental is invented."};
 }
 function macroDirection(e){return e.bias==="PRESSURE"?-1:e.bias==="SUPPORTIVE"?1:0}
-
-function ema(c,n){
- if(!Array.isArray(c)||c.length<n)return null;
- const k=2/(n+1);let e=c.slice(0,n).reduce((s,x)=>s+x.c,0)/n;
- for(let i=n;i<c.length;i++)e=c[i].c*k+e*(1-k);
- return e;
+function compactBrain(b){
+ if(!b?.ok)return {ok:false,reason:b?.reason||"UNAVAILABLE"};
+ return {ok:true,atr:b.atr,structure:{bias:b.structure.bias,highClass:b.structure.highClass,lowClass:b.structure.lowClass,
+   lastHigh:b.structure.lastHigh?{price:rnd(b.structure.lastHigh.price),time:b.structure.lastHigh.time}:null,
+   lastLow:b.structure.lastLow?{price:rnd(b.structure.lastLow.price),time:b.structure.lastLow.time}:null},
+  breakEvent:b.breakEvent,liquidity:b.liquidity,zones:b.zones,chartPattern:b.chartPattern,candlePattern:b.candlePattern,
+  regime:b.regime,buy:{score:b.buy.score,evidence:b.buy.evidence,blockers:b.buy.blockers},
+  sell:{score:b.sell.score,evidence:b.sell.evidence,blockers:b.sell.blockers}};
 }
-function rsi(c,n=14){
- if(!Array.isArray(c)||c.length<n+1)return null;
- let gain=0,loss=0;
- for(let i=c.length-n;i<c.length;i++){
-  const d=c[i].c-c[i-1].c;if(d>0)gain+=d;else loss-=d;
- }
- if(loss===0)return 100;
- const rs=(gain/n)/(loss/n);return 100-(100/(1+rs));
+function mtfScores(k,s,h1,h4,e,fullGold){
+ let buy=.54*s.buy.score+.24*h1.buy.score+.14*h4.buy.score;
+ let sell=.54*s.sell.score+.24*h1.sell.score+.14*h4.sell.score;
+ const notes=[];
+ const trend=(d,label,w)=>{if(d===1){buy+=w;notes.push(label+" bullish +"+w+" BUY")}else if(d===-1){sell+=w;notes.push(label+" bearish +"+w+" SELL")}};
+ trend(k.h1Trend,"H1 trend",5);trend(k.h4Trend,"H4 trend",7);
+ if(h1.breakEvent?.direction===1){buy+=5;notes.push("H1 "+h1.breakEvent.type+" +5 BUY")}
+ if(h1.breakEvent?.direction===-1){sell+=5;notes.push("H1 "+h1.breakEvent.type+" +5 SELL")}
+ if(h4.breakEvent?.direction===1){buy+=6;notes.push("H4 "+h4.breakEvent.type+" +6 BUY")}
+ if(h4.breakEvent?.direction===-1){sell+=6;notes.push("H4 "+h4.breakEvent.type+" +6 SELL")}
+ const md=fullGold?macroDirection(e):0;
+ if(md===1){buy+=8;sell-=3;notes.push("Verified Gold macro supportive +8 BUY / -3 SELL")}
+ if(md===-1){sell+=8;buy-=3;notes.push("Verified Gold macro pressure +8 SELL / -3 BUY")}
+ return {buy:clamp(buy,0,100),sell:clamp(sell,0,100),macroDirection:md,notes};
 }
-function localTrend(c,p){
- const e10=ema(c.slice(-80),10),e20=ema(c.slice(-80),20),prev20=ema(c.slice(-83,-3),20),last=c.at(-1);
- if(!last||!p||e10===null||e20===null||prev20===null)return {direction:0,e10,e20,slope:null};
- const slope=e20-prev20;
- if(last.c>e10&&e10>e20&&slope>.025*p)return {direction:1,e10,e20,slope};
- if(last.c<e10&&e10<e20&&slope<-.025*p)return {direction:-1,e10,e20,slope};
- return {direction:0,e10,e20,slope};
+function chooseDirection(scores){
+ const gap=Math.abs(scores.buy-scores.sell),max=Math.max(scores.buy,scores.sell);
+ if(max<25||gap<6)return {direction:0,gap:rnd(gap,1),score:rnd(max,1),reason:max<25?"INSUFFICIENT_EVIDENCE":"BUY_SELL_EVIDENCE_TOO_CLOSE"};
+ const d=scores.buy>scores.sell?1:-1;
+ return {direction:d,gap:rnd(gap,1),score:rnd(d===1?scores.buy:scores.sell,1),opposite:rnd(d===1?scores.sell:scores.buy,1),reason:"DOMINANT_MULTI_ENGINE_EVIDENCE"};
 }
-function closeLocation(bar,d){
- const range=bar.h-bar.l;if(!(range>0))return 0;
- return d===1?(bar.c-bar.l)/range:(bar.h-bar.c)/range;
+function thesis(brain,d,h1,h4){
+ const br=brain.breakEvent,liq=brain.liquidity?.sweep,cp=brain.chartPattern;
+ if(br?.direction===d&&br.type==="CHOCH")return {type:"REVERSAL_CHOCH",quality:"HIGH",reason:"Selected TF CHOCH changed recent swing structure."};
+ if(liq?.direction===d&&cp?.direction===d)return {type:"LIQUIDITY_PATTERN_REVERSAL",quality:"HIGH",reason:"Liquidity sweep and chart pattern point the same way."};
+ if(br?.direction===d&&br.type==="BOS")return {type:"BOS_CONTINUATION_RETEST",quality:"HIGH",reason:"Selected TF BOS supports continuation/retest."};
+ if(cp?.direction===d&&cp.state==="CONFIRMED")return {type:"CHART_PATTERN_BREAK_RETEST",quality:"MEDIUM_HIGH",reason:cp.type+" has confirmed through its neckline/structure."};
+ if(liq?.direction===d)return {type:"LIQUIDITY_SWEEP_REVERSAL",quality:"MEDIUM_HIGH",reason:liq.type+" rejected external liquidity."};
+ if(brain.structure.bias===d&&(h1.structure.bias===d||h4.structure.bias===d))return {type:"MTF_TREND_CONTINUATION",quality:"MEDIUM",reason:"Selected TF structure and at least one HTF structure agree."};
+ return {type:"DIRECTIONAL_MARKET_WATCH",quality:"EARLY",reason:"Evidence has a directional edge but no dominant structural trigger yet."};
 }
-function detectPattern(c,i,d,p){
- const bar=c[i],previous=c[i-1],prior8=c.slice(Math.max(0,i-8),i),prior3=c.slice(Math.max(0,i-3),i);
- if(!bar||!previous||prior8.length<5||!p)return null;
- const high8=Math.max(...prior8.map(b=>b.h)),low8=Math.min(...prior8.map(b=>b.l));
- const high3=Math.max(...prior3.map(b=>b.h)),low3=Math.min(...prior3.map(b=>b.l));
- const range=Math.max(0,bar.h-bar.l),body=Math.abs(bar.c-bar.o),dirBody=d*(bar.c-bar.o),loc=closeLocation(bar,d);
- const lowerWick=Math.min(bar.o,bar.c)-bar.l,upperWick=bar.h-Math.max(bar.o,bar.c);
- const breakout=d===1?bar.c>high8+.035*p:bar.c<low8-.035*p;
- const engulf=d===1?
-  previous.c<previous.o&&bar.c>bar.o&&bar.c>=previous.o&&bar.o<=previous.c:
-  previous.c>previous.o&&bar.c<bar.o&&bar.c<=previous.o&&bar.o>=previous.c;
- const displacement=dirBody>=.44*p&&loc>=.68&&(d===1?bar.c>previous.h:bar.c<previous.l);
- const rejection=d===1?
-  lowerWick>=Math.max(body*1.25,.16*p)&&loc>=.60&&bar.c>previous.c:
-  upperWick>=Math.max(body*1.25,.16*p)&&loc>=.60&&bar.c<previous.c;
- const microBreak=dirBody>=.25*p&&loc>=.62&&(d===1?bar.c>high3+.012*p:bar.c<low3-.012*p);
- if(breakout&&dirBody>.18*p)return {type:"CLOSED_IMPULSE_BREAKOUT",level:d===1?high8:low8,points:20,location:rnd(loc,3),bodyAtr:rnd(body/p,2),quality:"STRONG"};
- if(engulf&&dirBody>.16*p&&loc>=.58)return {type:"ENGULFING_MTF_CONFIRMATION",level:previous.c,points:18,location:rnd(loc,3),bodyAtr:rnd(body/p,2),quality:"STRONG"};
- if(displacement)return {type:"CLOSED_DISPLACEMENT",level:d===1?previous.h:previous.l,points:16,location:rnd(loc,3),bodyAtr:rnd(body/p,2),quality:"MEDIUM_STRONG"};
- if(rejection)return {type:"PULLBACK_REJECTION",level:(bar.o+bar.c)/2,points:15,location:rnd(loc,3),bodyAtr:rnd(body/p,2),quality:"MEDIUM"};
- if(microBreak)return {type:"MICRO_STRUCTURE_BREAK",level:d===1?high3:low3,points:13,location:rnd(loc,3),bodyAtr:rnd(body/p,2),quality:"MEDIUM"};
- return null;
+function triggerFor(brain,d){
+ const candidates=[];
+ if(brain.breakEvent?.direction===d)candidates.push({rank:100,type:brain.breakEvent.type,index:brain.breakEvent.index,time:brain.breakEvent.time,level:brain.breakEvent.level});
+ if(brain.liquidity?.sweep?.direction===d)candidates.push({rank:94,type:brain.liquidity.sweep.type,index:brain.liquidity.sweep.index,time:brain.liquidity.sweep.time,level:brain.liquidity.sweep.level});
+ if(brain.chartPattern?.direction===d&&brain.chartPattern.state==="CONFIRMED")candidates.push({rank:90,type:brain.chartPattern.type+"_CONFIRMED",index:null,time:null,level:brain.chartPattern.neckline});
+ if(brain.candlePattern?.direction===d)candidates.push({rank:72,type:brain.candlePattern.type,index:null,time:null,level:null});
+ candidates.sort((a,b)=>b.rank-a.rank);return candidates[0]||null;
 }
-function mtfContext(k,local){
- const h1=k.h1Trend,h4=k.h4Trend,l=local.direction;
- if(h1&&h4&&h1===-h4)return {direction:0,mode:"H1_H4_CONFLICT",score:0,entryEligible:false,hardConflict:true,
-  reason:"H1 and H4 are opposite. Adaptive AI will not force a direction."};
- if(h1&&h4&&h1===h4)return {direction:h1,mode:"ALIGNED_H1_H4",score:30,entryEligible:true,hardConflict:false,
-  reason:"H1 and H4 are aligned."};
- if(h1&&h4===0&&l!==-h1)return {direction:h1,mode:"H1_WITH_H4_NEUTRAL",score:22,entryEligible:l===h1,hardConflict:false,
-  reason:"H1 is directional while H4 is neutral; local TF must agree before entry."};
- if(h4&&h1===0&&l!==-h4)return {direction:h4,mode:"H4_WITH_H1_NEUTRAL",score:22,entryEligible:l===h4,hardConflict:false,
-  reason:"H4 is directional while H1 is neutral; local TF must agree before entry."};
- if(!h1&&!h4&&l)return {direction:l,mode:"LOCAL_EARLY_BIAS",score:12,entryEligible:false,hardConflict:false,
-  reason:"Only the selected timeframe is directional; this is an early bias, not entry-ready."};
- if(h1&&!h4)return {direction:h1,mode:"H1_ONLY_WATCH",score:16,entryEligible:false,hardConflict:false,
-  reason:"H1 is directional but H4/local confirmation is incomplete."};
- if(h4&&!h1)return {direction:h4,mode:"H4_ONLY_WATCH",score:16,entryEligible:false,hardConflict:false,
-  reason:"H4 is directional but H1/local confirmation is incomplete."};
- return {direction:0,mode:"NO_MTF_DIRECTION",score:0,entryEligible:false,hardConflict:false,
-  reason:"No stable multi-timeframe direction is available yet."};
+function contradiction(k,s,h1,h4,d){
+ const flags=[];
+ if(k.h1Trend===-d&&k.h4Trend===-d)flags.push("H1_H4_TREND_BOTH_OPPOSE");
+ if(h1.structure.bias===-d&&h4.structure.bias===-d)flags.push("H1_H4_STRUCTURE_BOTH_OPPOSE");
+ if(h4.breakEvent?.direction===-d&&h4.breakEvent?.type==="CHOCH")flags.push("H4_CHOCH_OPPOSES");
+ if(s.breakEvent?.direction===-d&&s.breakEvent?.type==="CHOCH")flags.push("SELECTED_TF_CHOCH_OPPOSES");
+ return flags;
 }
-function momentumScore(c,d,p,local){
- const x=rsi(c,14),last=c.at(-1),range=last?last.h-last.l:0;
- let score=0;const notes=[];
- if(local.direction===d){score+=12;notes.push("Selected TF EMA trend agrees +12")}
- else if(local.direction===0){score+=4;notes.push("Selected TF EMA trend neutral +4")}
- else{score-=10;notes.push("Selected TF EMA trend opposes -10")}
- if(x!==null){
-  if(d===1&&x>=50&&x<=72||d===-1&&x<=50&&x>=28){score+=8;notes.push("RSI supports direction +8")}
-  else if(d===1&&x>78||d===-1&&x<22){score-=6;notes.push("RSI overextended -6")}
-  else{score+=2;notes.push("RSI mixed +2")}
- }
- if(last&&local.e20!==null){
-  if(d===1&&last.c>local.e20||d===-1&&last.c<local.e20){score+=6;notes.push("Price on correct EMA20 side +6")}
-  else notes.push("Price not on preferred EMA20 side +0");
- }
- if(p&&range>=.18*p&&range<=2.4*p){score+=4;notes.push("Current volatility usable +4")}
- return {score,rsi:x===null?null:rnd(x,1),notes};
+function reversalException(s,h1,d){
+ const sweep=s.liquidity?.sweep?.direction===d,choch=s.breakEvent?.direction===d&&s.breakEvent.type==="CHOCH";
+ const h1Turn=h1.breakEvent?.direction===d&&["CHOCH","BOS"].includes(h1.breakEvent.type);
+ return {strong:Boolean(choch&&sweep&&h1Turn),choch,sweep,h1Turn};
 }
-function nextCloseUTC(latest,args){
- const sec=TFSEC[args.tf]||900;
- return new Date((latest.t-args.offsetSeconds+2*sec)*1000).toISOString();
+function thresholds(thesisType,macroHeadwind,counterTrend){
+ let confirm=55,ready=66;
+ if(/REVERSAL/.test(thesisType)){confirm=62;ready=74}
+ if(counterTrend){confirm+=5;ready+=7}
+ if(macroHeadwind){confirm+=4;ready+=6}
+ return {confirm:Math.min(confirm,82),ready:Math.min(ready,90)};
 }
-function adaptivePlan(c,trigger,d,p,fullGoldEvidence,macroDir){
- const base=c.slice(Math.max(0,trigger.index-14),trigger.index);
- if(!base.length)return null;
- const origin=d===1?Math.min(...base.map(x=>x.l)):Math.max(...base.map(x=>x.h));
- const impulse=d*(trigger.bar.c-origin);
- const strong=Boolean(fullGoldEvidence&&macroDir===d);
- const targetScale=strong?[1.2,2.1,3.0]:[1,1.75,2.55];
- let entryLow=null,entryHigh=null,stop=null,method=null;
- if(["CLOSED_IMPULSE_BREAKOUT","ENGULFING_MTF_CONFIRMATION","CLOSED_DISPLACEMENT"].includes(trigger.type)&&impulse>=.45*p&&impulse<=10*p){
-  const a=trigger.bar.c-d*.618*impulse,b=trigger.bar.c-d*.382*impulse;
-  entryLow=Math.min(a,b);entryHigh=Math.max(a,b);
-  stop=d===1?Math.min(origin,trigger.bar.l)-.18*p:Math.max(origin,trigger.bar.h)+.18*p;
-  method="AI_ADAPTIVE_FIB_0382_TO_0618";
- }else{
-  const anchor=Number.isFinite(Number(trigger.level))?Number(trigger.level):(trigger.bar.o+trigger.bar.c)/2;
-  entryLow=anchor-.18*p;entryHigh=anchor+.18*p;
-  const swingLow=Math.min(...base.slice(-10).map(x=>x.l),trigger.bar.l);
-  const swingHigh=Math.max(...base.slice(-10).map(x=>x.h),trigger.bar.h);
-  stop=d===1?swingLow-.16*p:swingHigh+.16*p;
-  method="AI_ADAPTIVE_STRUCTURE_RETEST";
- }
- const mid=(entryLow+entryHigh)/2,risk=d*(mid-stop);
- if(!(risk>.12*p&&risk<12*p))return null;
- const plan=riskLevels({side:d===1?"BUY":"SELL",entryLow,entryHigh,stop,targets:targetScale.map(t=>mid+d*risk*t)});
- return plan?{...plan,entryMethod:method,impulseAtr:rnd(impulse/p,2)}:null;
+function observedSince(args,k,t){
+ return (Array.isArray(args.bars)?args.bars:[]).map(x=>({t:val(x.t),h:val(x.h),l:val(x.l)}))
+  .filter(x=>x.t!==null&&x.h!==null&&x.l!==null&&x.t>t&&x.t-args.offsetSeconds<=k.nowSec);
 }
 function response(status,k,e,extra={}){
- const expiry=EXPIRY[k?.tf]||4;
- const aiPolicy={
-  entryPolicy:"ADAPTIVE_CONFLUENCE_V1",
-  requiresH1H4Alignment:false,
-  h1H4Rule:"ALIGNED preferred; one neutral is allowed only when selected TF agrees. Opposing H1/H4 is a hard veto.",
-  acceptedClosedPatterns:["CLOSED_IMPULSE_BREAKOUT","ENGULFING_MTF_CONFIRMATION","CLOSED_DISPLACEMENT","PULLBACK_REJECTION","MICRO_STRUCTURE_BREAK"],
-  triggerLookbackClosedBars:6,
-  entryRetest:"ADAPTIVE_FIB_OR_STRUCTURE_RETEST",
-  entryExpiryClosedBars:expiry,
-  scoreThresholdAligned:68,
-  scoreThresholdPartialMTF:74,
-  hardVetoes:["STALE_BROKER_DATA","OPPOSING_H1_H4","VERIFIED_GOLD_MACRO_CONFLICT","STRUCTURE_INVALIDATION"],
-  persistent24hSignalArchive:false,
-  note:"Adaptive score is an auditable confluence score, NOT win probability. The endpoint still reports current state only and does not prove no transient setup appeared earlier in the last 24 hours."
- };
- return {ok:true,engine:"GF_AI_LIVE_ADAPTIVE_V3",mode:"ai",modeProfile:"ADAPTIVE_MACRO_MTF_MOMENTUM_STRUCTURE",
-  modelType:"AUDITABLE_ADAPTIVE_RULES_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
-  source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,aiPolicy,
-  caution:"AI score is contextual confluence, not guaranteed direction, news surprise or calibrated win probability.",
-  status,...extra};
+ const aiPolicy={version:"1.20",entryPolicy:"MARKET_INTELLIGENCE_MULTI_ENGINE",
+  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS",
+   "ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","MTF_CONTEXT","MACRO_CONTEXT"],
+  chartPatterns:["DOUBLE_TOP_BOTTOM","HEAD_AND_SHOULDERS","INVERSE_HEAD_AND_SHOULDERS","ASCENDING_DESCENDING_TRIANGLE"],
+  entryModels:["BOS_RBS_SBR_RETEST","CHOCH_RETEST","LIQUIDITY_SWEEP_ZONE_RETEST","PATTERN_NECKLINE_RETEST","ORDER_BLOCK_RETEST","FVG_REBALANCE","SUPPLY_DEMAND_REACTION"],
+  fibonacciRole:"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED",
+  scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",persistent24hSignalArchive:false,
+  hardSafety:["STALE_BROKER_DATA","STRUCTURE_INVALIDATION","TARGET_ALREADY_REACHED","AMBIGUOUS_OHLC_PATH"],
+  note:"AI reads market evidence first and chooses the entry model that matches the current setup. It never forces every setup into Fibonacci."};
+ return {ok:true,engine:"GF_AI_MARKET_INTELLIGENCE_V4",mode:"ai",modeProfile:"STRUCTURE_LIQUIDITY_PATTERN_MTF_MACRO",
+  modelType:"AUDITABLE_MARKET_INTELLIGENCE_RULES_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
+  source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,fundamentalApplied:!!(e.assetSpecific&&e.available),aiPolicy,
+  caution:"Confluence score is not win probability and cannot guarantee market direction.",status,...extra};
 }
 export function evaluateAILive(args={}){
  const k=context(args),gold=isGold(args.symbol),e=macroEvidence(args.macro,gold);
  if(!k.ok)return response(k.status,k,e,{reason:k.reason});
- const fullGoldEvidence=gold&&e.available;
- const scope=fullGoldEvidence?"VERIFIED_GOLD_MACRO_PLUS_TECHNICAL":"TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE";
- const c=k.c,p=k.atr,latest=c.at(-1),local=localTrend(c,p),mtf=mtfContext(k,local),macroDir=fullGoldEvidence?macroDirection(e):0;
- if(mtf.hardConflict)return response("AI_WAIT_MTF_CONFLICT",k,e,{
-  researchScope:scope,direction:0,reason:mtf.reason,
-  analysis:{mtfMode:mtf.mode,h1Direction:k.h1Trend,h4Direction:k.h4Trend,localDirection:local.direction,score:0,entryEligible:false,
-   blockers:["OPPOSING_H1_H4"]}});
- if(!mtf.direction)return response("AI_WAIT_DIRECTION",k,e,{
-  researchScope:scope,direction:0,reason:mtf.reason,nextCandleCloseUTC:nextCloseUTC(latest,args),
-  analysis:{mtfMode:mtf.mode,h1Direction:k.h1Trend,h4Direction:k.h4Trend,localDirection:local.direction,score:0,entryEligible:false,
-   blockers:["NO_STABLE_DIRECTION"]}});
- const d=mtf.direction,n=c.length,mom=momentumScore(c,d,p,local),macroConflict=Boolean(macroDir&&macroDir!==d);
- let macroPoints=fullGoldEvidence?(macroDir===d?10:macroDir===0?3:-20):0;
- const baseScore=clamp(mtf.score+mom.score+macroPoints,0,100);
- const baseReasons=[
-  mtf.reason+" +"+mtf.score,
-  ...mom.notes,
-  fullGoldEvidence?(macroDir===d?"Verified Gold macro agrees +10":macroDir===0?"Verified Gold macro neutral +3":"Verified Gold macro conflicts -20"):"Macro incomplete/unavailable: technical-only +0"
+ const price=(k.bid+k.ask)/2,selected=readMarketBrain(k.c,price),h1=readMarketBrain(k.a1,price),h4=readMarketBrain(k.a4,price);
+ if(!selected.ok||!h1.ok||!h4.ok)return response("DATA_UNVERIFIED",k,e,{reason:"MARKET_BRAIN_INPUT_INCOMPLETE"});
+ const fullGold=gold&&e.available,scores=mtfScores(k,selected,h1,h4,e,fullGold),pick=chooseDirection(scores);
+ const map={selected:compactBrain(selected),h1:compactBrain(h1),h4:compactBrain(h4)};
+ if(!pick.direction)return response("AI_MARKET_BALANCED",k,e,{direction:0,researchScope:fullGold?"VERIFIED_GOLD_MACRO_PLUS_MARKET_BRAIN":"TECHNICAL_MARKET_BRAIN",
+  reason:pick.reason==="BUY_SELL_EVIDENCE_TOO_CLOSE"?
+   "BUY and SELL evidence are too balanced. AI will not invent a trade when structure/liquidity/pattern evidence has no clear edge.":
+   "Market evidence is too weak for a directional thesis.",
+  marketBrain:map,analysis:{buyScore:rnd(scores.buy,1),sellScore:rnd(scores.sell,1),scoreGap:pick.gap,scoreMeaning:"NOT_WIN_PROBABILITY",
+   mtfEvidence:scores.notes,blockers:[pick.reason]}});
+ const d=pick.direction,th=thesis(selected,d,h1,h4),trigger=triggerFor(selected,d),macroDir=scores.macroDirection,
+  macroHeadwind=Boolean(macroDir&&macroDir!==d),contra=contradiction(k,selected,h1,h4,d),rev=reversalException(selected,h1,d),
+  counterTrend=contra.length>0&&!rev.strong,limits=thresholds(th.type,macroHeadwind,counterTrend);
+ const dirEvidence=d===1?selected.buy:selected.sell,htfEvidence=[
+  ...(d===1?h1.buy.evidence:h1.sell.evidence).slice(0,4).map(x=>({tf:"H1",...x})),
+  ...(d===1?h4.buy.evidence:h4.sell.evidence).slice(0,4).map(x=>({tf:"H4",...x}))
  ];
- let trigger=null;
- for(let i=n-1;i>=Math.max(n-6,10);i--){
-  const v=detectPattern(c,i,d,p);if(v){trigger={...v,index:i,bar:c[i]};break}
- }
- if(!trigger){
-  const watchStatus=macroConflict?(d===1?"AI_BUY_BLOCKED_MACRO":"AI_SELL_BLOCKED_MACRO"):(d===1?"AI_BUY_WATCH":"AI_SELL_WATCH");
-  return response(watchStatus,k,e,{direction:d,researchScope:scope,
-   reason:macroConflict?
-    "Technical direction exists, but verified Gold macro is opposite. Entry is blocked until the conflict clears and a fresh closed trigger appears.":
-    "Adaptive directional bias exists, but no accepted fully CLOSED trigger appeared within the last six candles. AI keeps the direction on WATCH instead of returning a meaningless blank state.",
-   nextCandleCloseUTC:nextCloseUTC(latest,args),
-   analysis:{mtfMode:mtf.mode,h1Direction:k.h1Trend,h4Direction:k.h4Trend,localDirection:local.direction,rsi:mom.rsi,
-    baseScore:Math.round(baseScore),score:Math.round(baseScore),entryEligible:false,trigger:null,scoreBreakdown:baseReasons,
-    blockers:[macroConflict?"VERIFIED_GOLD_MACRO_CONFLICT":"WAIT_CLOSED_TRIGGER"].filter(Boolean),
-    acceptedTriggers:["breakout","engulfing","displacement","pullback rejection","micro structure break"]}});
- }
- const recency=n-1-trigger.index,recencyPoints=Math.max(0,6-recency);
- const setupScore=clamp(baseScore+trigger.points+recencyPoints,0,100);
- const plan=adaptivePlan(c,trigger,d,p,fullGoldEvidence,macroDir);
- if(!plan)return response(d===1?"AI_BUY_WATCH":"AI_SELL_WATCH",k,e,{
-  direction:d,researchScope:scope,reason:"A closed trigger exists, but adaptive risk/retest geometry is not valid enough for an entry plan.",
-  analysis:{mtfMode:mtf.mode,rsi:mom.rsi,score:Math.round(setupScore),entryEligible:false,trigger:trigger.type,
-   triggerQuality:trigger.quality,scoreBreakdown:[...baseReasons,trigger.type+" +"+trigger.points,"Trigger recency +"+recencyPoints],
-   blockers:["RISK_GEOMETRY_INVALID"]}});
- const expiry=EXPIRY[args.tf]||4;
- const explain={
-  headline:(gold?"GOLD":String(args.symbol||"SYMBOL"))+" "+(d===1?"BUY":"SELL")+" adaptive confluence scenario",
-  drivers:[fullGoldEvidence?"Verified derived Gold Macro Regime: "+e.bias+" (score "+e.score+"/100; NOT win probability)":
-    "Fundamental unavailable/insufficient for "+args.symbol+"; using Vantage technical evidence only. No fabricated fundamental.",
-   "MTF mode: "+mtf.mode+" • H1 "+(k.h1Trend===1?"BULLISH":k.h1Trend===-1?"BEARISH":"NEUTRAL")+" • H4 "+(k.h4Trend===1?"BULLISH":k.h4Trend===-1?"BEARISH":"NEUTRAL"),
-   "Selected TF trend: "+(local.direction===1?"BULLISH":local.direction===-1?"BEARISH":"NEUTRAL")+" • RSI14 "+(mom.rsi??"N/A"),
-   "Closed trigger: "+trigger.type+" • quality "+trigger.quality,
-   "Setup confluence score: "+Math.round(setupScore)+"/100 (NOT win probability)",
-   "Price confirmation/retest is still required before ENTRY READY."],
-  releaseTimingVerified:false,newsSurpriseVerified:false,
-  basis:plan.entryMethod==="AI_ADAPTIVE_FIB_0382_TO_0618"?
-    "Adaptive impulse Fibonacci retracement + pre-trigger structural invalidation":
-    "Adaptive structure/rejection retest + swing invalidation",
-  researchScope:scope};
- const signalClose=trigger.bar.t-args.offsetSeconds+(TFSEC[args.tf]||900);
- const conf={...plan,direction:d,confirmationType:trigger.type,confirmationCloseUTC:new Date(signalClose*1000).toISOString(),
-  signalCandleTime:trigger.bar.t,targetMethod:"AI_ADAPTIVE_RISK_SCALED",score:Math.round(setupScore),expiresAfterClosedBars:expiry,
-  verifiedForecastSurprise:false,explanation:explain.drivers};
- delete conf.impulseAtr;
- const elapsed=n-1-trigger.index,price=d===1?k.ask:k.bid;
- const inside=price>=plan.entryLow&&price<=plan.entryHigh;
- const liveScore=clamp(setupScore+(inside?8:0),0,100);
- const threshold=mtf.mode==="ALIGNED_H1_H4"?68:74;
- const entryEligible=mtf.entryEligible&&!macroConflict&&liveScore>=threshold;
+ let confluence=pick.score;
+ if(trigger)confluence+=trigger.rank>=94?7:trigger.rank>=85?5:3;
+ if(macroHeadwind)confluence-=6;
+ if(counterTrend)confluence-=8;
+ const plan=buildMarketPlan(k.c,selected,d,d===1?k.ask:k.bid);
+ if(plan?.fibConfluence?.overlap)confluence+=4;
+ confluence=clamp(confluence,0,100);
  const blockers=[];
- if(!mtf.entryEligible)blockers.push("MTF_ENTRY_CONTEXT_INCOMPLETE");
- if(macroConflict)blockers.push("VERIFIED_GOLD_MACRO_CONFLICT");
- if(liveScore<threshold)blockers.push("CONFLUENCE_SCORE_BELOW_"+threshold);
- if(!inside)blockers.push("WAIT_ENTRY_RETEST");
- const overlay={direction:d,researchScope:scope,fundamentalApplied:fullGoldEvidence,confirmation:conf,explanation:explain,
-  entryQuote:price,entryQuoteSide:d===1?"ASK":"BID",elapsedClosedBars:elapsed,
-  analysis:{mtfMode:mtf.mode,h1Direction:k.h1Trend,h4Direction:k.h4Trend,localDirection:local.direction,rsi:mom.rsi,
-   baseScore:Math.round(baseScore),setupScore:Math.round(setupScore),liveScore:Math.round(liveScore),entryThreshold:threshold,
-   entryEligible,trigger:trigger.type,triggerQuality:trigger.quality,triggerAgeClosedBars:recency,
-   scoreBreakdown:[...baseReasons,trigger.type+" +"+trigger.points,"Trigger recency +"+recencyPoints,inside?"Price inside retest +8":"Price outside retest +0"],
-   blockers}};
- const observed=(Array.isArray(args.bars)?args.bars:[]).map(x=>({t:val(x.t),h:val(x.h),l:val(x.l)}))
-  .filter(x=>x.t!==null&&x.h!==null&&x.l!==null&&x.t>trigger.bar.t&&x.t-args.offsetSeconds<=k.nowSec);
- const stopTouched=observed.some(x=>d===1?x.l<=plan.invalidation:x.h>=plan.invalidation);
- if(stopTouched||d*(price-plan.invalidation)<=0)return response("AI_INVALIDATED",k,e,{
-  ...overlay,reason:"Post-confirmation broker wick/quote breached the original adaptive structure invalidation."});
- const targetTouched=observed.some(x=>d===1?x.h>=plan.tp1:x.l<=plan.tp1);
- if(targetTouched)return response("AI_COMPLETED_STUDY",k,e,{...overlay,reason:"TP1 touched since confirmation; the old AI setup is retired and never reactivated."});
- if(elapsed>expiry)return response("AI_EXPIRED",k,e,{...overlay,reason:"Adaptive entry window expired after "+expiry+" fully closed candles; wait for a new trigger."});
- const chased=d===1?price>plan.entryHigh+.65*p:price<plan.entryLow-.65*p;
- if(chased)return response("AI_MISSED_ENTRY",k,e,{...overlay,reason:"Price moved beyond adaptive retest tolerance; no chasing. Wait for a new trigger."});
- if(macroConflict)return response(d===1?"AI_BUY_BLOCKED_MACRO":"AI_SELL_BLOCKED_MACRO",k,e,{
-  ...overlay,reason:"Technical "+(d===1?"BUY":"SELL")+" setup exists, but verified Gold macro is opposite. The setup remains visible for study but entry is blocked."});
- if(!entryEligible){
-  return response(d===1?"AI_BUY_WATCH":"AI_SELL_WATCH",k,e,{...overlay,
-   reason:inside?
-    "Price is in the adaptive retest zone, but the confluence threshold/context is not strong enough for ENTRY READY.":
-    "Adaptive "+(d===1?"BUY":"SELL")+" setup is confirmed; wait for price to enter the retest zone and for the live confluence threshold to be satisfied."});
+ if(!trigger)blockers.push("NO_SELECTED_TF_STRUCTURAL_TRIGGER");
+ if(!plan)blockers.push("NO_VALID_MARKET_DRIVEN_RETEST_ZONE");
+ if(counterTrend)blockers.push(...contra);
+ if(macroHeadwind)blockers.push("VERIFIED_GOLD_MACRO_HEADWIND");
+ if(confluence<limits.confirm)blockers.push("CONFLUENCE_BELOW_CONFIRM_"+limits.confirm);
+ const analysis={buyScore:rnd(scores.buy,1),sellScore:rnd(scores.sell,1),directionScore:rnd(confluence,1),scoreGap:pick.gap,
+  scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",thesis:th,trigger,confirmThreshold:limits.confirm,readyThreshold:limits.ready,
+  macroHeadwind,counterTrend,reversalException:rev,strongReversalOverride:rev.strong,mtfEvidence:scores.notes,
+  selectedEvidence:dirEvidence.evidence,htfEvidence,blockers,entryModel:plan?.entryMethod||null,
+  fibonacci:plan?.fibConfluence||{overlap:false,bonus:0,role:"OPTIONAL_ONLY"},marketRegime:selected.regime};
+ const scope=fullGold?"VERIFIED_GOLD_MACRO_PLUS_MARKET_BRAIN":"TECHNICAL_MARKET_BRAIN";
+ if(!trigger||!plan||confluence<limits.confirm||counterTrend){
+  const status=d===1?"AI_BUY_WATCH":"AI_SELL_WATCH";
+  return response(status,k,e,{direction:d,researchScope:scope,marketBrain:map,analysis,
+   candidatePlan:plan?{...plan,researchOnly:true,status:"WATCH_NOT_ENTRY_READY"}:null,
+   reason:counterTrend?
+    side(d)+" evidence exists, but both higher-timeframe structure/trend still oppose it. AI keeps a reversal WATCH and requires stronger structural transition before entry.":
+    !trigger?side(d)+" directional thesis exists from structure/liquidity/MTF evidence, but no fresh selected-TF BOS/CHOCH/sweep/pattern/candle trigger is confirmed yet.":
+    !plan?"A valid "+side(d)+" trigger exists, but no clean structure/liquidity/zone retest can produce defensible SL/TP geometry.":
+    side(d)+" thesis exists, but confluence "+rnd(confluence,1)+"/100 is below confirmation threshold "+limits.confirm+".",
+   nextCandleCloseUTC:new Date((k.last.t-k.brokerUtcOffsetSeconds+2*(TFSEC[k.tf]||900))*1000).toISOString()});
  }
- return response(inside?(d===1?"AI_BUY_READY":"AI_SELL_READY"):d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED",k,e,{
-  ...overlay,canEnter:inside&&entryEligible,entryState:inside?"AI_ADAPTIVE_RETEST_VALIDATED":"WAIT_ADAPTIVE_RETEST",
-  reason:inside?
-   "Fresh Vantage broker quote entered the adaptive retest zone with sufficient MTF/momentum/trigger confluence. "+(fullGoldEvidence?"Verified Gold macro does not oppose the setup.":"Technical-only mode is disclosed because full Gold macro evidence is unavailable."):
-   "AI direction is confirmed with sufficient confluence; wait for the adaptive retest zone. Do not chase."});
+ const triggerIndex=Number.isInteger(trigger.index)?trigger.index:k.c.length-1,triggerBar=k.c[triggerIndex]||k.last,
+  closeEpoch=triggerBar.t-k.brokerUtcOffsetSeconds+(TFSEC[k.tf]||900),expiry=EXPIRY[k.tf]||5;
+ const conf={...plan,direction:d,confirmationType:trigger.type,confirmationCloseUTC:new Date(closeEpoch*1000).toISOString(),
+  signalCandleTime:triggerBar.t,targetMethod:plan.targetMethod,score:rnd(confluence,1),expiresAfterClosedBars:expiry,
+  verifiedForecastSurprise:false,explanation:[
+   "Thesis: "+th.type+" • "+th.reason,
+   "Structure: "+selected.structure.highClass+"/"+selected.structure.lowClass,
+   selected.breakEvent?"Structure event: "+selected.breakEvent.label+" @ "+selected.breakEvent.level:null,
+   selected.liquidity.sweep?"Liquidity: "+selected.liquidity.sweep.type+" @ "+selected.liquidity.sweep.level:null,
+   selected.chartPattern?"Chart pattern: "+selected.chartPattern.type+" • "+selected.chartPattern.state:null,
+   selected.candlePattern?"Candle evidence: "+selected.candlePattern.type:null,
+   "Entry model selected by market context: "+plan.entryMethod,
+   plan.fibConfluence?.overlap?"Fibonacci overlaps the chosen market zone (+4 confluence); Fib did NOT create the setup.":"Fibonacci does not overlap; setup remains valid because Fib is optional.",
+   "Confluence "+rnd(confluence,1)+"/100 (NOT win probability)"
+  ].filter(Boolean)};
+ const elapsed=k.c.length-1-triggerIndex,entryPx=d===1?k.ask:k.bid,overlay={direction:d,researchScope:scope,marketBrain:map,
+  analysis,confirmation:conf,entryQuote:entryPx,entryQuoteSide:d===1?"ASK":"BID",elapsedClosedBars:elapsed,
+  explanation:{headline:(gold?"GOLD":String(args.symbol||"SYMBOL"))+" "+side(d)+" • "+th.type,
+   drivers:conf.explanation,basis:plan.entryMethod,researchScope:scope}};
+ const later=observedSince(args,k,triggerBar.t),stopped=later.some(x=>d===1?x.l<=plan.invalidation:x.h>=plan.invalidation),
+  reached=later.some(x=>d===1?x.h>=plan.tp1:x.l<=plan.tp1);
+ if(stopped&&reached)return response("AI_AMBIGUOUS_PATH",k,e,{...overlay,reason:"The same observable OHLC path touched both TP1 and structural invalidation; trade path cannot be proven."});
+ if(stopped||d*(entryPx-plan.invalidation)<=0)return response("AI_INVALIDATED",k,e,{...overlay,reason:"Market invalidated the original structure/zone stop. Previous AI thesis is retired."});
+ if(reached)return response("AI_COMPLETED_STUDY",k,e,{...overlay,reason:"TP1 was already reached after confirmation. AI will not reactivate the old setup."});
+ if(elapsed>expiry)return response("AI_EXPIRED",k,e,{...overlay,reason:"Market-driven retest window expired after "+expiry+" closed candles. Wait for new structure."});
+ const inside=entryPx>=plan.entryLow&&entryPx<=plan.entryHigh,far=d===1?entryPx>plan.entryHigh+.75*selected.atr:entryPx<plan.entryLow-.75*selected.atr;
+ if(far)return response("AI_MISSED_ENTRY",k,e,{...overlay,reason:"Price has moved too far beyond the selected market-structure retest zone. Do not chase."});
+ const ready=inside&&confluence>=limits.ready;
+ return response(ready?(d===1?"AI_BUY_READY":"AI_SELL_READY"):d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED",k,e,{
+  ...overlay,canEnter:ready,entryState:ready?"MARKET_INTELLIGENCE_ENTRY_ZONE_VALIDATED":"WAIT_MARKET_DRIVEN_RETEST",
+  reason:ready?
+   side(d)+" ENTRY READY: market structure/liquidity/pattern thesis is confirmed and fresh Vantage price is inside the selected "+plan.entryMethod+" zone."+
+    (macroHeadwind?" Macro is a verified headwind, so the higher counter-macro threshold was required and passed.":""):
+   side(d)+" thesis is CONFIRMED by "+trigger.type+". Wait for the market-driven "+plan.entryMethod+" zone; Fibonacci is optional only."});
 }

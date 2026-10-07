@@ -56,7 +56,7 @@
  function invalidate(){
   state.last=null;state.context=null;state.seq++;
   const m=mode();
-  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.10 • Adaptive Confluence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
+  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.20 • Market Intelligence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose","Loading the NEW mode. Previous signal/entry plan deliberately cleared; NO ENTRY until verified.");
   put("gfStudyState","REFRESHING");if($("gfStudyState"))$("gfStudyState").className="y";
   put("gfStudyReason","Waiting for a new verified response for this symbol / timeframe / study mode.");
@@ -93,11 +93,20 @@
     const markerTime=Number(p.signalCandleTime)-Number(d.brokerUtcOffsetSeconds);
     if(rows.some(b=>b.time===markerTime)&&candle.setMarkers)candle.setMarkers([{time:markerTime,
       position:green?"belowBar":"aboveBar",color:col,shape:green?"arrowUp":"arrowDown",text:(green?"BUY":"SELL")+" CLOSED CONFIRMED"}]);
-    const prefix=d.mode==="ai"?"AI FIB":d.mode==="study"&&d.structureFlip?.type?d.structureFlip.type+" RETEST":"PIVOT RETEST";
+    const prefix=d.mode==="ai"?"AI "+String(p.entryMethod||"MARKET RETEST").replaceAll("_"," "):d.mode==="study"&&d.structureFlip?.type?d.structureFlip.type+" RETEST":"PIVOT RETEST";
     for(const [price,name,color,lineStyle] of [[p.entryLow,prefix+" LOW",col,2],[p.entryHigh,prefix+" HIGH",col,2],
      [p.invalidation,"STRUCTURE INVALID","#f2c75b",0],[p.tp1,"TP1","#71c3fa",2],[p.tp2,"TP2","#71c3fa",2],[p.tp3,"TP3","#71c3fa",2]]){
       if(price!==null&&price!==undefined&&Number.isFinite(Number(price)))candle.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle,axisLabelVisible:true,title:name});
     }
+   }else if(d.mode==="ai"&&d.candidatePlan){
+    const q=d.candidatePlan,dir=Number(d.direction)||0,col=dir>0?"#31d6a4":"#ff6079",nm=String(q.entryMethod||"AI WATCH").replaceAll("_"," ");
+    for(const [price,name,color] of [[q.entryLow,nm+" LOW • WATCH",col],[q.entryHigh,nm+" HIGH • WATCH",col],
+      [q.invalidation,"STRUCTURE INVALID • WATCH","#f2c75b"],[q.tp1,"TP1 PROJECTION • WATCH","#71c3fa"]]){
+      if(price!==null&&price!==undefined&&Number.isFinite(Number(price)))
+       candle.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle:2,axisLabelVisible:true,title:name});
+    }
+    const be=d.marketBrain?.selected?.breakEvent;
+    if(be&&Number.isFinite(Number(be.level)))candle.createPriceLine({price:Number(be.level),color:"#71c3fa",lineWidth:1,lineStyle:2,axisLabelVisible:true,title:be.type+" "+(be.direction>0?"BULL":"BEAR")});
    }else if(d.mode==="study"&&d.structureLevels){
     // Market Study must display its proposed levels WHILE WAITING, explicitly
     // labelled as RESEARCH and never represented as an executed position.
@@ -113,12 +122,12 @@
    studyChart.timeScale().fitContent();
    put("gfStudyChartNote",d.mode==="study"?
     "GF-MARKET STUDY • support/resistance + explicit SBR/RBS break/retest lifecycle. RBS = broken resistance retested as support; SBR = broken support retested as resistance. PENDING/WATCH lines are NOT entry-ready. Closed-candle confirmation only.":
-    d.mode==="ai"?"GF-AI • independent 38.2%-61.8% impulse retracement, structural invalidation and scenario targets; Macro Regime is historical observation context, not guaranteed direction.":
+    d.mode==="ai"?"GF-AI v1.20 • market structure/BOS/CHOCH/liquidity/SND-SNR/SBR-RBS/order-block/FVG/chart-pattern analysis. Entry model is selected from market context; Fibonacci is optional only.":
     "Vantage MT5 • broker clock normalized to UTC. Confirmation uses CLOSED candles only. Never an executed trade.");
   }catch(e){if(studyChart){studyChart.remove();studyChart=null}node.textContent="Broker chart rendering unavailable.";put("gfStudyChartNote","Data visualization unavailable; trade-ready status does not depend on chart rendering.")}
  }
  window.addEventListener("resize",function(){if(studyChart&&$("gfStudyChart"))studyChart.applyOptions({width:Math.max(300,$("gfStudyChart").clientWidth)})});
- const colors={BUY_ENTRY_READY:"g",SELL_ENTRY_READY:"r",BUY_CONFIRMED:"g",SELL_CONFIRMED:"r",AI_BUY_WATCH:"g",AI_SELL_WATCH:"r",AI_BUY_BLOCKED_MACRO:"y",AI_SELL_BLOCKED_MACRO:"y",AI_WAIT_MTF_CONFLICT:"y",AI_WAIT_DIRECTION:"y",BUY_INVALID:"r",SELL_INVALID:"r",WAIT_CONFIRMATION:"y",WAIT_CONFLICT:"y",MISSED_ENTRY:"y",COMPLETED_STUDY:"g",AMBIGUOUS_PATH:"y",EXPIRED:"y",DATA_UNVERIFIED:"y",MARKET_OFFLINE:"y"};
+ const colors={BUY_ENTRY_READY:"g",SELL_ENTRY_READY:"r",BUY_CONFIRMED:"g",SELL_CONFIRMED:"r",AI_BUY_WATCH:"g",AI_SELL_WATCH:"r",AI_MARKET_BALANCED:"y",AI_AMBIGUOUS_PATH:"y",AI_BUY_BLOCKED_MACRO:"y",AI_SELL_BLOCKED_MACRO:"y",AI_WAIT_MTF_CONFLICT:"y",AI_WAIT_DIRECTION:"y",BUY_INVALID:"r",SELL_INVALID:"r",WAIT_CONFIRMATION:"y",WAIT_CONFLICT:"y",MISSED_ENTRY:"y",COMPLETED_STUDY:"g",AMBIGUOUS_PATH:"y",EXPIRED:"y",DATA_UNVERIFIED:"y",MARKET_OFFLINE:"y"};
  function render(d){
   state.last=d;
   const rawStatus=String(d?.status||"DATA_UNVERIFIED"),st=d?.transportUnavailable?"DATA_UNVERIFIED":rawStatus,p=d?.confirmation||null;
@@ -126,11 +135,11 @@
   const technicalMode=m==="study",gold=/^(XAU|GOLD)/i.test(String(d?.symbol||""));
   const activeLifecycle=technicalMode?renderActiveLifecycle(d):null;
   put("gfStudyModeTitle",technicalMode?"GF-Market Study Pro • Technical Entry Lifecycle":
-      m==="ai"?"GF-AI Live Analyst v1.10 • Adaptive Confluence":"GF-News Impact Pro • Gold Context Study");
+      m==="ai"?"GF-AI Live Analyst v1.20 • Market Intelligence":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose",technicalMode?
     "STRUCTURE-DRIVEN: closed-candle rejection/break-retest; H1/H4 may be neutral but cannot oppose. Entry comes from dynamic pivots, targets from liquidity levels; Gold macro/yields are commentary ONLY, never entry gate.":
-    m==="ai"?(gold?"ADAPTIVE AI RESEARCH: H1/H4 alignment is preferred; one neutral HTF may be accepted only when the selected TF agrees. Opposing H1/H4 remains a hard veto. AI scores MTF trend, momentum, closed trigger quality, retest and verified Gold macro. Score is NOT win probability.":
-    "ADAPTIVE TECHNICAL AI: H1/H4 + selected-TF momentum + closed structure triggers. One neutral HTF may be accepted with a higher threshold; opposing H1/H4 remains blocked. No fabricated asset fundamentals or trained-ML probability."):
+    m==="ai"?(gold?"MARKET INTELLIGENCE: AI reads HH/HL/LH/LL, BOS/CHOCH, liquidity sweeps/equal highs-lows, SND/SNR/SBR/RBS, order blocks, FVG, chart patterns, candle behaviour, MTF structure and verified Gold macro. It chooses the entry model that fits the market. Fibonacci is optional overlap only, never the core setup. Score is NOT win probability.":
+    "MARKET INTELLIGENCE TECHNICAL AI: structure, liquidity, BOS/CHOCH, supply/demand, SBR/RBS, order blocks, FVG, chart/candle patterns and MTF context. No fabricated asset fundamental and no trained-ML probability."):
     "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
 
   const aiMode=m==="ai",research=d?.macroEvidence,structure=d?.structureLevels,scenario=d?.explanation;
@@ -140,9 +149,11 @@
   put("gfScenarioNarrative",aiMode?[
     scenario?.headline||"AI scenario pending verified confluence.",
     ...(scenario?.drivers||[]),
-    "AI methodology: "+(p?.entryMethod||"Adaptive MTF + momentum + five closed-trigger families + retest"),
-    d?.analysis?.score!==undefined||d?.analysis?.setupScore!==undefined?"Adaptive confluence: "+safe(d.analysis.liveScore??d.analysis.setupScore??d.analysis.score)+"/100 • threshold "+safe(d.analysis.entryThreshold)+" • MTF "+(d.analysis.mtfMode||"N/A")+" • RSI14 "+safe(d.analysis.rsi):"",
-    ...(d?.analysis?.scoreBreakdown||[]).map(x=>"EVIDENCE: "+x),
+    "AI methodology: "+(p?.entryMethod||d?.candidatePlan?.entryMethod||"Market structure → liquidity → pattern → MTF → market-driven retest"),
+    d?.analysis?.directionScore!==undefined?"Market-intelligence confluence: "+safe(d.analysis.directionScore)+"/100 • confirm "+safe(d.analysis.confirmThreshold)+" • ready "+safe(d.analysis.readyThreshold)+" • thesis "+(d.analysis.thesis?.type||"N/A"):"",
+    ...(d?.analysis?.selectedEvidence||[]).map(x=>"SELECTED TF: "+(x.points>=0?"+":"")+x.points+" • "+x.text),
+    ...(d?.analysis?.htfEvidence||[]).map(x=>"HTF "+x.tf+": "+(x.points>=0?"+":"")+x.points+" • "+x.text),
+    ...(d?.analysis?.mtfEvidence||[]).map(x=>"MTF: "+x),
     ...(d?.analysis?.blockers||[]).map(x=>"BLOCKER: "+x),
     "Verified observations: "+(research?.observations||[]).filter(x=>x.display&&x.status!=="UNAVAILABLE")
       .slice(0,10).map(x=>x.id+" "+x.display+" (period "+x.period+", "+x.impactCategory+" category)").join("; "),
@@ -194,8 +205,8 @@
    }
   }else if(["AI_BUY_WATCH","AI_SELL_WATCH"].includes(st)){
    const side=st.includes("BUY")?"BUY":"SELL",a=d?.analysis||{};
-   decision=side+" WATCH • ADAPTIVE SETUP";
-   hint="Directional evidence exists, but ENTRY READY is not verified yet. Score "+safe(a.liveScore??a.setupScore??a.score)+"/100"+(a.entryThreshold?" vs threshold "+a.entryThreshold:"")+" • blockers: "+((a.blockers||[]).join(", ")||"WAIT RETEST / CLOSED TRIGGER")+".";
+   decision=side+" WATCH • MARKET THESIS";
+   hint="Directional evidence exists, but ENTRY READY is not verified yet. Score "+safe(a.directionScore)+"/100 • confirm "+safe(a.confirmThreshold)+" • ready "+safe(a.readyThreshold)+" • blockers: "+((a.blockers||[]).join(", ")||"WAIT MARKET TRIGGER / RETEST")+".";
   }else if(["AI_BUY_BLOCKED_MACRO","AI_SELL_BLOCKED_MACRO"].includes(st)){
    decision=(st.includes("BUY")?"BUY":"SELL")+" SETUP • MACRO CONFLICT • NO ENTRY";
    hint="Technical setup exists, but verified Gold macro points the opposite way. AI keeps the setup visible for study and blocks entry.";
@@ -203,6 +214,12 @@
    decision="H1 / H4 CONFLICT • NO ENTRY";hint="H1 and H4 are opposite. Adaptive AI will not force a direction.";
   }else if(st==="AI_WAIT_DIRECTION"){
    decision="NO STABLE DIRECTION • WAIT";hint="AI has no stable MTF/local direction yet. It will form BUY/SELL WATCH before ENTRY READY.";
+  }else if(st==="AI_MARKET_BALANCED"){
+   decision="MARKET BALANCED • NO FORCED TRADE";
+   hint="BUY and SELL evidence are too close or too weak. AI will wait for BOS/CHOCH/liquidity/pattern evidence instead of inventing a signal.";
+  }else if(st==="AI_AMBIGUOUS_PATH"){
+   decision="AMBIGUOUS OHLC PATH • NO ENTRY";
+   hint="The observed candle path touched both structural stop and TP1; result cannot be proven.";
   }else if(["AI_WAIT_VERIFIED_MACRO","AI_ASSET_FUNDAMENTAL_UNAVAILABLE","AI_WAIT_MACRO_CONFLUENCE","AI_WAIT_MTF_ALIGNMENT","AI_WAIT_PATTERN"].includes(st)){
    decision="AI CONFLUENCE INCOMPLETE • NO ENTRY";hint="One or more independent AI evidence gates are not verified; never reuse a previous mode's signal.";
   }else if(["AI_MISSED_ENTRY","STUDY_MISSED_ENTRY"].includes(st)){
@@ -220,21 +237,27 @@
   put("gfOppositeDirection",p&&["AI_BUY_READY","AI_SELL_READY","AI_BUY_CONFIRMED","AI_SELL_CONFIRMED","BUY_ENTRY_READY","SELL_ENTRY_READY","BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)?
    (p.direction>0?"SELL INVALID for this BUY study":"BUY INVALID for this SELL study"):
    "Opposite-direction status is not an independent confirmed trade.");
-  const staleTag=d?.transportUnavailable?" (LAST KNOWN)":"";
-  put("gfEntryRange",p?safe(p.entryLow)+" — "+safe(p.entryHigh)+staleTag:structure&&technicalMode?"REACTION (WAIT): "+safe(structure.reactionZoneLow)+" — "+safe(structure.reactionZoneHigh)+staleTag:"—");
-  put("gfInvalidate",p?safe(p.invalidation)+staleTag:technicalMode?safe(structure?.invalidationLevel)+" (WAIT)"+staleTag:"—");
-  put("gfTP1",p?safe(p.tp1)+staleTag:technicalMode&&d.projectedTargets?.length?safe(d.projectedTargets[0])+" (PROJECTION)"+staleTag:"—");
-  put("gfTP2",p?safe(p.tp2)+staleTag:technicalMode&&d.projectedTargets?.length>1?safe(d.projectedTargets[1])+" (PROJECTION)"+staleTag:"—");
-  put("gfTP3",p?safe(p.tp3)+staleTag:technicalMode&&d.projectedTargets?.length>2?safe(d.projectedTargets[2])+" (PROJECTION)"+staleTag:"—");
+  const staleTag=d?.transportUnavailable?" (LAST KNOWN)":"",watchPlan=aiMode&&!p?d?.candidatePlan:null;
+  put("gfEntryRange",p?safe(p.entryLow)+" — "+safe(p.entryHigh)+staleTag:watchPlan?safe(watchPlan.entryLow)+" — "+safe(watchPlan.entryHigh)+" (WATCH)":structure&&technicalMode?"REACTION (WAIT): "+safe(structure.reactionZoneLow)+" — "+safe(structure.reactionZoneHigh)+staleTag:"—");
+  put("gfInvalidate",p?safe(p.invalidation)+staleTag:watchPlan?safe(watchPlan.invalidation)+" (WATCH)":technicalMode?safe(structure?.invalidationLevel)+" (WAIT)"+staleTag:"—");
+  put("gfTP1",p?safe(p.tp1)+staleTag:watchPlan?safe(watchPlan.tp1)+" (WATCH)":technicalMode&&d.projectedTargets?.length?safe(d.projectedTargets[0])+" (PROJECTION)"+staleTag:"—");
+  put("gfTP2",p?safe(p.tp2)+staleTag:watchPlan?safe(watchPlan.tp2)+" (WATCH)":technicalMode&&d.projectedTargets?.length>1?safe(d.projectedTargets[1])+" (PROJECTION)"+staleTag:"—");
+  put("gfTP3",p?safe(p.tp3)+staleTag:watchPlan?safe(watchPlan.tp3)+" (WATCH)":technicalMode&&d.projectedTargets?.length>2?safe(d.projectedTargets[2])+" (PROJECTION)"+staleTag:"—");
   const h1=v=>v===1?"BULLISH":v===-1?"BEARISH":"NEUTRAL / N/A";
   put("gfStudyTechnical",[
     "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
-    aiMode&&d?.aiPolicy?"AI ADAPTIVE GATES: H1/H4 aligned preferred; one neutral HTF allowed only with selected-TF agreement • "+d.aiPolicy.acceptedClosedPatterns.length+" accepted CLOSED trigger types in last "+d.aiPolicy.triggerLookbackClosedBars+" candles • Fib OR structure retest • score threshold "+d.aiPolicy.scoreThresholdAligned+" aligned / "+d.aiPolicy.scoreThresholdPartialMTF+" partial • expires after "+d.aiPolicy.entryExpiryClosedBars+" CLOSED bars.":"",
+    aiMode&&d?.aiPolicy?"AI MARKET BRAIN: "+d.aiPolicy.primaryEngines.join(" • ")+" | ENTRY MODELS: "+d.aiPolicy.entryModels.join(" • ")+" | FIB: "+d.aiPolicy.fibonacciRole+"." :"",
     aiMode&&d?.aiPolicy&&!d.aiPolicy.persistent24hSignalArchive?"24H AI HISTORY: NOT ARCHIVED YET — current WAIT cannot prove there was no transient setup earlier in the day.":"",
     technicalMode?(d?.structureFlip?.type?"SBR/RBS: "+d.structureFlip.type+" • "+d.structureFlip.stage+" @ "+safe(d.structureFlip.level):d?.structureFlipWatch?.type?"SBR/RBS: "+d.structureFlipWatch.type+" WATCH @ "+safe(d.structureFlipWatch.level):"SBR/RBS: no confirmed flip"):"",
-    p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Adaptive confluence score "+p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):(aiMode&&(d?.analysis?.score!==undefined||d?.analysis?.setupScore!==undefined)?"Directional WATCH score "+safe(d.analysis.liveScore??d.analysis.setupScore??d.analysis.score)+"/100 • no entry-ready closed trigger yet":"No validated signal candle"),
-    p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):"",
+    p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Market-intelligence confluence "+p.score+"/100 (NOT win probability)":" • Structure-derived confirmation"):(aiMode&&d?.analysis?.directionScore!==undefined?"Directional WATCH "+safe(d.analysis.directionScore)+"/100 • "+(d.analysis.thesis?.type||"MARKET THESIS")+" • no entry-ready trigger/retest yet":"No validated signal candle"),
+    aiMode&&d?.marketBrain?.selected?"STRUCTURE: "+(d.marketBrain.selected.structure?.highClass||"N/A")+"/"+(d.marketBrain.selected.structure?.lowClass||"N/A")+" • "+(d.marketBrain.selected.breakEvent?.label||"NO RECENT BOS/CHOCH"):"",
+    aiMode&&d?.marketBrain?.selected?.liquidity?.sweep?"LIQUIDITY: "+d.marketBrain.selected.liquidity.sweep.type+" @ "+safe(d.marketBrain.selected.liquidity.sweep.level):"",
+    aiMode&&d?.marketBrain?.selected?.chartPattern?"CHART PATTERN: "+d.marketBrain.selected.chartPattern.type+" • "+d.marketBrain.selected.chartPattern.state:"",
+    aiMode&&d?.marketBrain?.selected?.zones?.flip?"SBR/RBS: "+d.marketBrain.selected.zones.flip.type+" @ "+safe(d.marketBrain.selected.zones.flip.level):"",
+    aiMode&&d?.marketBrain?.selected?.zones?.orderBlock?"ORDER BLOCK: "+d.marketBrain.selected.zones.orderBlock.type+" "+safe(d.marketBrain.selected.zones.orderBlock.low)+" — "+safe(d.marketBrain.selected.zones.orderBlock.high):"",
+    aiMode&&d?.marketBrain?.selected?.zones?.fvg?"FVG: "+d.marketBrain.selected.zones.fvg.type+" "+safe(d.marketBrain.selected.zones.fvg.low)+" — "+safe(d.marketBrain.selected.zones.fvg.high):"",
+    p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):watchPlan?"Candidate "+watchPlan.entryMethod+" • RESEARCH WATCH ONLY":"",
     p?"Entry model: "+String(p.entryMethod||"LEGACY")+"; targets: "+String(p.targetMethod||"derived study")+"; structural stop "+safe(p.invalidation)+".":""
   ].filter(Boolean).join("\n"));
   const macro=d?.news,events=macro?.cards||[],find=id=>events.find(x=>x.id===id);
