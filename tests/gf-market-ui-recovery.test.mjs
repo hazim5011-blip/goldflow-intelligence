@@ -130,13 +130,18 @@ test("GF News/AI UI distinguishes stale selected-symbol quote from whole-market 
  assert.ok(ui.includes("Vantage terminal/bridge may still be LIVE"));
  assert.ok(ui.includes("daily rollover"));
 });
-test("AI UI exposes adaptive gates and states that 24h signals are not yet archived",()=>{
+test("AI UI exposes Market Intelligence engines and states that 24h signals are not yet archived",()=>{
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const engine=readFileSync(new URL("../api/_aiLiveEngine.js",import.meta.url),"utf8");
+ const brain=readFileSync(new URL("../api/_aiMarketBrain.js",import.meta.url),"utf8");
  assert.ok(engine.includes('persistent24hSignalArchive:false'));
- assert.ok(engine.includes('triggerLookbackClosedBars:6'));
- assert.ok(engine.includes('entryExpiryClosedBars:expiry'));
- assert.ok(ui.includes("AI ADAPTIVE GATES: H1/H4 aligned preferred"));
+ assert.ok(engine.includes('"BOS_CHOCH"'));
+ assert.ok(engine.includes('"LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS"'));
+ assert.ok(engine.includes('"SND_SNR_SBR_RBS"'));
+ assert.ok(engine.includes('fibonacciRole:"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED"'));
+ assert.ok(brain.includes('"DOUBLE_TOP"'));
+ assert.ok(brain.includes('"HEAD_AND_SHOULDERS"'));
+ assert.ok(ui.includes("AI MARKET BRAIN:"));
  assert.ok(ui.includes("24H AI HISTORY: NOT ARCHIVED YET"));
 });
 test("Fund104 Performance explains validation-only N/A rather than implying missing data",()=>{
@@ -263,15 +268,20 @@ test("GF-News Impact Dashboard and Study UI expose WHY BUY/SELL/WAIT reasoning",
  assert.ok(ui.includes("PRESSURE/SUPPORTIVE are GoldFlow derived macro-context labels"));
 });
 
-test("Adaptive AI UI exposes WATCH direction, confluence score and blockers without calling it win probability",()=>{
+test("Market Intelligence AI UI exposes WATCH direction, thesis, BOS/CHOCH evidence and market-driven plans",()=>{
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
- assert.ok(html.includes("GF-AI Live Analyst v1.10 • Adaptive Rule-Based"));
+ assert.ok(html.includes("GF-AI Live Analyst v1.20 • Market Intelligence"));
  assert.ok(app.includes("BUY WATCH"));
- assert.ok(app.includes("d.analysis?.liveScore"));
- assert.ok(ui.includes("WATCH • ADAPTIVE SETUP"));
- assert.ok(ui.includes("Adaptive confluence score"));
+ assert.ok(app.includes("d.analysis.directionScore"));
+ assert.ok(app.includes("d.candidatePlan"));
+ assert.ok(ui.includes("WATCH • MARKET THESIS"));
+ assert.ok(ui.includes("Market-intelligence confluence"));
+ assert.ok(ui.includes("STRUCTURE: "));
+ assert.ok(ui.includes("LIQUIDITY: "));
+ assert.ok(ui.includes("CHART PATTERN: "));
+ assert.ok(ui.includes("ORDER BLOCK: "));
+ assert.ok(ui.includes("FVG: "));
  assert.ok(ui.includes("NOT win probability"));
- assert.ok(ui.includes("H1 / H4 CONFLICT • NO ENTRY"));
 });
