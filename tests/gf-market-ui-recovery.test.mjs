@@ -272,7 +272,7 @@ test("Market Intelligence AI UI exposes WATCH direction, thesis, BOS/CHOCH evide
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
- assert.ok(html.includes("GF-AI Live Analyst v1.20 • Market Intelligence"));
+ assert.ok(html.includes("GF-AI Live Analyst v1.21 • All-TF Market Intelligence"));
  assert.ok(app.includes("BUY WATCH"));
  assert.ok(app.includes("d.analysis.directionScore"));
  assert.ok(app.includes("d.candidatePlan"));
@@ -284,4 +284,19 @@ test("Market Intelligence AI UI exposes WATCH direction, thesis, BOS/CHOCH evide
  assert.ok(ui.includes("ORDER BLOCK: "));
  assert.ok(ui.includes("FVG: "));
  assert.ok(ui.includes("NOT win probability"));
+});
+
+test("GF-AI v1.21 UI proves M1-to-D1 hierarchy and guards mixed-version policy fields",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const api=readFileSync(new URL("../api/study.js",import.meta.url),"utf8");
+ assert.ok(html.includes("M1/M5/M15/M30/H1/H4/D1 market hierarchy"));
+ assert.ok(api.includes('const allAiFrames=["M1","M5","M15","M30","H1","H4","D1"]'));
+ assert.ok(api.includes('frames:mode==="ai"?(bridge.frames||{}):undefined'));
+ assert.ok(ui.includes("ALL TF MATRIX:"));
+ assert.ok(ui.includes("ALL TF CONSENSUS:"));
+ assert.ok(ui.includes("Array.isArray(d.aiPolicy.primaryEngines)"));
+ assert.ok(app.includes('ALL TF • M1→D1 • Entry '));
+ assert.ok(app.includes("d.analysis?.allTfConsensus"));
 });
