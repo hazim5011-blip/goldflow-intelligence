@@ -226,3 +226,26 @@ test("TradingView Hybrid multi-timeframe fallback paces broker requests sequenti
  assert.ok(v.includes('if(!$("tvPage")?.classList.contains("on"))return;'));
  assert.ok(!v.includes("var rows=await Promise.all(tfs.map"));
 });
+
+test("Production bridge v3.0.1 serializes MetaTrader5 access across FastAPI requests",()=>{
+ const py=readFileSync(new URL("../bridge/mt5_bridge.py",import.meta.url),"utf8");
+ assert.ok(py.includes('BRIDGE_RUNTIME_VERSION="3.0.1"'));
+ assert.ok(py.includes("MT5_LOCK=threading.RLock()"));
+ assert.ok(py.includes("def mt5_serialized(fn):"));
+ for(const route of ["/health","/symbols","/catalog","/bars","/multi-bars","/snapshot"]){
+  const marker='@app.get("'+route+'")\n@mt5_serialized';
+  assert.ok(py.includes(marker),"missing serialized route "+route);
+ }
+});
+test("Production bridge recovery uses named tunnel and explicitly rejects Quick Tunnel as production",()=>{
+ const recover=readFileSync(new URL("../bridge/RECOVER_GOLDFLOW_BRIDGE.bat",import.meta.url),"utf8");
+ const named=readFileSync(new URL("../bridge/START_NAMED_TUNNEL.bat",import.meta.url),"utf8");
+ const http2=readFileSync(new URL("../bridge/START_TUNNEL_HTTP2.bat",import.meta.url),"utf8");
+ const quick=readFileSync(new URL("../bridge/START_QUICK_TUNNEL.bat",import.meta.url),"utf8");
+ assert.ok(recover.includes("https://bridge.hazim5011.com/health"));
+ assert.ok(recover.includes("LOCAL BRIDGE + NAMED TUNNEL + PUBLIC HOST"));
+ assert.ok(named.includes("TUNNEL_TOKEN"));
+ assert.ok(named.includes("cloudflared service"));
+ assert.ok(http2.includes("START_NAMED_TUNNEL.bat"));
+ assert.ok(quick.includes("DEVELOPMENT ONLY - NOT GOLDFLOW PRODUCTION"));
+});
