@@ -12,6 +12,9 @@ function feed(n=95,tf=900,step=.13){
  }
  return arr;
 }
+function allFrames(step=.13){
+ return {M1:feed(95,60,step),M5:feed(95,300,step),M15:feed(95,900,step),M30:feed(95,1800,step),H1:feed(95,3600,step),H4:feed(95,14400,step),D1:feed(95,86400,step)};
+}
 const verified=()=>({
  quality:{available:16,total:16,errors:[],stale:[],strictPrimaryReady:true,secondaryMirror:[],primarySourceHealth:"RECOVERED_OFFICIAL_VIA_LOCAL_BRIDGE"},
  gold:{bias:"SUPPORTIVE",score:74},
@@ -27,7 +30,7 @@ function fixture(){
 }
 test("identical Gold inputs go through genuinely separate engines, methods, entries and target construction",()=>{
  const f=fixture(),a=evaluateAILive(f),s=evaluateMarketStudy(f);
- assert.equal(a.engine,"GF_AI_MARKET_INTELLIGENCE_V4");
+ assert.equal(a.engine,"GF_AI_ALL_TF_MARKET_INTELLIGENCE_V5");
  assert.ok(a.aiPolicy.primaryEngines.includes("BOS_CHOCH"));
  assert.ok(a.aiPolicy.primaryEngines.includes("LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS"));
  assert.equal(a.aiPolicy.fibonacciRole,"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED");
@@ -64,7 +67,7 @@ test("AI Gold downgrades to verifiable technical-only mode with incomplete 13/16
  const f=fixture(),bad={...verified(),quality:{...verified().quality,available:13,strictPrimaryReady:false,errors:["BLS block"]}};
  const a=evaluateAILive({...f,macro:bad});
  const s=evaluateMarketStudy({...f,macro:bad});
- assert.equal(a.researchScope,"TECHNICAL_MARKET_BRAIN");
+ assert.equal(a.researchScope,"ALL_TF_TECHNICAL_MARKET_BRAIN");
  assert.notEqual(a.status,"AI_WAIT_VERIFIED_MACRO");
  assert.equal(s.engine,"GF_MARKET_STRUCTURE_SCENARIO_V2");
  assert.equal(s.macroContext.available,false);
@@ -74,7 +77,7 @@ test("AI Gold downgrades to verifiable technical-only mode with incomplete 13/16
 test("AI BTC uses valid technical candles without asserting fake BTC fundamentals",()=>{
  const f=fixture(),r=evaluateAILive({...f,symbol:"BTCUSD",macro:verified()});
  assert.notEqual(r.status,"AI_ASSET_FUNDAMENTAL_UNAVAILABLE");
- assert.equal(r.researchScope,"TECHNICAL_MARKET_BRAIN");
+ assert.equal(r.researchScope,"ALL_TF_TECHNICAL_MARKET_BRAIN");
  assert.equal(r.fundamentalApplied,false);
  assert.equal(r.macroEvidence.scope,"USD_MACRO_CONTEXT_NOT_BTC_SPECIFIC");
  assert.equal(r.macroEvidence.assetSpecific,false);
@@ -108,7 +111,8 @@ test("release period is never promoted to verified news timestamp or fake surpri
 
 test("Market Intelligence exposes a directional WATCH with market-brain evidence instead of meaningless WAIT PATTERN",()=>{
  const bars=feed(),px=bars.at(-2).c;
- const f={symbol:"XAUUSD247",tf:"M15",bars,h1:feed(95,3600,.13),h4:feed(95,14400,.13),
+ const frames=allFrames(.13);frames.M15=bars;
+ const f={symbol:"XAUUSD247",tf:"M15",bars,h1:frames.H1,h4:frames.H4,frames,
   quote:{bid:px,ask:px+.05,tickTime:now+offset,observedAt:now},offsetSeconds:offset,macro:verified(),nowSec:now};
  const a=evaluateAILive(f);
  assert.ok(["AI_BUY_WATCH","AI_SELL_WATCH","AI_MARKET_BALANCED","AI_BUY_CONFIRMED","AI_SELL_CONFIRMED"].includes(a.status),JSON.stringify(a));
@@ -124,14 +128,42 @@ test("Market Intelligence policy contains structure, BOS/CHOCH, liquidity, SND/S
   assert.ok(e.includes(id),id);
  }
  assert.ok(a.aiPolicy.entryModels.includes("BOS_RBS_SBR_RETEST"));
- assert.ok(a.aiPolicy.entryModels.includes("CHOCH_RETEST"));
+ assert.ok(a.aiPolicy.entryModels.includes("CHOCH_STRUCTURE_RETEST"));
  assert.equal(a.aiPolicy.fibonacciRole,"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED");
 });
 
 test("Market Intelligence never forces a trade when BUY/SELL evidence is balanced",()=>{
  const flat=feed(95,900,0),px=flat.at(-2).c;
- const a=evaluateAILive({symbol:"XAUUSD247",tf:"M15",bars:flat,h1:feed(95,3600,0),h4:feed(95,14400,0),
+ const frames=allFrames(0);frames.M15=flat;
+ const a=evaluateAILive({symbol:"XAUUSD247",tf:"M15",bars:flat,h1:frames.H1,h4:frames.H4,frames,
   quote:{bid:px,ask:px+.05,tickTime:now+offset,observedAt:now},offsetSeconds:offset,macro:null,nowSec:now});
  assert.ok(["AI_MARKET_BALANCED","AI_BUY_WATCH","AI_SELL_WATCH"].includes(a.status),JSON.stringify(a));
  assert.equal(a.canEnter,false);
+});
+
+test("GF-AI v1.21 reads all seven broker timeframes and exposes a visible matrix",()=>{
+ const a=evaluateAILive(fixture());
+ assert.deepEqual(a.aiPolicy.timeframes,["M1","M5","M15","M30","H1","H4","D1"]);
+ assert.equal(a.aiPolicy.selectedTfOwnsEntry,true);
+ assert.equal(a.marketBrain.coverage.available,7);
+ assert.equal(a.marketBrain.coverage.total,7);
+ assert.equal(a.analysis.timeframeMatrix.length,7);
+ for(const tf of ["M1","M5","M15","M30","H1","H4","D1"]){
+  assert.ok(a.analysis.timeframeMatrix.some(x=>x.tf===tf&&x.available),tf);
+  assert.ok(a.marketBrain.allTimeframes[tf].ok,tf);
+ }
+});
+test("GF-AI v1.21 fails closed when fewer than four timeframes are available",()=>{
+ const f=fixture(),frames={M15:f.frames.M15,H1:f.frames.H1,H4:f.frames.H4};
+ const a=evaluateAILive({...f,frames});
+ assert.equal(a.status,"DATA_UNVERIFIED");
+ assert.equal(a.reason,"ALL_TF_COVERAGE_TOO_LOW");
+ assert.equal(a.canEnter,false);
+});
+test("Backward-compatibility fields prevent cached v1.10 UI from crashing on acceptedClosedPatterns.length",()=>{
+ const a=evaluateAILive(fixture());
+ assert.ok(Array.isArray(a.aiPolicy.acceptedClosedPatterns));
+ assert.ok(a.aiPolicy.acceptedClosedPatterns.length>0);
+ assert.ok(Number.isInteger(a.aiPolicy.triggerLookbackClosedBars));
+ assert.ok(Number.isInteger(a.aiPolicy.entryExpiryClosedBars));
 });
