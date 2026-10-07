@@ -16,6 +16,13 @@ if "%CF%"=="" (
   exit /b 1
 )
 
+echo =====================================================
+echo WARNING: DEVELOPMENT ONLY - NOT GOLDFLOW PRODUCTION
+echo Production ignores trycloudflare.com and uses:
+echo https://bridge.hazim5011.com
+echo For Production run RECOVER_GOLDFLOW_BRIDGE.bat instead.
+echo =====================================================
+echo.
 echo Starting GoldFlow Quick Tunnel...
 echo Keep this window OPEN.
 echo Copy the https://xxxxx.trycloudflare.com URL after it appears.

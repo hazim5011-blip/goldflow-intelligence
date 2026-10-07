@@ -1,4 +1,4 @@
-import os, time, json, re, glob
+import os, time, json, re, glob, threading, functools
 from typing import Optional
 from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,7 +31,16 @@ TF={"M1":mt5.TIMEFRAME_M1,"M5":mt5.TIMEFRAME_M5,"M15":mt5.TIMEFRAME_M15,
     "M30":mt5.TIMEFRAME_M30,"H1":mt5.TIMEFRAME_H1,"H4":mt5.TIMEFRAME_H4,
     "D1":mt5.TIMEFRAME_D1,"W1":mt5.TIMEFRAME_W1,"MN1":mt5.TIMEFRAME_MN1}
 
-app=FastAPI(title="GoldFlow Vantage MT5 Bridge",version="3.0.0")
+BRIDGE_RUNTIME_VERSION="3.0.1"
+app=FastAPI(title="GoldFlow Vantage MT5 Bridge",version=BRIDGE_RUNTIME_VERSION)
+MT5_LOCK=threading.RLock()
+
+def mt5_serialized(fn):
+    @functools.wraps(fn)
+    def wrapped(*args,**kwargs):
+        with MT5_LOCK:
+            return fn(*args,**kwargs)
+    return wrapped
 app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_credentials=False,allow_methods=["GET"],allow_headers=["*"])
 
 def auth(key:Optional[str]):
@@ -131,9 +140,10 @@ def symbol_row(s):
 
 @app.get("/")
 def root():
-    return {"ok":True,"service":"GoldFlow Vantage MT5 Bridge","version":"3.0.0","docs":"/docs","timeframes":list(TF.keys())}
+    return {"ok":True,"service":"GoldFlow Vantage MT5 Bridge","version":BRIDGE_RUNTIME_VERSION,"docs":"/docs","timeframes":list(TF.keys())}
 
 @app.get("/health")
+@mt5_serialized
 def health(x_bridge_key:Optional[str]=Header(default=None)):
     auth(x_bridge_key); ensure_mt5()
     ti=mt5.terminal_info(); ai=mt5.account_info()
@@ -141,7 +151,7 @@ def health(x_bridge_key:Optional[str]=Header(default=None)):
             "terminal":getattr(ti,"name",None),"build":getattr(ti,"build",None),
             "server":getattr(ai,"server",None) if ai else None,
             "tradeAllowed":bool(getattr(ti,"trade_allowed",False)) if ti else False,
-            "time":int(time.time()),"version":"3.0.0"}
+            "time":int(time.time()),"version":BRIDGE_RUNTIME_VERSION}
 
 @app.get("/macro/bls")
 async def macro_bls(x_bridge_key:Optional[str]=Header(default=None)):
@@ -156,6 +166,7 @@ async def macro_bls(x_bridge_key:Optional[str]=Header(default=None)):
         raise HTTPException(status_code=503,detail="MACRO_LOCAL_COLLECTOR_UNAVAILABLE")
 
 @app.get("/symbols")
+@mt5_serialized
 def symbols(filter:str="",limit:int=Query(500,ge=1,le=5000),x_bridge_key:Optional[str]=Header(default=None)):
     auth(x_bridge_key); ensure_mt5()
     f=norm(filter) if filter else ""; out=[]
@@ -166,6 +177,7 @@ def symbols(filter:str="",limit:int=Query(500,ge=1,le=5000),x_bridge_key:Optiona
     return {"ok":True,"filter":filter,"count":len(out),"symbols":out}
 
 @app.get("/catalog")
+@mt5_serialized
 def catalog(filter:str="",category:str="",limit:int=Query(5000,ge=1,le=10000),x_bridge_key:Optional[str]=Header(default=None)):
     auth(x_bridge_key); ensure_mt5()
     f=(filter or "").upper().strip(); cat=(category or "").upper().strip(); out=[]
@@ -181,6 +193,7 @@ def catalog(filter:str="",category:str="",limit:int=Query(5000,ge=1,le=10000),x_
             "count":len(out),"symbols":out}
 
 @app.get("/bars")
+@mt5_serialized
 def bars(symbol:str=Query(...),tf:str=Query("M5"),limit:int=Query(500,ge=20,le=5000),x_bridge_key:Optional[str]=Header(default=None)):
     auth(x_bridge_key); ensure_mt5()
     tf=tf.upper()
@@ -201,6 +214,7 @@ def bars(symbol:str=Query(...),tf:str=Query("M5"),limit:int=Query(500,ge=20,le=5
             "serverTime":int(tick.time) if tick else int(time.time()),"bars":out}
 
 @app.get("/multi-bars")
+@mt5_serialized
 def multi_bars(symbol:str=Query(...),tfs:str=Query("M5,M15,H1"),limits:str=Query("1000,800,600"),x_bridge_key:Optional[str]=Header(default=None)):
     auth(x_bridge_key); ensure_mt5()
     sym=resolve_symbol(symbol)
@@ -232,6 +246,7 @@ def multi_bars(symbol:str=Query(...),tfs:str=Query("M5,M15,H1"),limits:str=Query
             "serverTime":int(tick.time) if tick else int(time.time()),"frames":out}
 
 @app.get("/snapshot")
+@mt5_serialized
 def snapshot(symbols:str="XAUUSD247,XAUUSD,EURUSD,GBPUSD,AUDUSD,NZDUSD,USDJPY,USDCHF,USDCAD",x_bridge_key:Optional[str]=Header(default=None)):
     auth(x_bridge_key); ensure_mt5(); data={}
     for req in [x.strip() for x in symbols.split(",") if x.strip()]:
