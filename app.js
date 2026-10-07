@@ -200,13 +200,13 @@ function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
   $("source").textContent="Vantage • "+(d.symbol||requestedSymbol)+" • MT5_BRIDGE";
   $("signal").textContent=gfStatusLabel(d.status);$("signal").className=clsDir(dir);
   $("signalScore").textContent=p&&finite(p.score)?fmt(p.score,0)+"/100":d.mode==="ai"&&finite(d.analysis?.directionScore)?fmt(d.analysis.directionScore,0)+"/100":"RULE-BASED";$("signalStatus").textContent=d.canEnter?"ENTRY CONDITIONS MET":String(d.status||"WAIT");
-  var h1=Number(d.h1Trend)||0,h4=Number(d.h4Trend)||0,bias=h1&&h1===h4?h1:0;
-  $("biasState").textContent=bias?stateText(bias):(h1===0&&h4===0?"NEUTRAL":"MIXED");$("biasState").className=clsDir(bias);
-  $("biasStrength").textContent="H1 "+stateText(h1)+" • H4 "+stateText(h4);
-  $("biasEvent").textContent=d.mode==="ai"?(d.researchScope||d.macroBias||"AI CONTEXT"):d.mode==="news"?(d.macroBias||"NEWS CONTEXT"):"STRUCTURE ONLY";
+  var h1=Number(d.h1Trend)||0,h4=Number(d.h4Trend)||0,cons=d.mode==="ai"?d.analysis?.allTfConsensus:null,bias=cons?Number(cons.direction)||0:(h1&&h1===h4?h1:0);
+  $("biasState").textContent=bias?stateText(bias):(cons?"BALANCED":h1===0&&h4===0?"NEUTRAL":"MIXED");$("biasState").className=clsDir(bias);
+  $("biasStrength").textContent=cons?("M1→D1 • BUY "+fmt(cons.buy,0)+" / SELL "+fmt(cons.sell,0)+" • Gap "+fmt(cons.gap,0)):("H1 "+stateText(h1)+" • H4 "+stateText(h4));
+  $("biasEvent").textContent=d.mode==="ai"?(cons?("TF coverage "+(d.analysis?.tfCoverage?.available??"—")+"/"+(d.analysis?.tfCoverage?.total??7)+" • "+(d.researchScope||"ALL TF")):(d.researchScope||d.macroBias||"AI CONTEXT")):d.mode==="news"?(d.macroBias||"NEWS CONTEXT"):"STRUCTURE ONLY";
   $("setupState").textContent=dir?stateText(dir):"WAIT";$("setupState").className=clsDir(dir);$("setupStrength").textContent=d.canEnter?"ENTRY READY":d.mode==="ai"&&/AI_(BUY|SELL)_WATCH/.test(String(d.status||""))?"WATCH":"WAIT";
   $("setupEvent").textContent=d.mode==="ai"?(p?.confirmationType||d.analysis?.trigger?.type||d.analysis?.thesis?.type||"MARKET BRAIN WATCH"):(d.structureFlip?.type?(d.structureFlip.type+" • "+d.structureFlip.stage):d.structureFlipWatch?.type?(d.structureFlipWatch.type+" WATCH"):p?.confirmationType||"NO CLOSED TRIGGER");
-  $("profile").textContent=requestedTF+" • H1 • H4";$("lastAge").textContent=finite(d.quoteAgeSeconds)?"Tick "+fmt(d.quoteAgeSeconds,0)+" s":"Tick N/A";$("resolvedSymbol").textContent=d.symbol||requestedSymbol;
+  $("profile").textContent=d.mode==="ai"?("ALL TF • M1→D1 • Entry "+requestedTF):(requestedTF+" • H1 • H4");$("lastAge").textContent=finite(d.quoteAgeSeconds)?"Tick "+fmt(d.quoteAgeSeconds,0)+" s":"Tick N/A";$("resolvedSymbol").textContent=d.symbol||requestedSymbol;
   var aip=d.mode==="ai"?(p||d.candidatePlan):null;
   var entryLo=aip&&finite(aip.entryLow)?Number(aip.entryLow):p&&finite(p.entryLow)?Number(p.entryLow):d.mode==="study"&&finite(d.structureLevels?.reactionZoneLow)?Number(d.structureLevels.reactionZoneLow):null;
   var entryHi=aip&&finite(aip.entryHigh)?Number(aip.entryHigh):p&&finite(p.entryHigh)?Number(p.entryHigh):d.mode==="study"&&finite(d.structureLevels?.reactionZoneHigh)?Number(d.structureLevels.reactionZoneHigh):null;
