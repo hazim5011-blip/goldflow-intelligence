@@ -121,7 +121,7 @@
  const colors={BUY_ENTRY_READY:"g",SELL_ENTRY_READY:"r",BUY_CONFIRMED:"g",SELL_CONFIRMED:"r",BUY_INVALID:"r",SELL_INVALID:"r",WAIT_CONFIRMATION:"y",WAIT_CONFLICT:"y",MISSED_ENTRY:"y",COMPLETED_STUDY:"g",AMBIGUOUS_PATH:"y",EXPIRED:"y",DATA_UNVERIFIED:"y",MARKET_OFFLINE:"y"};
  function render(d){
   state.last=d;
-  const st=String(d?.status||"DATA_UNVERIFIED"),p=d?.confirmation||null;
+  const rawStatus=String(d?.status||"DATA_UNVERIFIED"),st=d?.transportUnavailable?"DATA_UNVERIFIED":rawStatus,p=d?.confirmation||null;
   const m=d?.mode||mode();
   const technicalMode=m==="study",gold=/^(XAU|GOLD)/i.test(String(d?.symbol||""));
   const activeLifecycle=technicalMode?renderActiveLifecycle(d):null;
@@ -161,11 +161,11 @@
     d?.reason||""
    ].filter(Boolean).join("\n"):
    d?.reason||"No release-time claim without a verified official calendar.");
-  put("gfStudyState",st.replaceAll("_"," "));
+  put("gfStudyState",d?.transportUnavailable?("DATA UNVERIFIED • LAST KNOWN "+rawStatus.replaceAll("_"," ")):st.replaceAll("_"," "));
   $("gfStudyState").className=colors[st]||(st.endsWith("READY")?"g":st.endsWith("INVALID")||st==="AI_INVALIDATED"?"r":"y");
-  put("gfStudyReason",d?.reason||"No verified study state.");
+  put("gfStudyReason",d?.transportUnavailable?("BRIDGE UNAVAILABLE • Last known study is reference only and cannot create a new entry. "+(d?.transportReason||"")):(d?.reason||"No verified study state."));
   put("gfStudyFresh",[d?.symbol||"",d?.tf||"",d?.closedAtUTC||"N/A",d?.quoteAgeSeconds==null?"Tick N/A":"Tick "+d.quoteAgeSeconds+" s"].filter(Boolean).join(" • "));
-  put("gfConfirmTime",p?"Confirmed candle closed at "+p.confirmationCloseUTC+" • expires after "+(p.expiresAfterClosedBars||3)+" closed bars":"No confirmed closed trigger candle");
+  put("gfConfirmTime",p?(d?.transportUnavailable?"LAST KNOWN • ":"")+"Confirmed candle closed at "+p.confirmationCloseUTC+" • expires after "+(p.expiresAfterClosedBars||3)+" closed bars":"No confirmed closed trigger candle");
   let decision="NO ENTRY",hint="WAIT for a fresh confirmed candle. No broker order is sent.";
   if(d?.canEnter && ["AI_BUY_READY","AI_SELL_READY","BUY_ENTRY_READY","SELL_ENTRY_READY"].includes(st)){
     decision=p?.side+" • ENTRY READY"+(aiMode&&d.researchScope==="TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE"?" • TECHNICAL ONLY":"");hint="Verified CLOSED candle + FRESH "+d.entryQuoteSide+" inside mode-specific entry area. "+(aiMode&&d.researchScope==="TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE"?"Fundamental for this pair unavailable; decision is based ONLY on valid broker technical evidence. ":"")+"Study ONLY; confirm your own trade.";
@@ -200,17 +200,18 @@
   }else if(st==="STUDY_AMBIGUOUS_PATH"){
    decision="AMBIGUOUS OHLC PATH • NO ENTRY";hint="Cannot prove whether TP or SL touched first.";
   }
-  else if(st==="DATA_UNVERIFIED"){decision="DATA UNVERIFIED";hint="Source quality is insufficient; cannot issue a new trade-ready indication."}
+  else if(st==="DATA_UNVERIFIED"){decision=d?.transportUnavailable?"BRIDGE OFFLINE • NO NEW ENTRY":"DATA UNVERIFIED";hint=d?.transportUnavailable?"Broker transport is unavailable. Any levels shown below are LAST KNOWN / STALE reference only until a fresh Vantage study is received.":"Source quality is insufficient; cannot issue a new trade-ready indication."}
   put("gfEntryDecision",decision);$("gfEntryDecision").className=d?.canEnter?(p?.direction>0?"g":"r"):"y";
   put("gfEntryHint",hint);
   put("gfOppositeDirection",p&&["AI_BUY_READY","AI_SELL_READY","AI_BUY_CONFIRMED","AI_SELL_CONFIRMED","BUY_ENTRY_READY","SELL_ENTRY_READY","BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)?
    (p.direction>0?"SELL INVALID for this BUY study":"BUY INVALID for this SELL study"):
    "Opposite-direction status is not an independent confirmed trade.");
-  put("gfEntryRange",p?safe(p.entryLow)+" — "+safe(p.entryHigh):structure&&technicalMode?"REACTION (WAIT): "+safe(structure.reactionZoneLow)+" — "+safe(structure.reactionZoneHigh):"—");
-  put("gfInvalidate",p?safe(p.invalidation):technicalMode?safe(structure?.invalidationLevel)+" (WAIT)":"—");
-  put("gfTP1",p?safe(p.tp1):technicalMode&&d.projectedTargets?.length?safe(d.projectedTargets[0])+" (PROJECTION)":"—");
-  put("gfTP2",p?safe(p.tp2):technicalMode&&d.projectedTargets?.length>1?safe(d.projectedTargets[1])+" (PROJECTION)":"—");
-  put("gfTP3",p?safe(p.tp3):technicalMode&&d.projectedTargets?.length>2?safe(d.projectedTargets[2])+" (PROJECTION)":"—");
+  const staleTag=d?.transportUnavailable?" (LAST KNOWN)":"";
+  put("gfEntryRange",p?safe(p.entryLow)+" — "+safe(p.entryHigh)+staleTag:structure&&technicalMode?"REACTION (WAIT): "+safe(structure.reactionZoneLow)+" — "+safe(structure.reactionZoneHigh)+staleTag:"—");
+  put("gfInvalidate",p?safe(p.invalidation)+staleTag:technicalMode?safe(structure?.invalidationLevel)+" (WAIT)"+staleTag:"—");
+  put("gfTP1",p?safe(p.tp1)+staleTag:technicalMode&&d.projectedTargets?.length?safe(d.projectedTargets[0])+" (PROJECTION)"+staleTag:"—");
+  put("gfTP2",p?safe(p.tp2)+staleTag:technicalMode&&d.projectedTargets?.length>1?safe(d.projectedTargets[1])+" (PROJECTION)"+staleTag:"—");
+  put("gfTP3",p?safe(p.tp3)+staleTag:technicalMode&&d.projectedTargets?.length>2?safe(d.projectedTargets[2])+" (PROJECTION)"+staleTag:"—");
   const h1=v=>v===1?"BULLISH":v===-1?"BEARISH":"NEUTRAL / N/A";
   put("gfStudyTechnical",[
     "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
@@ -306,7 +307,19 @@
   if(!document.hidden&&isGF()&&$("gfStudyPage")?.classList.contains("on"))load();
  });
 
- window.GFStudy={load,invalidate,getLast:()=>state.last,getActive:()=>state.active};
+ function transportLost(reason){
+  if(!isGF())return;
+  const old=state.last;
+  if(old){
+    render({...old,ok:false,transportUnavailable:true,transportReason:String(reason||"BROKER TRANSPORT UNAVAILABLE"),
+      previousStatus:String(old.status||"DATA_UNVERIFIED"),status:"DATA_UNVERIFIED",canEnter:false,bid:null,ask:null,entryQuote:null,quoteAgeSeconds:null,
+      limitation:"BRIDGE OFFLINE • LAST KNOWN study shown for reference only. No new entry can be issued until fresh Vantage data returns."});
+  }else{
+    render({ok:false,mode:mode(),status:"DATA_UNVERIFIED",transportUnavailable:true,transportReason:String(reason||"BROKER TRANSPORT UNAVAILABLE"),
+      canEnter:false,reason:"Bridge unavailable. Entry blocked.",limitation:"BRIDGE OFFLINE • No verified broker study is available."});
+  }
+}
+window.GFStudy={load,invalidate,getLast:()=>state.last,getActive:()=>state.active,transportLost};
  if($("gfStudyRefresh"))$("gfStudyRefresh").onclick=load;
  if($("gfActiveSetupClear"))$("gfActiveSetupClear").onclick=function(){removeActive(state.last||{});state.active=null;if(state.last)renderActiveLifecycle(state.last)};
  // API returns only positive exact-symbol fresh ticks. Unsampled symbols never count as ONLINE.
