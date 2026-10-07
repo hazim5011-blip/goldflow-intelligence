@@ -161,6 +161,7 @@ export function evaluateAILive(args={}){
  if(!trigger||!plan||confluence<limits.confirm||counterTrend){
   const status=d===1?"AI_BUY_WATCH":"AI_SELL_WATCH";
   return response(status,k,e,{direction:d,researchScope:scope,marketBrain:map,analysis,
+   candidatePlan:plan?{...plan,researchOnly:true,status:"WATCH_NOT_ENTRY_READY"}:null,
    reason:counterTrend?
     side(d)+" evidence exists, but both higher-timeframe structure/trend still oppose it. AI keeps a reversal WATCH and requires stronger structural transition before entry.":
     !trigger?side(d)+" directional thesis exists from structure/liquidity/MTF evidence, but no fresh selected-TF BOS/CHOCH/sweep/pattern/candle trigger is confirmed yet.":
