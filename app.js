@@ -194,12 +194,12 @@ function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
   $("price").textContent=finite(price)?px(price):"—";$("spread").textContent=finite(d.bid)&&finite(d.ask)?"Spread "+px(Number(d.ask)-Number(d.bid)):"—";
   $("source").textContent="Vantage • "+(d.symbol||requestedSymbol)+" • MT5_BRIDGE";
   $("signal").textContent=gfStatusLabel(d.status);$("signal").className=clsDir(dir);
-  $("signalScore").textContent=p&&finite(p.score)?fmt(p.score,0)+"%":"RULE-BASED";$("signalStatus").textContent=d.canEnter?"ENTRY CONDITIONS MET":String(d.status||"WAIT");
+  $("signalScore").textContent=p&&finite(p.score)?fmt(p.score,0)+"/100":d.mode==="ai"&&finite(d.analysis?.liveScore??d.analysis?.setupScore??d.analysis?.score)?fmt(d.analysis?.liveScore??d.analysis?.setupScore??d.analysis?.score,0)+"/100":"RULE-BASED";$("signalStatus").textContent=d.canEnter?"ENTRY CONDITIONS MET":String(d.status||"WAIT");
   var h1=Number(d.h1Trend)||0,h4=Number(d.h4Trend)||0,bias=h1&&h1===h4?h1:0;
   $("biasState").textContent=bias?stateText(bias):(h1===0&&h4===0?"NEUTRAL":"MIXED");$("biasState").className=clsDir(bias);
   $("biasStrength").textContent="H1 "+stateText(h1)+" • H4 "+stateText(h4);
   $("biasEvent").textContent=d.mode==="ai"?(d.researchScope||d.macroBias||"AI CONTEXT"):d.mode==="news"?(d.macroBias||"NEWS CONTEXT"):"STRUCTURE ONLY";
-  $("setupState").textContent=dir?stateText(dir):"WAIT";$("setupState").className=clsDir(dir);$("setupStrength").textContent=d.canEnter?"ENTRY READY":"WAIT";
+  $("setupState").textContent=dir?stateText(dir):"WAIT";$("setupState").className=clsDir(dir);$("setupStrength").textContent=d.canEnter?"ENTRY READY":d.mode==="ai"&&/AI_(BUY|SELL)_WATCH/.test(String(d.status||""))?"WATCH":"WAIT";
   $("setupEvent").textContent=d.structureFlip?.type?(d.structureFlip.type+" • "+d.structureFlip.stage):d.structureFlipWatch?.type?(d.structureFlipWatch.type+" WATCH"):p?.confirmationType||"NO CLOSED TRIGGER";
   $("profile").textContent=requestedTF+" • H1 • H4";$("lastAge").textContent=finite(d.quoteAgeSeconds)?"Tick "+fmt(d.quoteAgeSeconds,0)+" s":"Tick N/A";$("resolvedSymbol").textContent=d.symbol||requestedSymbol;
   var entryLo=p&&finite(p.entryLow)?Number(p.entryLow):d.mode==="study"&&finite(d.structureLevels?.reactionZoneLow)?Number(d.structureLevels.reactionZoneLow):null;
@@ -208,13 +208,13 @@ function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
   $("sl").textContent=p&&finite(p.invalidation)?px(p.invalidation):d.mode==="study"&&finite(d.structureLevels?.invalidationLevel)?px(d.structureLevels.invalidationLevel):"—";
   var t1=p&&finite(p.tp1)?p.tp1:d.projectedTargets?.[0],t2=p&&finite(p.tp2)?p.tp2:d.projectedTargets?.[1];
   $("tp1").textContent=finite(t1)?px(t1):"—";$("tp2").textContent=finite(t2)?px(t2):"—";
-  $("planBadge").textContent=d.canEnter?(dir>0?"BUY READY":"SELL READY"):"WAIT";$("planBadge").className="tag "+clsDir(d.canEnter?dir:0);$("reasons").textContent=d.mode==="news"&&d.newsDecision?.summary?d.newsDecision.summary:(d.reason||"Wait for verified mode-specific confirmation.");
+  $("planBadge").textContent=d.canEnter?(dir>0?"BUY READY":"SELL READY"):d.mode==="ai"&&/AI_(BUY|SELL)_WATCH/.test(String(d.status||""))?(dir>0?"BUY WATCH":"SELL WATCH"):"WAIT";$("planBadge").className="tag "+clsDir(d.canEnter?dir:(d.mode==="ai"&&/AI_(BUY|SELL)_WATCH/.test(String(d.status||""))?dir:0));$("reasons").textContent=d.mode==="news"&&d.newsDecision?.summary?d.newsDecision.summary:(d.reason||"Wait for verified mode-specific confirmation.");
   var ctx=gfContextPosition(d);if($("pdTitle"))$("pdTitle").textContent=d.mode==="study"?"STRUCTURE RANGE":"ENTRY / CONTEXT";
   if(ctx){$("pdHigh").textContent=px(ctx.high);$("pdEq").textContent=px(ctx.eq);$("pdLow").textContent=px(ctx.low);$("pdPos").textContent=ctx.position}
   else if(p){$("pdHigh").textContent=px(p.entryHigh);$("pdEq").textContent=px((Number(p.entryLow)+Number(p.entryHigh))/2);$("pdLow").textContent=px(p.entryLow);$("pdPos").textContent=d.canEnter?"IN ENTRY ZONE":"OUTSIDE ENTRY ZONE"}
   else{$("pdHigh").textContent=$("pdEq").textContent=$("pdLow").textContent=$("pdPos").textContent="—"}
   $("watch").textContent=d.mode==="news"&&d.newsDecision?.headline?d.newsDecision.headline:(d.structureFlipWatch?.type?(d.structureFlipWatch.type+" WATCH @ "+px(d.structureFlipWatch.level)+" • "+d.structureFlipWatch.meaning):
-    d.structureFlip?.type?(d.structureFlip.type+" "+d.structureFlip.stage+" @ "+px(d.structureFlip.level)):d.mode==="ai"?(d.macroEvidence?.explanation||d.reason||"AI confluence watch"):d.reason||"No active mode-specific zone.");
+    d.structureFlip?.type?(d.structureFlip.type+" "+d.structureFlip.stage+" @ "+px(d.structureFlip.level)):d.mode==="ai"?("AI "+(dir>0?"BUY":dir<0?"SELL":"NEUTRAL")+" • "+(finite(d.analysis?.liveScore??d.analysis?.setupScore??d.analysis?.score)?fmt(d.analysis?.liveScore??d.analysis?.setupScore??d.analysis?.score,0)+"/100 • ":"")+(d.reason||d.macroEvidence?.explanation||"Adaptive confluence watch")):d.reason||"No active mode-specific zone.");
   renderZones(zones,lastLiveTick);renderStats({total:0,wins:0,losses:0,pending:0});
   if($("statsNote"))$("statsNote").textContent="GF LIVE STUDY • Current-state research only. Historical/forward performance is not inherited from legacy indicators.";
   $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(requestedSymbol));
