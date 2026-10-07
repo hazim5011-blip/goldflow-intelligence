@@ -71,22 +71,24 @@ export default async function handler(req,res){
  const offset=vantageBrokerUtcOffsetSeconds();
  if(offset===null)return res.status(200).json({ok:false,status:"DATA_UNVERIFIED",error:"BROKER_UTC_OFFSET_UNVERIFIED"});
  try{
-  const frames=[...new Set([tf,"H1","H4"])];
+  const allAiFrames=["M1","M5","M15","M30","H1","H4","D1"];
+  const frames=mode==="ai"?allAiFrames:[...new Set([tf,"H1","H4"])];
+  const limitFor=f=>mode==="ai"?(f===tf?240:["M1","M5"].includes(f)?220:["M15","M30","H1"].includes(f)?190:150):(f===tf?180:100);
   const [bridge,macro]=await Promise.all([
-   brokerGet("/multi-bars",{symbol,tfs:frames.join(","),limits:frames.map(f=>f===tf?180:100).join(",")},25000,2),
+   brokerGet("/multi-bars",{symbol,tfs:frames.join(","),limits:frames.map(limitFor).join(",")},30000,2),
    /^(XAU|GOLD)/i.test(symbol)?macroSnapshot().catch(()=>null):Promise.resolve(null)
   ]);
   const nowSec=Math.floor(Date.now()/1000);
   const evaluator=mode==="ai"?evaluateAILive:mode==="study"?evaluateMarketStudy:evaluateStudy;
   const output=evaluator({symbol:bridge.symbol||symbol,tf,mode,bars:bridge.frames?.[tf]||[],
-   h1:bridge.frames?.H1||[],h4:bridge.frames?.H4||[],
+   h1:bridge.frames?.H1||[],h4:bridge.frames?.H4||[],frames:mode==="ai"?(bridge.frames||{}):undefined,
    quote:{bid:bridge.bid,ask:bridge.ask,tickTime:bridge.serverTime,observedAt:nowSec},
    offsetSeconds:offset,macro,nowSec});
   const publicMacro=macro?{fetchedAtUTC:macro.fetchedAt,quality:macro.quality,gold:macro.gold,
    cards:(macro.cards||[]).filter(c=>NEWS_DRIVER_IDS.includes(c.id)).map(c=>({id:c.id,name:c.name,display:c.display,value:c.value,date:c.date,status:c.status,source:c.source,stale:c.stale,goldImpact:c.goldImpact,change:c.change,changeLabel:c.changeLabel,detail:c.detail}))}:null;
   return res.status(200).json({...output,source:"VANTAGE_MT5",marketResearchOnly:true,autoTrading:false,news:publicMacro,
    chartBars:(bridge.frames?.[tf]||[]).slice(-160).map(b=>({t:Number(b.t)-offset,o:b.o,h:b.h,l:b.l,c:b.c})),
-   limitation:"Mode-specific auditable research: AI macro/MTF/impulse vs Market Study price-structure/retest. No verified publication timestamp, forecast surprise, intrabar fill or ML-trained win probability."});
+   limitation:mode==="ai"?"GF-AI v1.21 reads M1/M5/M15/M30/H1/H4/D1 Vantage closed candles in one auditable hierarchy. Entry remains selected-TF; all other TFs are context. No trained-ML probability or automatic execution.":"Mode-specific auditable research. No verified publication timestamp, forecast surprise, intrabar fill or ML-trained win probability."});
  }catch(e){
   return res.status(200).json({ok:false,status:"DATA_UNVERIFIED",reason:"BROKER_DATA_UNAVAILABLE",errorCode:String(e?.code||"FETCH_FAILED"),
     marketResearchOnly:true,autoTrading:false});
