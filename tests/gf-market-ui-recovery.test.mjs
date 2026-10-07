@@ -208,3 +208,21 @@ test("TradingView Gold reference uses ThinkMarkets XAUUSD247 and is not silently
  assert.ok(v8.includes('{s:"THINKMARKETS:XAUUSD247",d:"Gold • ThinkMarkets XAUUSD247"}'));
  assert.ok(v8.includes("XAUUSD247 uses ThinkMarkets Spot Gold Continuous"));
 });
+
+test("bridge transport loss demotes displayed GF study to fail-closed LAST KNOWN state",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ assert.ok(app.includes("window.GFStudy?.transportLost?."));
+ assert.ok(ui.includes("function transportLost(reason)"));
+ assert.ok(ui.includes("DATA UNVERIFIED • LAST KNOWN"));
+ assert.ok(ui.includes("BRIDGE OFFLINE • NO NEW ENTRY"));
+ assert.ok(ui.includes("(LAST KNOWN)"));
+ assert.ok(ui.includes("canEnter:false,bid:null,ask:null,entryQuote:null,quoteAgeSeconds:null"));
+});
+test("TradingView Hybrid multi-timeframe fallback paces broker requests sequentially",()=>{
+ const v=readFileSync(new URL("../v8.js",import.meta.url),"utf8");
+ assert.ok(v.includes("for(const tf of tfs)"));
+ assert.ok(v.includes("await new Promise(r=>setTimeout(r,140))"));
+ assert.ok(v.includes('if(!$("tvPage")?.classList.contains("on"))return;'));
+ assert.ok(!v.includes("var rows=await Promise.all(tfs.map"));
+});
