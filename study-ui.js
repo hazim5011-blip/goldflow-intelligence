@@ -161,7 +161,7 @@
     d?.reason||""
    ].filter(Boolean).join("\n"):
    d?.reason||"No release-time claim without a verified official calendar.");
-  put("gfStudyState",d?.transportUnavailable?("DATA UNVERIFIED • LAST KNOWN "+rawStatus.replaceAll("_"," ")):st.replaceAll("_"," "));
+  put("gfStudyState",d?.transportUnavailable?("DATA UNVERIFIED • LAST KNOWN "+String(d?.previousStatus||rawStatus).replaceAll("_"," ")):st.replaceAll("_"," "));
   $("gfStudyState").className=colors[st]||(st.endsWith("READY")?"g":st.endsWith("INVALID")||st==="AI_INVALIDATED"?"r":"y");
   put("gfStudyReason",d?.transportUnavailable?("BRIDGE UNAVAILABLE • Last known study is reference only and cannot create a new entry. "+(d?.transportReason||"")):(d?.reason||"No verified study state."));
   put("gfStudyFresh",[d?.symbol||"",d?.tf||"",d?.closedAtUTC||"N/A",d?.quoteAgeSeconds==null?"Tick N/A":"Tick "+d.quoteAgeSeconds+" s"].filter(Boolean).join(" • "));
