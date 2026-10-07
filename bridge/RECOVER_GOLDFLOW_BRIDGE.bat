@@ -3,9 +3,8 @@ setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 if not exist logs mkdir logs >nul 2>nul
 
-for /f "tokens=1-4 delims=/ " %%a in ("%date%") do set "GFDATE=%%d%%b%%c"
-for /f "tokens=1-3 delims=:." %%a in ("%time: =0%") do set "GFTIME=%%a%%b%%c"
-set "LOG=%cd%\logs\bridge_recovery_%GFDATE%_%GFTIME%.log"
+for /f %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "STAMP=%%T"
+set "LOG=%cd%\logs\bridge_recovery_%STAMP%.log"
 
 set "KEY="
 set "PORT=8787"
