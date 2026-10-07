@@ -130,3 +130,11 @@
 .gfIndicatorMenu{position:relative}.gfIndicatorMenu summary{list-style:none}.gfIndicatorMenu summary::-webkit-details-marker{display:none}.gfIndicatorMenu>div{position:absolute;top:34px;left:0;z-index:35;min-width:165px;padding:9px;background:#07151e;border:1px solid #385664;border-radius:8px;box-shadow:0 10px 26px #0009}.gfIndicatorMenu label{display:block;padding:4px 3px;font-size:10px;color:#c1d4dd;white-space:nowrap}.gfIndicatorMenu input{vertical-align:middle}
 .gfChartRange{padding:0 8px 7px;border-bottom:1px solid #172c37;margin-bottom:6px}.gfChartRange span{margin-left:auto;color:#7894a3;font-size:9px}.gfChartRange button{min-height:24px;padding:3px 7px;background:transparent;border-color:#28404c}
 @media(max-width:760px){.gfChartToolbar{align-items:flex-start}.gfChartActions{width:100%}.gfChartRange{overflow-x:auto;flex-wrap:nowrap}.gfChartRange span{display:none}.gfIndicatorMenu>div{position:fixed;left:12px;right:12px;top:auto;min-width:0}}
+
+
+/* V8.1.3 GF-News Impact — explicit WHY BUY / SELL / WAIT decision explanation. */
+.newsWhyCard{border-color:#345267;background:linear-gradient(180deg,#0c202c,#091923)}
+.newsWhySummary{font-size:13px;font-weight:750;line-height:1.55;color:#e7f5fb;padding:10px 12px;border:1px solid #2a4a5b;border-radius:9px;background:#07151e}
+.newsWhyBlock{border:1px solid #294754;border-radius:9px;background:#07151e;padding:11px;min-height:104px}
+.newsWhyBlock small{display:block;color:#85afc1;font-size:9px;font-weight:850;letter-spacing:.06em;margin-bottom:7px}
+.newsWhyBlock div{white-space:pre-line;color:#c8dbe4;font-size:11px;line-height:1.55}
