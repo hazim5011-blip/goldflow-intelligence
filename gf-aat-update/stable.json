@@ -1,0 +1,9 @@
+{
+  "channel": "stable",
+  "version": "1.6.3-r5.4",
+  "build_id": "gf-aat-1.6.3-r5.4-compact-cognitive-ui",
+  "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
+  "sha256": "88da7bea5ccb577e1470645cc07ee2fd9b0bed579422e535ff087c155c699863",
+  "restart_cmd": "RESTART_GF_AAT_R5_4.bat",
+  "minimum_updater": 2
+}
