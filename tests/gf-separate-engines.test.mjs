@@ -108,7 +108,7 @@ test("release period is never promoted to verified news timestamp or fake surpri
  assert.equal(x.macroEvidence.releaseTimeVerified,false);
  assert.equal(x.macroEvidence.forecastSurpriseVerified,false);
  assert.ok(x.macroEvidence.observations.every(o=>o.verifiedReleaseTimestamp===false&&o.consensusSurprise===null));
- assert.equal(x.modelType,"AUDITABLE_MARKET_INTELLIGENCE_RULES_NOT_TRAINED_ML");
+ assert.equal(x.modelType,"AUDITABLE_REASONING_RULES_PLUS_EXPERIENCE_CALIBRATION_NOT_TRAINED_ML");
 });
 
 
