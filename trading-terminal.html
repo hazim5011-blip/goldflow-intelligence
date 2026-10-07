@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GoldFlow AI Trading Terminal</title><link rel="stylesheet" href="/terminal.css"></head>
+<body><div class="shell">
+<aside><div class="brand">GOLDFLOW <b>AI</b><small>INTELLIGENCE TERMINAL</small></div>
+<nav><a class="active">Dashboard</a><a>AI Market Brain</a><a>Live Chart</a><a>MTF Analysis</a><a>Macro Regime</a><a>News Intelligence</a><a>Signals</a><a>Performance</a><a>Evidence</a></nav>
+<div class="source">PRIMARY FEED<br><b>VANTAGE XAUUSD247</b><span id="bridgeDot">● checking</span></div></aside>
+<main><header><div><h1>AI Trading Command Center</h1><p>Broker-grounded market intelligence • Malaysia time</p></div><div id="clock"></div></header>
+<section class="ticker"><div><label>XAUUSD247</label><strong id="price">—</strong><small id="fresh">checking broker…</small></div><div><label>DXY</label><strong id="dxy">—</strong><small>macro feed</small></div><div><label>US2Y</label><strong>—</strong><small>when available</small></div><div><label>US10Y</label><strong>—</strong><small>when available</small></div><div><label>REAL YIELD</label><strong>—</strong><small>when available</small></div></section>
+<section class="hero"><div class="card chart"><div class="title">LIVE MARKET MAP <span id="symbol">XAUUSD247</span></div><div class="tf"><button>M1</button><button>M5</button><button class="on">M15</button><button>M30</button><button>H1</button><button>H4</button><button>D1</button></div><div id="chartPlaceholder"><div class="watermark">XAUUSD247</div><p>Broker chart layer • structure / SND / liquidity overlays</p><div class="levels" id="levels"></div></div></div>
+<div class="card brain"><div class="title">AI MARKET BRAIN <span class="live">LIVE STUDY</span></div><div id="bias" class="bias wait">WAIT</div><div class="confidence"><span>Confidence</span><b id="confidence">—</b></div><div class="plan"><p>ENTRY AREA <b id="entry">WAIT CONFIRMATION</b></p><p>STOP / INVALIDATION <b id="sl">—</b></p><p>TP1 / TP2 / TP3 <b id="tp">—</b></p></div><div class="why"><b>WHY?</b><p id="why">Waiting for verified M15/H1 broker analysis.</p></div></div></section>
+<section class="grid"><div class="card"><div class="title">MULTI-TIMEFRAME BRAIN</div><div id="mtf" class="mtf"></div></div>
+<div class="card"><div class="title">IMPLIKASI GOLD & USD</div><h3 id="goldImpact">Gold: WAIT / belum disahkan</h3><h3 id="usdImpact">USD: belum jelas</h3><p id="chain">Macro → DXY/Yields → Gold. Sistem hanya akan menukar bias apabila data disahkan.</p></div>
+<div class="card"><div class="title">MARKET DRIVER BOARD</div><div class="drivers"><span>DXY <b>—</b></span><span>US2Y <b>—</b></span><span>US10Y <b>—</b></span><span>OIL <b>—</b></span><span>FED <b>—</b></span><span>GEO RISK <b>—</b></span></div></div>
+<div class="card"><div class="title">SIGNAL LIFECYCLE</div><p class="muted">WAIT → SETUP → CANDIDATE → CONFIRMED → BE/TP/SL</p><div id="audit">No verified live setup yet.</div></div></section>
+<section class="card footerCard"><div class="title">PROOF, NOT PROMISES</div><div class="stats"><div><b>—</b><small>Win Rate</small></div><div><b>—</b><small>Net Pips</small></div><div><b>—</b><small>TP / BE / SL</small></div><div><b>—</b><small>Max Drawdown</small></div></div><p class="muted">Metrics appear only from stored verified signal history. No fabricated performance.</p></section>
+</main></div><script src="/terminal.js"></script></body></html>
