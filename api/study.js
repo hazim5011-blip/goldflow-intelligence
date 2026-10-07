@@ -17,7 +17,7 @@ async function macroSnapshot(){
 const allowed=/^[A-Za-z0-9._#-]{1,42}$/;
 const NEWS_DRIVER_IDS=["CPI","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"];
 const side=n=>Number(n)>0?"BUY":Number(n)<0?"SELL":"NEUTRAL";
-function newsDecision(output,macro){
+export function buildNewsDecision(output,macro){
   if(!output||output.mode!=="news")return null;
   const gold=macro?.gold||{},bias=String(gold.bias||"UNAVAILABLE"),score=Number.isFinite(Number(gold.score))?Number(gold.score):null;
   const macroDir=bias==="PRESSURE"?-1:bias==="SUPPORTIVE"?1:0;
