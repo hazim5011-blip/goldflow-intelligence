@@ -291,7 +291,7 @@ test("GF-AI v1.30 UI proves M1-to-D1 hierarchy and guards mixed-version policy f
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const api=readFileSync(new URL("../api/study.js",import.meta.url),"utf8");
- assert.ok(html.includes("M1/M5/M15/M30/H1/H4/D1 market hierarchy"));
+ assert.ok(html.includes("M1→D1 market hierarchy"));
  assert.ok(api.includes('const allAiFrames=["M1","M5","M15","M30","H1","H4","D1"]'));
  assert.ok(api.includes('frames:mode==="ai"?(bridge.frames||{}):undefined'));
  assert.ok(ui.includes("ALL TF MATRIX:"));
