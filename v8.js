@@ -496,10 +496,13 @@
     var el=$("v8TVMarket"),engine=window.GFTVHybrid;if(!el||!engine)return;
     var symbol=window.selectedSymbol||$("symbolSelect")?.value||"XAUUSD247",tfs=["M1","M5","M15","M30","H1","H4","D1"];
     el.innerHTML='<div class="tvHybridLoading">Loading multi-timeframe Vantage overview • '+safe(symbol)+'…</div>';
-    var rows=await Promise.all(tfs.map(async function(tf){
-      try{var feed=await tvBars(symbol,tf),c=engine.calc(feed.bars||[]);return {tf,ok:c.ok,calc:c,error:c.error||null}}
-      catch(e){return {tf,ok:false,error:String(e.message||e)}}
-    }));
+    var rows=[];
+    for(const tf of tfs){
+      if(!$("tvPage")?.classList.contains("on"))return;
+      try{var feed=await tvBars(symbol,tf),c=engine.calc(feed.bars||[]);rows.push({tf,ok:c.ok,calc:c,error:c.error||null})}
+      catch(e){rows.push({tf,ok:false,error:String(e.message||e)})}
+      await new Promise(r=>setTimeout(r,140));
+    }
     var ok=rows.filter(x=>x.ok);
     if(!ok.length){el.innerHTML='<div class="notice bad">Multi-timeframe broker overview unavailable. No synthetic market state was substituted.</div>';return}
     var alignedBuy=ok.filter(x=>x.calc.summaries.overall.action==="BUY").length,alignedSell=ok.filter(x=>x.calc.summaries.overall.action==="SELL").length;
