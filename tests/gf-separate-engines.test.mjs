@@ -24,8 +24,8 @@ const verified=()=>({
 function fixture(){
  const bars=feed(),last=bars.at(-2),prior=bars.at(-3);
  last.o=prior.c+.15;last.c=prior.h+2.1;last.l=last.o-.23;last.h=last.c+.30;
- const px=last.c+.1;
- return {symbol:"XAUUSD247",tf:"M15",bars,h1:feed(95,3600,.13),h4:feed(95,14400,.13),
+ const px=last.c+.1,frames=allFrames(.13);frames.M15=bars;
+ return {symbol:"XAUUSD247",tf:"M15",bars,h1:frames.H1,h4:frames.H4,frames,
   quote:{bid:px,ask:px+.05,tickTime:now+offset,observedAt:now},offsetSeconds:offset,macro:verified(),nowSec:now};
 }
 test("identical Gold inputs go through genuinely separate engines, methods, entries and target construction",()=>{
@@ -124,7 +124,7 @@ test("Market Intelligence exposes a directional WATCH with market-brain evidence
 
 test("Market Intelligence policy contains structure, BOS/CHOCH, liquidity, SND/SNR/SBR/RBS, OB/FVG and chart-pattern engines",()=>{
  const a=evaluateAILive(fixture()),e=a.aiPolicy.primaryEngines;
- for(const id of ["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","MTF_CONTEXT"]){
+ for(const id of ["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT"]){
   assert.ok(e.includes(id),id);
  }
  assert.ok(a.aiPolicy.entryModels.includes("BOS_RBS_SBR_RETEST"));
