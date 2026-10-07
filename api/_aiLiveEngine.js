@@ -116,7 +116,7 @@ function response(status,k,e,extra={}){
   note:"AI reads market evidence first and chooses the entry model that matches the current setup. It never forces every setup into Fibonacci."};
  return {ok:true,engine:"GF_AI_MARKET_INTELLIGENCE_V4",mode:"ai",modeProfile:"STRUCTURE_LIQUIDITY_PATTERN_MTF_MACRO",
   modelType:"AUDITABLE_MARKET_INTELLIGENCE_RULES_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
-  source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,aiPolicy,
+  source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,fundamentalApplied:!!(e.assetSpecific&&e.available),aiPolicy,
   caution:"Confluence score is not win probability and cannot guarantee market direction.",status,...extra};
 }
 export function evaluateAILive(args={}){
