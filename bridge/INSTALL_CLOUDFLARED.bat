@@ -29,5 +29,6 @@ echo.
 echo Download complete.
 cloudflared.exe --version
 echo.
-echo NEXT: Double-click START_QUICK_TUNNEL.bat
+echo NEXT for Production: Double-click RECOVER_GOLDFLOW_BRIDGE.bat
+echo Quick Tunnel is development-only and does not power bridge.hazim5011.com
 pause
