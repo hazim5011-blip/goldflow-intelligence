@@ -56,7 +56,7 @@
  function invalidate(){
   state.last=null;state.context=null;state.seq++;
   const m=mode();
-  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.21 • All-TF Market Intelligence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
+  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.30 • Reasoning + Learning":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose","Loading the NEW mode. Previous signal/entry plan deliberately cleared; NO ENTRY until verified.");
   put("gfStudyState","REFRESHING");if($("gfStudyState"))$("gfStudyState").className="y";
   put("gfStudyReason","Waiting for a new verified response for this symbol / timeframe / study mode.");
@@ -65,7 +65,7 @@
   put("gfEntryHint","Old mode's confirmation is cleared. Never act on a previous selection.");
   put("gfOppositeDirection","NO CURRENT VERIFIED DIRECTION");
   put("gfConfirmTime","—");put("gfStudyFresh","—");
-  for(const id of ["gfEntryRange","gfInvalidate","gfTP1","gfTP2","gfTP3","gfStudyTechnical","gfStudyMacro"])put(id,"—");
+  for(const id of ["gfEntryRange","gfInvalidate","gfTP1","gfTP2","gfTP3","gfStudyTechnical","gfStudyMacro","gfReasoningHeadline","gfReasoningBuy","gfReasoningBuyWhy","gfReasoningSell","gfReasoningSellWhy","gfReasoningNoTrade","gfReasoningNoTradeWhy","gfReasoningChange","gfLearningSummary"])put(id,"—");
   if(studyChart){studyChart.remove();studyChart=null}
   if($("gfStudyChart"))$("gfStudyChart").textContent="Waiting for broker data for the newly selected study.";
  }
@@ -135,25 +135,26 @@
   const technicalMode=m==="study",gold=/^(XAU|GOLD)/i.test(String(d?.symbol||""));
   const activeLifecycle=technicalMode?renderActiveLifecycle(d):null;
   put("gfStudyModeTitle",technicalMode?"GF-Market Study Pro • Technical Entry Lifecycle":
-      m==="ai"?"GF-AI Live Analyst v1.21 • All-TF Market Intelligence":"GF-News Impact Pro • Gold Context Study");
+      m==="ai"?"GF-AI Live Analyst v1.30 • Reasoning + Learning":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose",technicalMode?
     "STRUCTURE-DRIVEN: closed-candle rejection/break-retest; H1/H4 may be neutral but cannot oppose. Entry comes from dynamic pivots, targets from liquidity levels; Gold macro/yields are commentary ONLY, never entry gate.":
-    m==="ai"?(gold?"ALL-TF MARKET INTELLIGENCE: AI reads M1/M5/M15/M30/H1/H4/D1 together — HH/HL/LH/LL, BOS/CHOCH, liquidity, SND/SNR/SBR/RBS, OB/FVG, chart/candle patterns and macro. The selected TF owns the entry; all others are context. Fibonacci is optional only. Score is NOT win probability.":
-    "ALL-TF TECHNICAL AI: M1→D1 structure, liquidity, BOS/CHOCH, SND/SNR/SBR/RBS, OB/FVG and chart/candle patterns. No fabricated asset fundamental and no trained-ML probability."):
+    m==="ai"?(gold?"REASONING + LEARNING AI: M1→D1 Market Brain compares BUY, SELL and NO-TRADE scenarios, weighs evidence vs contradictions, states what would change its mind, and calibrates only slightly from prior Vantage closed-candle follow-through. Selected TF owns entry. Fibonacci is optional only.":
+    "REASONING + LEARNING TECHNICAL AI: M1→D1 structure/liquidity/pattern scenarios with capped broker-history calibration. No fabricated asset fundamental and no trained-ML probability."):
     "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
 
   const aiMode=m==="ai",research=d?.macroEvidence,structure=d?.structureLevels,scenario=d?.explanation;
-  put("gfScenarioTitle",aiMode?"GF-AI • Evidence & Macro/Pattern Decision":
+  put("gfScenarioTitle",aiMode?"GF-AI • Reasoning / Primary + Alternative Scenario":
     technicalMode?"Market Structure Study • Continuation / Reclaim / Reaction":"GF-News Study");
   put("gfScenarioBadge",d?.canEnter?"ENTRY CONDITIONS MET":"RESEARCH ONLY • NO EXECUTION");
   put("gfScenarioNarrative",aiMode?[
-    scenario?.headline||"AI scenario pending verified confluence.",
+    d?.reasoning?.decisionSummary?.whyPrimary?("PRIMARY: "+d.reasoning.primaryScenario+" • "+d.reasoning.decisionSummary.whyPrimary):scenario?.headline||"AI scenario pending verified confluence.",
+    d?.reasoning?.alternativeScenario?("ALTERNATIVE: "+d.reasoning.alternativeScenario+" • "+(d.reasoning.decisionSummary?.whyNotAlternative||"Lower evidence than primary.")):"",
     ...(scenario?.drivers||[]),
-    "AI methodology: "+(p?.entryMethod||d?.candidatePlan?.entryMethod||"Market structure → liquidity → pattern → MTF → market-driven retest"),
-    d?.analysis?.directionScore!==undefined?"Market-intelligence confluence: "+safe(d.analysis.directionScore)+"/100 • confirm "+safe(d.analysis.confirmThreshold)+" • ready "+safe(d.analysis.readyThreshold)+" • thesis "+(d.analysis.thesis?.type||"N/A"):"",
+    "AI methodology: "+(p?.entryMethod||d?.candidatePlan?.entryMethod||"Market structure → liquidity → pattern → all-TF scenario comparison → market-driven retest"),
+    d?.analysis?.directionScore!==undefined?"Reasoning confluence: "+safe(d.analysis.directionScore)+"/100 • confirm "+safe(d.analysis.confirmThreshold)+" • ready "+safe(d.analysis.readyThreshold)+" • thesis "+(d.analysis.thesis?.type||"N/A"):"",
     ...(d?.analysis?.selectedEvidence||[]).map(x=>"SELECTED TF: "+(x.points>=0?"+":"")+x.points+" • "+x.text),
-    ...(d?.analysis?.htfEvidence||[]).map(x=>"HTF "+x.tf+": "+(x.points>=0?"+":"")+x.points+" • "+x.text),
-    ...(d?.analysis?.mtfEvidence||[]).map(x=>"MTF: "+x),
+    ...(d?.analysis?.allTfEvidence||[]).slice(0,12).map(x=>"ALL-TF "+x.tf+": "+(x.points>=0?"+":"")+x.points+" • "+x.text),
+    d?.experienceLearning?.ok?("LEARNING: BUY adj "+(d.experienceLearning.buyAdjustment>=0?"+":"")+safe(d.experienceLearning.buyAdjustment)+" • SELL adj "+(d.experienceLearning.sellAdjustment>=0?"+":"")+safe(d.experienceLearning.sellAdjustment)+" • "+safe(d.experienceLearning.overall?.decidable)+" decidable historical event samples. NOT win probability."):"",
     ...(d?.analysis?.blockers||[]).map(x=>"BLOCKER: "+x),
     "Verified observations: "+(research?.observations||[]).filter(x=>x.display&&x.status!=="UNAVAILABLE")
       .slice(0,10).map(x=>x.id+" "+x.display+" (period "+x.period+", "+x.impactCategory+" category)").join("; "),
@@ -175,6 +176,22 @@
     d?.reason||""
    ].filter(Boolean).join("\n"):
    [d?.newsDecision?.headline||"WHY WAIT • NEWS IMPACT",d?.newsDecision?.summary||d?.reason||"No release-time claim without a verified official calendar.",...(d?.newsDecision?.technicalReasons||[]).map(x=>"TECHNICAL: "+x),...(d?.newsDecision?.macroReasons||[]).map(x=>"MACRO: "+x),d?.newsDecision?.disclaimer||""].filter(Boolean).join("\n"));
+  const rb=aiMode?d?.reasoning:null,rbBuy=rb?.scenarios?.BUY,rbSell=rb?.scenarios?.SELL,rbFlat=rb?.scenarios?.NO_TRADE,learn=d?.experienceLearning;
+  put("gfReasoningHeadline",aiMode&&rb?(rb.primaryScenario+" PRIMARY • ALT "+rb.alternativeScenario):"—");
+  put("gfReasoningBuy",aiMode&&rbBuy?("BUY "+safe(rbBuy.score)+"/100 • "+(rbBuy.state||"WATCH")):"—");
+  put("gfReasoningBuyWhy",aiMode&&rbBuy?[rbBuy.thesis,...(rbBuy.evidence||[]).slice(0,5).map(x=>"PRO: "+x),...(rbBuy.contradictions||[]).slice(0,4).map(x=>"CONTRA: "+x),rbBuy.entry?.entryModel?"ENTRY MODEL: "+rbBuy.entry.entryModel:""].filter(Boolean).join("\n"):"—");
+  put("gfReasoningSell",aiMode&&rbSell?("SELL "+safe(rbSell.score)+"/100 • "+(rbSell.state||"WATCH")):"—");
+  put("gfReasoningSellWhy",aiMode&&rbSell?[rbSell.thesis,...(rbSell.evidence||[]).slice(0,5).map(x=>"PRO: "+x),...(rbSell.contradictions||[]).slice(0,4).map(x=>"CONTRA: "+x),rbSell.entry?.entryModel?"ENTRY MODEL: "+rbSell.entry.entryModel:""].filter(Boolean).join("\n"):"—");
+  put("gfReasoningNoTrade",aiMode&&rbFlat?("NO TRADE "+safe(rbFlat.score)+"/100 • "+(rbFlat.state||"OPTION")):"—");
+  put("gfReasoningNoTradeWhy",aiMode&&rbFlat?((rbFlat.reasons||[]).map(x=>"• "+x).join("\n")||"No-trade remains a valid safety option."):"—");
+  put("gfReasoningChange",aiMode&&rb?((rb.decisionSummary?.whatWouldChangeMyMind||[]).map(x=>"• "+x).join("\n")||"—"):"—");
+  put("gfLearningSummary",aiMode&&learn?.ok?[
+    "Mode: "+learn.mode,
+    "BUY follow-through: "+safe(learn.buy?.followThroughRate)+"% • "+safe(learn.buy?.decidable)+" decidable • adjustment "+(learn.buyAdjustment>=0?"+":"")+safe(learn.buyAdjustment),
+    "SELL follow-through: "+safe(learn.sell?.followThroughRate)+"% • "+safe(learn.sell?.decidable)+" decidable • adjustment "+(learn.sellAdjustment>=0?"+":"")+safe(learn.sellAdjustment),
+    "Cap ±"+safe(learn.adjustmentCap)+" points • minimum "+safe(learn.minSamplesForAdjustment)+" samples.",
+    "Historical follow-through only; NOT trade win rate / ML probability."
+  ].join("\n"):aiMode?(learn?.reason||"Learning unavailable for this history window."):"—");
   put("gfStudyState",d?.transportUnavailable?("DATA UNVERIFIED • LAST KNOWN "+String(d?.previousStatus||rawStatus).replaceAll("_"," ")):st.replaceAll("_"," "));
   $("gfStudyState").className=colors[st]||(st.endsWith("READY")?"g":st.endsWith("INVALID")||st==="AI_INVALIDATED"?"r":"y");
   put("gfStudyReason",d?.transportUnavailable?("BRIDGE UNAVAILABLE • Last known study is reference only and cannot create a new entry. "+(d?.transportReason||"")):(d?.reason||"No verified study state."));
@@ -248,6 +265,8 @@
     "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     aiMode&&Array.isArray(d?.analysis?.timeframeMatrix)?"ALL TF MATRIX: "+d.analysis.timeframeMatrix.map(x=>x.available?x.tf+" "+(x.structure===1?"BULL":x.structure===-1?"BEAR":"NEUT")+" "+safe(x.buyScore)+"/"+safe(x.sellScore):x.tf+" N/A").join(" • "):"H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
     aiMode&&d?.analysis?.allTfConsensus?"ALL TF CONSENSUS: BUY "+safe(d.analysis.allTfConsensus.buy)+" • SELL "+safe(d.analysis.allTfConsensus.sell)+" • gap "+safe(d.analysis.allTfConsensus.gap)+" • coverage "+safe(d.analysis.tfCoverage?.available)+"/"+safe(d.analysis.tfCoverage?.total):"",
+    aiMode&&d?.reasoning?"REASONING: PRIMARY "+d.reasoning.primaryScenario+" • ALT "+d.reasoning.alternativeScenario+" • "+(d.reasoning.decisionSummary?.whyPrimary||""):"",
+    aiMode&&d?.experienceLearning?.ok?"EXPERIENCE: BUY "+(d.experienceLearning.buyAdjustment>=0?"+":"")+safe(d.experienceLearning.buyAdjustment)+" • SELL "+(d.experienceLearning.sellAdjustment>=0?"+":"")+safe(d.experienceLearning.sellAdjustment)+" • "+safe(d.experienceLearning.overall?.decidable)+" decidable samples (NOT win probability)":"",
     aiMode&&d?.aiPolicy?"AI MARKET BRAIN: "+(Array.isArray(d.aiPolicy.primaryEngines)?d.aiPolicy.primaryEngines.join(" • "):"UNAVAILABLE")+" | ENTRY MODELS: "+(Array.isArray(d.aiPolicy.entryModels)?d.aiPolicy.entryModels.join(" • "):"UNAVAILABLE")+" | FIB: "+(d.aiPolicy.fibonacciRole||"OPTIONAL")+"." :"",
     aiMode&&d?.aiPolicy&&!d.aiPolicy.persistent24hSignalArchive?"24H AI HISTORY: NOT ARCHIVED YET — current WAIT cannot prove there was no transient setup earlier in the day.":"",
     technicalMode?(d?.structureFlip?.type?"SBR/RBS: "+d.structureFlip.type+" • "+d.structureFlip.stage+" @ "+safe(d.structureFlip.level):d?.structureFlipWatch?.type?"SBR/RBS: "+d.structureFlipWatch.type+" WATCH @ "+safe(d.structureFlipWatch.level):"SBR/RBS: no confirmed flip"):"",

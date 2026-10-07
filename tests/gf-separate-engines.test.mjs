@@ -30,10 +30,13 @@ function fixture(){
 }
 test("identical Gold inputs go through genuinely separate engines, methods, entries and target construction",()=>{
  const f=fixture(),a=evaluateAILive(f),s=evaluateMarketStudy(f);
- assert.equal(a.engine,"GF_AI_ALL_TF_MARKET_INTELLIGENCE_V5");
+ assert.equal(a.engine,"GF_AI_REASONING_SCENARIO_LEARNING_V6");
  assert.ok(a.aiPolicy.primaryEngines.includes("BOS_CHOCH"));
  assert.ok(a.aiPolicy.primaryEngines.includes("LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS"));
  assert.equal(a.aiPolicy.fibonacciRole,"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED");
+ assert.deepEqual(a.aiPolicy.reasoningModel.scenarios,["BUY","SELL","NO_TRADE"]);
+ assert.equal(a.aiPolicy.learningModel.trainedML,false);
+ assert.equal(a.aiPolicy.learningModel.maxScoreAdjustment,5);
  assert.equal(a.aiPolicy.persistent24hSignalArchive,false);
  assert.equal(s.engine,"GF_MARKET_STRUCTURE_SCENARIO_V2");
  assert.ok(s.confirmation,JSON.stringify({status:s.status,reason:s.reason}));
@@ -105,7 +108,7 @@ test("release period is never promoted to verified news timestamp or fake surpri
  assert.equal(x.macroEvidence.releaseTimeVerified,false);
  assert.equal(x.macroEvidence.forecastSurpriseVerified,false);
  assert.ok(x.macroEvidence.observations.every(o=>o.verifiedReleaseTimestamp===false&&o.consensusSurprise===null));
- assert.equal(x.modelType,"AUDITABLE_MARKET_INTELLIGENCE_RULES_NOT_TRAINED_ML");
+ assert.equal(x.modelType,"AUDITABLE_REASONING_RULES_PLUS_EXPERIENCE_CALIBRATION_NOT_TRAINED_ML");
 });
 
 
@@ -141,7 +144,7 @@ test("Market Intelligence never forces a trade when BUY/SELL evidence is balance
  assert.equal(a.canEnter,false);
 });
 
-test("GF-AI v1.21 reads all seven broker timeframes and exposes a visible matrix",()=>{
+test("GF-AI v1.30 reads all seven broker timeframes and exposes a visible matrix",()=>{
  const a=evaluateAILive(fixture());
  assert.deepEqual(a.aiPolicy.timeframes,["M1","M5","M15","M30","H1","H4","D1"]);
  assert.equal(a.aiPolicy.selectedTfOwnsEntry,true);
@@ -153,7 +156,7 @@ test("GF-AI v1.21 reads all seven broker timeframes and exposes a visible matrix
   assert.ok(a.marketBrain.allTimeframes[tf].ok,tf);
  }
 });
-test("GF-AI v1.21 fails closed when fewer than four timeframes are available",()=>{
+test("GF-AI v1.30 fails closed when fewer than four timeframes are available",()=>{
  const f=fixture(),frames={M15:f.frames.M15,H1:f.frames.H1,H4:f.frames.H4};
  const a=evaluateAILive({...f,frames});
  assert.equal(a.status,"DATA_UNVERIFIED");
@@ -166,4 +169,28 @@ test("Backward-compatibility fields prevent cached v1.10 UI from crashing on acc
  assert.ok(a.aiPolicy.acceptedClosedPatterns.length>0);
  assert.ok(Number.isInteger(a.aiPolicy.triggerLookbackClosedBars));
  assert.ok(Number.isInteger(a.aiPolicy.entryExpiryClosedBars));
+});
+
+test("GF-AI v1.30 returns auditable primary/alternative/no-trade reasoning",()=>{
+ const a=evaluateAILive(fixture());
+ assert.ok(a.reasoning,JSON.stringify({status:a.status,reason:a.reason}));
+ assert.equal(a.reasoning.version,"1.30");
+ assert.ok(["BUY","SELL","NO_TRADE"].includes(a.reasoning.primaryScenario));
+ assert.ok(["BUY","SELL"].includes(a.reasoning.alternativeScenario));
+ assert.ok(a.reasoning.scenarios.BUY);
+ assert.ok(a.reasoning.scenarios.SELL);
+ assert.ok(a.reasoning.scenarios.NO_TRADE);
+ assert.ok(Array.isArray(a.reasoning.decisionSummary.whatWouldChangeMyMind));
+ assert.ok(a.reasoning.decisionSummary.whatWouldChangeMyMind.length>=2);
+});
+test("GF-AI v1.30 Experience Learning is capped and cannot masquerade as win probability",()=>{
+ const a=evaluateAILive(fixture());
+ assert.ok(a.experienceLearning);
+ if(a.experienceLearning.ok){
+  assert.ok(Math.abs(Number(a.experienceLearning.buyAdjustment)||0)<=5);
+  assert.ok(Math.abs(Number(a.experienceLearning.sellAdjustment)||0)<=5);
+  assert.match(a.experienceLearning.disclaimer,/not win probability/i);
+  assert.match(a.experienceLearning.sampleDefinition,/NOT an entry simulation/);
+ }
+ assert.equal(a.aiPolicy.scoreMeaning,"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY");
 });
