@@ -134,6 +134,7 @@ async function loadSymbols(force){
 function resetDashboard(){
   ["price","spread","signalScore","signalStatus","biasState","biasStrength","biasEvent","setupState","setupStrength","setupEvent","profile","lastAge","resolvedSymbol","entry","sl","tp1","tp2","pdHigh","pdEq","pdLow","pdPos"].forEach(function(id){$(id).textContent="—"});
   if($("pdTitle"))$("pdTitle").textContent="PREMIUM / DISCOUNT";
+  if($("newsWhyCard"))$("newsWhyCard").hidden=true;
   $("signal").textContent="WAIT";$("reasons").textContent="Waiting for broker analysis…";$("watch").textContent="No active zone nearby.";
 }
 
@@ -164,6 +165,20 @@ function gfContextPosition(d){
   var hi=Number(q.resistance),lo=Number(q.support),eq=(hi+lo)/2;
   return {high:hi,low:lo,eq:eq,position:price>eq?"PREMIUM":price<eq?"DISCOUNT":"EQUILIBRIUM"};
 }
+function renderNewsWhy(d){
+  var card=$("newsWhyCard");if(!card)return;
+  if(d?.mode!=="news"){card.hidden=true;return}
+  card.hidden=false;
+  var w=d.newsDecision||{},decision=String(w.decision||"WAIT"),technical=Array.isArray(w.technicalReasons)?w.technicalReasons:[],macro=Array.isArray(w.macroReasons)?w.macroReasons:[];
+  $("newsWhyHeadline").textContent=w.headline||"WHY WAIT • NEWS IMPACT";
+  $("newsWhySummary").textContent=w.summary||d.reason||"Waiting for verified News Impact reasoning.";
+  $("newsWhyTechnical").textContent=technical.length?technical.map(x=>"• "+x).join("\n"):"• No verified technical direction yet.";
+  $("newsWhyMacro").textContent=macro.length?macro.map(x=>"• "+x).join("\n"):"• Macro/news context unavailable or mixed.";
+  $("newsWhyDisclaimer").textContent=w.disclaimer||"Macro context is derived from official observations; it is not a guaranteed price direction.";
+  var b=$("newsWhyBadge"),dir=String(w.technicalSide||"");
+  b.textContent=decision.replaceAll("_"," ");
+  b.className="tag "+(decision.includes("READY")?(dir==="BUY"?"g":"r"):decision.includes("CONFLICT")||decision.includes("WAIT")?"y":"");
+}
 function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
   var dir=gfDir(d),p=d&&d.confirmation,zones=gfZones(d),price=finite(d&&d.bid)?Number(d.bid):finite(d&&d.ask)?Number(d.ask):null;
   var quoteFresh=finite(d&&d.bid)&&finite(d&&d.ask)&&finite(d&&d.quoteAgeSeconds)&&Number(d.quoteAgeSeconds)>=-20&&Number(d.quoteAgeSeconds)<=35;
@@ -172,6 +187,7 @@ function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
     symbol:d.symbol||requestedSymbol,triggerTF:requestedTF,setupTF:"H1",biasTF:"H4",chartBars:Array.isArray(d.chartBars)?d.chartBars:[],
     price,marketState:quoteFresh?"MT5 LIVE":"QUOTE UNVERIFIED",indicator:{activeZones:zones,history:[],stats:{total:0,wins:0,losses:0,pending:0}}};
   var eng=indicatorName(requestedIndicator);
+  renderNewsWhy(d);
   chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip",d.ok?"good":"warn","● "+eng);chip("marketChip",quoteFresh?"good":"warn",quoteFresh?"MT5 LIVE":"QUOTE CHECK");
   $("connectionNotice").className="notice "+(d.ok?"good":"bad");
   $("connectionNotice").innerHTML="<b>"+(d.symbol||requestedSymbol)+"</b> • "+eng+" • "+requestedTF+" • direct Vantage MT5 closed candles • "+(d.modelType||"RULE-BASED");
@@ -192,13 +208,13 @@ function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
   $("sl").textContent=p&&finite(p.invalidation)?px(p.invalidation):d.mode==="study"&&finite(d.structureLevels?.invalidationLevel)?px(d.structureLevels.invalidationLevel):"—";
   var t1=p&&finite(p.tp1)?p.tp1:d.projectedTargets?.[0],t2=p&&finite(p.tp2)?p.tp2:d.projectedTargets?.[1];
   $("tp1").textContent=finite(t1)?px(t1):"—";$("tp2").textContent=finite(t2)?px(t2):"—";
-  $("planBadge").textContent=d.canEnter?(dir>0?"BUY READY":"SELL READY"):"WAIT";$("planBadge").className="tag "+clsDir(d.canEnter?dir:0);$("reasons").textContent=d.reason||"Wait for verified mode-specific confirmation.";
+  $("planBadge").textContent=d.canEnter?(dir>0?"BUY READY":"SELL READY"):"WAIT";$("planBadge").className="tag "+clsDir(d.canEnter?dir:0);$("reasons").textContent=d.mode==="news"&&d.newsDecision?.summary?d.newsDecision.summary:(d.reason||"Wait for verified mode-specific confirmation.");
   var ctx=gfContextPosition(d);if($("pdTitle"))$("pdTitle").textContent=d.mode==="study"?"STRUCTURE RANGE":"ENTRY / CONTEXT";
   if(ctx){$("pdHigh").textContent=px(ctx.high);$("pdEq").textContent=px(ctx.eq);$("pdLow").textContent=px(ctx.low);$("pdPos").textContent=ctx.position}
   else if(p){$("pdHigh").textContent=px(p.entryHigh);$("pdEq").textContent=px((Number(p.entryLow)+Number(p.entryHigh))/2);$("pdLow").textContent=px(p.entryLow);$("pdPos").textContent=d.canEnter?"IN ENTRY ZONE":"OUTSIDE ENTRY ZONE"}
   else{$("pdHigh").textContent=$("pdEq").textContent=$("pdLow").textContent=$("pdPos").textContent="—"}
-  $("watch").textContent=d.structureFlipWatch?.type?(d.structureFlipWatch.type+" WATCH @ "+px(d.structureFlipWatch.level)+" • "+d.structureFlipWatch.meaning):
-    d.structureFlip?.type?(d.structureFlip.type+" "+d.structureFlip.stage+" @ "+px(d.structureFlip.level)):d.mode==="ai"?(d.macroEvidence?.explanation||d.reason||"AI confluence watch"):d.reason||"No active mode-specific zone.";
+  $("watch").textContent=d.mode==="news"&&d.newsDecision?.headline?d.newsDecision.headline:(d.structureFlipWatch?.type?(d.structureFlipWatch.type+" WATCH @ "+px(d.structureFlipWatch.level)+" • "+d.structureFlipWatch.meaning):
+    d.structureFlip?.type?(d.structureFlip.type+" "+d.structureFlip.stage+" @ "+px(d.structureFlip.level)):d.mode==="ai"?(d.macroEvidence?.explanation||d.reason||"AI confluence watch"):d.reason||"No active mode-specific zone.");
   renderZones(zones,lastLiveTick);renderStats({total:0,wins:0,losses:0,pending:0});
   if($("statsNote"))$("statsNote").textContent="GF LIVE STUDY • Current-state research only. Historical/forward performance is not inherited from legacy indicators.";
   $("vantageLink").href="https://secure.vantagemarketsea.com/web-trade/trade/"+encodeURIComponent(rootSymbol(requestedSymbol));

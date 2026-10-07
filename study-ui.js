@@ -160,7 +160,7 @@
     "FUNDAMENTAL: "+(d?.macroContext?.explanation||"Not applied as entry gate."),
     d?.reason||""
    ].filter(Boolean).join("\n"):
-   d?.reason||"No release-time claim without a verified official calendar.");
+   [d?.newsDecision?.headline||"WHY WAIT • NEWS IMPACT",d?.newsDecision?.summary||d?.reason||"No release-time claim without a verified official calendar.",...(d?.newsDecision?.technicalReasons||[]).map(x=>"TECHNICAL: "+x),...(d?.newsDecision?.macroReasons||[]).map(x=>"MACRO: "+x),d?.newsDecision?.disclaimer||""].filter(Boolean).join("\n"));
   put("gfStudyState",d?.transportUnavailable?("DATA UNVERIFIED • LAST KNOWN "+String(d?.previousStatus||rawStatus).replaceAll("_"," ")):st.replaceAll("_"," "));
   $("gfStudyState").className=colors[st]||(st.endsWith("READY")?"g":st.endsWith("INVALID")||st==="AI_INVALIDATED"?"r":"y");
   put("gfStudyReason",d?.transportUnavailable?("BRIDGE UNAVAILABLE • Last known study is reference only and cannot create a new entry. "+(d?.transportReason||"")):(d?.reason||"No verified study state."));
@@ -237,10 +237,12 @@
      "NO verified news release timestamp, market consensus or surprise. Conditions remain dependent on broker price."
     ].filter(Boolean).join("\n"):
     macro?[
+    d?.newsDecision?.headline||"GF-NEWS IMPACT • WHY BUY / SELL / WAIT",
+    d?.newsDecision?.summary||"",
     "Derived gold macro context: "+(macro.gold?.bias||"N/A")+" • Score "+safe(macro.gold?.score)+"/100 (NOT a directional guarantee)",
     "Official/derived coverage: "+safe(macro.quality?.available)+"/"+safe(macro.quality?.total)+"; source errors "+(macro.quality?.errors?.length||0),
-    ...ids.map(id=>{const x=find(id);return x?id+": "+(x.display||"N/A")+" • Period "+(x.date||"N/A")+" • "+(x.status||""):""}),
-    "Important: no verified release timestamp or consensus forecast is claimed here. Market price confirmation is required."
+    ...(d?.newsDecision?.drivers||[]).map(x=>x.id+": "+(x.display||"N/A")+" • "+(x.impact||"MIXED")+" • Period "+(x.period||"N/A")+" • "+(x.status||"")),
+    "Important: PRESSURE/SUPPORTIVE are GoldFlow derived macro-context labels. They are not a verified event surprise or automatic entry. Market price confirmation is required."
   ].filter(Boolean).join("\n"):"Macro context not verified / unavailable. AI & News modes must fail closed when required source data is incomplete.");
   $("gfStudyNote").textContent=d?.limitation||"CLOSED-CANDLE RESEARCH • A BUY/SELL CONFIRMED label does NOT mean an executed position.";
   $("gfStudyNote").className="notice "+(d?.ok?"info":"bad");

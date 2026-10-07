@@ -249,3 +249,16 @@ test("Production bridge recovery uses named tunnel and explicitly rejects Quick 
  assert.ok(http2.includes("START_NAMED_TUNNEL.bat"));
  assert.ok(quick.includes("DEVELOPMENT ONLY - NOT GOLDFLOW PRODUCTION"));
 });
+
+test("GF-News Impact Dashboard and Study UI expose WHY BUY/SELL/WAIT reasoning",()=>{
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ assert.ok(html.includes('id="newsWhyCard"'));
+ assert.ok(html.includes('id="newsWhyTechnical"'));
+ assert.ok(html.includes('id="newsWhyMacro"'));
+ assert.ok(app.includes("function renderNewsWhy(d)"));
+ assert.ok(app.includes('d.mode==="news"&&d.newsDecision?.summary'));
+ assert.ok(ui.includes("WHY WAIT • NEWS IMPACT"));
+ assert.ok(ui.includes("PRESSURE/SUPPORTIVE are GoldFlow derived macro-context labels"));
+});
