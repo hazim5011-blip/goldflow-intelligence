@@ -56,7 +56,7 @@
  function invalidate(){
   state.last=null;state.context=null;state.seq++;
   const m=mode();
-  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst • Strict MTF Confluence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
+  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.10 • Adaptive Confluence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose","Loading the NEW mode. Previous signal/entry plan deliberately cleared; NO ENTRY until verified.");
   put("gfStudyState","REFRESHING");if($("gfStudyState"))$("gfStudyState").className="y";
   put("gfStudyReason","Waiting for a new verified response for this symbol / timeframe / study mode.");
@@ -118,7 +118,7 @@
   }catch(e){if(studyChart){studyChart.remove();studyChart=null}node.textContent="Broker chart rendering unavailable.";put("gfStudyChartNote","Data visualization unavailable; trade-ready status does not depend on chart rendering.")}
  }
  window.addEventListener("resize",function(){if(studyChart&&$("gfStudyChart"))studyChart.applyOptions({width:Math.max(300,$("gfStudyChart").clientWidth)})});
- const colors={BUY_ENTRY_READY:"g",SELL_ENTRY_READY:"r",BUY_CONFIRMED:"g",SELL_CONFIRMED:"r",BUY_INVALID:"r",SELL_INVALID:"r",WAIT_CONFIRMATION:"y",WAIT_CONFLICT:"y",MISSED_ENTRY:"y",COMPLETED_STUDY:"g",AMBIGUOUS_PATH:"y",EXPIRED:"y",DATA_UNVERIFIED:"y",MARKET_OFFLINE:"y"};
+ const colors={BUY_ENTRY_READY:"g",SELL_ENTRY_READY:"r",BUY_CONFIRMED:"g",SELL_CONFIRMED:"r",AI_BUY_WATCH:"g",AI_SELL_WATCH:"r",AI_BUY_BLOCKED_MACRO:"y",AI_SELL_BLOCKED_MACRO:"y",AI_WAIT_MTF_CONFLICT:"y",AI_WAIT_DIRECTION:"y",BUY_INVALID:"r",SELL_INVALID:"r",WAIT_CONFIRMATION:"y",WAIT_CONFLICT:"y",MISSED_ENTRY:"y",COMPLETED_STUDY:"g",AMBIGUOUS_PATH:"y",EXPIRED:"y",DATA_UNVERIFIED:"y",MARKET_OFFLINE:"y"};
  function render(d){
   state.last=d;
   const rawStatus=String(d?.status||"DATA_UNVERIFIED"),st=d?.transportUnavailable?"DATA_UNVERIFIED":rawStatus,p=d?.confirmation||null;
@@ -126,11 +126,11 @@
   const technicalMode=m==="study",gold=/^(XAU|GOLD)/i.test(String(d?.symbol||""));
   const activeLifecycle=technicalMode?renderActiveLifecycle(d):null;
   put("gfStudyModeTitle",technicalMode?"GF-Market Study Pro • Technical Entry Lifecycle":
-      m==="ai"?"GF-AI Live Analyst • Strict MTF Confluence":"GF-News Impact Pro • Gold Context Study");
+      m==="ai"?"GF-AI Live Analyst v1.10 • Adaptive Confluence":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose",technicalMode?
     "STRUCTURE-DRIVEN: closed-candle rejection/break-retest; H1/H4 may be neutral but cannot oppose. Entry comes from dynamic pivots, targets from liquidity levels; Gold macro/yields are commentary ONLY, never entry gate.":
-    m==="ai"?(gold?"AI RESEARCH: both H1 and H4 plus closed pattern. Use verified Macro Regime when available; if missing, downgrade transparently to TECHNICAL ONLY. Verified contradictory Gold macro blocks the setup. No ML-trained win probability.":
-    "STRICT AI RULES: BOTH H1 and H4 must align. No verified asset-specific fundamental feed for this symbol; TECHNICAL-ONLY confluence, not Gold macro or trained ML."):
+    m==="ai"?(gold?"ADAPTIVE AI RESEARCH: H1/H4 alignment is preferred; one neutral HTF may be accepted only when the selected TF agrees. Opposing H1/H4 remains a hard veto. AI scores MTF trend, momentum, closed trigger quality, retest and verified Gold macro. Score is NOT win probability.":
+    "ADAPTIVE TECHNICAL AI: H1/H4 + selected-TF momentum + closed structure triggers. One neutral HTF may be accepted with a higher threshold; opposing H1/H4 remains blocked. No fabricated asset fundamentals or trained-ML probability."):
     "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
 
   const aiMode=m==="ai",research=d?.macroEvidence,structure=d?.structureLevels,scenario=d?.explanation;
@@ -140,7 +140,10 @@
   put("gfScenarioNarrative",aiMode?[
     scenario?.headline||"AI scenario pending verified confluence.",
     ...(scenario?.drivers||[]),
-    "AI methodology: "+(p?.entryMethod||"Await macro + H1/H4 + newly closed chart pattern"),
+    "AI methodology: "+(p?.entryMethod||"Adaptive MTF + momentum + five closed-trigger families + retest"),
+    d?.analysis?.score!==undefined||d?.analysis?.setupScore!==undefined?"Adaptive confluence: "+safe(d.analysis.liveScore??d.analysis.setupScore??d.analysis.score)+"/100 • threshold "+safe(d.analysis.entryThreshold)+" • MTF "+(d.analysis.mtfMode||"N/A")+" • RSI14 "+safe(d.analysis.rsi):"",
+    ...(d?.analysis?.scoreBreakdown||[]).map(x=>"EVIDENCE: "+x),
+    ...(d?.analysis?.blockers||[]).map(x=>"BLOCKER: "+x),
     "Verified observations: "+(research?.observations||[]).filter(x=>x.display&&x.status!=="UNAVAILABLE")
       .slice(0,10).map(x=>x.id+" "+x.display+" (period "+x.period+", "+x.impactCategory+" category)").join("; "),
     research?.explanation||"",
@@ -189,6 +192,17 @@
    }else{
     decision="STRUCTURE SCENARIO • WAIT CLOSED CANDLE";hint="Reaction zone and provisional targets are research only. WAIT for a new verified close and retest.";
    }
+  }else if(["AI_BUY_WATCH","AI_SELL_WATCH"].includes(st)){
+   const side=st.includes("BUY")?"BUY":"SELL",a=d?.analysis||{};
+   decision=side+" WATCH • ADAPTIVE SETUP";
+   hint="Directional evidence exists, but ENTRY READY is not verified yet. Score "+safe(a.liveScore??a.setupScore??a.score)+"/100"+(a.entryThreshold?" vs threshold "+a.entryThreshold:"")+" • blockers: "+((a.blockers||[]).join(", ")||"WAIT RETEST / CLOSED TRIGGER")+".";
+  }else if(["AI_BUY_BLOCKED_MACRO","AI_SELL_BLOCKED_MACRO"].includes(st)){
+   decision=(st.includes("BUY")?"BUY":"SELL")+" SETUP • MACRO CONFLICT • NO ENTRY";
+   hint="Technical setup exists, but verified Gold macro points the opposite way. AI keeps the setup visible for study and blocks entry.";
+  }else if(st==="AI_WAIT_MTF_CONFLICT"){
+   decision="H1 / H4 CONFLICT • NO ENTRY";hint="H1 and H4 are opposite. Adaptive AI will not force a direction.";
+  }else if(st==="AI_WAIT_DIRECTION"){
+   decision="NO STABLE DIRECTION • WAIT";hint="AI has no stable MTF/local direction yet. It will form BUY/SELL WATCH before ENTRY READY.";
   }else if(["AI_WAIT_VERIFIED_MACRO","AI_ASSET_FUNDAMENTAL_UNAVAILABLE","AI_WAIT_MACRO_CONFLUENCE","AI_WAIT_MTF_ALIGNMENT","AI_WAIT_PATTERN"].includes(st)){
    decision="AI CONFLUENCE INCOMPLETE • NO ENTRY";hint="One or more independent AI evidence gates are not verified; never reuse a previous mode's signal.";
   }else if(["AI_MISSED_ENTRY","STUDY_MISSED_ENTRY"].includes(st)){
@@ -216,10 +230,10 @@
   put("gfStudyTechnical",[
     "Independent engine: "+(d?.engine||"UNVERIFIED")+" • Broker: "+(d?.source||d?.technicalSource||"VANTAGE MT5"),
     "H1: "+h1(d?.h1Trend)+"; H4: "+h1(d?.h4Trend),
-    aiMode&&d?.aiPolicy?"AI ENTRY GATES: H1+H4 must align • accepted pattern in last "+d.aiPolicy.triggerLookbackClosedBars+" CLOSED candles • Fib 38.2–61.8 retest • expires after "+d.aiPolicy.entryExpiryClosedBars+" CLOSED bars.":"",
+    aiMode&&d?.aiPolicy?"AI ADAPTIVE GATES: H1/H4 aligned preferred; one neutral HTF allowed only with selected-TF agreement • "+d.aiPolicy.acceptedClosedPatterns.length+" accepted CLOSED trigger types in last "+d.aiPolicy.triggerLookbackClosedBars+" candles • Fib OR structure retest • score threshold "+d.aiPolicy.scoreThresholdAligned+" aligned / "+d.aiPolicy.scoreThresholdPartialMTF+" partial • expires after "+d.aiPolicy.entryExpiryClosedBars+" CLOSED bars.":"",
     aiMode&&d?.aiPolicy&&!d.aiPolicy.persistent24hSignalArchive?"24H AI HISTORY: NOT ARCHIVED YET — current WAIT cannot prove there was no transient setup earlier in the day.":"",
     technicalMode?(d?.structureFlip?.type?"SBR/RBS: "+d.structureFlip.type+" • "+d.structureFlip.stage+" @ "+safe(d.structureFlip.level):d?.structureFlipWatch?.type?"SBR/RBS: "+d.structureFlipWatch.type+" WATCH @ "+safe(d.structureFlipWatch.level):"SBR/RBS: no confirmed flip"):"",
-    p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Auditable AI alignment score "+p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):"No validated signal candle",
+    p?"Closed candle: "+p.confirmationType+(p.score!==null&&p.score!==undefined&&Number.isFinite(Number(p.score))?" • Adaptive confluence score "+p.score+"/100 (NOT win probability)":" • Pivot-based structure, no pseudo-probability"):(aiMode&&(d?.analysis?.score!==undefined||d?.analysis?.setupScore!==undefined)?"Directional WATCH score "+safe(d.analysis.liveScore??d.analysis.setupScore??d.analysis.score)+"/100 • no entry-ready closed trigger yet":"No validated signal candle"),
     p?"Entry quote "+(d?.entryQuoteSide||"—")+": "+safe(d?.entryQuote):"",
     p?"Entry model: "+String(p.entryMethod||"LEGACY")+"; targets: "+String(p.targetMethod||"derived study")+"; structural stop "+safe(p.invalidation)+".":""
   ].filter(Boolean).join("\n"));

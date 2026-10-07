@@ -27,15 +27,15 @@ function fixture(){
 }
 test("identical Gold inputs go through genuinely separate engines, methods, entries and target construction",()=>{
  const f=fixture(),a=evaluateAILive(f),s=evaluateMarketStudy(f);
- assert.equal(a.engine,"GF_AI_LIVE_MACRO_MTF_V2");
- assert.equal(a.aiPolicy.requiresH1H4Alignment,true);
- assert.equal(a.aiPolicy.triggerLookbackClosedBars,3);
- assert.equal(a.aiPolicy.entryExpiryClosedBars,2);
+ assert.equal(a.engine,"GF_AI_LIVE_ADAPTIVE_V3");
+ assert.equal(a.aiPolicy.requiresH1H4Alignment,false);
+ assert.equal(a.aiPolicy.triggerLookbackClosedBars,6);
+ assert.equal(a.aiPolicy.entryExpiryClosedBars,5);
  assert.equal(a.aiPolicy.persistent24hSignalArchive,false);
  assert.equal(s.engine,"GF_MARKET_STRUCTURE_SCENARIO_V2");
  assert.ok(a.confirmation,JSON.stringify({status:a.status,reason:a.reason}));
  assert.ok(s.confirmation,JSON.stringify({status:s.status,reason:s.reason}));
- assert.equal(a.confirmation.entryMethod,"AI_IMPULSE_FIB_0382_TO_0618");
+ assert.equal(a.confirmation.entryMethod,"AI_ADAPTIVE_FIB_0382_TO_0618");
  assert.equal(s.confirmation.entryMethod,"BROKEN_PIVOT_RETEST");
  assert.equal(s.structureFlip?.type,"RBS");
  assert.match(s.confirmation.confirmationType,/^RBS_/);
@@ -102,5 +102,32 @@ test("release period is never promoted to verified news timestamp or fake surpri
  assert.equal(x.macroEvidence.releaseTimeVerified,false);
  assert.equal(x.macroEvidence.forecastSurpriseVerified,false);
  assert.ok(x.macroEvidence.observations.every(o=>o.verifiedReleaseTimestamp===false&&o.consensusSurprise===null));
- assert.equal(x.modelType,"AUDITABLE_MULTI_FACTOR_RULES_NOT_TRAINED_ML");
+ assert.equal(x.modelType,"AUDITABLE_ADAPTIVE_RULES_NOT_TRAINED_ML");
+});
+
+test("Adaptive AI keeps a directional BUY WATCH instead of blank WAIT when MTF bias exists but no closed trigger is present",()=>{
+ const bars=feed(),px=bars.at(-2).c;
+ const f={symbol:"XAUUSD247",tf:"M15",bars,h1:feed(95,3600,.13),h4:feed(95,14400,.13),
+  quote:{bid:px,ask:px+.05,tickTime:now+offset,observedAt:now},offsetSeconds:offset,macro:verified(),nowSec:now};
+ const a=evaluateAILive(f);
+ assert.equal(a.status,"AI_BUY_WATCH");
+ assert.equal(a.direction,1);
+ assert.ok(a.analysis.score>0);
+ assert.ok(a.analysis.blockers.includes("WAIT_CLOSED_TRIGGER"));
+ assert.equal(a.canEnter,false);
+});
+test("Adaptive AI can use H1 plus selected-TF agreement when H4 is neutral, with a higher threshold",()=>{
+ const f=fixture(),neutralH4=feed(95,14400,0);
+ const a=evaluateAILive({...f,h4:neutralH4});
+ assert.notEqual(a.status,"AI_WAIT_MTF_ALIGNMENT");
+ assert.equal(a.direction,1);
+ assert.equal(a.analysis?.mtfMode,"H1_WITH_H4_NEUTRAL");
+ assert.equal(a.analysis?.entryThreshold,74);
+});
+test("Adaptive AI hard-blocks opposite H1 and H4 instead of forcing a signal",()=>{
+ const f=fixture(),a=evaluateAILive({...f,h4:feed(95,14400,-.13)});
+ assert.equal(a.status,"AI_WAIT_MTF_CONFLICT");
+ assert.equal(a.direction,0);
+ assert.ok(a.analysis.blockers.includes("OPPOSING_H1_H4"));
+ assert.equal(a.canEnter,false);
 });
