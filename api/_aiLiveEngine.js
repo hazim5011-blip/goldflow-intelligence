@@ -25,7 +25,7 @@ function macroEvidence(macro,assetGold){
    note:"Observation period is NOT a verified news publication time."};
  });
  const bias=assetGold?macro?.gold?.bias||"UNAVAILABLE":"USD_CROSS_ASSET_CONTEXT_ONLY";
- return {available:complete,assetSpecific:assetGold,scope:assetGold?"GOLD_MACRO":"USD_CROSS_ASSET_CONTEXT_ONLY",
+ return {available:complete,assetSpecific:assetGold,scope:assetGold?"GOLD_MACRO":"USD_MACRO_CONTEXT_NOT_BTC_SPECIFIC",
   bias,score:assetGold&&Number.isFinite(Number(macro?.gold?.score))?Number(macro.gold.score):null,observations:cards,
   releaseTimeVerified:false,forecastSurpriseVerified:false,sourceHealth:q?.primarySourceHealth||"UNAVAILABLE",
   explanation:assetGold?"Gold macro changes conviction/risk; it does not replace price structure.":"No fake asset-specific fundamental is invented."};
