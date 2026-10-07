@@ -138,3 +138,15 @@
 .newsWhyBlock{border:1px solid #294754;border-radius:9px;background:#07151e;padding:11px;min-height:104px}
 .newsWhyBlock small{display:block;color:#85afc1;font-size:9px;font-weight:850;letter-spacing:.06em;margin-bottom:7px}
 .newsWhyBlock div{white-space:pre-line;color:#c8dbe4;font-size:11px;line-height:1.55}
+
+/* GF-AI v1.30 Reasoning + Scenario + Learning */
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.gfReasoningGrid{align-items:stretch}
+.gfReasonBox{background:#08131a;border:1px solid #1e3340;border-radius:9px;padding:10px;min-width:0}
+.gfReasonBox small{display:block;color:var(--muted);font-size:9px;font-weight:850;letter-spacing:.05em}
+.gfReasonBox b{display:block;margin-top:6px;font-size:16px;overflow-wrap:anywhere}
+.gfReasonBox.buy{border-left:3px solid var(--g)}
+.gfReasonBox.sell{border-left:3px solid var(--r)}
+.gfReasonBox.flat{border-left:3px solid var(--y)}
+#gfReasoningCard .reason{white-space:pre-line}
+@media(max-width:900px){.g3{grid-template-columns:1fr}}
