@@ -192,6 +192,17 @@
    }else{
     decision="STRUCTURE SCENARIO • WAIT CLOSED CANDLE";hint="Reaction zone and provisional targets are research only. WAIT for a new verified close and retest.";
    }
+  }else if(["AI_BUY_WATCH","AI_SELL_WATCH"].includes(st)){
+   const side=st.includes("BUY")?"BUY":"SELL",a=d?.analysis||{};
+   decision=side+" WATCH • ADAPTIVE SETUP";
+   hint="Directional evidence exists, but ENTRY READY is not verified yet. Score "+safe(a.liveScore??a.setupScore??a.score)+"/100"+(a.entryThreshold?" vs threshold "+a.entryThreshold:"")+" • blockers: "+((a.blockers||[]).join(", ")||"WAIT RETEST / CLOSED TRIGGER")+".";
+  }else if(["AI_BUY_BLOCKED_MACRO","AI_SELL_BLOCKED_MACRO"].includes(st)){
+   decision=(st.includes("BUY")?"BUY":"SELL")+" SETUP • MACRO CONFLICT • NO ENTRY";
+   hint="Technical setup exists, but verified Gold macro points the opposite way. AI keeps the setup visible for study and blocks entry.";
+  }else if(st==="AI_WAIT_MTF_CONFLICT"){
+   decision="H1 / H4 CONFLICT • NO ENTRY";hint="H1 and H4 are opposite. Adaptive AI will not force a direction.";
+  }else if(st==="AI_WAIT_DIRECTION"){
+   decision="NO STABLE DIRECTION • WAIT";hint="AI has no stable MTF/local direction yet. It will form BUY/SELL WATCH before ENTRY READY.";
   }else if(["AI_WAIT_VERIFIED_MACRO","AI_ASSET_FUNDAMENTAL_UNAVAILABLE","AI_WAIT_MACRO_CONFLUENCE","AI_WAIT_MTF_ALIGNMENT","AI_WAIT_PATTERN"].includes(st)){
    decision="AI CONFLUENCE INCOMPLETE • NO ENTRY";hint="One or more independent AI evidence gates are not verified; never reuse a previous mode's signal.";
   }else if(["AI_MISSED_ENTRY","STUDY_MISSED_ENTRY"].includes(st)){
