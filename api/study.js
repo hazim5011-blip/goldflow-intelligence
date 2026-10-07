@@ -15,6 +15,52 @@ async function macroSnapshot(){
  try{const data=await memo.pending;if(data){memo.value=data;memo.time=Date.now()}return data}finally{memo.pending=null}
 }
 const allowed=/^[A-Za-z0-9._#-]{1,42}$/;
+const NEWS_DRIVER_IDS=["CPI","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"];
+const side=n=>Number(n)>0?"BUY":Number(n)<0?"SELL":"NEUTRAL";
+function newsDecision(output,macro){
+  if(!output||output.mode!=="news")return null;
+  const gold=macro?.gold||{},bias=String(gold.bias||"UNAVAILABLE"),score=Number.isFinite(Number(gold.score))?Number(gold.score):null;
+  const macroDir=bias==="PRESSURE"?-1:bias==="SUPPORTIVE"?1:0;
+  const technicalDir=Number(output.confirmation?.direction)||Number(output.direction)||0;
+  const technicalSide=side(technicalDir),macroSide=macroDir<0?"SELL PRESSURE":macroDir>0?"BUY SUPPORT":"MIXED / NEUTRAL";
+  const drivers=(macro?.cards||[]).filter(c=>NEWS_DRIVER_IDS.includes(c.id)).map(c=>({
+    id:c.id,name:c.name||c.id,display:c.display||null,period:c.date||null,status:c.status||"UNKNOWN",
+    impact:c.goldImpact||"MIXED",change:Number.isFinite(Number(c.change))?Number(c.change):null,
+    changeLabel:c.changeLabel||null,detail:c.detail||null,source:c.source||null
+  }));
+  const pressure=drivers.filter(x=>x.impact==="PRESSURE"),support=drivers.filter(x=>x.impact==="SUPPORTIVE");
+  const trigger=output.confirmation?.confirmationType||null,h1=side(output.h1Trend),h4=side(output.h4Trend);
+  let headline="WHY WAIT • NO VERIFIED DIRECTION",summary="No fresh technical direction is confirmed. Macro context alone is not an entry signal.",decision="WAIT";
+  if(["MARKET_OFFLINE","DATA_UNVERIFIED","BRIDGE_OFF"].includes(String(output.status||""))){
+    headline="WHY NO ENTRY • DATA NOT VERIFIED";summary="Broker or required source data is not fresh enough. BUY/SELL reasoning is withheld until verified data returns.";decision="NO_ENTRY";
+  }else if(technicalDir&&macroDir&&technicalDir!==macroDir){
+    headline="WHY WAIT • TECHNICAL "+technicalSide+" vs MACRO "+macroSide;
+    summary="A "+technicalSide+" technical candidate exists, but verified derived Gold macro points the opposite way ("+macroSide+"). The News Impact policy blocks the candidate. This is NOT an automatic "+(macroDir>0?"BUY":"SELL")+" entry; an opposite closed-candle confirmation is still required.";
+    decision="WAIT_CONFLICT";
+  }else if(output.canEnter&&technicalDir){
+    headline="WHY "+technicalSide+" • TECHNICAL + MACRO CONDITIONS PASSED";
+    summary=technicalSide+" is permitted because a fresh closed-candle technical confirmation is valid, the broker quote is inside its entry band, and verified Gold macro does not oppose it"+(macroDir===technicalDir?" (macro agrees: "+macroSide+")":"")+".";
+    decision=technicalSide+"_ENTRY_READY";
+  }else if(technicalDir&&String(output.status||"").includes("CONFIRMED")){
+    headline="WHY "+technicalSide+" BIAS • WAIT RETEST";
+    summary=technicalSide+" direction is technically confirmed"+(macroDir===technicalDir?" and macro agrees ("+macroSide+")":"")+", but price is not yet inside the verified entry band. Do not chase; wait for the retest.";
+    decision=technicalSide+"_CONFIRMED_WAIT_RETEST";
+  }else if(macroDir){
+    headline="WHY WAIT • MACRO "+macroSide+" BUT NO CLOSED-CANDLE ENTRY";
+    summary="Verified derived Gold macro currently gives "+macroSide+", but macro context alone cannot create an entry. A matching closed-candle technical trigger and valid broker entry zone are still required.";
+    decision="WAIT_TECHNICAL_CONFIRMATION";
+  }
+  const technicalReasons=["Technical side: "+technicalSide,"H1: "+h1+" • H4: "+h4,
+    trigger?"Closed-candle trigger: "+trigger:"Closed-candle trigger: NONE",
+    output.confirmation?"Entry band: "+output.confirmation.entryLow+" — "+output.confirmation.entryHigh:null,
+    "Engine state: "+String(output.status||"DATA_UNVERIFIED").replaceAll("_"," ")].filter(Boolean);
+  const macroReasons=["Derived Gold macro: "+bias+(score===null?"":" • score "+score+"/100 (not win probability)"),
+    ...(bias==="PRESSURE"?pressure:bias==="SUPPORTIVE"?support:drivers.filter(x=>x.impact!=="MIXED")).slice(0,5).map(x=>
+      x.name+": "+(x.display||"N/A")+" • "+x.impact+" in GoldFlow macro model"+(x.changeLabel?" • "+x.changeLabel:""))];
+  return {headline,decision,summary,technicalSide,macroSide,macroBias:bias,macroScore:score,
+    technicalReasons,macroReasons,drivers,pressureDrivers:pressure,supportiveDrivers:support,
+    disclaimer:"Macro driver labels are derived context from official observations, not a verified event surprise or guaranteed price direction."};
+}
 export default async function handler(req,res){
  res.setHeader("Cache-Control","no-store");
  if(req.method==="OPTIONS")return res.status(204).end();
@@ -37,7 +83,7 @@ export default async function handler(req,res){
    quote:{bid:bridge.bid,ask:bridge.ask,tickTime:bridge.serverTime,observedAt:nowSec},
    offsetSeconds:offset,macro,nowSec});
   const publicMacro=macro?{fetchedAtUTC:macro.fetchedAt,quality:macro.quality,gold:macro.gold,
-   cards:(macro.cards||[]).filter(c=>["CPI","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"].includes(c.id)).map(c=>({id:c.id,name:c.name,display:c.display,value:c.value,date:c.date,status:c.status,source:c.source,stale:c.stale}))}:null;
+   cards:(macro.cards||[]).filter(c=>NEWS_DRIVER_IDS.includes(c.id)).map(c=>({id:c.id,name:c.name,display:c.display,value:c.value,date:c.date,status:c.status,source:c.source,stale:c.stale,goldImpact:c.goldImpact,change:c.change,changeLabel:c.changeLabel,detail:c.detail}))}:null;
   return res.status(200).json({...output,source:"VANTAGE_MT5",marketResearchOnly:true,autoTrading:false,news:publicMacro,
    chartBars:(bridge.frames?.[tf]||[]).slice(-160).map(b=>({t:Number(b.t)-offset,o:b.o,h:b.h,l:b.l,c:b.c})),
    limitation:"Mode-specific auditable research: AI macro/MTF/impulse vs Market Study price-structure/retest. No verified publication timestamp, forecast surprise, intrabar fill or ML-trained win probability."});
