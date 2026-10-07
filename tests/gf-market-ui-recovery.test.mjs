@@ -130,12 +130,12 @@ test("GF News/AI UI distinguishes stale selected-symbol quote from whole-market 
  assert.ok(ui.includes("Vantage terminal/bridge may still be LIVE"));
  assert.ok(ui.includes("daily rollover"));
 });
-test("AI UI exposes strict gates and states that 24h signals are not yet archived",()=>{
+test("AI UI exposes adaptive gates and states that 24h signals are not yet archived",()=>{
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const engine=readFileSync(new URL("../api/_aiLiveEngine.js",import.meta.url),"utf8");
  assert.ok(engine.includes('persistent24hSignalArchive:false'));
- assert.ok(engine.includes('triggerLookbackClosedBars:3'));
- assert.ok(engine.includes('entryExpiryClosedBars:2'));
+ assert.ok(engine.includes('triggerLookbackClosedBars:6'));
+ assert.ok(engine.includes('entryExpiryClosedBars:expiry'));
  assert.ok(ui.includes("AI ADAPTIVE GATES: H1/H4 aligned preferred"));
  assert.ok(ui.includes("24H AI HISTORY: NOT ARCHIVED YET"));
 });
