@@ -1,0 +1,58 @@
+name: GoldFlow GPT-6 Isolated Gateway CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cloudflare/gpt-research.js'
+      - 'cloudflare/gpt-access.js'
+      - 'cloudflare/gpt-fundamentals.js'
+      - 'cloudflare/gpt-news.js'
+      - 'tests/gpt-news.test.mjs'
+      - 'cloudflare/forward-r2.js'
+      - 'cloudflare/gpt-r2-parity.test.mjs'
+      - 'cloudflare/build.mjs'
+      - 'gpt-ui.js'
+      - 'index.html'
+      - 'style.css'
+      - 'tests/gpt-access.test.mjs'
+      - 'tests/gpt-dashboard.test.mjs'
+      - 'cloudflare/worker.js'
+      - 'tests/gpt-research.test.mjs'
+      - 'docs/GPT6_ISOLATED_STAGING.md'
+      - '.github/workflows/gpt6-isolated-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gpt-isolated-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify GPT module JavaScript syntax
+        run: |
+          node --check cloudflare/gpt-research.js
+          node --check cloudflare/gpt-access.js
+          node --check cloudflare/gpt-fundamentals.js
+          node --check cloudflare/gpt-news.js
+          node --check gpt-ui.js
+          node --check cloudflare/worker.js
+      - name: Security and freshness unit tests (no live credentials)
+        run: node --test tests/gpt-research.test.mjs tests/gpt-access.test.mjs tests/gpt-dashboard.test.mjs
+      - name: Install build-time dependencies
+        run: npm install --no-audit --no-fund
+      - name: Existing Cloudflare compatibility and bundle
+        run: |
+          npm run test:cloudflare
+          npm run build:cloudflare
+          node --check dist/_worker.js
+          grep -q 'GPT_RESEARCH_DISABLED' dist/_worker.js
+          test -f dist/gpt-ui.js
+      # GoldFlow V8 CI runs the complete legacy regression separately on this PR.
+      # Its existing failures remain a hard merge/release blocker; do not weaken that gate.

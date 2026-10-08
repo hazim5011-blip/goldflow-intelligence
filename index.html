@@ -57,6 +57,7 @@
   <button class="tab" data-page="v8History" data-i18n="historyPro">History Pro</button>
   <button class="tab" data-page="v8Performance" data-i18n="performance">Performance</button>
   <button class="tab" data-page="recommendedAIPage">Recommended AI</button>
+  <button class="tab" data-page="gfGptPage">GPT Research</button>
   <button class="tab" data-page="v8Evidence" data-i18n="evidence">Evidence</button>
   <button class="tab" data-page="symbolsPage">All Symbols</button>
   <button class="tab" data-page="macroPage">Macro Regime</button>
@@ -380,6 +381,30 @@
   </div>
 </section>
 
+<section id="gfGptPage" class="page">
+  <div class="card">
+    <div class="head"><div><small class="eyebrow">OPENAI GPT-6 • VERIFIED VANTAGE XAUUSD247</small><h3>GPT Research • Owner Preview</h3></div><span class="tag y">READ ONLY</span></div>
+    <div class="notice info" id="gfGptStatus" aria-live="polite">Semakan status GPT belum dibuat. Buka tab ini untuk menyemak.</div>
+    <p class="sub">Akses pemilik: <a class="macroLink" href="/api/gpt-research" target="_blank" rel="noopener noreferrer">Log masuk / semak Cloudflare Access</a>. Jika belum aktif, backend akan kekal tertutup.</p>
+    <p class="v8Footnote">Panel ini tidak menggantikan signal GoldFlow, tidak mengubah SL/TP dan tidak membuka order. Analisis menggunakan candle tutup daripada MT5 Vantage sahaja. Pengesahan Cloudflare Access dan had permintaan diwajibkan pada server; tiada API key disimpan dalam browser.</p>
+    <div class="gfGptActions">
+      <label>Simbol <strong>XAUUSD247</strong></label>
+      <label for="gfGptTF">Timeframe</label>
+      <select id="gfGptTF"><option>M5</option><option selected>M15</option><option>M30</option><option>H1</option><option>H4</option></select>
+      <label for="gfGptQuestion">Soalan kepada GPT (5–240 aksara)</label>
+      <textarea id="gfGptQuestion" maxlength="240" rows="2">Kaji struktur Gold, kawasan risiko, dan jelaskan bila patut WAIT.</textarea>
+      <button type="button" class="primary" id="gfGptRun" disabled>Analisis dengan GPT-6</button>
+    </div>
+    <div class="gfGptSummary">
+      <div class="v8Metric"><small>RESEARCH BIAS • BUKAN SIGNAL EXECUTION</small><strong id="gfGptDecision">WAIT</strong><span id="gfGptSource">Tiada analisis live</span></div>
+      <div class="v8Metric"><small>RUMUSAN</small><div id="gfGptSummary">—</div></div>
+      <div class="v8Metric"><small>TEKNIKAL</small><div id="gfGptTechnical">—</div></div>
+      <div class="v8Metric"><small>FUNDAMENTAL • TIDAK REKA DATA</small><div id="gfGptFundamental">—</div></div>
+      <div class="v8Metric"><small>RISIKO & INVALIDATION</small><div id="gfGptRisks">—</div></div>
+    </div>
+  </div>
+</section>
+
 <section id="blogPage" class="page">
   <div class="card">
     <div class="head"><div><small class="eyebrow">RESEARCH • INDICATOR CHANGELOG</small><h3>GoldFlow Blog & Indicator Updates</h3></div><button type="button" class="primary" id="gfBlogRefresh">Refresh Blog</button></div>
@@ -405,5 +430,6 @@
 <script src="/app.js"></script>
 <script src="/v8.js" defer></script>
 <script src="/study-ui.js" defer></script>
+<script src="/gpt-ui.js" defer></script>
 </body>
 </html>
