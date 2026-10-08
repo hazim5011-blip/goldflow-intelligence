@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.7",
-  "build_id": "gf-aat-1.6.3-r5.7-scalping-campaign",
+  "version": "1.6.3-r5.8",
+  "build_id": "gf-aat-1.6.3-r5.8-professional-trade-coach",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "14bfc9c2c90dea7640d316a47336e754f6c58bfb2e0b335418f68019341d68bf",
-  "restart_cmd": "RESTART_GF_AAT_R5_7.bat",
+  "sha256": "ced071862ed87bdd40088ba02955520142cc4899b3ad32e1359be33a43eb0dec",
+  "restart_cmd": "RESTART_GF_AAT_R5_8.bat",
   "minimum_updater": 2
 }
