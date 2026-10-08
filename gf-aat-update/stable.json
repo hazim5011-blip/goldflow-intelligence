@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.10.1",
-  "build_id": "gf-aat-1.6.3-r5.10.1-startup-contract-hotfix",
+  "version": "1.6.3-r5.11",
+  "build_id": "gf-aat-1.6.3-r5.11-pro-entry-market-study",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "adaf63c2e76899bba60d4eb04ba4ff2bc98f7ec18710acfdd72e82bfab3d8314",
-  "restart_cmd": "RESTART_GF_AAT_R5_10_1.bat",
+  "sha256": "66267964e31711aa8fa47d77f242b96c50aa7f2128e6aab48bff5e38cb19a841",
+  "restart_cmd": "RESTART_GF_AAT_R5_11.bat",
   "minimum_updater": 2
 }
