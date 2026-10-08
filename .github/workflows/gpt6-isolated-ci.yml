@@ -7,6 +7,8 @@ on:
       - 'cloudflare/gpt-research.js'
       - 'cloudflare/gpt-access.js'
       - 'cloudflare/gpt-fundamentals.js'
+      - 'cloudflare/gpt-news.js'
+      - 'tests/gpt-news.test.mjs'
       - 'cloudflare/forward-r2.js'
       - 'cloudflare/gpt-r2-parity.test.mjs'
       - 'cloudflare/build.mjs'
@@ -38,6 +40,7 @@ jobs:
           node --check cloudflare/gpt-research.js
           node --check cloudflare/gpt-access.js
           node --check cloudflare/gpt-fundamentals.js
+          node --check cloudflare/gpt-news.js
           node --check gpt-ui.js
           node --check cloudflare/worker.js
       - name: Security and freshness unit tests (no live credentials)
