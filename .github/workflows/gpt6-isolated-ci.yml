@@ -29,8 +29,6 @@ jobs:
           node --check cloudflare/worker.js
       - name: Security and freshness unit tests (no live credentials)
         run: node --test tests/gpt-research.test.mjs
-      - name: Existing GoldFlow unit tests
-        run: npm test
       - name: Install build-time dependencies
         run: npm install --no-audit --no-fund
       - name: Existing Cloudflare compatibility and bundle
@@ -39,3 +37,5 @@ jobs:
           npm run build:cloudflare
           node --check dist/_worker.js
           grep -q 'GPT_RESEARCH_DISABLED' dist/_worker.js
+      - name: Existing GoldFlow regression suite (report existing failures)
+        run: npm test
