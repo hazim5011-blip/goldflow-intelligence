@@ -2,6 +2,7 @@ import {fetchV8Context,rebuildV8ContextWithProfile,aggregate} from "./_v8Data.js
 import {getEffectiveDynamicProfile,DEFAULT_DYNAMIC_PROFILES} from "./_dynamicTradeManagement.js";
 import {activeAIProfileRecord,aiProfileKey} from "./_recommendedAIProfiles.js";
 import {TF_SECONDS} from "./_v8Core.js";
+import {researchHypothesesFor} from "./_recommendedAIResearchMemory.js";
 
 const POS=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","TIME_WIN"]);
 const NEG=new Set(["SL","TIME_LOSS","GAP_LOSS"]);
@@ -89,10 +90,19 @@ function uniqueCandidates(list){
     const key=JSON.stringify(x.patch);
     if(seen.has(key))continue;seen.add(key);out.push(x);
   }
-  return out.slice(0,3);
+  return out.slice(0,4);
 }
-function candidatesFor(profile,diag,baseline){
+function candidatesFor(profile,diag,baseline,internetHypotheses=[]){
   const p=profile||{},list=[];
+  for(const h of (Array.isArray(internetHypotheses)?internetHypotheses:[]).slice(0,2)){
+    if(h?.status!=="TESTABLE"||Number(h?.confidence||0)<.60||!h?.patch||!Object.keys(h.patch).length)continue;
+    list.push({
+      id:"INTERNET_"+String(h.title||"HYPOTHESIS").replace(/[^A-Za-z0-9]+/g,"_").slice(0,40).toUpperCase(),
+      why:String(h.hypothesis||h.rationale||"Internet-derived research hypothesis").slice(0,500),
+      patch:h.patch,
+      researchEvidence:{confidence:Number(h.confidence)||0,sources:Array.isArray(h.sources)?h.sources.slice(0,6):[],title:h.title||null}
+    });
+  }
   if((diag.quickStopRate||0)>=45){
     list.push({id:"STRUCTURE_BUFFER_PLUS",why:"SL losses frequently occur within two bars; test slightly more structural breathing room.",
       patch:{bufferATR:snap(clamp(Number(p.bufferATR||.1)+.02,.02,.50),3),minRiskATR:snap(clamp(Number(p.minRiskATR||.5)+.08,.15,2.5),3)}});
@@ -169,7 +179,8 @@ export async function runRecommendedAI({symbol="XAUUSD247",tf="M15",indicator="1
     baseTrain=compactMetric(split.training,resolved),baseVal=compactMetric(split.validation,resolved),
     diag=diagnostics(rows,tf),trainDiag=diagnostics(split.training,tf),
     sampleReady=(baseAll.strictDenominator||0)>=40&&(baseVal.strictDenominator||0)>=10,
-    candidateDefs=mode==="gf-news"?[]:candidatesFor(effective,trainDiag,baseTrain),candidateResults=[];
+    internetHypotheses=researchHypothesesFor(mode,resolved),
+    candidateDefs=mode==="gf-news"?[]:candidatesFor(effective,trainDiag,baseTrain,internetHypotheses),candidateResults=[];
 
   if(shadow&&candidateDefs.length&&rows.length){
     for(const def of candidateDefs){
@@ -225,7 +236,8 @@ export async function runRecommendedAI({symbol="XAUUSD247",tf="M15",indicator="1
     state:action,activeProfile:active||null,effectiveProfile:effective,
     baseline:{all:baseAll,training:baseTrain,validation:baseVal},diagnostics:diag,
     recommendation:{summary:narrative(baseAll,diag,active),candidateCount:candidateResults.length,
-      note:"Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."},
+      internetHypothesesConsidered:internetHypotheses.map(h=>({title:h.title||null,confidence:h.confidence||0,status:h.status||null,sources:Array.isArray(h.sources)?h.sources.slice(0,4):[]})),
+      note:"Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Internet research is hypothesis input only; protected/native signal engines are never auto-edited."},
     candidates:candidateResults,
     decision:{action,reason,sampleReady,autoPromotionApproved,patch:autoPromotionApproved?best.effectiveProfile:null,
       candidatePatch:autoPromotionApproved?best.patch:null,candidateId:autoPromotionApproved?best.id:null,validation:autoPromotionApproved?best.validation:null,

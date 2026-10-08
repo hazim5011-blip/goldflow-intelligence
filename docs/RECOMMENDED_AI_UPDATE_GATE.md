@@ -32,3 +32,22 @@ Current automatic gate:
 The GitHub Actions learning heartbeat runs hourly. Indicator groups rotate so every configured indicator is revisited within about four hours. XAUUSD247 / M15 is the first persistent learning stream. Other symbol/TF/indicator combinations can be studied on demand from the Recommended AI page without borrowing XAU results.
 
 No broker orders are placed by Recommended AI.
+
+
+## Internet Research Brain
+
+Recommended AI now has a separate Internet Knowledge Scout.
+
+Rules:
+- public internet evidence is research input, never a broker price substitute;
+- XAUUSD247/Vantage candles remain the trading and validation source of truth;
+- official/primary feeds are preferred and each feed records OK/error status;
+- discovery/news items retain source URLs and timestamps;
+- internet evidence may not directly change protected/native indicator code;
+- model-generated internet hypotheses may only propose bounded Dynamic ATR + Structure parameters;
+- every internet-derived candidate must pass the same Vantage shadow replay, held-out validation, NET PIP, loss magnitude and >=95% coverage gates before promotion;
+- research memory is persisted under `/recommended-ai/research/`.
+
+The free evidence scout works without an AI API key. A reasoning model with built-in web search is optional and activates only when `OPENAI_API_KEY` is configured. `RECOMMENDED_AI_MODEL` can override the configured model. Without a key, the UI must report `OFFLINE_NO_OPENAI_API_KEY` rather than pretending model reasoning is active.
+
+The Internet Brain runs every four hours while the existing outcome-learning brain continues hourly.

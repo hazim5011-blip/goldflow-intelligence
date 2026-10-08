@@ -1,0 +1,182 @@
+const UA="GoldFlow-Internet-Research-Scout/1.0 (+evidence-first; no trading execution)";
+const FETCH_TIMEOUT_MS=8000;
+const MAX_ITEMS_PER_FEED=10;
+
+const FEEDS=[
+  {id:"FED_ALL",kind:"official",category:"FED",url:"https://www.federalreserve.gov/feeds/press_all.xml"},
+  {id:"BLS_LATEST",kind:"official",category:"US_MACRO",url:"https://www.bls.gov/feed/bls_latest.rss"},
+  {id:"CFTC_GENERAL",kind:"official",category:"POSITIONING_REGULATION",url:"https://www.cftc.gov/RSS.xml"},
+  {id:"NEWS_GOLD_MACRO",kind:"discovery",category:"GOLD_MACRO",url:"https://news.google.com/rss/search?q=gold+XAUUSD+Federal+Reserve+Treasury+yields+inflation&hl=en-US&gl=US&ceid=US:en"},
+  {id:"NEWS_USD_YIELDS",kind:"discovery",category:"USD_YIELDS",url:"https://news.google.com/rss/search?q=US+dollar+DXY+Treasury+yields+Fed&hl=en-US&gl=US&ceid=US:en"},
+  {id:"NEWS_MARKET_STRUCTURE",kind:"discovery",category:"TRADING_RESEARCH",url:"https://news.google.com/rss/search?q=market+structure+liquidity+volatility+trading+research&hl=en-US&gl=US&ceid=US:en"}
+];
+
+const FRED=[
+  {id:"DGS2",label:"US 2Y Treasury",url:"https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS2"},
+  {id:"DGS10",label:"US 10Y Treasury",url:"https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"},
+  {id:"DFII10",label:"US 10Y Real Yield",url:"https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFII10"},
+  {id:"VIXCLS",label:"VIX",url:"https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS"}
+];
+
+const decode=s=>String(s||"")
+  .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,"$1")
+  .replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">")
+  .replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+const strip=s=>decode(s).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,900);
+const tag=(xml,name)=>{
+  const m=String(xml||"").match(new RegExp("<"+name+"(?:\\s[^>]*)?>([\\s\\S]*?)<\\/"+name+">","i"));
+  return m?strip(m[1]):"";
+};
+function atomLink(block){
+  const m=String(block||"").match(/<link[^>]+href=["']([^"']+)["'][^>]*>/i);
+  return m?decode(m[1]):"";
+}
+function rssLink(block){
+  const v=tag(block,"link");
+  if(/^https?:\/\//i.test(v))return v;
+  return atomLink(block);
+}
+function parseFeed(xml,feed){
+  const blocks=[...(String(xml||"").matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi))].map(x=>x[1]);
+  if(!blocks.length)blocks.push(...[...(String(xml||"").matchAll(/<entry(?:\s[^>]*)?>([\s\S]*?)<\/entry>/gi))].map(x=>x[1]));
+  return blocks.slice(0,MAX_ITEMS_PER_FEED).map(b=>({
+    sourceId:feed.id,sourceKind:feed.kind,category:feed.category,title:tag(b,"title"),
+    url:rssLink(b),published:tag(b,"pubDate")||tag(b,"published")||tag(b,"updated"),
+    summary:tag(b,"description")||tag(b,"summary")||tag(b,"content")
+  })).filter(x=>x.title&&x.url);
+}
+async function fetchText(url,timeout=FETCH_TIMEOUT_MS){
+  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),timeout);
+  try{
+    const r=await fetch(url,{headers:{"user-agent":UA,"accept":"application/rss+xml, application/xml, text/xml, text/csv, text/plain;q=0.8, */*;q=0.5"},signal:ctl.signal,redirect:"follow"});
+    if(!r.ok)throw Error("HTTP_"+r.status);
+    const text=await r.text();
+    return text.slice(0,2_000_000);
+  }finally{clearTimeout(timer)}
+}
+const kw=[
+  ["fed",5],["fomc",5],["inflation",4],["cpi",4],["pce",4],["employment",3],["payroll",4],["nfp",4],
+  ["treasury",4],["yield",4],["real yield",5],["dollar",3],["dxy",4],["gold",5],["xau",5],
+  ["liquidity",3],["volatility",3],["atr",3],["market structure",4],["cftc",3],["positioning",3],["oil",2]
+];
+function relevance(x){
+  const s=(x.title+" "+x.summary).toLowerCase();let score=x.sourceKind==="official"?6:0;
+  for(const [k,w] of kw)if(s.includes(k))score+=w;
+  return score;
+}
+function dedupe(items){
+  const seen=new Set(),out=[];
+  for(const x of items.sort((a,b)=>relevance(b)-relevance(a))){
+    const k=(x.url||x.title).replace(/[?#].*$/,"").toLowerCase();
+    if(seen.has(k))continue;seen.add(k);out.push({...x,relevance:relevance(x)});
+  }
+  return out;
+}
+async function fredOne(s){
+  try{
+    const csv=await fetchText(s.url,12000),lines=csv.trim().split(/\r?\n/).slice(1).filter(Boolean);
+    for(let i=lines.length-1;i>=0;i--){
+      const parts=lines[i].split(","),value=Number(parts[1]);
+      if(parts[0]&&Number.isFinite(value))return {id:s.id,label:s.label,date:parts[0],value,source:"FRED",url:s.url};
+    }
+    return {id:s.id,label:s.label,error:"NO_NUMERIC_VALUE",source:"FRED",url:s.url};
+  }catch(e){return {id:s.id,label:s.label,error:String(e?.message||e),source:"FRED",url:s.url}}
+}
+export async function collectInternetEvidence(){
+  const settled=await Promise.all(FEEDS.map(async feed=>{
+    try{
+      const xml=await fetchText(feed.url);
+      return {feed,ok:true,items:parseFeed(xml,feed)};
+    }catch(e){return {feed,ok:false,error:String(e?.message||e),items:[]}}
+  }));
+  const items=dedupe(settled.flatMap(x=>x.items)).slice(0,40);
+  const macro=await Promise.all(FRED.map(fredOne));
+  return {
+    collectedAtUTC:new Date().toISOString(),
+    feedStatus:settled.map(x=>({id:x.feed.id,kind:x.feed.kind,category:x.feed.category,ok:x.ok,count:x.items.length,error:x.error||null,url:x.feed.url})),
+    items,macro,
+    evidencePolicy:"INTERNET_EVIDENCE_IS_HYPOTHESIS_INPUT_ONLY; VANTAGE_REPLAY_REMAINS_PROMOTION_GATE"
+  };
+}
+
+function outputText(resp){
+  if(typeof resp?.output_text==="string")return resp.output_text;
+  for(const o of resp?.output||[])for(const c of o?.content||[])if(c?.type==="output_text"&&typeof c.text==="string")return c.text;
+  return "";
+}
+function jsonFromText(s){
+  const t=String(s||"").trim().replace(/^\`\`\`json\s*/i,"").replace(/\s*\`\`\`$/,"");
+  try{return JSON.parse(t)}catch{}
+  const a=t.indexOf("{"),b=t.lastIndexOf("}");
+  if(a>=0&&b>a)try{return JSON.parse(t.slice(a,b+1))}catch{}
+  return null;
+}
+const ALLOWED_PATCH=new Set(["bufferATR","minRiskATR","maxRiskATR","lookback","t1MinR","t1MaxR","t1FallbackR","t2MinR","t2MaxR","t2FallbackR","t3MinR","t3MaxR","t3FallbackR"]);
+export function sanitizeInternetHypothesis(h){
+  const patch={};
+  for(const [k,v] of Object.entries(h?.patch||{}))if(ALLOWED_PATCH.has(k)&&Number.isFinite(Number(v)))patch[k]=Number(v);
+  const sources=(Array.isArray(h?.sources)?h.sources:[]).filter(x=>/^https?:\/\//i.test(String(x))).slice(0,6).map(String);
+  return {
+    indicator:String(h?.indicator||"*").toLowerCase(),symbol:String(h?.symbol||"*").toUpperCase(),
+    title:String(h?.title||"Internet research hypothesis").slice(0,160),
+    hypothesis:String(h?.hypothesis||"").slice(0,700),rationale:String(h?.rationale||"").slice(0,900),
+    confidence:Math.max(0,Math.min(1,Number(h?.confidence)||0)),patch,sources,status:Object.keys(patch).length&&sources.length?"TESTABLE":"EVIDENCE_ONLY"
+  };
+}
+export async function reasonWithInternet({evidence,recommendedArchive}={}){
+  const key=process.env.OPENAI_API_KEY;
+  if(!key)return {enabled:false,status:"OFFLINE_NO_OPENAI_API_KEY",model:null,hypotheses:[],
+    note:"Free internet evidence collection is active. Model reasoning + web search activates only after OPENAI_API_KEY is configured."};
+  const model=process.env.RECOMMENDED_AI_MODEL||"gpt-6-luna";
+  const compact=(Object.values(recommendedArchive?.recommendations||{})).map(x=>({
+    indicator:x?.indicator,symbol:x?.symbol,tf:x?.tf,state:x?.state,baseline:x?.baseline?.all,diagnostics:x?.diagnostics
+  })).slice(0,20);
+  const prompt=[
+    "You are GoldFlow Recommended AI Internet Research Brain.",
+    "Goal: turn current external market/trading research into TESTABLE hypotheses for GoldFlow Dynamic ATR + Structure management.",
+    "Never claim a hypothesis is proven. Never recommend changing protected/native signal logic. Never output trading orders.",
+    "Only propose numeric patches using these keys: "+[...ALLOWED_PATCH].join(", ")+".",
+    "Each patch must be small/conservative and tied to at least one source URL. Use web search when useful and prefer primary/official sources.",
+    "Consider current per-indicator outcomes. A high count win rate with negative P/L is not success.",
+    "Return JSON only: {summary:string,hypotheses:[{indicator:string,symbol:string,title:string,hypothesis:string,rationale:string,confidence:number,patch:object,sources:string[]}]}",
+    "Current Recommended AI diagnostics: "+JSON.stringify(compact),
+    "Fresh free evidence: "+JSON.stringify({items:(evidence?.items||[]).slice(0,24),macro:evidence?.macro||[]})
+  ].join("\n");
+  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
+  try{
+    const res=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",headers:{"authorization":"Bearer "+key,"content-type":"application/json"},
+      body:JSON.stringify({model,input:prompt,tools:[{type:"web_search"}],tool_choice:"auto",max_output_tokens:2600}),signal:ctl.signal
+    });
+    const body=await res.json();
+    if(!res.ok)throw Error("OPENAI_"+res.status+"_"+String(body?.error?.message||"API_ERROR").slice(0,180));
+    const parsed=jsonFromText(outputText(body));
+    const hypotheses=(Array.isArray(parsed?.hypotheses)?parsed.hypotheses:[]).map(sanitizeInternetHypothesis).filter(x=>x.hypothesis).slice(0,8);
+    return {enabled:true,status:"ONLINE_OPENAI_WEB_REASONING",model,summary:String(parsed?.summary||"").slice(0,1200),hypotheses,responseId:body?.id||null};
+  }catch(e){
+    return {enabled:true,status:"OPENAI_REASONING_ERROR",model,hypotheses:[],error:String(e?.message||e).slice(0,240)};
+  }finally{clearTimeout(timer)}
+}
+
+async function loadRecommendedArchive(){
+  const base=String(process.env.GOLDFLOW_PUBLIC_BASE_URL||"https://goldflow-intelligence.vercel.app").replace(/\/$/,"");
+  try{
+    const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),7000);
+    const r=await fetch(base+"/recommended-ai/latest.json?ts="+Date.now(),{headers:{"user-agent":UA},signal:ctl.signal,cache:"no-store"});
+    clearTimeout(timer);
+    if(!r.ok)throw Error("HTTP_"+r.status);
+    return await r.json();
+  }catch(e){return {version:"UNAVAILABLE",recommendations:{},error:String(e?.message||e)}}
+}
+export async function runInternetResearch({useReasoning=true}={}){
+  const evidence=await collectInternetEvidence();
+  const recommendedArchive=await loadRecommendedArchive();
+  const reasoning=useReasoning?await reasonWithInternet({evidence,recommendedArchive}):{enabled:false,status:"REASONING_SKIPPED",model:null,hypotheses:[]};
+  return {
+    ok:true,version:"RECOMMENDED_AI_INTERNET_RESEARCH_V1",generatedAtUTC:new Date().toISOString(),
+    mode:reasoning.status==="ONLINE_OPENAI_WEB_REASONING"?"INTERNET_SCOUT_PLUS_REASONING":"FREE_INTERNET_EVIDENCE_SCOUT",
+    evidence,reasoning,
+    safety:{internetCanDirectlyEditProtectedEngine:false,internetCanDirectlyPromoteProfile:false,
+      rule:"Internet hypotheses must be converted to bounded profile candidates and pass Vantage shadow/OOS validation before any promotion."}
+  };
+}

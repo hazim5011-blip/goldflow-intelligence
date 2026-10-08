@@ -1,0 +1,47 @@
+name: GoldFlow Recommended AI Internet Brain
+
+on:
+  schedule:
+    - cron: "37 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goldflow-recommended-ai-internet
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run internet research scout
+        env:
+          GOLDFLOW_BASE_URL: https://goldflow-intelligence.vercel.app
+        run: node scripts/recommended-ai-internet-cycle.mjs
+
+      - name: Commit internet research memory
+        run: |
+          git config user.name "goldflow-internet-brain"
+          git config user.email "goldflow-internet-brain@users.noreply.github.com"
+          git add recommended-ai/research api/_recommendedAIResearchMemory.js
+          if git diff --cached --quiet; then
+            echo "No internet-research changes."
+            exit 0
+          fi
+          git commit -m "chore(recommended-ai): internet research memory"
+          git pull --rebase origin main
+          git push origin HEAD:main
