@@ -139,7 +139,7 @@
 .newsWhyBlock small{display:block;color:#85afc1;font-size:9px;font-weight:850;letter-spacing:.06em;margin-bottom:7px}
 .newsWhyBlock div{white-space:pre-line;color:#c8dbe4;font-size:11px;line-height:1.55}
 
-/* GF-AI v1.30 Reasoning + Scenario + Learning */
+/* GF-AI v1.40 Professional Trader Playbook */
 .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .gfReasoningGrid{align-items:stretch}
 .gfReasonBox{background:#08131a;border:1px solid #1e3340;border-radius:9px;padding:10px;min-width:0}
@@ -150,3 +150,6 @@
 .gfReasonBox.flat{border-left:3px solid var(--y)}
 #gfReasoningCard .reason{white-space:pre-line}
 @media(max-width:900px){.g3{grid-template-columns:1fr}}
+
+.gfPlaybookCard{border-color:#35546a;background:linear-gradient(180deg,#0a202b,#08151d)}
+#gfTradeIdeaId{font-variant-numeric:tabular-nums;letter-spacing:.04em}
