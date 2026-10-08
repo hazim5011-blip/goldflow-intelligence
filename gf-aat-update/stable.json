@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.17",
-  "build_id": "gf-aat-1.6.3-r5.17-correction-effectiveness",
+  "version": "1.6.3-r5.17.1",
+  "build_id": "gf-aat-1.6.3-r5.17.1-technical-evidence-25",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "404cef85c28b667b652b5dc869d796af606a0c1bc47903143d1a684a29ef265d",
-  "restart_cmd": "RESTART_GF_AAT_R5_17.bat",
+  "sha256": "6a106a1a5eb01ffdce80166ed8d0148a08496dacf04e03f888f01f77665449c3",
+  "restart_cmd": "RESTART_GF_AAT_R5_17_1.bat",
   "minimum_updater": 2
 }
