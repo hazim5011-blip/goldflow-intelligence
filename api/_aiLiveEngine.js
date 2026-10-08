@@ -1,4 +1,4 @@
-// GF-AI LIVE ANALYST v1.50 • LIVE MANAGEMENT + RECOVERY BRAIN
+// GF-AI LIVE ANALYST v1.60 • ADAPTIVE ENTRY INTELLIGENCE
 // Reads M1/M5/M15/M30/H1/H4/D1 as one hierarchy, then compares BUY/SELL/NO_TRADE scenarios.
 // Selected TF owns the entry trigger/zone; every other TF is contextual evidence.
 // Market structure, BOS/CHOCH, liquidity, SND/SNR/SBR/RBS, OB/FVG,
@@ -41,7 +41,7 @@ function compactBrain(b){
    lastHigh:b.structure?.lastHigh?{price:rnd(b.structure.lastHigh.price),time:b.structure.lastHigh.time}:null,
    lastLow:b.structure?.lastLow?{price:rnd(b.structure.lastLow.price),time:b.structure.lastLow.time}:null},
   breakEvent:b.breakEvent||null,liquidity:b.liquidity||null,zones:b.zones||null,chartPattern:b.chartPattern||null,candlePattern:b.candlePattern||null,
-  regime:b.regime||null,buy:{score:Number(b.buy?.score)||0,evidence:Array.isArray(b.buy?.evidence)?b.buy.evidence:[],blockers:Array.isArray(b.buy?.blockers)?b.buy.blockers:[]},
+  regime:b.regime||null,motion:b.motion||null,buy:{score:Number(b.buy?.score)||0,evidence:Array.isArray(b.buy?.evidence)?b.buy.evidence:[],blockers:Array.isArray(b.buy?.blockers)?b.buy.blockers:[]},
   sell:{score:Number(b.sell?.score)||0,evidence:Array.isArray(b.sell?.evidence)?b.sell.evidence:[],blockers:Array.isArray(b.sell?.blockers)?b.sell.blockers:[]}};
 }
 function fallbackRaw(args,k,tf){
@@ -86,7 +86,7 @@ function allTfScores(rows,selectedTf,e,fullGold){
    structureLabel:(b.structure?.highClass||"N/A")+"/"+(b.structure?.lowClass||"N/A"),buyScore:rnd(bs,1),sellScore:rnd(ss,1),
    breakEvent:b.breakEvent?{type:b.breakEvent.type,direction:b.breakEvent.direction,level:b.breakEvent.level}:null,
    sweep:b.liquidity?.sweep?{type:b.liquidity.sweep.type,direction:b.liquidity.sweep.direction,level:b.liquidity.sweep.level}:null,
-   chartPattern:b.chartPattern?{type:b.chartPattern.type,direction:b.chartPattern.direction,state:b.chartPattern.state}:null,regime:b.regime?.type||null});
+   chartPattern:b.chartPattern?{type:b.chartPattern.type,direction:b.chartPattern.direction,state:b.chartPattern.state}:null,regime:b.regime?.type||null,motion:b.motion?.state||null});
  }
  if(trendNet>0){buy+=trendNet*8}else sell+=Math.abs(trendNet)*8;
  if(structureNet>0){buy+=structureNet*9}else sell+=Math.abs(structureNet)*9;
@@ -153,23 +153,60 @@ function observedSince(args,k,t){
  return (Array.isArray(args.bars)?args.bars:[]).map(x=>({t:val(x.t),h:val(x.h),l:val(x.l)}))
   .filter(x=>x.t!==null&&x.h!==null&&x.l!==null&&x.t>t&&x.t-args.offsetSeconds<=k.nowSec);
 }
+function validateEntryRetest(bars,triggerIndex,plan,d,atr,currentPrice){
+ if(!plan||!Array.isArray(bars)||!Number.isInteger(triggerIndex)||![1,-1].includes(d)||!Number.isFinite(Number(atr)))
+  return {valid:false,state:"NO_ENTRY_VALIDATION_DATA",touched:false,confirmation:null};
+ const lo=Number(plan.entryLow),hi=Number(plan.entryHigh),mid=(lo+hi)/2,act=Number(plan.activationLevel),A=Number(atr);
+ if(![lo,hi,mid].every(Number.isFinite)||!(hi>lo))return {valid:false,state:"INVALID_ENTRY_ZONE",touched:false,confirmation:null};
+ const sweepModel=/SWEEP/.test(String(plan.entryEnvironment||plan.entryMethod||""));
+ const start=Math.max(0,sweepModel?triggerIndex:triggerIndex+1),pad=.035*A;
+ let touchIndex=-1,confirmation=null;
+ for(let i=start;i<bars.length;i++){
+  const b=bars[i];if(!b)continue;
+  const touches=Number(b.h)>=lo-pad&&Number(b.l)<=hi+pad;
+  if(touches&&touchIndex<0)touchIndex=i;
+  if(touchIndex<0||i<touchIndex)continue;
+  const range=Math.max(Number(b.h)-Number(b.l),1e-9),body=Math.abs(Number(b.c)-Number(b.o));
+  const wick=d===1?Math.min(Number(b.o),Number(b.c))-Number(b.l):Number(b.h)-Math.max(Number(b.o),Number(b.c));
+  const directional=d===1?Number(b.c)>Number(b.o):Number(b.c)<Number(b.o);
+  const closesThroughMid=d===1?Number(b.c)>=mid:Number(b.c)<=mid;
+  const reclaim=Number.isFinite(act)?(d===1?Number(b.c)>=act-.035*A:Number(b.c)<=act+.035*A):closesThroughMid;
+  const rejection=wick>=Math.max(.10*A,.45*body);
+  const decisiveBody=body>=.28*A&&body/range>=.52;
+  const notAbnormal=range<=2.40*A;
+  if(directional&&closesThroughMid&&reclaim&&(rejection||decisiveBody)&&notAbnormal){
+   confirmation={index:i,time:b.t,close:rnd(b.c),type:rejection?"RETEST_REJECTION_CLOSE":"RETEST_DISPLACEMENT_CLOSE",
+    wickAtr:rnd(wick/A,2),bodyAtr:rnd(body/A,2),barsAfterTouch:i-touchIndex};
+  }
+ }
+ if(touchIndex<0)return {valid:false,state:"WAIT_FIRST_RETEST",touched:false,confirmation:null};
+ if(!confirmation)return {valid:false,state:"ZONE_TOUCHED_WAIT_CLOSED_REJECTION",touched:true,touchIndex,confirmation:null};
+ const age=bars.length-1-confirmation.index,fresh=age<=2;
+ if(!fresh)return {valid:false,state:"RETEST_CONFIRMATION_STALE",touched:true,touchIndex,confirmation,ageClosedBars:age};
+ const chase=.18*A,execLow=d===1?lo:lo-chase,execHigh=d===1?hi+chase:hi,px=Number(currentPrice);
+ const inExecutionBand=Number.isFinite(px)&&px>=execLow&&px<=execHigh;
+ const overextended=Number.isFinite(px)&&(d===1?px>hi+.48*A:px<lo-.48*A);
+ return {valid:fresh&&inExecutionBand&&!overextended,state:overextended?"RETEST_CONFIRMED_BUT_CHASED":inExecutionBand?"RETEST_CONFIRMED_ENTRY_WINDOW":"RETEST_CONFIRMED_WAIT_PRICE",
+  touched:true,touchIndex,confirmation,ageClosedBars:age,executionBand:{low:rnd(execLow),high:rnd(execHigh)},inExecutionBand,overextended,
+  rule:"NO_BLIND_TOUCH_ENTRY_CLOSED_RETEST_REJECTION_REQUIRED"};
+}
 function response(status,k,e,extra={}){
  const expiry=EXPIRY[k?.tf]||5;
- const aiPolicy={version:"1.50",entryPolicy:"PROFESSIONAL_TRADER_PLAYBOOK_LIFECYCLE_RECOVERY",timeframes:ALL_TFS,selectedTfOwnsEntry:true,
-  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT","MACRO_CONTEXT","SCENARIO_REASONING","EXPERIENCE_CALIBRATION","PROFESSIONAL_TRADER_PLAYBOOK","TRADE_IDEA_HIERARCHY","LIVE_MANAGEMENT","RECOVERY_BRAIN"],
+ const aiPolicy={version:"1.60",entryPolicy:"ADAPTIVE_ENTRY_INTELLIGENCE_CLOSED_RETEST_VALIDATION",timeframes:ALL_TFS,selectedTfOwnsEntry:true,
+  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","GOLD_MOTION_PROFILE","ADAPTIVE_ENTRY_ENVIRONMENT","CLOSED_RETEST_REJECTION","ALL_TF_CONTEXT","MACRO_CONTEXT","SCENARIO_REASONING","EXPERIENCE_CALIBRATION","PROFESSIONAL_TRADER_PLAYBOOK","TRADE_IDEA_HIERARCHY","LIVE_MANAGEMENT","RECOVERY_BRAIN"],
   reasoningModel:{scenarios:["BUY","SELL","NO_TRADE"],primaryAlternative:true,whatWouldChangeMyMind:true,evidenceVsContradiction:true},
   learningModel:{type:"RETROSPECTIVE_DIRECTIONAL_FOLLOW_THROUGH",trainedML:false,maxScoreAdjustment:5,minDecidableSamples:5,persistentLongTermMemory:false},
   managementPolicy:{states:["HOLD_PLAN","PROTECT","TAKE_PARTIAL","CUT_SETUP","WAIT_RECOVERY","RECOVERY_READY"],fullMarginAllowed:false,martingaleAllowed:false,recoveryRisk:"NORMAL_RISK_ONLY",highConviction:"A++_QUALITY_NOT_WIN_PROBABILITY"},
   chartPatterns:["DOUBLE_TOP_BOTTOM","HEAD_AND_SHOULDERS","INVERSE_HEAD_AND_SHOULDERS","ASCENDING_DESCENDING_TRIANGLE"],
-  entryModels:["BOS_RBS_SBR_RETEST","CHOCH_STRUCTURE_RETEST","LIQUIDITY_SWEEP_ZONE_RETEST","PATTERN_NECKLINE_RETEST","ORDER_BLOCK_RETEST","FVG_REBALANCE","SUPPLY_DEMAND_REACTION"],
+  entryModels:["TREND_BOS_PULLBACK","BREAKOUT_RETEST","SWEEP_CHOCH_REVERSAL","LIQUIDITY_SWEEP_RECLAIM","COMPRESSION_BREAK_RETEST","CHOCH_REVERSAL_RETEST","TREND_PULLBACK","RANGE_EDGE_ONLY"],
   fibonacciRole:"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED",scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",persistent24hSignalArchive:false,
-  hardSafety:["STALE_BROKER_DATA","STRUCTURE_INVALIDATION","TARGET_ALREADY_REACHED","AMBIGUOUS_OHLC_PATH","LOW_TF_COVERAGE"],
+  hardSafety:["STALE_BROKER_DATA","STRUCTURE_INVALIDATION","TARGET_ALREADY_REACHED","AMBIGUOUS_OHLC_PATH","LOW_TF_COVERAGE","BLIND_ZONE_TOUCH","CHASE_AFTER_DISPLACEMENT","CHOP_WITHOUT_SWEEP"],
   // Backward compatibility for browser clients that still have v1.10 UI cached.
   requiresH1H4Alignment:false,acceptedClosedPatterns:["BOS","CHOCH","LIQUIDITY_SWEEP","CHART_PATTERN","CANDLE_FORENSICS"],
-  triggerLookbackClosedBars:6,entryExpiryClosedBars:expiry,entryRetest:"MARKET_DRIVEN",scoreThresholdAligned:66,scoreThresholdPartialMTF:74,
-  note:"AI compares BUY, SELL and NO_TRADE, applies D1/H4→H1/M30→M15/M5→M1 professional hierarchy, one parent Trade Idea ID, then manages the observed research lifecycle through HOLD/PROTECT/CUT/RECOVERY. A++ is a quality tier, not 90% win probability. No full-margin or martingale automation."};
- return {ok:true,engine:"GF_AI_LIVE_MANAGEMENT_RECOVERY_V8",mode:"ai",modeProfile:"PROFESSIONAL_TRADER_LIFECYCLE_RECOVERY",
-  modelType:"AUDITABLE_PROFESSIONAL_TRADER_LIFECYCLE_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
+  triggerLookbackClosedBars:6,entryExpiryClosedBars:expiry,entryRetest:"CLOSED_RETEST_REJECTION_REQUIRED",scoreThresholdAligned:66,scoreThresholdPartialMTF:74,
+  note:"v1.60 changes the ENTRY itself: a zone touch is never enough. AI classifies current Gold motion/regime, selects a setup-specific precision zone, then requires a CLOSED retest rejection/reclaim before ENTRY READY. Choppy Gold is blocked unless a directional liquidity sweep exists. No chase, no blind touch, no full-margin/martingale automation."};
+ return {ok:true,engine:"GF_AI_ADAPTIVE_ENTRY_INTELLIGENCE_V9",mode:"ai",modeProfile:"GOLD_ADAPTIVE_ENTRY_INTELLIGENCE",
+  modelType:"AUDITABLE_ADAPTIVE_ENTRY_INTELLIGENCE_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
   source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,fundamentalApplied:!!(e.assetSpecific&&e.available),aiPolicy,
   caution:"Confluence score is not win probability and cannot guarantee direction.",status,...extra};
 }
@@ -224,7 +261,7 @@ export function evaluateAILive(args={}){
   macroHeadwind,counterTrend,higherContext:higher,reversalException:rev,strongReversalOverride:rev.strong,
   timeframeMatrix:scores.matrix,allTfConsensus:scores.consensus,tfCoverage:{available:scores.coverage,total:scores.total,missing:scores.missing},
   selectedEvidence:Array.isArray(selectedEvidence?.evidence)?selectedEvidence.evidence:[],allTfEvidence:allEvidence.slice(0,18),blockers,entryModel:plan?.entryMethod||null,
-  fibonacci:plan?.fibConfluence||{overlap:false,bonus:0,role:"OPTIONAL_ONLY"},marketRegime:selected.regime,
+  fibonacci:plan?.fibConfluence||{overlap:false,bonus:0,role:"OPTIONAL_ONLY"},marketRegime:selected.regime,marketMotion:selected.motion||null,entryEnvironment:plan?.entryEnvironment||null,
   experienceAdjustment:d===1?(experience?.buyAdjustment||0):(experience?.sellAdjustment||0),reasoningPrimary:reasoning.primaryScenario};
  const professionalPlaybook=buildProfessionalPlaybook({symbol:args.symbol,selectedTf:k.tf,matrix:scores.matrix,selected,reasoning,analysis,
   plan,currentPrice:d===1?k.ask:k.bid,macroHeadwind});
@@ -239,7 +276,10 @@ export function evaluateAILive(args={}){
    nextCandleCloseUTC:new Date((k.last.t-k.brokerUtcOffsetSeconds+2*(TF_SECONDS[k.tf]||900))*1000).toISOString()});
  }
  const triggerIndex=Number.isInteger(trigger.index)?trigger.index:selectedRow.bars.length-1,triggerBar=selectedRow.bars[triggerIndex]||k.last,
-  closeEpoch=triggerBar.t-k.brokerUtcOffsetSeconds+(TF_SECONDS[k.tf]||900),expiry=EXPIRY[k.tf]||5;
+  closeEpoch=triggerBar.t-k.brokerUtcOffsetSeconds+(TF_SECONDS[k.tf]||900),expiry=EXPIRY[k.tf]||5,
+  entryPx=d===1?k.ask:k.bid,entryValidation=validateEntryRetest(selectedRow.bars,triggerIndex,plan,d,selected.atr,entryPx);
+ analysis.entryValidation=entryValidation;
+ if(!entryValidation.valid)analysis.blockers.push(entryValidation.state);
  const conf={...plan,direction:d,confirmationType:trigger.type,confirmationCloseUTC:new Date(closeEpoch*1000).toISOString(),signalCandleTime:triggerBar.t,
   targetMethod:plan.targetMethod,score:rnd(confluence,1),expiresAfterClosedBars:expiry,verifiedForecastSurprise:false,
   explanation:["Primary scenario: "+reasoning.primaryScenario+" • Alternative: "+reasoning.alternativeScenario,
@@ -249,10 +289,10 @@ export function evaluateAILive(args={}){
    selected.breakEvent?"Selected structure event: "+selected.breakEvent.label+" @ "+selected.breakEvent.level:null,
    selected.liquidity?.sweep?"Liquidity: "+selected.liquidity.sweep.type+" @ "+selected.liquidity.sweep.level:null,
    selected.chartPattern?"Chart pattern: "+selected.chartPattern.type+" • "+selected.chartPattern.state:null,
-   "Entry model: "+plan.entryMethod,plan.fibConfluence?.overlap?"Fibonacci overlaps chosen market zone (+4 only).":"Fibonacci not required.",
+   "Entry model: "+plan.entryMethod,"Gold motion: "+(selected.motion?.state||"UNKNOWN")+" • regime "+(selected.regime?.type||"UNKNOWN"),"Entry validation: "+entryValidation.state+" • blind zone-touch entry is blocked.",plan.fibConfluence?.overlap?"Fibonacci overlaps chosen market zone (+4 only).":"Fibonacci not required.",
    "Confluence "+rnd(confluence,1)+"/100 (NOT win probability)"].filter(Boolean)};
  conf.tradeIdeaId=professionalPlaybook?.tradeIdea?.id||null;
- const elapsed=selectedRow.bars.length-1-triggerIndex,entryPx=d===1?k.ask:k.bid,overlay={direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,professionalPlaybook,confirmation:conf,
+ const elapsed=selectedRow.bars.length-1-triggerIndex,overlay={direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,professionalPlaybook,confirmation:conf,
   entryQuote:entryPx,entryQuoteSide:d===1?"ASK":"BID",elapsedClosedBars:elapsed,
   explanation:{headline:(gold?"GOLD":String(args.symbol||"SYMBOL"))+" "+side(d)+" • "+th.type,drivers:conf.explanation,basis:plan.entryMethod,researchScope:scope}};
  const later=observedSince(args,k,triggerBar.t),stopped=later.some(x=>d===1?x.l<=plan.invalidation:x.h>=plan.invalidation),reached=later.some(x=>d===1?x.h>=plan.tp1:x.l<=plan.tp1);
@@ -260,12 +300,12 @@ export function evaluateAILive(args={}){
  if(stopped||d*(entryPx-plan.invalidation)<=0)return response("AI_INVALIDATED",k,e,{...overlay,reason:"Market invalidated the original structure/zone stop."});
  if(reached)return response("AI_COMPLETED_STUDY",k,e,{...overlay,reason:"TP1 already reached. Old setup is retired."});
  if(elapsed>expiry)return response("AI_EXPIRED",k,e,{...overlay,reason:"Market-driven retest window expired. Wait for new structure."});
- const inside=entryPx>=plan.entryLow&&entryPx<=plan.entryHigh,far=d===1?entryPx>plan.entryHigh+.75*selected.atr:entryPx<plan.entryLow-.75*selected.atr;
- if(far)return response("AI_MISSED_ENTRY",k,e,{...overlay,reason:"Price moved too far beyond the selected-TF retest zone. Do not chase."});
- const ready=inside&&confluence>=limits.ready&&professionalPlaybook?.tradeIdea?.quality?.eligible===true;
+ const far=d===1?entryPx>plan.entryHigh+.75*selected.atr:entryPx<plan.entryLow-.75*selected.atr;
+ if(far||entryValidation.overextended)return response("AI_MISSED_ENTRY",k,e,{...overlay,reason:"Price moved beyond the validated retest execution band. AI refuses to chase after displacement."});
+ const ready=entryValidation.valid&&confluence>=limits.ready&&professionalPlaybook?.tradeIdea?.quality?.eligible===true;
  return response(ready?(d===1?"AI_BUY_READY":"AI_SELL_READY"):d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED",k,e,{...overlay,canEnter:ready,
-  entryState:ready?"REASONING_SCENARIO_ENTRY_VALIDATED":"WAIT_MARKET_DRIVEN_RETEST",
-  reason:ready?side(d)+" ENTRY READY: all-TF context supports the selected "+k.tf+" thesis and Vantage price is inside "+plan.entryMethod+"."+
+  entryState:ready?"CLOSED_RETEST_REJECTION_VALIDATED":entryValidation.state,
+  reason:ready?side(d)+" ENTRY READY: "+plan.entryEnvironment+" is confirmed by a CLOSED retest/rejection and current Vantage price remains inside the anti-chase execution band."+
    (macroHeadwind?" Macro headwind exists; the higher threshold was required and passed.":""):
-   side(d)+" thesis is CONFIRMED on "+k.tf+" by "+trigger.type+". Wait for "+plan.entryMethod+"; all other TFs remain context, not separate entries."});
+   side(d)+" thesis is CONFIRMED, but ENTRY is NOT ready yet. "+entryValidation.state+". Zone touch alone is not an entry; wait for CLOSED rejection/reclaim and a non-chased price."});
 }
