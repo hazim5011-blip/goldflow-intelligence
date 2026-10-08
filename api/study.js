@@ -75,7 +75,7 @@ export default async function handler(req,res){
   const frames=mode==="ai"?allAiFrames:[...new Set([tf,"H1","H4"])];
   const limitFor=f=>mode==="ai"?(f===tf?240:["M1","M5"].includes(f)?220:["M15","M30","H1"].includes(f)?190:150):(f===tf?180:100);
   const [bridge,macro]=await Promise.all([
-   brokerGet("/multi-bars",{symbol,tfs:frames.join(","),limits:frames.map(limitFor).join(",")},30000,2),
+   brokerGet("/multi-bars",{symbol,tfs:frames.join(","),limits:frames.map(limitFor).join(",")},18000,2),
    /^(XAU|GOLD)/i.test(symbol)?macroSnapshot().catch(()=>null):Promise.resolve(null)
   ]);
   const nowSec=Math.floor(Date.now()/1000);
