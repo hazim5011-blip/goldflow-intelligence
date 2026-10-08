@@ -28,7 +28,6 @@ function indicatorName(v){
     "103":"MTF 1.03",
     "pvt":"PVT 1.02",
     "pvtchart101":"PVT CHART CONFLUENCE 1.01",
-    "pvtchart101":"PVT CHART CONFLUENCE 1.01",
     "pattern132":"PATTERN TUTOR 1.32 • MQ5 VERIFIED",
     "snd107":"SND/SNR 1.07",
     "owl101":"OWL 1.01",
