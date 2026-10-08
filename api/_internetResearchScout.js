@@ -74,7 +74,7 @@ function dedupe(items){
 }
 async function fredOne(s){
   try{
-    const csv=await fetchText(s.url,6000),lines=csv.trim().split(/\r?\n/).slice(1).filter(Boolean);
+    const csv=await fetchText(s.url,12000),lines=csv.trim().split(/\r?\n/).slice(1).filter(Boolean);
     for(let i=lines.length-1;i>=0;i--){
       const parts=lines[i].split(","),value=Number(parts[1]);
       if(parts[0]&&Number.isFinite(value))return {id:s.id,label:s.label,date:parts[0],value,source:"FRED",url:s.url};
@@ -112,7 +112,7 @@ function jsonFromText(s){
   return null;
 }
 const ALLOWED_PATCH=new Set(["bufferATR","minRiskATR","maxRiskATR","lookback","t1MinR","t1MaxR","t1FallbackR","t2MinR","t2MaxR","t2FallbackR","t3MinR","t3MaxR","t3FallbackR"]);
-function sanitizeHypothesis(h){
+export function sanitizeInternetHypothesis(h){
   const patch={};
   for(const [k,v] of Object.entries(h?.patch||{}))if(ALLOWED_PATCH.has(k)&&Number.isFinite(Number(v)))patch[k]=Number(v);
   const sources=(Array.isArray(h?.sources)?h.sources:[]).filter(x=>/^https?:\/\//i.test(String(x))).slice(0,6).map(String);
@@ -151,7 +151,7 @@ export async function reasonWithInternet({evidence,recommendedArchive}={}){
     const body=await res.json();
     if(!res.ok)throw Error("OPENAI_"+res.status+"_"+String(body?.error?.message||"API_ERROR").slice(0,180));
     const parsed=jsonFromText(outputText(body));
-    const hypotheses=(Array.isArray(parsed?.hypotheses)?parsed.hypotheses:[]).map(sanitizeHypothesis).filter(x=>x.hypothesis).slice(0,8);
+    const hypotheses=(Array.isArray(parsed?.hypotheses)?parsed.hypotheses:[]).map(sanitizeInternetHypothesis).filter(x=>x.hypothesis).slice(0,8);
     return {enabled:true,status:"ONLINE_OPENAI_WEB_REASONING",model,summary:String(parsed?.summary||"").slice(0,1200),hypotheses,responseId:body?.id||null};
   }catch(e){
     return {enabled:true,status:"OPENAI_REASONING_ERROR",model,hypotheses:[],error:String(e?.message||e).slice(0,240)};
