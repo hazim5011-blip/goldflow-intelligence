@@ -153,15 +153,13 @@ function observedSince(args,k,t){
  return (Array.isArray(args.bars)?args.bars:[]).map(x=>({t:val(x.t),h:val(x.h),l:val(x.l)}))
   .filter(x=>x.t!==null&&x.h!==null&&x.l!==null&&x.t>t&&x.t-args.offsetSeconds<=k.nowSec);
 }
-function validateEntryRetest(bars,triggerIndex,plan,d,atr,currentPrice){
- if(!plan||!Array.isArray(bars)||!Number.isInteger(triggerIndex)||![1,-1].includes(d)||!Number.isFinite(Number(atr)))
-  return {valid:false,state:"NO_ENTRY_VALIDATION_DATA",touched:false,confirmation:null};
- const lo=Number(plan.entryLow),hi=Number(plan.entryHigh),mid=(lo+hi)/2,act=Number(plan.activationLevel),A=Number(atr);
- if(![lo,hi,mid].every(Number.isFinite)||!(hi>lo))return {valid:false,state:"INVALID_ENTRY_ZONE",touched:false,confirmation:null};
- const sweepModel=/SWEEP/.test(String(plan.entryEnvironment||plan.entryMethod||""));
- const start=Math.max(0,sweepModel?triggerIndex:triggerIndex+1),pad=.035*A;
- let touchIndex=-1,confirmation=null;
- for(let i=start;i<bars.length;i++){
+function validateRetestCore(bars,startIndex,plan,d,zoneAtr,currentPrice,candleAtr,executionTf){
+ if(!plan||!Array.isArray(bars)||![1,-1].includes(d)||!Number.isFinite(Number(zoneAtr)))
+  return {valid:false,state:"NO_ENTRY_VALIDATION_DATA",touched:false,confirmation:null,executionTf};
+ const lo=Number(plan.entryLow),hi=Number(plan.entryHigh),mid=(lo+hi)/2,act=Number(plan.activationLevel),ZA=Number(zoneAtr),CA=Number(candleAtr)||ZA;
+ if(![lo,hi,mid].every(Number.isFinite)||!(hi>lo))return {valid:false,state:"INVALID_ENTRY_ZONE",touched:false,confirmation:null,executionTf};
+ const pad=.035*ZA;let touchIndex=-1,confirmation=null;
+ for(let i=Math.max(0,startIndex);i<bars.length;i++){
   const b=bars[i];if(!b)continue;
   const touches=Number(b.h)>=lo-pad&&Number(b.l)<=hi+pad;
   if(touches&&touchIndex<0)touchIndex=i;
@@ -170,25 +168,43 @@ function validateEntryRetest(bars,triggerIndex,plan,d,atr,currentPrice){
   const wick=d===1?Math.min(Number(b.o),Number(b.c))-Number(b.l):Number(b.h)-Math.max(Number(b.o),Number(b.c));
   const directional=d===1?Number(b.c)>Number(b.o):Number(b.c)<Number(b.o);
   const closesThroughMid=d===1?Number(b.c)>=mid:Number(b.c)<=mid;
-  const reclaim=Number.isFinite(act)?(d===1?Number(b.c)>=act-.035*A:Number(b.c)<=act+.035*A):closesThroughMid;
-  const rejection=wick>=Math.max(.10*A,.45*body);
-  const decisiveBody=body>=.28*A&&body/range>=.52;
-  const notAbnormal=range<=2.40*A;
+  const reclaim=Number.isFinite(act)?(d===1?Number(b.c)>=act-.035*ZA:Number(b.c)<=act+.035*ZA):closesThroughMid;
+  const rejection=wick>=Math.max(.10*CA,.45*body);
+  const decisiveBody=body>=.28*CA&&body/range>=.52;
+  const notAbnormal=range<=2.40*CA;
   if(directional&&closesThroughMid&&reclaim&&(rejection||decisiveBody)&&notAbnormal){
    confirmation={index:i,time:b.t,close:rnd(b.c),type:rejection?"RETEST_REJECTION_CLOSE":"RETEST_DISPLACEMENT_CLOSE",
-    wickAtr:rnd(wick/A,2),bodyAtr:rnd(body/A,2),barsAfterTouch:i-touchIndex};
+    wickAtr:rnd(wick/CA,2),bodyAtr:rnd(body/CA,2),barsAfterTouch:i-touchIndex};
   }
  }
- if(touchIndex<0)return {valid:false,state:"WAIT_FIRST_RETEST",touched:false,confirmation:null};
- if(!confirmation)return {valid:false,state:"ZONE_TOUCHED_WAIT_CLOSED_REJECTION",touched:true,touchIndex,confirmation:null};
+ if(touchIndex<0)return {valid:false,state:"WAIT_FIRST_RETEST",touched:false,confirmation:null,executionTf};
+ if(!confirmation)return {valid:false,state:"ZONE_TOUCHED_WAIT_CLOSED_REJECTION",touched:true,touchIndex,confirmation:null,executionTf};
  const age=bars.length-1-confirmation.index,fresh=age<=2;
- if(!fresh)return {valid:false,state:"RETEST_CONFIRMATION_STALE",touched:true,touchIndex,confirmation,ageClosedBars:age};
- const chase=.18*A,execLow=d===1?lo:lo-chase,execHigh=d===1?hi+chase:hi,px=Number(currentPrice);
+ if(!fresh)return {valid:false,state:"RETEST_CONFIRMATION_STALE",touched:true,touchIndex,confirmation,ageClosedBars:age,executionTf};
+ const chase=.18*ZA,execLow=d===1?lo:lo-chase,execHigh=d===1?hi+chase:hi,px=Number(currentPrice);
  const inExecutionBand=Number.isFinite(px)&&px>=execLow&&px<=execHigh;
- const overextended=Number.isFinite(px)&&(d===1?px>hi+.48*A:px<lo-.48*A);
+ const overextended=Number.isFinite(px)&&(d===1?px>hi+.48*ZA:px<lo-.48*ZA);
  return {valid:fresh&&inExecutionBand&&!overextended,state:overextended?"RETEST_CONFIRMED_BUT_CHASED":inExecutionBand?"RETEST_CONFIRMED_ENTRY_WINDOW":"RETEST_CONFIRMED_WAIT_PRICE",
-  touched:true,touchIndex,confirmation,ageClosedBars:age,executionBand:{low:rnd(execLow),high:rnd(execHigh)},inExecutionBand,overextended,
+  touched:true,touchIndex,confirmation,ageClosedBars:age,executionTf,executionBand:{low:rnd(execLow),high:rnd(execHigh)},inExecutionBand,overextended,
   rule:"NO_BLIND_TOUCH_ENTRY_CLOSED_RETEST_REJECTION_REQUIRED"};
+}
+function validateEntryRetest(bars,triggerIndex,plan,d,atr,currentPrice,executionTf){
+ const sweepModel=/SWEEP/.test(String(plan?.entryEnvironment||plan?.entryMethod||""));
+ const start=Math.max(0,sweepModel?triggerIndex:triggerIndex+1);
+ return validateRetestCore(bars,start,plan,d,atr,currentPrice,atr,executionTf);
+}
+function validateEntryByTime(bars,startTime,plan,d,zoneAtr,currentPrice,candleAtr,executionTf){
+ if(!Array.isArray(bars)||!bars.length)return {valid:false,state:"EXECUTION_TF_DATA_UNAVAILABLE",touched:false,confirmation:null,executionTf};
+ const start=bars.findIndex(b=>Number(b?.t)>=Number(startTime));
+ if(start<0)return {valid:false,state:"WAIT_EXECUTION_TF_BAR_AFTER_SETUP",touched:false,confirmation:null,executionTf};
+ return validateRetestCore(bars,start,plan,d,zoneAtr,currentPrice,candleAtr,executionTf);
+}
+function executionValidationTf(selectedTf,rows){
+ const pref={
+  D1:["H1","M30"],H4:["M30","M15"],H1:["M15","M5"],M30:["M5","M1"],M15:["M5","M1"],M5:["M1"],M1:["M1"]
+ };
+ for(const tf of pref[selectedTf]||[selectedTf])if(rows?.[tf]?.available&&Array.isArray(rows[tf].bars)&&rows[tf].bars.length>=20)return tf;
+ return selectedTf;
 }
 function response(status,k,e,extra={}){
  const expiry=EXPIRY[k?.tf]||5;
@@ -204,7 +220,8 @@ function response(status,k,e,extra={}){
   // Backward compatibility for browser clients that still have v1.10 UI cached.
   requiresH1H4Alignment:false,acceptedClosedPatterns:["BOS","CHOCH","LIQUIDITY_SWEEP","CHART_PATTERN","CANDLE_FORENSICS"],
   triggerLookbackClosedBars:6,entryExpiryClosedBars:expiry,entryRetest:"CLOSED_RETEST_REJECTION_REQUIRED",scoreThresholdAligned:66,scoreThresholdPartialMTF:74,
-  note:"v1.60 changes the ENTRY itself: a zone touch is never enough. AI classifies current Gold motion/regime, selects a setup-specific precision zone, then requires a CLOSED retest rejection/reclaim before ENTRY READY. Choppy Gold is blocked unless a directional liquidity sweep exists. No chase, no blind touch, no full-margin/martingale automation."};
+  executionLadder:{D1:"H1",H4:"M30",H1:"M15",M30:"M5",M15:"M5",M5:"M1",M1:"M1"},
+  note:"v1.60 changes the ENTRY itself: selected TF owns the thesis/zone, a lower execution TF validates the entry when available. A zone touch is never enough. AI classifies current Gold motion/regime, selects a setup-specific precision zone, then requires a CLOSED retest rejection/reclaim before ENTRY READY. Choppy Gold is blocked unless a directional liquidity sweep exists. No chase, no blind touch, no full-margin/martingale automation."};
  return {ok:true,engine:"GF_AI_ADAPTIVE_ENTRY_INTELLIGENCE_V9",mode:"ai",modeProfile:"GOLD_ADAPTIVE_ENTRY_INTELLIGENCE",
   modelType:"AUDITABLE_ADAPTIVE_ENTRY_INTELLIGENCE_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
   source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,fundamentalApplied:!!(e.assetSpecific&&e.available),aiPolicy,
@@ -277,7 +294,12 @@ export function evaluateAILive(args={}){
  }
  const triggerIndex=Number.isInteger(trigger.index)?trigger.index:selectedRow.bars.length-1,triggerBar=selectedRow.bars[triggerIndex]||k.last,
   closeEpoch=triggerBar.t-k.brokerUtcOffsetSeconds+(TF_SECONDS[k.tf]||900),expiry=EXPIRY[k.tf]||5,
-  entryPx=d===1?k.ask:k.bid,entryValidation=validateEntryRetest(selectedRow.bars,triggerIndex,plan,d,selected.atr,entryPx);
+  entryPx=d===1?k.ask:k.bid,executionTf=executionValidationTf(k.tf,rows),executionRow=rows[executionTf],
+  triggerCloseBrokerTime=Number(triggerBar.t)+(TF_SECONDS[k.tf]||900),
+  entryValidation=executionTf===k.tf?
+   validateEntryRetest(selectedRow.bars,triggerIndex,plan,d,selected.atr,entryPx,executionTf):
+   validateEntryByTime(executionRow?.bars||[],triggerCloseBrokerTime,plan,d,selected.atr,entryPx,executionRow?.brain?.atr||selected.atr,executionTf);
+ analysis.executionTf=executionTf;
  analysis.entryValidation=entryValidation;
  if(!entryValidation.valid)analysis.blockers.push(entryValidation.state);
  const conf={...plan,direction:d,confirmationType:trigger.type,confirmationCloseUTC:new Date(closeEpoch*1000).toISOString(),signalCandleTime:triggerBar.t,
@@ -289,7 +311,7 @@ export function evaluateAILive(args={}){
    selected.breakEvent?"Selected structure event: "+selected.breakEvent.label+" @ "+selected.breakEvent.level:null,
    selected.liquidity?.sweep?"Liquidity: "+selected.liquidity.sweep.type+" @ "+selected.liquidity.sweep.level:null,
    selected.chartPattern?"Chart pattern: "+selected.chartPattern.type+" • "+selected.chartPattern.state:null,
-   "Entry model: "+plan.entryMethod,"Gold motion: "+(selected.motion?.state||"UNKNOWN")+" • regime "+(selected.regime?.type||"UNKNOWN"),"Entry validation: "+entryValidation.state+" • blind zone-touch entry is blocked.",plan.fibConfluence?.overlap?"Fibonacci overlaps chosen market zone (+4 only).":"Fibonacci not required.",
+   "Entry model: "+plan.entryMethod,"Gold motion: "+(selected.motion?.state||"UNKNOWN")+" • regime "+(selected.regime?.type||"UNKNOWN"),"Entry validation: "+entryValidation.state+" on "+executionTf+" • blind zone-touch entry is blocked.",plan.fibConfluence?.overlap?"Fibonacci overlaps chosen market zone (+4 only).":"Fibonacci not required.",
    "Confluence "+rnd(confluence,1)+"/100 (NOT win probability)"].filter(Boolean)};
  conf.tradeIdeaId=professionalPlaybook?.tradeIdea?.id||null;
  const elapsed=selectedRow.bars.length-1-triggerIndex,overlay={direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,professionalPlaybook,confirmation:conf,
@@ -305,7 +327,7 @@ export function evaluateAILive(args={}){
  const ready=entryValidation.valid&&confluence>=limits.ready&&professionalPlaybook?.tradeIdea?.quality?.eligible===true;
  return response(ready?(d===1?"AI_BUY_READY":"AI_SELL_READY"):d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED",k,e,{...overlay,canEnter:ready,
   entryState:ready?"CLOSED_RETEST_REJECTION_VALIDATED":entryValidation.state,
-  reason:ready?side(d)+" ENTRY READY: "+plan.entryEnvironment+" is confirmed by a CLOSED retest/rejection and current Vantage price remains inside the anti-chase execution band."+
+  reason:ready?side(d)+" ENTRY READY: "+plan.entryEnvironment+" is confirmed by a CLOSED "+executionTf+" retest/rejection and current Vantage price remains inside the anti-chase execution band."+
    (macroHeadwind?" Macro headwind exists; the higher threshold was required and passed.":""):
    side(d)+" thesis is CONFIRMED, but ENTRY is NOT ready yet. "+entryValidation.state+". Zone touch alone is not an entry; wait for CLOSED rejection/reclaim and a non-chased price."});
 }
