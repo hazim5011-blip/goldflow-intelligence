@@ -22,7 +22,7 @@ test('same-direction SND is confirmed only when an entry-capable Fibo level is i
       {value:.5,label:'0.5 MEDIUM RISK',role:'MEDIUM_RISK',price:100},
       {value:2.125,label:'2.125 SL',role:'SL',price:100.5}
     ]),
-    point:.01
+    point:.01,price:103
   });
   assert.equal(r.active,true);assert.equal(r.confirmedCount,1);
   const z=r.activeZones.buy[0];
@@ -48,6 +48,57 @@ test('nearby Fibo is WATCH only and cannot become confirmed entry',()=>{
   });
   assert.equal(r.confirmedCount,0);assert.equal(r.watchCount,1);
   assert.equal(r.activeZones.buy[0].fiboSnd.watch,true);
+});
+
+test('BUY layers are ordered from first retracement touch to deeper layers',()=>{
+  const r=buildPattern132FiboSndConfluence({
+    activeZones:{buy:[snd(1,96,101,'DEMAND')],sell:[],swap:[]},
+    autoFibo:fib(1,2,[
+      {value:.25,label:'0.25 LOW RISK',role:'LOW_RISK',price:100},
+      {value:.5,label:'0.5 MEDIUM RISK',role:'MEDIUM_RISK',price:98},
+      {value:.75,label:'0.75 HIGH RISK',role:'HIGH_RISK',price:97}
+    ]),price:104
+  });
+  assert.deepEqual(r.bestPlan.layers.map(x=>[x.layerCode,x.price]),[['ENTRY',100],['L2',98],['L3',97]]);
+});
+
+test('SELL layers are ordered from first retracement touch to deeper layers',()=>{
+  const r=buildPattern132FiboSndConfluence({
+    activeZones:{buy:[],sell:[snd(-1,99,104,'SUPPLY')],swap:[]},
+    autoFibo:fib(-1,2,[
+      {value:.25,label:'0.25 LOW RISK',role:'LOW_RISK',price:100},
+      {value:.5,label:'0.5 MEDIUM RISK',role:'MEDIUM_RISK',price:102},
+      {value:.75,label:'0.75 HIGH RISK',role:'HIGH_RISK',price:103}
+    ]),price:96
+  });
+  assert.deepEqual(r.bestPlan.layers.map(x=>[x.layerCode,x.price]),[['ENTRY',100],['L2',102],['L3',103]]);
+});
+
+test('protective stop selects the adverse Auto Fibo SL and targets use nearest favorable Fibo references',()=>{
+  const r=buildPattern132FiboSndConfluence({
+    activeZones:{buy:[snd(1,98,101,'DEMAND')],sell:[],swap:[]},
+    autoFibo:fib(1,2,[
+      {value:-1.125,label:'-1.125 SL',role:'SL',price:90},
+      {value:.5,label:'0.5 MEDIUM RISK',role:'MEDIUM_RISK',price:100},
+      {value:1,label:'1 MARK 1',role:'MARK',price:106},
+      {value:1.25,label:'1.25 G',role:'LETTER',price:108},
+      {value:1.375,label:'1.375 GONDEN ZONE',role:'GOLDEN',price:110},
+      {value:2.125,label:'2.125 SL',role:'SL',price:120}
+    ]),price:103
+  });
+  assert.equal(r.bestPlan.protectiveStop.price,90);
+  assert.equal(r.bestPlan.protectiveStop.source,'AUTO_FIBO_SL');
+  assert.deepEqual(r.bestPlan.targets.map(x=>[x.targetCode,x.price]),[['TP1',106],['TP2',108],['TP3',110]]);
+});
+
+test('SND fallback stop is used if no Fibo SL exists on adverse side',()=>{
+  const r=buildPattern132FiboSndConfluence({
+    activeZones:{buy:[snd(1,99,101,'DEMAND')],sell:[],swap:[]},
+    autoFibo:fib(1,1,[{value:.5,label:'0.5 MEDIUM RISK',role:'MEDIUM_RISK',price:100}]),
+    point:.01
+  });
+  assert.equal(r.bestPlan.protectiveStop.source,'SND_FALLBACK');
+  assert.ok(r.bestPlan.protectiveStop.price<99);
 });
 
 test('confluence math is scale-independent for forex-like and crypto-like prices',()=>{
