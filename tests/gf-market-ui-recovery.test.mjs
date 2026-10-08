@@ -272,7 +272,7 @@ test("Market Intelligence AI UI exposes WATCH direction, thesis, BOS/CHOCH evide
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
- assert.ok(html.includes("GF-AI Live Analyst v1.50 • Live Management + Recovery"));
+ assert.ok(html.includes("GF-AI Live Analyst v1.60 • Adaptive Entry Intelligence"));
  assert.ok(app.includes("BUY WATCH"));
  assert.ok(app.includes("d.analysis.directionScore"));
  assert.ok(app.includes("d.candidatePlan"));
@@ -286,7 +286,7 @@ test("Market Intelligence AI UI exposes WATCH direction, thesis, BOS/CHOCH evide
  assert.ok(ui.includes("NOT win probability"));
 });
 
-test("GF-AI v1.50 UI proves M1-to-D1 hierarchy and guards mixed-version policy fields",()=>{
+test("GF-AI v1.60 UI proves M1-to-D1 hierarchy and guards mixed-version policy fields",()=>{
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
@@ -297,11 +297,11 @@ test("GF-AI v1.50 UI proves M1-to-D1 hierarchy and guards mixed-version policy f
  assert.ok(ui.includes("ALL TF MATRIX:"));
  assert.ok(ui.includes("ALL TF CONSENSUS:"));
  assert.ok(ui.includes("Array.isArray(d.aiPolicy.primaryEngines)"));
- assert.ok(app.includes('LIVE MANAGER v1.50 • Entry '));
+ assert.ok(app.includes('ENTRY INTELLIGENCE v1.60 • Entry '));
  assert.ok(app.includes("d.analysis?.allTfConsensus"));
 });
 
-test("GF-AI v1.50 UI renders BUY SELL NO-TRADE scenarios and Experience Learning disclosure",()=>{
+test("GF-AI v1.60 UI renders BUY SELL NO-TRADE scenarios and Experience Learning disclosure",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
@@ -314,10 +314,10 @@ test("GF-AI v1.50 UI renders BUY SELL NO-TRADE scenarios and Experience Learning
  assert.ok(ui.includes("ALTERNATIVE: "));
  assert.ok(ui.includes("Historical follow-through only; NOT trade win rate / ML probability."));
  assert.ok(app.includes("PRIMARY "));
- assert.ok(app.includes("LIVE MANAGER v1.50"));
+ assert.ok(app.includes("ENTRY INTELLIGENCE v1.60"));
 });
 
-test("GF-AI v1.50 UI exposes one Trade Idea and professional top-down hierarchy",()=>{
+test("GF-AI v1.60 UI exposes one Trade Idea and professional top-down hierarchy",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
@@ -328,11 +328,11 @@ test("GF-AI v1.50 UI exposes one Trade Idea and professional top-down hierarchy"
  assert.ok(ui.includes("ONE_PARENT_IDEA_ACROSS_TFS"));
  assert.ok(ui.includes("Cadence guide: "));
  assert.ok(ui.includes("Countertrend: "));
- assert.ok(app.includes("LIVE MANAGER v1.50"));
+ assert.ok(app.includes("ENTRY INTELLIGENCE v1.60"));
  assert.ok(app.includes("professionalPlaybook.tradeIdea.id"));
 });
 
-test("GF-AI v1.50 UI exposes live HOLD/CUT/RECOVERY lifecycle without full-margin claims",()=>{
+test("GF-AI v1.60 UI exposes live HOLD/CUT/RECOVERY lifecycle without full-margin claims",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
@@ -344,4 +344,20 @@ test("GF-AI v1.50 UI exposes live HOLD/CUT/RECOVERY lifecycle without full-margi
  assert.ok(ui.includes("CUT SETUP • ORIGINAL THESIS INVALID"));
  assert.ok(ui.includes("Recovery risk remains NORMAL only; no martingale."));
  assert.ok(app.includes("A++ HIGH CONVICTION • ENTRY CONDITIONS MET"));
+});
+
+test("GF-AI v1.60 UI makes zone-not-entry rule and adaptive entry proof explicit",()=>{
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ assert.ok(html.includes('id="gfEntryIntelBadge"'));
+ assert.ok(html.includes('id="gfEntryMotion"'));
+ assert.ok(html.includes('id="gfEntryModel"'));
+ assert.ok(html.includes('id="gfEntryValidation"'));
+ assert.ok(html.includes("ZONE ≠ ENTRY"));
+ assert.ok(html.includes("CLOSED retest/rejection/reclaim"));
+ assert.ok(ui.includes("Zone touch alone did NOT trigger this entry"));
+ assert.ok(ui.includes("WAIT ENTRY PROOF"));
+ assert.ok(ui.includes("NO BLIND TOUCH"));
+ assert.ok(app.includes("ENTRY INTELLIGENCE v1.60"));
 });
