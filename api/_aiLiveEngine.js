@@ -1,4 +1,4 @@
-// GF-AI LIVE ANALYST v1.40 • PROFESSIONAL TRADER PLAYBOOK
+// GF-AI LIVE ANALYST v1.50 • LIVE MANAGEMENT + RECOVERY BRAIN
 // Reads M1/M5/M15/M30/H1/H4/D1 as one hierarchy, then compares BUY/SELL/NO_TRADE scenarios.
 // Selected TF owns the entry trigger/zone; every other TF is contextual evidence.
 // Market structure, BOS/CHOCH, liquidity, SND/SNR/SBR/RBS, OB/FVG,
@@ -155,10 +155,11 @@ function observedSince(args,k,t){
 }
 function response(status,k,e,extra={}){
  const expiry=EXPIRY[k?.tf]||5;
- const aiPolicy={version:"1.40",entryPolicy:"PROFESSIONAL_TRADER_PLAYBOOK_REASONING_LEARNING",timeframes:ALL_TFS,selectedTfOwnsEntry:true,
-  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT","MACRO_CONTEXT","SCENARIO_REASONING","EXPERIENCE_CALIBRATION","PROFESSIONAL_TRADER_PLAYBOOK","TRADE_IDEA_HIERARCHY"],
+ const aiPolicy={version:"1.50",entryPolicy:"PROFESSIONAL_TRADER_PLAYBOOK_LIFECYCLE_RECOVERY",timeframes:ALL_TFS,selectedTfOwnsEntry:true,
+  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT","MACRO_CONTEXT","SCENARIO_REASONING","EXPERIENCE_CALIBRATION","PROFESSIONAL_TRADER_PLAYBOOK","TRADE_IDEA_HIERARCHY","LIVE_MANAGEMENT","RECOVERY_BRAIN"],
   reasoningModel:{scenarios:["BUY","SELL","NO_TRADE"],primaryAlternative:true,whatWouldChangeMyMind:true,evidenceVsContradiction:true},
   learningModel:{type:"RETROSPECTIVE_DIRECTIONAL_FOLLOW_THROUGH",trainedML:false,maxScoreAdjustment:5,minDecidableSamples:5,persistentLongTermMemory:false},
+  managementPolicy:{states:["HOLD_PLAN","PROTECT","TAKE_PARTIAL","CUT_SETUP","WAIT_RECOVERY","RECOVERY_READY"],fullMarginAllowed:false,martingaleAllowed:false,recoveryRisk:"NORMAL_RISK_ONLY",highConviction:"A++_QUALITY_NOT_WIN_PROBABILITY"},
   chartPatterns:["DOUBLE_TOP_BOTTOM","HEAD_AND_SHOULDERS","INVERSE_HEAD_AND_SHOULDERS","ASCENDING_DESCENDING_TRIANGLE"],
   entryModels:["BOS_RBS_SBR_RETEST","CHOCH_STRUCTURE_RETEST","LIQUIDITY_SWEEP_ZONE_RETEST","PATTERN_NECKLINE_RETEST","ORDER_BLOCK_RETEST","FVG_REBALANCE","SUPPLY_DEMAND_REACTION"],
   fibonacciRole:"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED",scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",persistent24hSignalArchive:false,
@@ -166,9 +167,9 @@ function response(status,k,e,extra={}){
   // Backward compatibility for browser clients that still have v1.10 UI cached.
   requiresH1H4Alignment:false,acceptedClosedPatterns:["BOS","CHOCH","LIQUIDITY_SWEEP","CHART_PATTERN","CANDLE_FORENSICS"],
   triggerLookbackClosedBars:6,entryExpiryClosedBars:expiry,entryRetest:"MARKET_DRIVEN",scoreThresholdAligned:66,scoreThresholdPartialMTF:74,
-  note:"AI compares BUY, SELL and NO_TRADE, then applies the Professional Trader Playbook: D1/H4 regime, H1/M30 thesis, M15/M5 setup, M1 precision trigger, one parent Trade Idea ID across TFs. Fibonacci never creates the setup."};
- return {ok:true,engine:"GF_AI_PROFESSIONAL_TRADER_PLAYBOOK_V7",mode:"ai",modeProfile:"ALL_TF_PROFESSIONAL_TRADER_REASONING",
-  modelType:"AUDITABLE_PROFESSIONAL_TRADER_PLAYBOOK_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
+  note:"AI compares BUY, SELL and NO_TRADE, applies D1/H4→H1/M30→M15/M5→M1 professional hierarchy, one parent Trade Idea ID, then manages the observed research lifecycle through HOLD/PROTECT/CUT/RECOVERY. A++ is a quality tier, not 90% win probability. No full-margin or martingale automation."};
+ return {ok:true,engine:"GF_AI_LIVE_MANAGEMENT_RECOVERY_V8",mode:"ai",modeProfile:"PROFESSIONAL_TRADER_LIFECYCLE_RECOVERY",
+  modelType:"AUDITABLE_PROFESSIONAL_TRADER_LIFECYCLE_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
   source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,fundamentalApplied:!!(e.assetSpecific&&e.available),aiPolicy,
   caution:"Confluence score is not win probability and cannot guarantee direction.",status,...extra};
 }
