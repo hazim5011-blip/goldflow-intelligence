@@ -4,6 +4,9 @@ import macroHandler from "./macro.js";
 import {evaluateStudy,TF_SECONDS} from "./_studyEngine.js";
 import {evaluateAILive} from "./_aiLiveEngine.js";
 import {evaluateMarketStudy} from "./_marketStudyEngine.js";
+import {enforceGFTradePlan} from "./_gfTradePlan.js";
+import {forwardConfigured,normalizePublishedPayload,storePublished,listForwardPrivate,normalizeOutcomePayload,storeOutcome} from "./_v8Ledger.js";
+import {replayOutcome} from "./_v8Core.js";
 
 const memo={time:0,value:null,pending:null};
 function capture(){let status=200,body=null;const res={setHeader(){return res},status(v){status=v;return res},json(x){body=x;return res},end(){return res}};return {res,get:()=>({status,body})}}
@@ -17,6 +20,66 @@ async function macroSnapshot(){
 const allowed=/^[A-Za-z0-9._#-]{1,42}$/;
 const NEWS_DRIVER_IDS=["CPI","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"];
 const side=n=>Number(n)>0?"BUY":Number(n)<0?"SELL":"NEUTRAL";
+const GF_MODE_ID={ai:"gf-ai",news:"gf-news",study:"gf-study"};
+function closedUtcBars(raw,tf,offset,nowSec){
+ const sec=TF_SECONDS[tf]||300;
+ return (Array.isArray(raw)?raw:[]).map(b=>({t:Number(b.t)-offset,o:Number(b.o),h:Number(b.h),l:Number(b.l),c:Number(b.c),v:Number(b.v||0)}))
+  .filter(b=>[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&b.h>=b.l&&b.t+sec<=nowSec-1)
+  .sort((a,b)=>a.t-b.t);
+}
+function samePlan(a,p){
+ const tol=Math.max(1e-9,Math.abs(Number(p.entryHigh)-Number(p.entryLow))*.08);
+ return Number(a.direction)===Number(p.direction)&&Math.abs(Number(a.originalSL)-Number(p.sl))<=tol&&Math.abs(Number(a.tp1)-Number(p.tp1))<=tol;
+}
+async function archiveAndSettleGF(output,mode,bridge,tf,offset,nowSec){
+ const indicator=GF_MODE_ID[mode];
+ if(!indicator||!forwardConfigured())return {configured:false,status:"FORWARD_ARCHIVE_NOT_CONFIGURED"};
+ const tradePlan=output?.tradePlan,raw=bridge.frames?.[tf]||[],closed=closedUtcBars(raw,tf,offset,nowSec);
+ if(closed.length<25)return {configured:true,status:"WAIT_ARCHIVE_CANDLES"};
+ let pairs=[];
+ try{pairs=await listForwardPrivate({indicator,symbol:bridge.symbol,tf,limit:80})}catch{}
+ let publishedNow=false,signalId=null;
+ if(output?.canEnter===true&&tradePlan?.valid){
+  const exists=pairs.some(x=>!x.outcome&&samePlan(x.published,tradePlan));
+  if(!exists){
+   const entry=(Number(tradePlan.entryLow)+Number(tradePlan.entryHigh))/2;
+   const payload={symbolResolved:bridge.symbol,brokerServer:bridge.server||null,indicatorId:indicator,
+    indicatorVersion:String(output.engine||indicator),engineBuildHash:String(output.engine||indicator),tf,
+    direction:tradePlan.direction,signalCandleCloseUTC:output.closedAtUTC,entry,originalSL:tradePlan.sl,
+    tp1:tradePlan.tp1,tp2:tradePlan.tp2,tp3:tradePlan.tp3,score:tradePlan.score,
+    reasons:[...(tradePlan.reasons||[]),"Forward archive records ENTRY READY decision; no broker order is placed."],
+    zone:{tf,low:tradePlan.entryLow,high:tradePlan.entryHigh,source:tradePlan.entryMethod||tradePlan.confirmationType||indicator},
+    spec:{point:bridge.point,digits:bridge.digits},closedCandles:closed.slice(-160)};
+   try{
+    const normalized=normalizePublishedPayload(payload,new Date(nowSec*1000));
+    await storePublished(normalized);publishedNow=true;signalId=normalized.signalId;
+    pairs=await listForwardPrivate({indicator,symbol:bridge.symbol,tf,limit:80}).catch(()=>pairs);
+   }catch(e){
+    if(!/duplicate|already.exists|immutable|overwrite|409|conflict/i.test(String(e?.message||e)))throw e;
+   }
+  }
+ }
+ const replayBars=(Array.isArray(raw)?raw:[]).map(b=>({t:Number(b.t)-offset,o:Number(b.o),h:Number(b.h),l:Number(b.l),c:Number(b.c),v:Number(b.v||0)}))
+  .filter(b=>[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&b.h>=b.l).sort((a,b)=>a.t-b.t);
+ let settled=0;
+ for(const pair of pairs){
+  if(pair.outcome)continue;
+  const p=pair.published,close=Math.floor(Date.parse(p.signalCandleCloseUTC)/1000);
+  if(!Number.isFinite(close))continue;
+  const sig={time:close-(TF_SECONDS[tf]||300),closeTime:close,direction:p.direction,entry:p.entry,originalSL:p.originalSL,
+   invalidation:p.originalSL,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3};
+  const out=replayOutcome(sig,replayBars,tf,indicator);
+  if(!["TP1","TP2","TP3","TRAILING","BE_POSITIVE","BE_ZERO","SL"].includes(out.outcome))continue;
+  try{
+   const event=normalizeOutcomePayload({date:p.receivedAtUTC.slice(0,10),signalId:p.signalId,outcome:out.outcome,
+    exitPrice:out.exitPrice,exitTimeUTC:out.exitTimeUTC,exitRule:out.exitRule},p,new Date(nowSec*1000));
+   await storeOutcome(event);settled++;
+  }catch(e){
+   if(!/already.exists|already_exists|immutable|overwrite|409|conflict/i.test(String(e?.message||e)))throw e;
+  }
+ }
+ return {configured:true,status:publishedNow?"FORWARD_SIGNAL_ARCHIVED":"FORWARD_ARCHIVE_ACTIVE",signalId,settled};
+}
 export function buildNewsDecision(output,macro){
   if(!output||output.mode!=="news")return null;
   const gold=macro?.gold||{},bias=String(gold.bias||"UNAVAILABLE"),score=Number.isFinite(Number(gold.score))?Number(gold.score):null;
@@ -84,9 +147,11 @@ export default async function handler(req,res){
    h1:bridge.frames?.H1||[],h4:bridge.frames?.H4||[],frames:mode==="ai"?(bridge.frames||{}):undefined,
    quote:{bid:bridge.bid,ask:bridge.ask,tickTime:bridge.serverTime,observedAt:nowSec},
    offsetSeconds:offset,macro,nowSec});
+  const safeOutput=enforceGFTradePlan(output,GF_MODE_ID[mode]);
+  const archive=await archiveAndSettleGF(safeOutput,mode,bridge,tf,offset,nowSec).catch(e=>({configured:forwardConfigured(),status:"FORWARD_ARCHIVE_ERROR",errorCode:String(e?.message||e).slice(0,80)}));
   const publicMacro=macro?{fetchedAtUTC:macro.fetchedAt,quality:macro.quality,gold:macro.gold,
    cards:(macro.cards||[]).filter(c=>NEWS_DRIVER_IDS.includes(c.id)).map(c=>({id:c.id,name:c.name,display:c.display,value:c.value,date:c.date,status:c.status,source:c.source,stale:c.stale,goldImpact:c.goldImpact,change:c.change,changeLabel:c.changeLabel,detail:c.detail}))}:null;
-  return res.status(200).json({...output,source:"VANTAGE_MT5",marketResearchOnly:true,autoTrading:false,news:publicMacro,
+  return res.status(200).json({...safeOutput,source:"VANTAGE_MT5",marketResearchOnly:true,autoTrading:false,forwardArchive:archive,news:publicMacro,
    chartBars:(bridge.frames?.[tf]||[]).slice(-160).map(b=>({t:Number(b.t)-offset,o:b.o,h:b.h,l:b.l,c:b.c})),
    limitation:mode==="ai"?"GF-AI v1.60 reads current Vantage closed-candle motion and separates thesis from entry. A zone touch is not enough: a setup-specific CLOSED retest/rejection/reclaim and anti-chase execution band are required before ENTRY READY. HOLD/PROTECT/CUT/RECOVERY remains active after entry. No full-margin/martingale automation or broker execution.":"Mode-specific auditable research. No verified publication timestamp, forecast surprise, intrabar fill or ML-trained win probability."});
  }catch(e){

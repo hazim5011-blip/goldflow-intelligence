@@ -1,6 +1,6 @@
 import {createHash,timingSafeEqual} from "node:crypto";
 const TF_SECONDS={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400};
-const INDICATORS=new Set(["105","103","pvt","pattern132","snd107","owl101"]);
+const INDICATORS=new Set(["105","103","pvt","pattern132","snd107","owl101","gf-ai","gf-news","gf-study"]);
 const xnum=v=>v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))?Number(v):null;
 const sha256=s=>createHash("sha256").update(s).digest("hex");
 const timeIso=()=>new Date().toISOString();
@@ -129,6 +129,36 @@ export async function readForwardOutcomePrivate(date,id){
  if(sha256(JSON.stringify({...body,eventHash:undefined}))!==eventHash)throw Error("OUTCOME_HASH_MISMATCH");
  return event;
 }
+export async function listForwardPrivate({indicator=null,symbol=null,tf=null,limit=200}={}){
+ if(!forwardConfigured())return [];
+ const {list}=await import("@vercel/blob");
+ const max=Math.max(1,Math.min(500,Number(limit)||200)),paths=[];let cursor;
+ do{
+  const page=await list({prefix:"goldflow-forward/v1/",limit:1000,cursor});
+  for(const b of page?.blobs||[]){
+   if(String(b.pathname||"").endsWith("/published.json"))paths.push(String(b.pathname));
+  }
+  cursor=page?.cursor||undefined;
+ }while(cursor&&paths.length<max*4);
+ const out=[];
+ for(const pathname of paths.sort().reverse()){
+  if(out.length>=max)break;
+  try{
+   const published=await readPrivateJson(pathname);
+   if(!published||published.recordMode!=="FORWARD_LOGGED")continue;
+   const {recordHash,...body}=published;
+   if(sha256(JSON.stringify({...body,recordHash:undefined}))!==recordHash)continue;
+   if(indicator&&published.indicatorId!==String(indicator).toLowerCase())continue;
+   if(symbol&&published.symbolResolved!==String(symbol))continue;
+   if(tf&&published.tf!==String(tf).toUpperCase())continue;
+   let outcome=null;
+   try{outcome=await readForwardOutcomePrivate(published.receivedAtUTC.slice(0,10),published.signalId)}catch{}
+   out.push({published,outcome});
+  }catch{}
+ }
+ return out.sort((a,b)=>Date.parse(a.published.receivedAtUTC)-Date.parse(b.published.receivedAtUTC));
+}
+
 export async function readForwardOutcome(date,id){
  if(!publicReadEnabled())throw Error("FORWARD_PUBLIC_READ_NOT_ENABLED");
  return readForwardOutcomePrivate(date,id);
