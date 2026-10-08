@@ -1,0 +1,41 @@
+name: GoldFlow GPT-6 Isolated Gateway CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cloudflare/gpt-research.js'
+      - 'cloudflare/worker.js'
+      - 'tests/gpt-research.test.mjs'
+      - 'docs/GPT6_ISOLATED_STAGING.md'
+      - '.github/workflows/gpt6-isolated-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gpt-isolated-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify GPT module JavaScript syntax
+        run: |
+          node --check cloudflare/gpt-research.js
+          node --check cloudflare/worker.js
+      - name: Security and freshness unit tests (no live credentials)
+        run: node --test tests/gpt-research.test.mjs
+      - name: Existing GoldFlow unit tests
+        run: npm test
+      - name: Install build-time dependencies
+        run: npm install --no-audit --no-fund
+      - name: Existing Cloudflare compatibility and bundle
+        run: |
+          npm run test:cloudflare
+          npm run build:cloudflare
+          node --check dist/_worker.js
+          grep -q 'GPT_RESEARCH_DISABLED' dist/_worker.js
