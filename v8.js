@@ -243,8 +243,9 @@
       '<span><b>'+signed(r.signedPoints,0)+'</b><small>'+t("points")+'</small></span>'+
       '</summary><div class="v8RecordDetails"><div class="v8Plan">'+
       stat(t("entry"),number(r.entry,5))+stat("SL",number(r.originalSL,5))+stat("TP1",number(r.tp1,5))+stat("TP2",number(r.tp2,5))+
-      stat("TP3",number(r.tp3,5))+stat("BE RULE",r.managementPlan?"Trigger +0.50R":"N/A",r.managementPlan?"Lock +0.05R":"")+
-      stat("TRAIL RULE",r.managementPlan?"Start +0.75R":"N/A",r.managementPlan?"Distance 0.35R":"")+stat("PLAN SOURCE",r.nativeTargetDefined?"NATIVE TP + NORMALIZED MGMT":"NORMALIZED 1R/2R/3R",r.planOrigin||"")+
+      stat("TP3",number(r.tp3,5))+stat("BE RULE",r.managementPlan&&finite(r.managementPlan.beTriggerR)?"Trigger +"+number(r.managementPlan.beTriggerR,2)+"R":"N/A",r.managementPlan&&finite(r.managementPlan.beLockR)?"Lock +"+number(r.managementPlan.beLockR,2)+"R":"")+
+      stat("TRAIL RULE",r.managementPlan&&finite(r.managementPlan.trailTriggerR)?"Start +"+number(r.managementPlan.trailTriggerR,2)+"R":"N/A",r.managementPlan&&finite(r.managementPlan.trailDistanceR)?"Distance "+number(r.managementPlan.trailDistanceR,2)+"R"+(finite(r.managementPlan.trailStepR)?" • Step "+number(r.managementPlan.trailStepR,2)+"R":""):"")+
+      stat("PLAN SOURCE",String(r.planOrigin||"").indexOf("PVT_CHART_CONFLUENCE")===0?"NATIVE PVT v1.01 PLAN":r.nativeTargetDefined?"NATIVE TP + HISTORY MGMT":"NORMALIZED 1R/2R/3R",r.planOrigin||"")+
       stat(t("exit"),number(r.exitPrice,5))+stat(t("riskToSL"),signed(r.riskPoints,0)+" points")+
       stat(t("grossPL"),pl,"0.01 lot • excludes costs")+stat(t("totalR"),signed(r.rMultiple,2))+
       '</div><p><b>'+t("technicalReasons")+':</b> '+safe((r.reasons||[]).join(" • ")||"N/A")+'</p>'+
