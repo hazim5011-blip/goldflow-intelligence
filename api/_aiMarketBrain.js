@@ -232,7 +232,7 @@ function overlapZone(a,b){
 function directionalZoneSet(brain,d,atr){
  const z=brain.zones||{},out=[];
  const add=(type,zone,base,source)=>{if(zone&&Number(zone.direction||d)===d&&N(zone.low)!==null&&N(zone.high)!==null)out.push({type,zone,base,source})};
- if(z.flip?.direction===d)add(z.flip.type+"_STRUCTURE_RETEST",z.flip,108,z.flip.source||z.flip.type);
+ if(z.flip?.direction===d)add(brain.breakEvent?.type==="CHOCH"?"CHOCH_STRUCTURE_RETEST":z.flip.type+"_STRUCTURE_RETEST",z.flip,108,z.flip.source||z.flip.type);
  if(brain.chartPattern?.direction===d&&brain.chartPattern.state==="CONFIRMED"&&N(brain.chartPattern.neckline)!==null){
   const n=Number(brain.chartPattern.neckline);add(brain.chartPattern.type+"_NECKLINE_RETEST",{direction:d,low:n-.13*atr,high:n+.13*atr},96,brain.chartPattern.type);
  }
@@ -318,7 +318,7 @@ export function buildMarketPlan(c,brain,d,price){
  const fib=optionalFibConfluence(c,d,entry,atr),zoneType=String(entry.type||""),
   activationLevel=/RBS|SBR|NECKLINE/.test(zoneType)&&brain.breakEvent?.direction===d?brain.breakEvent.level:
    /SWEEP/.test(entry.environment?.type||"")&&brain.liquidity?.sweep?.direction===d?brain.liquidity.sweep.level:entry.mid;
- return {...plan,entryMethod:entry.environment.type,entryZoneMethod:entry.type,entrySource:entry.source,fibConfluence:fib,
+ return {...plan,entryMethod:entry.type,entryEnvironment:entry.environment.type,entryZoneMethod:entry.type,entrySource:entry.source,fibConfluence:fib,
   entryEnvironment:entry.environment.type,motionProfile:brain.motion,zoneConfluence:entry.zoneConfluence,
   stopSource:stopInfo.source,stopDistanceAtr:stopInfo.distanceAtr,activationLevel:rnd(activationLevel),
   requiresClosedRetest:true,noBlindTouch:true,chaseBufferAtr:.18,
