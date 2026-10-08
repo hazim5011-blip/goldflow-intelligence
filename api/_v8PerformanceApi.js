@@ -16,7 +16,7 @@ export default async function handler(req,res){
         signalWinRate:"Count-based reference only: positive signal count / (positive + negative). It must not override a negative NET PIP/USD result.",
         legacyWinRate:"(positive + BE_ZERO) / (positive + negative + BE_ZERO); count-only legacy reference",
         ambiguous:"excluded from P/L weighting because intrabar order is unknown",pips:"Per-symbol only; WIN PIP + SL PIP = NET PIP.",RMultiple:"signed quote-price move / original SL risk",
-        normalizedTradePlan:"Every evaluable signal requires Entry + SL. Missing native targets are filled only in the History study layer as 1R/2R/3R; management uses BE trigger +0.50R, lock +0.05R, trail trigger +0.75R, trail distance 0.35R.",
+        dynamicTradePlan:"Every evaluable signal uses a GoldFlow Dynamic ATR + Structure managed plan. The indicator's own setup/zone/structure defines the stop anchor; ATR supplies volatility padding/minimum risk. TP1/TP2/TP3 prefer confirmed pre-signal structure/liquidity and use dynamic R fallbacks only when structure does not provide enough targets. BE trigger +0.50R, lock +0.05R, trail trigger +0.75R, trail distance 0.35R.",
         grossPL:"Contract-based gross estimate for broker-supported 0.01 lot settled in USD; excludes spread, commission, swap and slippage."},
       completeness:"WINDOW_LIMITED_HISTORICAL_SIM",disclaimer:DISCLAIMER});
   }catch(e){res.setHeader("Cache-Control","no-store");return res.status(200).json({ok:false,ready:false,error:String(e?.message||e),groups:[]});}

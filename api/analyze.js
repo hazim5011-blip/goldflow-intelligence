@@ -9,6 +9,7 @@ import {runPattern132AutoFibo} from "./_pattern132AutoFibo.js";
 import {buildPattern132FiboSndConfluence} from "./_pattern132FiboSndConfluence.js";
 import {runSND107} from "./_indicatorSND107.js";
 import {runFund104} from "./_indicatorFund104.js";
+import {applyDynamicPlanToSignal,UNIVERSAL_MANAGEMENT} from "./_dynamicTradeManagement.js";
 
 const PROFILE={
   M1:["M1","M5","M15"],
@@ -109,6 +110,14 @@ export default async function handler(req,res){
       indicator=runSND107({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),m5Bars:bars("M5"),m15Bars:bars("M15"),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
     }else{
       indicator=run105({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
+    }
+
+    if(indicator?.latestSignal){
+      const nativeLatestSignal=indicator.latestSignal;
+      const managed=applyDynamicPlanToSignal(nativeLatestSignal,bars(tTF),tTF,indicatorMode,meta.point||0);
+      indicator={...indicator,nativeLatestSignal,dynamicTradePlan:managed.plan||null,
+        tradeManagement:{mode:"DYNAMIC_ATR_STRUCTURE",...UNIVERSAL_MANAGEMENT},
+        latestSignal:managed.signal||nativeLatestSignal};
     }
 
     const now=Math.floor(Date.now()/1000);

@@ -1,11 +1,9 @@
+import {UNIVERSAL_MANAGEMENT} from "./_dynamicTradeManagement.js";
 const N=v=>v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))?Number(v):null;
 const rnd=(v,d=10)=>N(v)==null?null:Number(Number(v).toFixed(d));
 const side=d=>d>0?"BUY":d<0?"SELL":"NEUTRAL";
 
-export const GF_HISTORY_MANAGEMENT=Object.freeze({
-  beTriggerR:.50,beLockR:.05,trailTriggerR:.75,trailDistanceR:.35,
-  policy:"GOLDFLOW_GF_RESEARCH_CLOSED_OHLC_CONSERVATIVE"
-});
+export const GF_HISTORY_MANAGEMENT=UNIVERSAL_MANAGEMENT;
 
 function origin(mode){
   return mode==="gf-ai"?"GF_AI_V1_60_NATIVE_MARKET_PLAN":
