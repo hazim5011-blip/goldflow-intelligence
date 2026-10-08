@@ -1,0 +1,12 @@
+{
+  "version": "RECOMMENDED_AI_ARCHIVE_V1",
+  "updatedAtUTC": null,
+  "heartbeat": "WAIT_FIRST_HOURLY_CYCLE",
+  "primarySymbol": "XAUUSD247",
+  "primaryTF": "M15",
+  "schedule": {
+    "cadence": "hourly",
+    "strategy": "rotating indicator batches; every indicator revisited within about 4 hours"
+  },
+  "recommendations": {}
+}
