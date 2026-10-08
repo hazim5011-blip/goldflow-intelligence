@@ -2,6 +2,7 @@ import {bridgeConfigured,brokerGet,apiError,vantageBrokerUtcOffsetSeconds} from 
 import {runIndicator as run105} from "./_indicator105.js";
 import {runIndicator as run103} from "./_indicator103.js";
 import {runPVT} from "./_indicatorPVT102.js";
+import {runPVTChart101} from "./_indicatorPVTChart101.js";
 import {runIndicator as runOWL101} from "./_indicatorOWL101.js";
 import {runPattern132} from "./_indicatorPattern132.js";
 import {runSND107} from "./_indicatorSND107.js";
@@ -39,6 +40,7 @@ function sndProfile(sourceTF){
   return ["M1",sourceTF,bias];
 }
 function resolveProfile(tf,mode){
+  if(mode==="pvtchart101"||mode==="pvt-chart-101")return [tf,tf,tf];
   if(mode==="fund104"||mode==="fundstructure"||mode==="1.04")return [tf,"H1","H4"];
   if(mode==="pattern132"||mode==="pattern"||mode==="1.32") return patternProfile(tf);
   if(mode==="snd107"||mode==="snd"||mode==="1.07") return sndProfile(tf);
@@ -85,7 +87,9 @@ export default async function handler(req,res){
     const meta=data.meta||{};
     let indicator;
 
-    if(indicatorMode==="fund104"||indicatorMode==="fundstructure"||indicatorMode==="1.04"){
+    if(indicatorMode==="pvtchart101"||indicatorMode==="pvt-chart-101"){
+      indicator=runPVTChart101({triggerBars:bars(tTF),triggerTF:tTF,symbol:meta.symbol||symbol,point:meta.point||0});
+    }else if(indicatorMode==="fund104"||indicatorMode==="fundstructure"||indicatorMode==="1.04"){
       indicator=runFund104({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
     }else if(indicatorMode==="pvt"||indicatorMode==="pvt102"){
       indicator=runPVT({triggerBars:bars(tTF),triggerTF:tTF,symbol:meta.symbol||symbol,point:meta.point||0});
