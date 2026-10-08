@@ -7,7 +7,8 @@
     {id:"105",label:"MTF Research v1.05",historical:true},
     {id:"103",label:"MTF Research v1.03",historical:true},
     {id:"pvt",label:"PVT v1.02",historical:true},
-    {id:"pattern132",label:"Pattern Zone Tutor v1.32",historical:true},
+    {id:"pvtchart101",label:"PVT Chart Confluence XAU v1.01 • MQ5 Source",historical:true},
+    {id:"pattern132",label:"Pattern Zone Tutor v1.32 • MQ5 Verified",historical:true},
     {id:"snd107",label:"SND / SNR / SBR / RBS v1.07",historical:true},
     {id:"owl101",label:"OWL Style Research v1.01",historical:true},
     {id:"fund104",label:"Fund Structure A v1.04 — Web Study",historical:true,validationOnly:true},
@@ -142,7 +143,7 @@
     if($("v8IndicatorComparison"))$("v8IndicatorComparison").innerHTML='<p class="sub">Mengira win rate setiap indicator daripada broker candle window yang sama…</p>';
     if($("v8DailySummary"))$("v8DailySummary").innerHTML='<p class="sub">Mengira jumlah TP/SL, R, pip dan point setiap hari…</p>';
     var extra=analyticsQuery(filters?.direction,filters?.from,filters?.to);
-    var results=await mapLimit(HISTORY_IDS,2,async function(id){
+    var results=await mapLimit(HISTORY_IDS,1,async function(id){
       try{return {id,data:await json("/api/performance?"+uriForIndicator(id,extra))}}
       catch(e){return {id,error:String(e.message||e)}}
     });
