@@ -108,7 +108,12 @@
     if(meta.forwardOnly&&String(data?.historyMode||"").indexOf("FORWARD")>=0&&!Number(st?.totalSignals||0)){
       return '<tr><td><b>'+safe(meta.label)+'</b><br><small>OWN ENTRY / SL / TP1 / TP2 / TP3</small></td>'+
         '<td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>'+
-        '<td class="y"><b>WAIT ARCHIVE</b><br><small>n=0</small></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+        '<td class="y"><b>WAIT ARCHIVE</b><br><small>n=0</small></td><td>0.0</td><td>0.0</td><td>0.0</td><td>0</td><td>0.00</td><td>—</td></tr>';
+    }
+    if(st&&!Number(st.totalSignals||0)){
+      return '<tr><td><b>'+safe(meta.label)+'</b><br><small>OWN ENTRY / SL / TP1 / TP2 / TP3</small></td>'+
+        '<td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>'+
+        '<td class="y"><b>NO SIGNAL</b><br><small>n=0</small></td><td>0.0</td><td>0.0</td><td>0.0</td><td>0</td><td>0.00</td><td>—</td></tr>';
     }
     var tp=tpTrailCount(st),be=Number(st?.outcomes?.BE_POSITIVE||0),den=Number(st?.strictDenominator||0),
       winP=metricPart(st,"pipsBySymbol",symbol,"winTotal"),lossP=metricPart(st,"pipsBySymbol",symbol,"lossTotal"),netP=metricTotal(st,"pipsBySymbol",symbol);
