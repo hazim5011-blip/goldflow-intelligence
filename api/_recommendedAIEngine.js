@@ -1,4 +1,4 @@
-import {fetchV8Context,aggregate} from "./_v8Data.js";
+import {fetchV8Context,rebuildV8ContextWithProfile,aggregate} from "./_v8Data.js";
 import {getEffectiveDynamicProfile,DEFAULT_DYNAMIC_PROFILES} from "./_dynamicTradeManagement.js";
 import {activeAIProfileRecord,aiProfileKey} from "./_recommendedAIProfiles.js";
 import {TF_SECONDS} from "./_v8Core.js";
@@ -162,7 +162,7 @@ export async function runRecommendedAI({symbol="XAUUSD247",tf="M15",indicator="1
   if(shadow&&candidateDefs.length&&rows.length){
     for(const def of candidateDefs){
       try{
-        const ctx=await fetchV8Context({symbol,tf,indicator:mode,managementProfile:{params:def.patch}});
+        const ctx=rebuildV8ContextWithProfile(baselineCtx,{params:def.patch});
         const candRows=ctx.rows||[],candAll=compactMetric(candRows,ctx.symbolResolved),
           candVal=compactMetric(afterCut(candRows,split.cutoff),ctx.symbolResolved),
           gate=candidatePass(baseVal,candVal,baseAll,candAll);
@@ -190,8 +190,18 @@ export async function runRecommendedAI({symbol="XAUUSD247",tf="M15",indicator="1
     const post=rows.filter(x=>(dt(x.signalCandleCloseUTC)||0)>=promotedAt),postMetric=compactMetric(post,baselineCtx.symbolResolved);
     rollback={eligible:false,postPromotion:postMetric,previousParams:active.previousParams||null,reason:"MIN_12_POST_PROMOTION_SIGNALS_REQUIRED"};
     if((postMetric.strictDenominator||0)>=12&&N(postMetric.strictWR)!=null&&N(postMetric.netPip)!=null&&postMetric.strictWR<42&&postMetric.netPip<0&&active.previousParams){
-      rollback={eligible:true,postPromotion:postMetric,previousParams:active.previousParams,reason:"POST_PROMOTION_STRICT_WR_LT_42_AND_NET_NEGATIVE"};
-      action="ROLLBACK_READY";autoPromotionApproved=false;reason=rollback.reason;
+      try{
+        const previousCtx=rebuildV8ContextWithProfile(baselineCtx,{__replace:true,params:active.previousParams});
+        const previousPost=previousCtx.rows.filter(x=>(dt(x.signalCandleCloseUTC)||0)>=promotedAt);
+        const previousMetric=compactMetric(previousPost,previousCtx.symbolResolved);
+        const better=N(previousMetric.strictWR)!=null&&N(previousMetric.netPip)!=null&&
+          previousMetric.strictWR>=postMetric.strictWR+4&&previousMetric.netPip>postMetric.netPip;
+        rollback={eligible:better,postPromotion:postMetric,previousProfileShadow:previousMetric,previousParams:active.previousParams,
+          reason:better?"POST_PROMOTION_DEGRADATION_AND_PREVIOUS_PROFILE_SHADOW_BETTER":"CURRENT_DEGRADED_BUT_PREVIOUS_PROFILE_NOT_PROVEN_BETTER"};
+        if(better){action="ROLLBACK_READY";autoPromotionApproved=false;reason=rollback.reason}
+      }catch(e){
+        rollback={eligible:false,postPromotion:postMetric,previousParams:active.previousParams,reason:"ROLLBACK_SHADOW_REPLAY_ERROR",error:String(e?.message||e)};
+      }
     }
   }
 
