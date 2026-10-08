@@ -272,7 +272,7 @@ test("Market Intelligence AI UI exposes WATCH direction, thesis, BOS/CHOCH evide
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
- assert.ok(html.includes("GF-AI Live Analyst v1.30 • Reasoning + Learning"));
+ assert.ok(html.includes("GF-AI Live Analyst v1.40 • Professional Trader Playbook"));
  assert.ok(app.includes("BUY WATCH"));
  assert.ok(app.includes("d.analysis.directionScore"));
  assert.ok(app.includes("d.candidatePlan"));
@@ -286,7 +286,7 @@ test("Market Intelligence AI UI exposes WATCH direction, thesis, BOS/CHOCH evide
  assert.ok(ui.includes("NOT win probability"));
 });
 
-test("GF-AI v1.30 UI proves M1-to-D1 hierarchy and guards mixed-version policy fields",()=>{
+test("GF-AI v1.40 UI proves M1-to-D1 hierarchy and guards mixed-version policy fields",()=>{
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
@@ -297,11 +297,11 @@ test("GF-AI v1.30 UI proves M1-to-D1 hierarchy and guards mixed-version policy f
  assert.ok(ui.includes("ALL TF MATRIX:"));
  assert.ok(ui.includes("ALL TF CONSENSUS:"));
  assert.ok(ui.includes("Array.isArray(d.aiPolicy.primaryEngines)"));
- assert.ok(app.includes('REASONING v1.30 • M1→D1 • Entry '));
+ assert.ok(app.includes('TRADER PLAYBOOK v1.40 • Entry '));
  assert.ok(app.includes("d.analysis?.allTfConsensus"));
 });
 
-test("GF-AI v1.30 UI renders BUY SELL NO-TRADE scenarios and Experience Learning disclosure",()=>{
+test("GF-AI v1.40 UI renders BUY SELL NO-TRADE scenarios and Experience Learning disclosure",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
@@ -315,4 +315,19 @@ test("GF-AI v1.30 UI renders BUY SELL NO-TRADE scenarios and Experience Learning
  assert.ok(ui.includes("Historical follow-through only; NOT trade win rate / ML probability."));
  assert.ok(app.includes("PRIMARY "));
  assert.ok(app.includes("REASONING v1.30"));
+});
+
+test("GF-AI v1.40 UI exposes one Trade Idea and professional top-down hierarchy",()=>{
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
+ const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ assert.ok(html.includes('id="gfTradeIdeaId"'));
+ assert.ok(html.includes('id="gfPlaybookState"'));
+ assert.ok(html.includes('id="gfPlaybookHierarchy"'));
+ assert.ok(html.includes("D1/H4 regime → H1/M30 thesis → M15/M5 setup → M1 precision trigger"));
+ assert.ok(ui.includes("ONE_PARENT_IDEA_ACROSS_TFS"));
+ assert.ok(ui.includes("Cadence guide: "));
+ assert.ok(ui.includes("Countertrend: "));
+ assert.ok(app.includes("TRADER PLAYBOOK v1.40"));
+ assert.ok(app.includes("professionalPlaybook.tradeIdea.id"));
 });
