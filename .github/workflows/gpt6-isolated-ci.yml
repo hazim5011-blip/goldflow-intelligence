@@ -5,6 +5,16 @@ on:
     branches: [main]
     paths:
       - 'cloudflare/gpt-research.js'
+      - 'cloudflare/gpt-access.js'
+      - 'cloudflare/gpt-fundamentals.js'
+      - 'cloudflare/forward-r2.js'
+      - 'cloudflare/gpt-r2-parity.test.mjs'
+      - 'cloudflare/build.mjs'
+      - 'gpt-ui.js'
+      - 'index.html'
+      - 'style.css'
+      - 'tests/gpt-access.test.mjs'
+      - 'tests/gpt-dashboard.test.mjs'
       - 'cloudflare/worker.js'
       - 'tests/gpt-research.test.mjs'
       - 'docs/GPT6_ISOLATED_STAGING.md'
@@ -26,9 +36,12 @@ jobs:
       - name: Verify GPT module JavaScript syntax
         run: |
           node --check cloudflare/gpt-research.js
+          node --check cloudflare/gpt-access.js
+          node --check cloudflare/gpt-fundamentals.js
+          node --check gpt-ui.js
           node --check cloudflare/worker.js
       - name: Security and freshness unit tests (no live credentials)
-        run: node --test tests/gpt-research.test.mjs
+        run: node --test tests/gpt-research.test.mjs tests/gpt-access.test.mjs tests/gpt-dashboard.test.mjs
       - name: Install build-time dependencies
         run: npm install --no-audit --no-fund
       - name: Existing Cloudflare compatibility and bundle
@@ -37,5 +50,6 @@ jobs:
           npm run build:cloudflare
           node --check dist/_worker.js
           grep -q 'GPT_RESEARCH_DISABLED' dist/_worker.js
+          test -f dist/gpt-ui.js
       - name: Existing GoldFlow regression suite (report existing failures)
         run: npm test
