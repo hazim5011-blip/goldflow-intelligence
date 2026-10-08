@@ -31,13 +31,14 @@ Use Pages dashboard > Settings > Variables and Secrets. Never commit/paste secre
 5. `GF_GPT_MODEL`: `gpt-6-sol` or another audited GPT-6 model allowed in code. If model is not available, the route fails closed.
 6. `GF_GPT_ACCESS_TEAM`: Cloudflare Zero Trust team subdomain **slug** (example `myteam` for `https://myteam.cloudflareaccess.com`), **not** the full URL.
 7. `GF_GPT_ACCESS_AUD`: exact Cloudflare Access application AUD (Audience Tag). Configure an Access application/policy restricted to owner identity for `/api/gpt-research` on the exact preview hostname. The Worker independently verifies RS256 JWT signature, issuer, audience and expiry.
-8. `GF_GPT_RATE_KV`: bind a **new isolated Cloudflare KV namespace**. This is required; without it POST fails closed and incurs no OpenAI charge.
-9. `GF_GPT_DAILY_LIMIT`: e.g. `12`; bounded to 1–30. KV applies approximately 90-second cooldown plus per-identity daily quota. **KV is eventually consistent**; also configure WAF rate limits, OpenAI project spend alerts/limits and authenticated Access policy for production-hard enforcement.
-10. `GF_GPT_INCLUDE_MACRO`: optional `1` only after provider freshness and official sourcing verification. Default disabled/unavailable.
-11. `GF_GPT_INCLUDE_NEWS`: optional `1` to include timestamp-checked live publisher RSS headlines only; missing/stale feed is disclosed. Default off.
-12. `GF_GPT_ENABLED`: keep absent / `0` until secrets, project budget, Access, KV and broker clock have been verified. Then set `1` on **isolated preview** only.
+8. `GF_GPT_OWNER_EMAIL`: the exact allowed owner email, matched against the **cryptographically verified** Cloudflare Access `email` claim. If absent or mismatched, browser requests are denied.
+9. `GF_GPT_RATE_KV`: bind a **new isolated Cloudflare KV namespace**. This is required; without it POST fails closed and incurs no OpenAI charge.
+10. `GF_GPT_DAILY_LIMIT`: e.g. `12`; bounded to 1–30. KV applies approximately 90-second cooldown plus per-identity daily quota. **KV is eventually consistent**; also configure WAF rate limits, OpenAI project spend alerts/limits and authenticated Access policy for production-hard enforcement.
+11. `GF_GPT_INCLUDE_MACRO`: optional `1` only after provider freshness and official sourcing verification. Default disabled/unavailable.
+12. `GF_GPT_INCLUDE_NEWS`: optional `1` to include timestamp-checked live publisher RSS headlines only; missing/stale feed is disclosed. Default off.
+13. `GF_GPT_ENABLED`: keep absent / `0` until secrets, project budget, Access, KV and broker clock have been verified. Then set `1` on **isolated preview** only.
 
-The owner browser must use a valid **signed Cloudflare Access JWT**, verified on the Worker against the team JWK URL and configured AUD. The public static tab does not grant API access. An owner service bearer token is an alternate **server-to-server only** mechanism. The `GF_GPT_RATE_KV` counters are approximate, not hard economic guarantees; enforce Access, WAF and API project budget limits outside the Worker before rollout. If Access/team/AUD is absent, normal browser POST is always denied.
+The owner browser must use a valid **signed Cloudflare Access JWT**, verified on the Worker against the team JWK URL, configured AUD and exact owner email allowlist. The public static tab does not grant API access. An owner service bearer token is an alternate **server-to-server only** mechanism. The `GF_GPT_RATE_KV` counters are approximate, not hard economic guarantees; enforce Access, WAF and API project budget limits outside the Worker before rollout. If Access/team/AUD is absent, normal browser POST is always denied.
 
 ## Verify without live mutation
 
