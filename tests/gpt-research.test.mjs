@@ -30,7 +30,7 @@ function request({method="POST",token=TOKEN,body={symbol:"XAUUSD247",tf:"M15"}}=
  return new Request("https://goldflow.example/api/gpt-research",{method,
   headers:{"content-type":"application/json",Authorization:"Bearer "+token},body:method==="POST"?JSON.stringify(body):undefined});
 }
-async function run(req,env=ENV,deps={}){const r=await handleGptResearch(req,env,{nowSec:()=>NOW,...deps});return {status:r.status,headers:r.headers,data:await r.json()};}
+async function run(req,env=ENV,deps={}){const values=new Map();const testEnv={...env,GF_GPT_RATE_KV:env.GF_GPT_RATE_KV??{get:async k=>values.get(k)||null,put:async(k,v)=>{values.set(k,v)}}};const r=await handleGptResearch(req,testEnv,{nowSec:()=>NOW,...deps});return {status:r.status,headers:r.headers,data:await r.json()};}
 
 test("opt-in default is disabled and cannot incur model costs",async()=>{
  const {network,calls}=mockCalls();const x=await run(request(),{}, {fetch:network});
