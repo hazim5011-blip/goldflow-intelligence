@@ -5,7 +5,8 @@ import {runPVT} from "./_indicatorPVT102.js";
 import {runPVTChart101} from "./_indicatorPVTChart101.js";
 import {runIndicator as runOWL101} from "./_indicatorOWL101.js";
 import {runPattern132} from "./_indicatorPattern132.js";
-import {runPattern132AutoFibo} from "./_pattern132AutoFibo.js";\nimport {buildPattern132FiboSndConfluence} from "./_pattern132FiboSndConfluence.js";
+import {runPattern132AutoFibo} from "./_pattern132AutoFibo.js";
+import {buildPattern132FiboSndConfluence} from "./_pattern132FiboSndConfluence.js";
 import {runSND107} from "./_indicatorSND107.js";
 import {runFund104} from "./_indicatorFund104.js";
 
