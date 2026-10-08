@@ -96,8 +96,11 @@ function quality({score,selectedTf,phaseInfo,counter,risk,locationHits,macroHead
  if(macroHeadwind){q-=3;reasons.push("Macro headwind -3")}
  if(reasoning?.primaryScenario==="NO_TRADE"){q-=15;blockers.push("REASONING_PRIMARY_NO_TRADE")}
  q=clamp(q,0,100);
- const floor=role.qualityFloor,grade=q>=82?"A+":q>=floor?"A":q>=floor-8?"B":"C";
- return {score:rnd(q,1),grade,floor,eligible:q>=floor&&risk.valid&&(!counter.isCounterTrend||counter.strongException)&&reasoning?.primaryScenario!=="NO_TRADE",reasons,blockers};
+ const floor=role.qualityFloor;
+ const highConviction=q>=90&&risk.valid&&Number(risk.rr1)>=1.15&&locationHits.length>=2&&(!counter.isCounterTrend||counter.strongException)&&reasoning?.primaryScenario!=="NO_TRADE";
+ const grade=highConviction?"A++":q>=82?"A+":q>=floor?"A":q>=floor-8?"B":"C";
+ return {score:rnd(q,1),grade,floor,highConviction,eligible:q>=floor&&risk.valid&&(!counter.isCounterTrend||counter.strongException)&&reasoning?.primaryScenario!=="NO_TRADE",reasons,blockers,
+  confidenceMeaning:"QUALITY_GRADE_NOT_WIN_PROBABILITY"};
 }
 function anchorTf({d,matrix,selectedTf}){
  for(const tf of ["H4","H1","M30","M15"]){
@@ -137,7 +140,8 @@ export function buildProfessionalPlaybook({symbol,selectedTf,matrix,selected,rea
    targets:plan?[plan.tp1,plan.tp2,plan.tp3].filter(Number.isFinite):[],riskGeometry:risk,locationEvidence:loc,
    counterTrend:counter,macroHeadwind:Boolean(macroHeadwind),
    duplicatePolicy:"ONE_PARENT_IDEA_ACROSS_TFS",entryOwner:role.entryOwner,
-   cadenceGuidance:role.cadence,
+   cadenceGuidance:role.cadence,highConvictionLabel:q.highConviction?"A++ HIGH CONVICTION":"STANDARD QUALIFIED",
+   riskPolicy:{fullMarginAllowed:false,recoveryRisk:"NORMAL_RISK_ONLY",martingaleAllowed:false,lossChasingAllowed:false},
    professionalRule:state==="ENTRY_READY"?"Entry is permitted by playbook research gates; still not broker execution.":
     "Do not force or chase. Wait until market location, structural trigger and risk geometry are simultaneously acceptable."
   },executionHierarchy,tfChecklist,
