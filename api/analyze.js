@@ -5,7 +5,7 @@ import {runPVT} from "./_indicatorPVT102.js";
 import {runPVTChart101} from "./_indicatorPVTChart101.js";
 import {runIndicator as runOWL101} from "./_indicatorOWL101.js";
 import {runPattern132} from "./_indicatorPattern132.js";
-import {runPattern132AutoFibo} from "./_pattern132AutoFibo.js";
+import {runPattern132AutoFibo} from "./_pattern132AutoFibo.js";\nimport {buildPattern132FiboSndConfluence} from "./_pattern132FiboSndConfluence.js";
 import {runSND107} from "./_indicatorSND107.js";
 import {runFund104} from "./_indicatorFund104.js";
 
@@ -100,7 +100,10 @@ export default async function handler(req,res){
       indicator=runOWL101({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
     }else if(indicatorMode==="pattern132"||indicatorMode==="pattern"||indicatorMode==="1.32"){
       const pattern=runPattern132({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
-      indicator={...pattern,autoFibo:runPattern132AutoFibo({bars:bars(tTF)})};
+      const autoFibo=runPattern132AutoFibo({bars:bars(tTF)});
+      const fiboSnd=buildPattern132FiboSndConfluence({activeZones:pattern.activeZones,autoFibo,point:meta.point||0});
+      const {activeZones:confluenceZones,...fiboSndMeta}=fiboSnd;
+      indicator={...pattern,activeZones:confluenceZones,autoFibo,fiboSndConfluence:fiboSndMeta,entryMode:"SND_FIBO_CONFLUENCE"};
     }else if(indicatorMode==="snd107"||indicatorMode==="snd"||indicatorMode==="1.07"){
       indicator=runSND107({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),m5Bars:bars("M5"),m15Bars:bars("M15"),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
     }else{
