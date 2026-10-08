@@ -226,7 +226,9 @@ test("Production UI contains both user MQ5 indicators and converts raw gateway f
  assert.ok(html.includes("PVT Chart Confluence XAU v1.01 • MQ5 Source"));
  assert.ok(html.includes("Pattern Zone Tutor v1.32 • MQ5 Verified"));
  assert.ok(app.includes('"pvtchart101":"PVT CHART CONFLUENCE 1.01"'));
- assert.ok(app.includes("WEB/API GATEWAY ERROR"));
+ assert.ok(app.includes("bridgeErrorText"));
+ assert.ok(app.includes("BRIDGE TIMEOUT"));
+ assert.ok(app.includes("BRIDGE TUNNEL OFFLINE"));
  assert.ok(broker.includes("BRIDGE_TIMEOUT"));
  assert.ok(broker.includes("BRIDGE_TUNNEL_ORIGIN_UNAVAILABLE"));
  assert.ok(v8.includes('id:"pvtchart101"'));
