@@ -199,7 +199,7 @@ function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
   $("price").textContent=finite(price)?px(price):"—";$("spread").textContent=finite(d.bid)&&finite(d.ask)?"Spread "+px(Number(d.ask)-Number(d.bid)):"—";
   $("source").textContent="Vantage • "+(d.symbol||requestedSymbol)+" • MT5_BRIDGE";
   $("signal").textContent=gfStatusLabel(d.status);$("signal").className=clsDir(dir);
-  $("signalScore").textContent=p&&finite(p.score)?fmt(p.score,0)+"/100":d.mode==="ai"&&finite(d.analysis?.directionScore)?fmt(d.analysis.directionScore,0)+"/100":"RULE-BASED";$("signalStatus").textContent=d.mode==="ai"&&d.professionalPlaybook?.tradeIdea?.quality?.highConviction&&d.canEnter?"A++ HIGH CONVICTION • ENTRY CONDITIONS MET":d.canEnter?"ENTRY CONDITIONS MET":String(d.status||"WAIT");
+  $("signalScore").textContent=p&&finite(p.score)?fmt(p.score,0)+"/100":d.mode==="ai"&&finite(d.analysis?.directionScore)?fmt(d.analysis.directionScore,0)+"/100":"RULE-BASED";$("signalStatus").textContent=d.mode==="ai"&&d.professionalPlaybook?.tradeIdea?.quality?.highConviction&&d.canEnter?"A++ HIGH CONVICTION • ENTRY READY • NORMAL RISK ONLY":d.canEnter?"ENTRY CONDITIONS MET":String(d.status||"WAIT");
   var h1=Number(d.h1Trend)||0,h4=Number(d.h4Trend)||0,cons=d.mode==="ai"?d.analysis?.allTfConsensus:null,bias=cons?Number(cons.direction)||0:(h1&&h1===h4?h1:0);
   $("biasState").textContent=bias?stateText(bias):(cons?"BALANCED":h1===0&&h4===0?"NEUTRAL":"MIXED");$("biasState").className=clsDir(bias);
   $("biasStrength").textContent=cons?("M1→D1 • BUY "+fmt(cons.buy,0)+" / SELL "+fmt(cons.sell,0)+" • Gap "+fmt(cons.gap,0)):("H1 "+stateText(h1)+" • H4 "+stateText(h4));
