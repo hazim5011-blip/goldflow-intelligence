@@ -88,7 +88,7 @@ export default async function handler(req,res){
    cards:(macro.cards||[]).filter(c=>NEWS_DRIVER_IDS.includes(c.id)).map(c=>({id:c.id,name:c.name,display:c.display,value:c.value,date:c.date,status:c.status,source:c.source,stale:c.stale,goldImpact:c.goldImpact,change:c.change,changeLabel:c.changeLabel,detail:c.detail}))}:null;
   return res.status(200).json({...output,source:"VANTAGE_MT5",marketResearchOnly:true,autoTrading:false,news:publicMacro,
    chartBars:(bridge.frames?.[tf]||[]).slice(-160).map(b=>({t:Number(b.t)-offset,o:b.o,h:b.h,l:b.l,c:b.c})),
-   limitation:mode==="ai"?"GF-AI v1.50 reads M1/M5/M15/M30/H1/H4/D1 Vantage closed candles using a professional hierarchy, one parent Trade Idea, and an observed HOLD/PROTECT/CUT/RECOVERY lifecycle. A++ is quality, not win probability. No full-margin/martingale automation or broker execution.":"Mode-specific auditable research. No verified publication timestamp, forecast surprise, intrabar fill or ML-trained win probability."});
+   limitation:mode==="ai"?"GF-AI v1.60 reads current Vantage closed-candle motion and separates thesis from entry. A zone touch is not enough: a setup-specific CLOSED retest/rejection/reclaim and anti-chase execution band are required before ENTRY READY. HOLD/PROTECT/CUT/RECOVERY remains active after entry. No full-margin/martingale automation or broker execution.":"Mode-specific auditable research. No verified publication timestamp, forecast surprise, intrabar fill or ML-trained win probability."});
  }catch(e){
   return res.status(200).json({ok:false,status:"DATA_UNVERIFIED",reason:"BROKER_DATA_UNAVAILABLE",errorCode:String(e?.code||"FETCH_FAILED"),
     marketResearchOnly:true,autoTrading:false});
