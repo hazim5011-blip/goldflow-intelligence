@@ -71,7 +71,11 @@ test("GF-AI on actual XAUUSD247 closed M15, H1/H4, 16/16 official macro and Vant
   quoteAgeSeconds:result.quoteAgeSeconds,macro:macro.quality.available+"/"+macro.quality.total}));
 });
 test("GF MARKET STUDY on LIVE weekend BTCUSD, no fabricated order", {skip:!active,timeout:150000},async()=>{
- const [m5,h1,h4]=await Promise.all(["M5","H1","H4"].map(tf=>bars("BTCUSD",tf)));
+ // Production Study/Chart paths intentionally pace broker work. Do not create an
+ // artificial three-request burst against the single local MT5 terminal/tunnel.
+ const m5=await bars("BTCUSD","M5");
+ const h1=await bars("BTCUSD","H1");
+ const h4=await bars("BTCUSD","H4");
  const now=Math.floor(Date.now()/1000);
  const d=evaluateStudy({symbol:"BTCUSD",tf:"M5",bars:m5.bars,h1:h1.bars,h4:h4.bars,
   quote:{bid:m5.bid,ask:m5.ask,tickTime:m5.serverTime,observedAt:now},offsetSeconds:OFFSET,nowSec:now,mode:"study"});
