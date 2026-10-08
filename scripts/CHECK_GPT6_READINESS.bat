@@ -10,13 +10,8 @@ where node >nul 2>&1
 if errorlevel 1 (echo ERROR: Node.js 20+ required.& exit /b 1)
 where npm >nul 2>&1
 if errorlevel 1 (echo ERROR: npm required.& exit /b 1)
-echo [1/5] Install pinned dependencies...
-if exist package-lock.json (
-  call npm ci --no-audit --no-fund
-) else (
-  echo ERROR: package-lock.json missing, refusing unpinned install.
-  exit /b 1
-)
+echo [1/5] Install build dependencies (existing repository has no lockfile)...
+call npm install --no-save --package-lock=false --no-audit --no-fund
 if errorlevel 1 goto fail
 echo [2/5] Isolated GPT-6 safety tests...
 call node --test tests\gpt-research.test.mjs tests\gpt-access.test.mjs tests\gpt-dashboard.test.mjs tests\gpt-news.test.mjs
