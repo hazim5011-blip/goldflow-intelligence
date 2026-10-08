@@ -1,0 +1,131 @@
+name: Publish GF-AAT R5.17 Stable
+
+on:
+  push:
+    paths:
+      - '.github/workflows/gfaat-r517-publish.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify R5.15 stable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          manifest = json.loads(pathlib.Path('gf-aat-update/stable.json').read_text(encoding='utf-8'))
+          assert manifest['channel'] == 'stable'
+          assert manifest['version'] == '1.6.3-r5.15', manifest
+          assert manifest['build_id'] == 'gf-aat-1.6.3-r5.15-loss-self-review-signal-time', manifest
+          p = pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          actual = hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual == manifest['sha256'], (actual, manifest['sha256'])
+          print('R5.15 stable baseline verified:', actual)
+          PY
+
+      - name: Reconstruct and verify R5.17 audited patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-r517 /tmp/r517.patch.gz /tmp/r517.patch /tmp/GF_AAT_STABLE.zip
+          mkdir -p /tmp/gfaat-r517
+          cat gf-aat-update/staging/r517.b64.* | base64 -d > /tmp/r517.patch.gz
+          echo '8b1342b53f963ef3eedf8321bc5f98256ccdacac4513cf5a73fe82abaf502416  /tmp/r517.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/r517.patch.gz > /tmp/r517.patch
+          echo '1fac0cbd1c9723efc1363f602da470744f4b9a2410a6cd1d54427e5fe94bb9f3  /tmp/r517.patch' | sha256sum -c -
+
+      - name: Build R5.17 from official R5.15 stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r517
+          test -d /tmp/gfaat-r517/GF_AAT_R5_15_STABLE
+          cd /tmp/gfaat-r517/GF_AAT_R5_15_STABLE
+          patch -p2 < /tmp/r517.patch
+          python3 - <<'PY'
+          import json, pathlib
+          expected='gf-aat-1.6.3-r5.17-correction-effectiveness'
+          build=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text(encoding='utf-8'))
+          assert build.get('build_id') == expected, build
+          assert str(build.get('runtime_revision')) == 'R5.17', build
+          print('R5.17 exact build contract verified:', expected)
+          PY
+
+      - name: Install test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check -r /tmp/gfaat-r517/GF_AAT_R5_15_STABLE/requirements.txt
+
+      - name: Run full R5.17 test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r517/GF_AAT_R5_15_STABLE
+          python3 -m pytest -q
+
+      - name: Verify safety and package stable ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r517/GF_AAT_R5_15_STABLE
+          PYTHONPATH=. python3 - <<'PY'
+          import json, pathlib
+          expected='gf-aat-1.6.3-r5.17-correction-effectiveness'
+          build=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text(encoding='utf-8'))
+          assert build['build_id'] == expected
+          text='\n'.join(p.read_text(encoding='utf-8', errors='ignore') for p in pathlib.Path('aat').rglob('*.py'))
+          assert 'order_send(' not in text, 'Real broker order_send() call detected in aat runtime source'
+          print('Safety contract PASS: Research/Paper Only; no order_send() runtime call')
+          PY
+          cd /tmp/gfaat-r517
+          mv GF_AAT_R5_15_STABLE GF_AAT_R5_17_STABLE
+          zip -qr /tmp/GF_AAT_STABLE.zip GF_AAT_R5_17_STABLE \
+            -x 'GF_AAT_R5_17_STABLE/.venv/*' \
+               'GF_AAT_R5_17_STABLE/data/*' \
+               'GF_AAT_R5_17_STABLE/logs/*' \
+               'GF_AAT_R5_17_STABLE/backups/*' \
+               'GF_AAT_R5_17_STABLE/_updates/*' \
+               'GF_AAT_R5_17_STABLE/.pytest_cache/*' \
+               'GF_AAT_R5_17_STABLE/**/__pycache__/*' \
+               'GF_AAT_R5_17_STABLE/.env'
+          unzip -t /tmp/GF_AAT_STABLE.zip
+          test -z "$(unzip -Z1 /tmp/GF_AAT_STABLE.zip | grep -E '(^|/)(\.env|data/|logs/|\.venv/)' || true)"
+
+      - name: Publish stable manifest and package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/GF_AAT_STABLE.zip gf-aat-update/GF_AAT_STABLE.zip
+          HASH="$(sha256sum gf-aat-update/GF_AAT_STABLE.zip | awk '{print $1}')"
+          cat > gf-aat-update/stable.json <<EOF
+          {
+            "channel": "stable",
+            "version": "1.6.3-r5.17",
+            "build_id": "gf-aat-1.6.3-r5.17-correction-effectiveness",
+            "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
+            "sha256": "$HASH",
+            "restart_cmd": "RESTART_GF_AAT_R5_17.bat",
+            "minimum_updater": 2
+          }
+          EOF
+          python3 -m json.tool gf-aat-update/stable.json >/dev/null
+          echo "Published candidate SHA256: $HASH"
+
+      - name: Commit stable channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gf-aat-update/GF_AAT_STABLE.zip gf-aat-update/stable.json
+          git diff --cached --quiet && { echo 'No stable changes to publish'; exit 1; }
+          git commit -m "Publish GF-AAT R5.17 correction effectiveness stable update"
+          git push
