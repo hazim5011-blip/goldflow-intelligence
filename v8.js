@@ -57,6 +57,17 @@
     var vals=Object.keys(obj).map(function(k){return obj[k]}).filter(function(x){return finite(x?.total)});
     return vals.length===1?Number(vals[0].total):null;
   }
+  function metricPart(st,key,symbol,part){
+    var obj=st?.[key]||{},sym=String(symbol||""),row=sym?obj[sym]:null;
+    if(!row){var vals=Object.values(obj);if(vals.length===1)row=vals[0]}
+    return row&&finite(row[part])?Number(row[part]):null;
+  }
+  function netClass(v){return !finite(v)?"y":Number(v)>0?"g":Number(v)<0?"r":"y"}
+  function dayStatus(st,symbol){
+    var p=metricTotal(st,"pipsBySymbol",symbol);
+    if(!finite(p))return "N/A";
+    return Number(p)>0?"PROFIT DAY":Number(p)<0?"LOSS DAY":"FLAT DAY";
+  }
   function tpTrailCount(st){return Number(st?.outcomes?.TP1||0)+Number(st?.outcomes?.TP2||0)+Number(st?.outcomes?.TP3||0)+Number(st?.outcomes?.TRAILING||0)}
   function wrClass(st){
     if(!finite(st?.strictWinRate))return "y";
@@ -66,15 +77,18 @@
   }
   function resultStats(st,symbol){
     if(!st)return "";
+    var winP=metricPart(st,"pipsBySymbol",symbol,"winTotal"),lossP=metricPart(st,"pipsBySymbol",symbol,"lossTotal"),netP=metricTotal(st,"pipsBySymbol",symbol);
     return stat(t("strictWR"),finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A",t("strictFormula"))+
       stat(t("positive"),number(st.positive,0),t("tpTrailingBePositive"))+
       stat(t("negative"),number(st.negative,0),"SL")+
+      stat("WIN PIP",signed(winP,1),"jumlah semua TP / trailing / BE+")+
+      stat("SL PIP",signed(lossP,1),"jumlah kerugian SL")+
+      stat("NET PIP",signed(netP,1),finite(netP)?(Number(netP)>0?"PROFIT":"LOSS / FLAT"):"N/A")+
+      stat("NET POINT",signed(metricTotal(st,"pointsBySymbol",symbol),0),"selected symbol only")+
+      stat(t("totalR"),signed(st.totalR,2),"WIN R "+signed(st.winR,2)+" • LOSS R "+signed(st.lossR,2))+
       stat(t("beZero"),number(st.beZero,0),t("excludedWR"))+
       stat(t("ambiguous"),number(st.ambiguous,0),t("intrabarUnknown"))+
-      stat("TOTAL PIP",signed(metricTotal(st,"pipsBySymbol",symbol),1),"selected symbol only")+
-      stat("TOTAL POINT",signed(metricTotal(st,"pointsBySymbol",symbol),0),"selected symbol only")+
-      stat(t("grossPL"),money(st.grossPLUSD),"0.01 lot • "+(st.grossCoverage||0)+" records • excludes costs")+
-      stat(t("totalR"),signed(st.totalR,2),(st.rCoverage||0)+" records")+
+      stat(t("grossPL"),money(st.grossPLUSD),"0.01 lot estimate when broker metadata supports it")+
       stat(t("legacyWR"),finite(st.legacyWinRate)?number(st.legacyWinRate,1)+"%":"N/A","includes BE0");
   }
   function analyticsQuery(direction,from,to){
@@ -89,33 +103,38 @@
     await Promise.all(Array.from({length:Math.min(limit,items.length)},run));return out;
   }
   function analyticsRow(meta,st,symbol,error){
-    if(error)return '<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="12" class="r">UNAVAILABLE • '+safe(error)+'</td></tr>';
-    var tp=tpTrailCount(st),be=Number(st?.outcomes?.BE_POSITIVE||0),den=Number(st?.strictDenominator||0);
-    return '<tr><td><b>'+safe(meta.label)+'</b>'+(meta.validationOnly?'<br><small>VALIDATION-ONLY ENGINE</small>':'')+'</td>'+
+    if(error)return '<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="15" class="r">UNAVAILABLE • '+safe(error)+'</td></tr>';
+    var tp=tpTrailCount(st),be=Number(st?.outcomes?.BE_POSITIVE||0),den=Number(st?.strictDenominator||0),
+      winP=metricPart(st,"pipsBySymbol",symbol,"winTotal"),lossP=metricPart(st,"pipsBySymbol",symbol,"lossTotal"),netP=metricTotal(st,"pipsBySymbol",symbol);
+    return '<tr><td><b>'+safe(meta.label)+'</b>'+(meta.validationOnly?'<br><small>NATIVE VALIDATION • NORMALIZED TRADE PLAN</small>':'')+'</td>'+
       '<td>'+number(st?.totalSignals,0)+'</td><td class="g">'+number(st?.positive,0)+'</td><td>'+number(tp,0)+'</td><td>'+number(be,0)+'</td>'+
       '<td class="r">'+number(st?.negative,0)+'</td><td>'+number(st?.beZero,0)+'</td><td>'+number(st?.ambiguous,0)+'</td>'+
       '<td class="'+wrClass(st)+'"><b>'+(finite(st?.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>n='+number(den,0)+'</small></td>'+
-      '<td>'+signed(st?.totalR,2)+'</td><td>'+signed(metricTotal(st,"pipsBySymbol",symbol),1)+'</td><td>'+signed(metricTotal(st,"pointsBySymbol",symbol),0)+'</td><td>'+money(st?.grossPLUSD)+'</td></tr>';
+      '<td class="g">'+signed(winP,1)+'</td><td class="r">'+signed(lossP,1)+'</td><td class="'+netClass(netP)+'"><b>'+signed(netP,1)+'</b></td>'+
+      '<td class="'+netClass(metricTotal(st,"pointsBySymbol",symbol))+'">'+signed(metricTotal(st,"pointsBySymbol",symbol),0)+'</td>'+
+      '<td>'+signed(st?.totalR,2)+'</td><td>'+money(st?.grossPLUSD)+'</td></tr>';
   }
   function renderIndicatorComparison(results,symbol){
     if(!$("v8IndicatorComparison"))return;
     var rows=(results||[]).map(function(x){return analyticsRow(historyMeta(x.id),x.data?.summary,symbol,x.error)});
     HISTORY_CATALOG.filter(function(x){return !x.historical}).forEach(function(meta){
-      rows.push('<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="12" class="y">N/A • '+safe(meta.note||"Historical WR unavailable")+' • data indicator lain tidak digunakan sebagai pengganti.</td></tr>');
+      rows.push('<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="14" class="y">N/A • '+safe(meta.note||"Historical WR unavailable")+' • data indicator lain tidak digunakan sebagai pengganti.</td></tr>');
     });
-    $("v8IndicatorComparison").innerHTML='<table class="v8Table v8WideTable"><thead><tr><th>INDICATOR</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>ΣR</th><th>Σ PIP</th><th>Σ POINT</th><th>GROSS USD*</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>'+
-      '<p class="v8Footnote">* Gross USD ialah anggaran 0.01 lot hanya apabila metadata kontrak broker menyokong pengiraan. Strict WR tidak termasuk BE0 dan AMBIGUOUS. Warna hijau hanya digunakan apabila denominator sekurang-kurangnya 5 rekod.</p>';
+    $("v8IndicatorComparison").innerHTML='<table class="v8Table v8WideTable"><thead><tr><th>INDICATOR</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>'+
+      '<p class="v8Footnote">History Pro menggunakan trade-plan lengkap. Jika indicator asal tiada TP, GoldFlow History menambah NORMALIZED STUDY PLAN 1R/2R/3R dan pengurusan BE/Trailing secara jelas; ia bukan target native indicator. WIN PIP + SL PIP = NET PIP. Strict WR tidak termasuk BE0 dan AMBIGUOUS.</p>';
   }
   function renderDailySummary(data){
     if(!$("v8DailySummary"))return;
     var meta=historyMeta(historyIndicator()),symbol=data?.symbol||state.history?.symbolResolved||"";
     if($("v8DailyIndicatorLabel"))$("v8DailyIndicatorLabel").textContent=meta.label+" • "+symbol+" • "+(data?.tf||window.selectedTF||"");
     var arr=(data?.groups||[]).slice().reverse();
-    $("v8DailySummary").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>DATE (MYT)</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>ΣR</th><th>Σ PIP</th><th>Σ POINT</th><th>GROSS USD*</th></tr></thead><tbody>'+
-      arr.map(function(st){return '<tr><td><b>'+safe(st.period)+'</b></td><td>'+number(st.totalSignals,0)+'</td><td class="g">'+number(st.positive,0)+'</td>'+
+    $("v8DailySummary").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>DATE (MYT)</th><th>DAY RESULT</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+
+      arr.map(function(st){var netP=metricTotal(st,"pipsBySymbol",symbol),day=dayStatus(st,symbol);return '<tr><td><b>'+safe(st.period)+'</b></td><td class="'+netClass(netP)+'"><b>'+day+'</b></td><td>'+number(st.totalSignals,0)+'</td><td class="g">'+number(st.positive,0)+'</td>'+
         '<td>'+number(tpTrailCount(st),0)+'</td><td>'+number(st.outcomes?.BE_POSITIVE||0,0)+'</td><td class="r">'+number(st.negative,0)+'</td><td>'+number(st.beZero,0)+'</td><td>'+number(st.ambiguous,0)+'</td>'+
         '<td class="'+wrClass(st)+'"><b>'+(finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>n='+number(st.strictDenominator||0,0)+'</small></td>'+
-        '<td>'+signed(st.totalR,2)+'</td><td>'+signed(metricTotal(st,"pipsBySymbol",symbol),1)+'</td><td>'+signed(metricTotal(st,"pointsBySymbol",symbol),0)+'</td><td>'+money(st.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':
+        '<td class="g">'+signed(metricPart(st,"pipsBySymbol",symbol,"winTotal"),1)+'</td><td class="r">'+signed(metricPart(st,"pipsBySymbol",symbol,"lossTotal"),1)+'</td>'+
+        '<td class="'+netClass(netP)+'"><b>'+signed(netP,1)+'</b></td><td class="'+netClass(metricTotal(st,"pointsBySymbol",symbol))+'">'+signed(metricTotal(st,"pointsBySymbol",symbol),0)+'</td>'+
+        '<td>'+signed(st.totalR,2)+'</td><td>'+money(st.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':
       '<p>'+t("noSignalsInWindow")+'</p>';
   }
   async function loadHistoryAnalytics(filters){
@@ -223,6 +242,8 @@
       '<span><b>'+signed(r.signedPoints,0)+'</b><small>'+t("points")+'</small></span>'+
       '</summary><div class="v8RecordDetails"><div class="v8Plan">'+
       stat(t("entry"),number(r.entry,5))+stat("SL",number(r.originalSL,5))+stat("TP1",number(r.tp1,5))+stat("TP2",number(r.tp2,5))+
+      stat("TP3",number(r.tp3,5))+stat("BE RULE",r.managementPlan?"Trigger +0.50R":"N/A",r.managementPlan?"Lock +0.05R":"")+
+      stat("TRAIL RULE",r.managementPlan?"Start +0.75R":"N/A",r.managementPlan?"Distance 0.35R":"")+stat("PLAN SOURCE",r.nativeTargetDefined?"NATIVE TP + NORMALIZED MGMT":"NORMALIZED 1R/2R/3R",r.planOrigin||"")+
       stat(t("exit"),number(r.exitPrice,5))+stat(t("riskToSL"),signed(r.riskPoints,0)+" points")+
       stat(t("grossPL"),pl,"0.01 lot • excludes costs")+stat(t("totalR"),signed(r.rMultiple,2))+
       '</div><p><b>'+t("technicalReasons")+':</b> '+safe((r.reasons||[]).join(" • ")||"N/A")+'</p>'+
@@ -258,12 +279,12 @@
   }
   function renderPerformance(data){
     if(!data)return;
-    var perfMsg=safe(data.symbol)+" • "+data.indicator+" • "+data.tf+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC);if(String(data.indicator).toLowerCase()==="fund104")perfMsg+=" • FUND 1.04 WEB STUDY is validation-only: native TP/SL outcome semantics are not defined, therefore WR/R/P&L remain N/A unless validated outcome rules exist.";notice("v8PerformanceStatus",perfMsg);
+    var perfMsg=safe(data.symbol)+" • "+data.indicator+" • "+data.tf+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC)+" • History performance uses Entry+SL and a transparent normalized 1R/2R/3R plan when the native indicator has no TP.";notice("v8PerformanceStatus",perfMsg);
     $("v8PerformanceSummary").innerHTML=resultStats(data.summary,data.symbol);
     $("v8MonthComparison").innerHTML=renderComparison(data.comparison);
     var arr=data.groups||[];
-    $("v8PeriodTable").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>'+t("period")+'</th><th>'+t("totalSignals")+'</th><th>'+t("completed")+'</th><th>'+t("positive")+'</th><th>'+t("negative")+'</th><th>'+t("beZero")+'</th><th>'+t("ambiguous")+'</th><th>'+t("strictWR")+'</th><th>'+t("totalR")+'</th><th>Σ PIP</th><th>Σ POINT</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
-      arr.map(function(s){return '<tr><td><b>'+safe(s.period)+'</b></td><td>'+number(s.totalSignals,0)+'</td><td>'+number(s.completed,0)+'</td><td class="g">'+number(s.positive,0)+'</td><td class="r">'+number(s.negative,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.ambiguous,0)+'</td><td class="'+wrClass(s)+'">'+(finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'</td><td>'+signed(s.totalR,2)+'</td><td>'+signed(metricTotal(s,"pipsBySymbol",data.symbol),1)+'</td><td>'+signed(metricTotal(s,"pointsBySymbol",data.symbol),0)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':'<p>'+t("noSignalsInWindow")+'</p>';
+    $("v8PeriodTable").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>'+t("period")+'</th><th>'+t("totalSignals")+'</th><th>'+t("completed")+'</th><th>'+t("positive")+'</th><th>'+t("negative")+'</th><th>'+t("beZero")+'</th><th>'+t("ambiguous")+'</th><th>'+t("strictWR")+'</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
+      arr.map(function(s){var net=metricTotal(s,"pipsBySymbol",data.symbol);return '<tr><td><b>'+safe(s.period)+'</b></td><td>'+number(s.totalSignals,0)+'</td><td>'+number(s.completed,0)+'</td><td class="g">'+number(s.positive,0)+'</td><td class="r">'+number(s.negative,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.ambiguous,0)+'</td><td class="'+wrClass(s)+'">'+(finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'</td><td class="g">'+signed(metricPart(s,"pipsBySymbol",data.symbol,"winTotal"),1)+'</td><td class="r">'+signed(metricPart(s,"pipsBySymbol",data.symbol,"lossTotal"),1)+'</td><td class="'+netClass(net)+'">'+signed(net,1)+'</td><td>'+signed(metricTotal(s,"pointsBySymbol",data.symbol),0)+'</td><td>'+signed(s.totalR,2)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':'<p>'+t("noSignalsInWindow")+'</p>';
   }
   async function loadPerformance(){
     setHistoryIndicator($("v8PerformanceIndicator")?.value||historyIndicator());

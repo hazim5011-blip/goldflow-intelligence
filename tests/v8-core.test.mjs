@@ -5,7 +5,7 @@ import {readFileSync,readdirSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 import {
-  replayOutcome,pipConvention,metadataFromCatalog,buildHistory,aggregate,groupHistory,compareMonths,
+  replayOutcome,normalizedTradePlan,pipConvention,metadataFromCatalog,buildHistory,aggregate,groupHistory,compareMonths,
   periodKey,filterHistory,evidenceForRecord,explainRecord
 } from "../api/_v8Core.js";
 import {normalizePublishedPayload,forwardPath,normalizeOutcomePayload,outcomePath,forwardConfigured,validateSecret} from "../api/_v8Ledger.js";
@@ -35,10 +35,14 @@ test("MTF 1.05 positive BE and TRAILING use actual managed stop prices",()=>{
   const trail=replay({},[mk(1300,101,108,101,107),mk(1600,107,108,103,103)],"105");
   assert.equal(trail.outcome,"TRAILING");assert.equal(trail.exitPrice,104.5);
 });
-test("PENDING and validation-only engines never claim wins",()=>{
+test("Every evaluable signal receives a transparent normalized trade plan when native TP is absent",()=>{
   assert.equal(replay({},[mk(1300,100,103,99,102)]).outcome,"PENDING");
-  assert.equal(replay({tp1:null},[mk(1300,100,106,97,104)],"pattern132").outcome,"VALID_ONLY");
-  assert.equal(replay({tp1:null},[mk(1300,100,106,97,104)],"snd107").outcome,"VALID_ONLY");
+  const plan=normalizedTradePlan({...base,tp1:null,tp2:null,tp3:null},"pattern132");
+  assert.equal(plan.valid,true);assert.equal(plan.tp1,110);assert.equal(plan.tp2,120);assert.equal(plan.tp3,130);
+  assert.equal(plan.origin,"GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R");
+  const managed=replay({tp1:null,tp2:null,tp3:null},[mk(1300,100,106,99,105),mk(1600,105,106,100,100)],"pattern132");
+  assert.equal(managed.outcome,"BE_POSITIVE");assert.equal(managed.planOrigin,"GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R");
+  assert.equal(replay({tp1:null},[mk(1300,100,103,99,102)],"snd107").outcome,"PENDING");
 });
 test("Pip conventions are explicit per asset",()=>{
   assert.equal(pipConvention("EURUSD.p",.00001).pipSize,.0001);
@@ -75,6 +79,10 @@ test("Strict and legacy win rates separate BE0, pending and ambiguous",()=>{
   const s=aggregate([q("a","TP1",10,1),q("b","SL",-10,-1),q("c","BE_ZERO",0,0),q("d","AMBIGUOUS",null,null),q("e","PENDING",null,null)]);
   assert.equal(s.strictWinRate,50);assert.ok(Math.abs(s.legacyWinRate-200/3)<.001);
   assert.equal(s.strictDenominator,2);assert.equal(s.ambiguous,1);assert.equal(s.beZero,1);
+  assert.equal(s.pipsBySymbol["XAUUSD.p"].winTotal,100);
+  assert.equal(s.pipsBySymbol["XAUUSD.p"].lossTotal,-100);
+  assert.equal(s.pipsBySymbol["XAUUSD.p"].total,0);
+  assert.equal(s.winR,1);assert.equal(s.lossR,-1);
 });
 test("MYT calendar boundaries, ISO week and comparisons never use UTC day by accident",()=>{
   const row={signalCandleCloseUTC:"2026-09-30T16:10:00.000Z"};
@@ -197,8 +205,10 @@ test("History Pro exposes explicit per-indicator WR and daily TP/SL total logic 
   assert.match(js,/HISTORY_CATALOG/);
   assert.match(js,/data indicator lain tidak digunakan sebagai pengganti/);
   assert.match(js,/STRICT WR/);
-  assert.match(js,/Σ PIP/);
-  assert.match(js,/Σ POINT/);
+  assert.match(js,/WIN PIP/);
+  assert.match(js,/SL PIP/);
+  assert.match(js,/NET PIP/);
+  assert.match(js,/NET POINT/);
   assert.match(js,/period=day/);
   assert.match(js,/strictDenominator/);
 });

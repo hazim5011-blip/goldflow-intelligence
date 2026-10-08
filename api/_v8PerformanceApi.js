@@ -12,7 +12,8 @@ export default async function handler(req,res){
       recordMode:"HISTORICAL_SIM",dataWindow:ctx.dataWindow,summary:aggregate(filtered),
       period,groups:groupHistory(filtered,period),comparison:compareMonths(filtered),
       metricDefinition:{strictWinRate:"positive / (positive + negative); BE_ZERO excluded",legacyWinRate:"(positive + BE_ZERO) / (positive + negative + BE_ZERO)",
-        ambiguous:"excluded from completion denominator",pips:"Per-symbol only; not added across unlike assets.",RMultiple:"signed quote-price move / original SL risk",
+        ambiguous:"excluded from completion denominator",pips:"Per-symbol only; WIN PIP + SL PIP = NET PIP.",RMultiple:"signed quote-price move / original SL risk",
+        normalizedTradePlan:"Every evaluable signal requires Entry + SL. Missing native targets are filled only in the History study layer as 1R/2R/3R; management uses BE trigger +0.50R, lock +0.05R, trail trigger +0.75R, trail distance 0.35R.",
         grossPL:"Contract-based estimate for broker-supported 0.01 lot settled in USD; excludes costs."},
       completeness:"WINDOW_LIMITED_HISTORICAL_SIM",disclaimer:DISCLAIMER});
   }catch(e){res.setHeader("Cache-Control","no-store");return res.status(200).json({ok:false,ready:false,error:String(e?.message||e),groups:[]});}

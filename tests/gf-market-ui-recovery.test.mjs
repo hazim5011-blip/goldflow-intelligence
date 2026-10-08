@@ -146,10 +146,15 @@ test("AI UI exposes Market Intelligence engines and states that 24h signals are 
  assert.ok(ui.includes("AI MARKET BRAIN:"));
  assert.ok(ui.includes("24H AI HISTORY: NOT ARCHIVED YET"));
 });
-test("Fund104 Performance explains validation-only N/A rather than implying missing data",()=>{
+test("History Performance clearly labels normalized targets instead of pretending they were native indicator targets",()=>{
  const v=readFileSync(new URL("../v8.js",import.meta.url),"utf8");
- assert.ok(v.includes("FUND 1.04 WEB STUDY is validation-only"));
- assert.ok(v.includes("WR/R/P&L remain N/A"));
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ assert.ok(v.includes("NORMALIZED 1R/2R/3R"));
+ assert.ok(v.includes("WIN PIP"));
+ assert.ok(v.includes("SL PIP"));
+ assert.ok(v.includes("PROFIT DAY"));
+ assert.ok(html.includes("NORMALIZED STUDY PLAN"));
+ assert.ok(html.includes("NET PIP"));
 });
 
 test("TradingView Hybrid Tools have a tested Vantage fallback instead of blank cards",()=>{
@@ -345,7 +350,7 @@ test("GF-AI v1.60 UI exposes live HOLD/CUT/RECOVERY lifecycle without full-margi
  assert.ok(html.includes("Full-margin, martingale and loss-chasing are explicitly disallowed"));
  assert.ok(ui.includes("CUT SETUP • ORIGINAL THESIS INVALID"));
  assert.ok(ui.includes("Recovery risk remains NORMAL only; no martingale."));
- assert.ok(app.includes("A++ HIGH CONVICTION • ENTRY CONDITIONS MET"));
+ assert.ok(app.includes("A++ HIGH CONVICTION • ENTRY READY • NORMAL RISK ONLY"));
 });
 
 test("GF-AI v1.60 UI makes zone-not-entry rule and adaptive entry proof explicit",()=>{
