@@ -155,3 +155,39 @@ export async function readForwardOutcome(date,id,env){
  if(!publicReadEnabled(env))throw Error("FORWARD_PUBLIC_READ_NOT_ENABLED");
  return readForwardOutcomePrivate(date,id,env);
 }
+
+
+// Read-only parity with _v8Ledger.js; never return unverified archive rows.
+// Without an explicit, configured R2 binding this safely returns [] (no synthetic history).
+export async function listForwardPrivate({indicator=null,symbol=null,tf=null,limit=200}={},env){
+ if(!forwardConfigured(env))return [];
+ const bucket=requireBucket(env);
+ const max=Math.max(1,Math.min(500,Number(limit)||200)),keys=[];
+ let cursor=null;
+ for(let page=0;page<20;page++){
+  const result=await bucket.list({prefix:"goldflow-forward/v1/",limit:1000,...(cursor?{cursor}:{})});
+  for(const obj of result?.objects||[]){
+   const key=String(obj.key||"");
+   if(/^goldflow-forward\/v1\/\d{4}-\d{2}-\d{2}\/[a-f0-9]{32}\/published\.json$/.test(key))keys.push(key);
+  }
+  if(!result?.truncated||!result?.cursor||keys.length>=max*4)break;
+  cursor=result.cursor;
+ }
+ const out=[];
+ for(const key of keys.sort().reverse()){
+  if(out.length>=max)break;
+  const m=/^goldflow-forward\/v1\/(\d{4}-\d{2}-\d{2})\/([a-f0-9]{32})\/published\.json$/.exec(key);
+  if(!m)continue;
+  try{
+   const published=await readForwardPrivate(m[1],m[2],env);
+   if(!published)continue;
+   if(indicator&&published.indicatorId!==String(indicator).toLowerCase())continue;
+   if(symbol&&published.symbolResolved!==String(symbol))continue;
+   if(tf&&published.tf!==String(tf).toUpperCase())continue;
+   let outcome=null;
+   try{outcome=await readForwardOutcomePrivate(m[1],m[2],env)}catch{}
+   out.push({published,outcome});
+  }catch{} // Ignore corrupt archive rows rather than fabricating matches.
+ }
+ return out.sort((a,b)=>Date.parse(a.published.receivedAtUTC)-Date.parse(b.published.receivedAtUTC));
+}
