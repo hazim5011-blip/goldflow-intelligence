@@ -1,6 +1,6 @@
 var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5", selectedIndicator=localStorage.getItem("gf_indicator")||"105";
 var chartLabelMode=localStorage.getItem("gf_chart_labels")||"nearest";
-var focusedZone=null, lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null;
+var focusedZone=null, lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null, raiLatest=null, raiLoading=false;
 function $(id){return document.getElementById(id)}
 function finite(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}
 function fmt(v,d){if(!finite(v))return "—";return Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}
@@ -46,6 +46,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
   if(b.dataset.page==="gfStudyPage"&&/^gf-/.test(selectedIndicator))setTimeout(function(){window.GFStudy?.load()},50);
+  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(false)},50);
 }});
 
 $("tfSelect").value=selectedTF;
@@ -57,6 +58,8 @@ $("symbolSearch").oninput=applySymbolFilter;
 $("category").onchange=applySymbolFilter;
 $("symbolSelect").onchange=function(){selectSymbol(this.value)};
 if($("macroRefresh"))$("macroRefresh").onclick=function(){loadMacro(true)};
+if($("raiRefresh"))$("raiRefresh").onclick=function(){loadRecommendedAI(true)};
+if($("raiRunNow"))$("raiRunNow").onclick=function(){runRecommendedAINow()};
 if($("chartLabelMode")){
   if(!["nearest","all","hide"].includes(chartLabelMode))chartLabelMode="nearest";
   $("chartLabelMode").value=chartLabelMode;
@@ -681,3 +684,71 @@ async function loadMacro(force){
   }finally{macroLoading=false}
 }
 setInterval(function(){if(macroLoaded)loadMacro(true)},900000);
+
+
+function raiEsc(v){return String(v??"").replace(/[&<>"']/g,function(ch){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[ch]})}
+function raiNum(v,d){return finite(v)?fmt(v,d):"—"}
+function raiMode(v){return v==="pvt"?"pvt102":v}
+function raiStateClass(s){s=String(s||"");return /AUTO_PROMOTE|KEEP_CURRENT/.test(s)?"g":/ROLLBACK/.test(s)?"r":"y"}
+function raiWhen(v){if(!v)return "—";var d=new Date(v);return Number.isNaN(d.getTime())?"—":d.toLocaleString()}
+function raiCard(x){
+  if(!x||!x.indicator)return "";
+  var a=x.baseline&&x.baseline.all||{},d=x.diagnostics||{},dec=x.decision||{},cands=Array.isArray(x.candidates)?x.candidates:[],
+      best=cands.slice().sort(function(m,n){return Number(n.delta&&n.delta.strictWRDelta||-999)-Number(m.delta&&m.delta.strictWRDelta||-999)})[0],
+      rec=x.recommendation&&Array.isArray(x.recommendation.summary)?x.recommendation.summary:[],
+      patch=dec.patch?Object.entries(dec.patch).map(function(kv){return raiEsc(kv[0])+"="+raiEsc(kv[1])}).join(" • "):"—";
+  return '<article class="raiCard">'+
+    '<div class="raiCardTop"><div><small>'+raiEsc(x.indicator)+'</small><h4>'+raiEsc(x.indicatorName||x.indicator)+'</h4><span>'+raiEsc(x.symbol||"")+" • "+raiEsc(x.tf||"")+'</span></div><b class="'+raiStateClass(x.state)+'">'+raiEsc(x.state||"WAIT")+'</b></div>'+
+    '<div class="raiMetrics"><div><small>STRICT WR</small><strong>'+raiNum(a.strictWR,1)+'%</strong></div><div><small>SIGNAL WR</small><strong>'+raiNum(a.signalWR,1)+'%</strong></div><div><small>NET PIP</small><strong class="'+(Number(a.netPip)>=0?"g":"r")+'">'+raiNum(a.netPip,1)+'</strong></div><div><small>SAMPLE</small><strong>'+raiNum(a.strictDenominator,0)+'</strong></div></div>'+
+    '<div class="raiDiag">Quick SL <b>'+raiNum(d.quickStopRate,0)+'%</b> • Target fallback <b>'+raiNum(d.targetFallbackRate,0)+'%</b> • Avg loss risk <b>'+raiNum(d.avgLossRiskATR,2)+' ATR</b></div>'+
+    '<div class="raiWhy">'+(rec.length?rec.map(function(v){return "• "+raiEsc(v)}).join("<br>"):"No diagnosis yet.")+'</div>'+
+    '<div class="raiCandidate"><small>BEST SHADOW CANDIDATE</small><b>'+(best?raiEsc(best.id):"—")+'</b><span>'+(best&&best.delta?("Δ Strict "+raiNum(best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta.netPipDelta,1)+" pip"):"Waiting for sample / replay")+'</span></div>'+
+    '<div class="raiDecision"><small>AI DECISION</small><b class="'+raiStateClass(dec.action)+'">'+raiEsc(dec.action||"WAIT")+'</b><span>'+raiEsc(dec.reason||"")+'</span><span>Patch: '+patch+'</span></div>'+
+    '<div class="raiFoot">Updated '+raiWhen(x.generatedAtUTC)+' • '+raiEsc(x.recommendationId||"")+'</div>'+
+  '</article>';
+}
+function renderRecommendedAIArchive(data){
+  raiLatest=data||{};
+  var recs=Object.values(raiLatest.recommendations||{}).filter(function(x){return x&&typeof x==="object"}).sort(function(a,b){return String(a.indicatorName||a.indicator).localeCompare(String(b.indicatorName||b.indicator))});
+  if($("raiHeartbeat"))$("raiHeartbeat").textContent=raiLatest.heartbeat||"WAIT";
+  if($("raiUpdated"))$("raiUpdated").textContent=raiWhen(raiLatest.updatedAtUTC);
+  if($("raiPrimary"))$("raiPrimary").textContent=(raiLatest.primarySymbol||"XAUUSD247")+" • "+(raiLatest.primaryTF||"M15");
+  if($("raiBatch"))$("raiBatch").textContent=raiLatest.lastBatch&&Array.isArray(raiLatest.lastBatch.indicators)?raiLatest.lastBatch.indicators.join(", "):"WAIT";
+  if($("raiCards"))$("raiCards").innerHTML=recs.length?recs.map(raiCard).join(""):'<div class="notice info">AI archive belum mempunyai cycle lengkap. Scheduler akan mengisi data secara berperingkat.</div>';
+  if($("raiStatus")){
+    $("raiStatus").className="notice "+(raiLatest.heartbeat==="OK"?"good":"info");
+    $("raiStatus").textContent=raiLatest.heartbeat==="OK"?
+      "Recommended AI 24H aktif • archive terakhir "+raiWhen(raiLatest.updatedAtUTC)+" • setiap indicator disimpan berasingan.":
+      "Recommended AI menunggu cycle hourly pertama. Manual study masih boleh dijalankan.";
+  }
+}
+async function loadRecommendedAI(force){
+  if(raiLoading&&!force)return;raiLoading=true;
+  try{
+    var data=await getJson("/recommended-ai/latest.json?ts="+(force?Date.now():"1"));
+    renderRecommendedAIArchive(data);
+  }catch(e){
+    if($("raiStatus")){$("raiStatus").className="notice bad";$("raiStatus").textContent="Recommended AI archive unavailable • "+String(e.message||e)}
+  }finally{raiLoading=false}
+}
+async function runRecommendedAINow(){
+  if(!$("raiLiveResult")||!selectedSymbol)return;
+  var mode=raiMode(selectedIndicator);
+  $("raiLiveBadge").className="tag y";$("raiLiveBadge").textContent="STUDYING";
+  $("raiLiveResult").textContent="Recommended AI sedang replay "+selectedSymbol+" • "+selectedTF+" • "+indicatorName(selectedIndicator)+" dan menguji shadow candidates…";
+  try{
+    var x=await getJson("/api/recommended-ai?symbol="+encodeURIComponent(selectedSymbol)+"&tf="+encodeURIComponent(selectedTF)+"&indicator="+encodeURIComponent(mode)+"&shadow=1");
+    if(!x.ok)throw Error(x.error||"AI study unavailable");
+    var a=x.baseline&&x.baseline.all||{},d=x.diagnostics||{},dec=x.decision||{},best=(x.candidates||[]).slice().sort(function(m,n){return Number(n.delta&&n.delta.strictWRDelta||-999)-Number(m.delta&&m.delta.strictWRDelta||-999)})[0];
+    $("raiLiveBadge").className="tag "+raiStateClass(dec.action);$("raiLiveBadge").textContent=dec.action||"DONE";
+    $("raiLiveResult").innerHTML='<b>'+raiEsc(x.indicatorName)+' • '+raiEsc(x.symbol)+' • '+raiEsc(x.tf)+'</b><br>'+
+      'Strict WR '+raiNum(a.strictWR,1)+'% • Signal WR '+raiNum(a.signalWR,1)+'% • NET '+raiNum(a.netPip,1)+' pip • sample '+raiNum(a.strictDenominator,0)+'<br>'+
+      'Quick SL '+raiNum(d.quickStopRate,0)+'% • target fallback '+raiNum(d.targetFallbackRate,0)+'% • avg loss risk '+raiNum(d.avgLossRiskATR,2)+' ATR<br>'+
+      (x.recommendation&&x.recommendation.summary?x.recommendation.summary.map(function(v){return "• "+raiEsc(v)}).join("<br>"):"")+
+      '<br><b>Shadow:</b> '+(best?raiEsc(best.id)+" • Δ Strict "+raiNum(best.delta&&best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta&&best.delta.netPipDelta,1)+" pip":"No candidate")+
+      '<br><b>Decision:</b> '+raiEsc(dec.action||"WAIT")+" • "+raiEsc(dec.reason||"");
+  }catch(e){
+    $("raiLiveBadge").className="tag r";$("raiLiveBadge").textContent="ERROR";$("raiLiveResult").textContent=String(e.message||e);
+  }
+}
+
