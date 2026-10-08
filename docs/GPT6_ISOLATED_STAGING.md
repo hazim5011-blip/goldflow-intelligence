@@ -15,6 +15,7 @@
 - Inputs: only exact `XAUUSD247` symbol, requested M5/M15/M30/H1/H4 timeframe, broker tick/bid/ask and closed candles from the existing named Vantage bridge. No browser-provided candles or arbitrary URL.
 - Refuses unavailable/offline/stale tick, insufficient closed candles, invalid broker UTC offset and invalid model output with `WAIT`/error; never invents a generic spot substitute.
 - Fundamental feed is **UNAVAILABLE by default**; set `GF_GPT_INCLUDE_MACRO=1` on verified preview to use the existing GoldFlow official macro pipeline. Only dated, sourced, non-stale OFFICIAL or explicitly flagged SECONDARY_MIRROR observations reach GPT; derived scores remain labelled derived.
+- Recent publisher headlines are also **UNAVAILABLE by default**. Set `GF_GPT_INCLUDE_NEWS=1` on preview to use the existing GoldFlow news pipeline: source-linked, dated RSS headlines (<=48 hours), explicitly **headline-only** and never claimed as confirmed article content. No synthetic news.
 - The result is `WATCH_BUY`/`WATCH_SELL`/`WAIT` **research only**; `canEnter=false`, `isExecutedTrade=false`. There are no executable entry/SL/TP fields or order pathways.
 - A separate **GPT Research** dashboard tab and `gpt-ui.js` are present. The browser uses only the signed Cloudflare Access session; it never reads OpenAI/admin/bridge keys.
 - No broker operations, signal archive writes, legacy trading logic modifications, or changes to other websites/robots. The only new writes are cost-quota counters in a dedicated KV binding.
@@ -33,13 +34,14 @@ Use Pages dashboard > Settings > Variables and Secrets. Never commit/paste secre
 8. `GF_GPT_RATE_KV`: bind a **new isolated Cloudflare KV namespace**. This is required; without it POST fails closed and incurs no OpenAI charge.
 9. `GF_GPT_DAILY_LIMIT`: e.g. `12`; bounded to 1–30. KV applies approximately 90-second cooldown plus per-identity daily quota. **KV is eventually consistent**; also configure WAF rate limits, OpenAI project spend alerts/limits and authenticated Access policy for production-hard enforcement.
 10. `GF_GPT_INCLUDE_MACRO`: optional `1` only after provider freshness and official sourcing verification. Default disabled/unavailable.
-11. `GF_GPT_ENABLED`: keep absent / `0` until secrets, project budget, Access, KV and broker clock have been verified. Then set `1` on **isolated preview** only.
+11. `GF_GPT_INCLUDE_NEWS`: optional `1` to include timestamp-checked live publisher RSS headlines only; missing/stale feed is disclosed. Default off.
+12. `GF_GPT_ENABLED`: keep absent / `0` until secrets, project budget, Access, KV and broker clock have been verified. Then set `1` on **isolated preview** only.
 
 The owner browser must use a valid **signed Cloudflare Access JWT**, verified on the Worker against the team JWK URL and configured AUD. The public static tab does not grant API access. An owner service bearer token is an alternate **server-to-server only** mechanism. The `GF_GPT_RATE_KV` counters are approximate, not hard economic guarantees; enforce Access, WAF and API project budget limits outside the Worker before rollout. If Access/team/AUD is absent, normal browser POST is always denied.
 
 ## Verify without live mutation
 
-- `node --test tests/gpt-research.test.mjs tests/gpt-access.test.mjs tests/gpt-dashboard.test.mjs` — isolated security, browser and protocol tests; synthetic fixtures are test-only. Run `npm test` separately; its existing failing legacy assertions must be audited without weakening existing guards.
+- `node --test tests/gpt-research.test.mjs tests/gpt-access.test.mjs tests/gpt-dashboard.test.mjs tests/gpt-news.test.mjs` — isolated security, browser and protocol tests; synthetic fixtures are test-only. Run `npm test` separately; its existing failing legacy assertions must be audited without weakening existing guards.
 - `npm run test:cloudflare`
 - `npm install --no-audit --no-fund && npm run build:cloudflare`
 - Confirm existing Cloudflare API routes still work and old indicator files have not changed.
