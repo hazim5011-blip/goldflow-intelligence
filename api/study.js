@@ -88,7 +88,7 @@ export default async function handler(req,res){
    cards:(macro.cards||[]).filter(c=>NEWS_DRIVER_IDS.includes(c.id)).map(c=>({id:c.id,name:c.name,display:c.display,value:c.value,date:c.date,status:c.status,source:c.source,stale:c.stale,goldImpact:c.goldImpact,change:c.change,changeLabel:c.changeLabel,detail:c.detail}))}:null;
   return res.status(200).json({...output,source:"VANTAGE_MT5",marketResearchOnly:true,autoTrading:false,news:publicMacro,
    chartBars:(bridge.frames?.[tf]||[]).slice(-160).map(b=>({t:Number(b.t)-offset,o:b.o,h:b.h,l:b.l,c:b.c})),
-   limitation:mode==="ai"?"GF-AI v1.21 reads M1/M5/M15/M30/H1/H4/D1 Vantage closed candles in one auditable hierarchy. Entry remains selected-TF; all other TFs are context. No trained-ML probability or automatic execution.":"Mode-specific auditable research. No verified publication timestamp, forecast surprise, intrabar fill or ML-trained win probability."});
+   limitation:mode==="ai"?"GF-AI v1.40 reads M1/M5/M15/M30/H1/H4/D1 Vantage closed candles using a professional hierarchy: D1/H4 regime, H1/M30 thesis, M15/M5 setup, M1 precision. One parent Trade Idea spans lower-TF confirmations. No trained-ML probability or automatic execution.":"Mode-specific auditable research. No verified publication timestamp, forecast surprise, intrabar fill or ML-trained win probability."});
  }catch(e){
   return res.status(200).json({ok:false,status:"DATA_UNVERIFIED",reason:"BROKER_DATA_UNAVAILABLE",errorCode:String(e?.code||"FETCH_FAILED"),
     marketResearchOnly:true,autoTrading:false});
