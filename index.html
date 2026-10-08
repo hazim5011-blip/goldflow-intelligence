@@ -37,7 +37,7 @@
     <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
     <option value="owl101">OWL Style Research v1.01</option>
     <option value="fund104">Fund Structure A v1.04 — Web Study</option>
-    <option value="gf-ai">GF-AI Live Analyst v1.40 • Professional Trader Playbook</option>
+    <option value="gf-ai">GF-AI Live Analyst v1.50 • Live Management + Recovery</option>
     <option value="gf-news">GF-News Impact Pro v1.00 • Gold</option>
     <option value="gf-study">GF-Market Study Pro v1.00</option>
   </select></div>
@@ -116,7 +116,7 @@
   <div class="card">
     <div class="head"><div><small class="eyebrow">BROKER-FIRST • CLOSED CANDLE STUDY</small><h3 id="gfStudyModeTitle">Select GF study mode</h3></div><button id="gfStudyRefresh" type="button" class="primary">Refresh Study</button></div>
     <div class="notice info" id="gfStudyNote">Select one of the GF-AI / GF-News / GF-Market Study indicators to begin. Rule-based confluence; no trained AI prediction or automatic broker order.</div>
-    <div class="notice" id="gfStudyModePurpose">GF-AI = D1/H4 regime → H1/M30 thesis → M15/M5 setup → M1 precision trigger, with BUY/SELL/NO-TRADE reasoning and one parent Trade Idea ID across TFs.</div>
+    <div class="notice" id="gfStudyModePurpose">GF-AI = D1/H4 regime → H1/M30 thesis → M15/M5 setup → M1 precision trigger → live HOLD/PROTECT/CUT/RECOVERY lifecycle. One parent Trade Idea ID across TFs.</div>
     <div class="grid g2">
       <div class="card"><small>CONFIRMATION STATE</small><h2 id="gfStudyState" aria-live="polite">WAIT CONFIRMATION</h2><div id="gfStudyReason" class="reason">Waiting for verified closed candles and fresh Vantage quote.</div><div class="sub" id="gfStudyFresh">—</div></div>
       <div class="card"><small>ENTRY DECISION</small><h2 id="gfEntryDecision">NO ENTRY</h2><div id="gfEntryHint" class="reason">A trade setup is NOT executed automatically.</div><div class="sub" id="gfOppositeDirection">BUY/SELL: WAIT VALIDATION</div><div class="sub" id="gfConfirmTime">—</div></div>
@@ -138,9 +138,18 @@
       </div>
       <div id="gfActiveSetupNote" class="reason">No Market Study setup has been observed inside its verified entry zone in this browser.</div>
     </div>
+    <div class="card sec gfAIManageCard" id="gfAIManageCard" hidden>
+      <div class="head"><div><small class="eyebrow">GF-AI LIVE TRADE MANAGEMENT • OBSERVED RESEARCH ENTRY</small><h3>Hold • Protect • Cut • Recovery</h3></div><div class="gfActiveActions"><span id="gfAIManageBadge" class="tag">NONE</span><button type="button" id="gfAIManageClear" class="studyClearBtn">Clear</button></div></div>
+      <div class="grid g3">
+        <div class="gfReasonBox"><small>ACTIVE TRADE IDEA</small><b id="gfAIManageIdea">—</b><div class="reason" id="gfAIManageEntry">—</div></div>
+        <div class="gfReasonBox"><small>LIVE MANAGEMENT</small><b id="gfAIManageAction">—</b><div class="reason" id="gfAIManageRisk">—</div></div>
+        <div class="gfReasonBox"><small>RECOVERY BRAIN</small><b id="gfAIRecoveryState">—</b><div class="reason" id="gfAIRecoveryNote">—</div></div>
+      </div>
+      <div class="macroDisclaimer">A++ = high-quality confluence tier, NOT 90% win probability. GoldFlow never recommends full-margin, martingale or larger recovery risk. Recovery requires a NEW qualified Trade Idea and returns to normal risk.</div>
+    </div>
     <div class="card sec"><div class="head"><h3 id="gfScenarioTitle">Live Research / Scenario</h3><span class="tag y" id="gfScenarioBadge">RESEARCH • NOT EXECUTED</span></div><div class="reason" id="gfScenarioNarrative">Select a study mode to see its own technical scenario, confirmation levels and sourced macro/news context.</div></div>
     <div class="card sec" id="gfReasoningCard">
-      <div class="head"><div><small class="eyebrow">GF-AI v1.30 • AUDITABLE SCENARIO REASONING</small><h3>Primary Thesis • Alternative Thesis • No Trade</h3></div><span class="tag y" id="gfReasoningHeadline">WAIT AI</span></div>
+      <div class="head"><div><small class="eyebrow">GF-AI v1.50 • AUDITABLE SCENARIO + TRADE MANAGEMENT</small><h3>Primary Thesis • Alternative Thesis • No Trade</h3></div><span class="tag y" id="gfReasoningHeadline">WAIT AI</span></div>
       <div class="grid g3 gfReasoningGrid">
         <div class="gfReasonBox buy"><small>BUY SCENARIO</small><b id="gfReasoningBuy">—</b><div class="reason" id="gfReasoningBuyWhy">—</div></div>
         <div class="gfReasonBox sell"><small>SELL SCENARIO</small><b id="gfReasoningSell">—</b><div class="reason" id="gfReasoningSellWhy">—</div></div>
@@ -165,7 +174,7 @@
       <div class="card"><div class="head"><h3>Fundamental / News Impact</h3><span class="tag y">OFFICIAL VS DERIVED</span></div><div id="gfStudyMacro" class="reason">—</div></div>
     </div>
 <div class="card sec"><div class="head"><h3>GF Study • Vantage Broker Chart</h3><span class="tag y">CONFIRMATION MARKER • NOT EXECUTED</span></div><div id="gfStudyChart" class="chart" role="img" aria-label="Vantage MT5 candles with closed-candle BUY or SELL study confirmation, entry band, invalidation and TP levels"></div><div class="sub" id="gfStudyChartNote">Study chart receives real Vantage candles when the new API is available. Confirmation markers always reference CLOSED candles only.</div></div>
-        <div class="macroDisclaimer">WAIT becomes BUY/SELL CONFIRMED only on a verified closed trigger candle. ENTRY READY additionally requires a fresh broker BID/ASK inside the studied entry range. If invalidated, expired, already moved away or news quality fails, no entry prompt is issued. GF-AI v1.40 uses an auditable professional-trader playbook: D1/H4 regime, H1/M30 thesis, M15/M5 setup, M1 precision, one Trade Idea across TFs, plus scenario reasoning and capped historical calibration. It is NOT a copied ChatGPT model, trained-ML win probability, broker execution, or guaranteed direction.</div>
+        <div class="macroDisclaimer">WAIT becomes BUY/SELL CONFIRMED only on a verified closed trigger candle. ENTRY READY additionally requires a fresh broker BID/ASK inside the studied entry range. If invalidated, expired, already moved away or news quality fails, no entry prompt is issued. GF-AI v1.50 adds live research lifecycle management to the professional playbook: HOLD, PROTECT, TAKE PARTIAL, CUT, WAIT RECOVERY and RECOVERY READY. A++ is a quality tier, not 90% certainty. Full-margin, martingale and loss-chasing are explicitly disallowed. It is NOT broker execution or a guaranteed direction.</div>
   </div>
 </section>
 
@@ -317,6 +326,7 @@
 </div>
 <script src="/ohlc-fallback.js"></script>
 <script src="/study-lifecycle.js"></script>
+<script src="/ai-lifecycle.js"></script>
 <script src="/tv-hybrid.js"></script>
 <script src="/chart-tools.js"></script>
 <script src="/app.js"></script>
