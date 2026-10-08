@@ -5,8 +5,10 @@ function bytes(s){return Uint8Array.from(b64urlDecode(s),x=>x.charCodeAt(0))}
 function readJwtSegment(s){return JSON.parse(new TextDecoder().decode(bytes(s)))}
 async function accessJwt(request,env,requestFetch){
  const team=String(env.GF_GPT_ACCESS_TEAM||"").trim().toLowerCase(),
-  audience=String(env.GF_GPT_ACCESS_AUD||"").trim();
- if(!/^[a-z0-9-]{1,50}$/.test(team)||!audience||audience.length>150)return null;
+  audience=String(env.GF_GPT_ACCESS_AUD||"").trim(),
+  ownerEmail=String(env.GF_GPT_OWNER_EMAIL||"").trim().toLowerCase();
+ if(!/^[a-z0-9-]{1,50}$/.test(team)||!audience||audience.length>150
+   ||!ownerEmail||ownerEmail.length>200||!ownerEmail.includes("@"))return null;
  const jwt=request.headers.get("Cf-Access-Jwt-Assertion")||"";
  const sections=jwt.split(".");
  if(sections.length!==3||jwt.length>6000)return null;
@@ -14,7 +16,8 @@ async function accessJwt(request,env,requestFetch){
   const header=readJwtSegment(sections[0]),payload=readJwtSegment(sections[1]);
   const now=Math.floor(Date.now()/1000),issuer="https://"+team+".cloudflareaccess.com";
   if(header.alg!=="RS256"||typeof header.kid!=="string"||!header.kid||header.kid.length>200
-    ||payload.iss!==issuer||!(Array.isArray(payload.aud)?payload.aud.includes(audience):payload.aud===audience)
+    ||payload.iss!==issuer||String(payload.email||"").toLowerCase()!==ownerEmail
+    ||!(Array.isArray(payload.aud)?payload.aud.includes(audience):payload.aud===audience)
     ||typeof payload.exp!=="number"||payload.exp<=now||payload.exp>now+86400*30
     ||typeof payload.iat!=="number"||payload.iat>now+60)return null;
   const result=await requestFetch(issuer+"/cdn-cgi/access/certs",{
@@ -27,7 +30,8 @@ async function accessJwt(request,env,requestFetch){
     {name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["verify"]);
   const valid=await crypto.subtle.verify("RSASSA-PKCS1-v1_5",verifyKey,bytes(sections[2]),
     new TextEncoder().encode(sections[0]+"."+sections[1]));
-  return valid?{id:typeof payload.sub==="string"?payload.sub:jwt.slice(-32),mode:"ACCESS"}:null;
+  return valid&&typeof payload.sub==="string"&&payload.sub.length>=3
+    ?{id:payload.sub,mode:"ACCESS"}:null;
  }catch{return null}
 }
 function equalSecret(a,b){
