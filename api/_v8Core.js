@@ -218,7 +218,8 @@ export function aggregate(rows=[]){
   };
   const pipBreakdown=symbols.length===1?sideBreakdown("signedPips",symbols[0]):null;
   const grossComplete=totals.length>0&&gross.length===totals.length;
-  const pipComplete=totals.length>0&&symbols.length===1&&pipBreakdown?.count===totals.length;
+  const pipStrictRows=symbols.length===1?totals.filter(x=>x.symbolResolved===symbols[0]&&n(x.signedPips)!=null):[];
+  const pipComplete=totals.length>0&&symbols.length===1&&pipStrictRows.length===totals.length;
   let strictBasis=null,strictWinValue=null,strictLossValue=null;
   if(grossComplete){
     strictBasis="USD_GROSS";
@@ -226,8 +227,8 @@ export function aggregate(rows=[]){
     strictLossValue=snap(sum(gross.filter(x=>Number(x.grossPLUSD)<0),"grossPLUSD"),4);
   }else if(pipComplete){
     strictBasis="PIP";
-    strictWinValue=pipBreakdown.winTotal;
-    strictLossValue=pipBreakdown.lossTotal;
+    strictWinValue=snap(sum(positives.filter(x=>n(x.signedPips)!=null),"signedPips"),3);
+    strictLossValue=snap(sum(negatives.filter(x=>n(x.signedPips)!=null),"signedPips"),3);
   }
   const strictValueDenominator=strictWinValue!=null&&strictLossValue!=null?strictWinValue+Math.abs(strictLossValue):null;
   const strictWinRate=strictValueDenominator>0?100*strictWinValue/strictValueDenominator:null;

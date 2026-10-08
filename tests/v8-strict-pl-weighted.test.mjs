@@ -42,3 +42,12 @@ test("Count win rate remains separate from P/L-weighted Strict WR",()=>{
   assert.ok(Math.abs(st.strictWinRate-(40/140*100))<1e-9);
   assert.ok(st.strictWinRate<50);
 });
+
+
+test("BE_ZERO is excluded from Strict WR magnitude and coverage",()=>{
+  const st=aggregate([row("TP1",259.88),row("SL",-210),{...row("BE_ZERO",0),priceMove:0,rMultiple:0}]);
+  assert.equal(st.strictBasis,"PIP");
+  assert.ok(Math.abs(st.strictWinRate-(259.88/(259.88+210)*100))<1e-9);
+  assert.equal(st.signalWinRate,50);
+  assert.equal(st.beZero,1);
+});
