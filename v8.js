@@ -12,9 +12,9 @@
     {id:"snd107",label:"SND / SNR / SBR / RBS v1.07",historical:true},
     {id:"owl101",label:"OWL Style Research v1.01",historical:true},
     {id:"fund104",label:"Fund Structure A v1.04 — Web Study",historical:true,validationOnly:true},
-    {id:"gf-ai",label:"GF-AI Live Analyst v1.60",historical:false,note:"No historical outcome archive yet"},
-    {id:"gf-news",label:"GF-News Impact Pro",historical:false,note:"No historical outcome archive yet"},
-    {id:"gf-study",label:"GF-Market Study Pro",historical:false,note:"No historical outcome archive yet"}
+    {id:"gf-ai",label:"GF-AI Live Analyst v1.60",historical:true,note:"Own-engine closed-candle replay"},
+    {id:"gf-news",label:"GF-News Impact Pro",historical:true,forwardOnly:true,note:"Forward archive only; historical macro/news is not backfilled"},
+    {id:"gf-study",label:"GF-Market Study Pro",historical:true,note:"Own-engine closed-candle replay"}
   ];
   var HISTORY_IDS=HISTORY_CATALOG.filter(function(x){return x.historical}).map(function(x){return x.id});
   function historyMeta(id){return HISTORY_CATALOG.find(function(x){return x.id===String(id||"").toLowerCase()})||{id:String(id||""),label:String(id||"UNKNOWN"),historical:false}}
@@ -103,8 +103,13 @@
     async function run(){while(true){var i=next++;if(i>=items.length)return;out[i]=await worker(items[i],i)}}
     await Promise.all(Array.from({length:Math.min(limit,items.length)},run));return out;
   }
-  function analyticsRow(meta,st,symbol,error){
-    if(error)return '<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="15" class="r">UNAVAILABLE • '+safe(error)+'</td></tr>';
+  function analyticsRow(meta,st,symbol,error,data){
+    if(error)return '<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="14" class="r">UNAVAILABLE • '+safe(error)+'</td></tr>';
+    if(meta.forwardOnly&&String(data?.historyMode||"").indexOf("FORWARD")>=0&&!Number(st?.totalSignals||0)){
+      return '<tr><td><b>'+safe(meta.label)+'</b><br><small>OWN ENTRY / SL / TP1 / TP2 / TP3</small></td>'+
+        '<td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>'+
+        '<td class="y"><b>WAIT ARCHIVE</b><br><small>n=0</small></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+    }
     var tp=tpTrailCount(st),be=Number(st?.outcomes?.BE_POSITIVE||0),den=Number(st?.strictDenominator||0),
       winP=metricPart(st,"pipsBySymbol",symbol,"winTotal"),lossP=metricPart(st,"pipsBySymbol",symbol,"lossTotal"),netP=metricTotal(st,"pipsBySymbol",symbol);
     return '<tr><td><b>'+safe(meta.label)+'</b>'+(meta.validationOnly?'<br><small>NATIVE VALIDATION • NORMALIZED TRADE PLAN</small>':'')+'</td>'+
@@ -117,12 +122,9 @@
   }
   function renderIndicatorComparison(results,symbol){
     if(!$("v8IndicatorComparison"))return;
-    var rows=(results||[]).map(function(x){return analyticsRow(historyMeta(x.id),x.data?.summary,symbol,x.error)});
-    HISTORY_CATALOG.filter(function(x){return !x.historical}).forEach(function(meta){
-      rows.push('<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="14" class="y">N/A • '+safe(meta.note||"Historical WR unavailable")+' • data indicator lain tidak digunakan sebagai pengganti.</td></tr>');
-    });
+    var rows=(results||[]).map(function(x){return analyticsRow(historyMeta(x.id),x.data?.summary,symbol,x.error,x.data)});
     $("v8IndicatorComparison").innerHTML='<table class="v8Table v8WideTable"><thead><tr><th>INDICATOR</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>'+
-      '<p class="v8Footnote">History Pro menggunakan trade-plan lengkap. Jika indicator asal tiada TP, GoldFlow History menambah NORMALIZED STUDY PLAN 1R/2R/3R dan pengurusan BE/Trailing secara jelas; ia bukan target native indicator. WIN PIP + SL PIP = NET PIP. Strict WR tidak termasuk BE0 dan AMBIGUOUS.</p>';
+      '<p class="v8Footnote">Semua signal directional mesti ada ENTRY + SL + TP1 + TP2 + TP3. GF-AI dan GF-Market Study menggunakan plan native engine masing-masing semasa replay; GF-News tidak backfill macro/news lama dan menunggu forward archive. WIN PIP + SL PIP = NET PIP. Strict WR tidak termasuk BE0 dan AMBIGUOUS.</p>';
   }
   function renderDailySummary(data){
     if(!$("v8DailySummary"))return;
