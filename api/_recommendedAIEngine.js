@@ -79,6 +79,10 @@ function diagnostics(rows=[],tf="M15"){
   };
 }
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+function profileParamsOnly(p={}){
+  const keys=["bufferATR","minRiskATR","maxRiskATR","lookback","t1MinR","t1MaxR","t1FallbackR","t2MinR","t2MaxR","t2FallbackR","t3MinR","t3MaxR","t3FallbackR"];
+  return Object.fromEntries(keys.filter(k=>N(p[k])!=null).map(k=>[k,Number(p[k])]));
+}
 function uniqueCandidates(list){
   const seen=new Set(),out=[];
   for(const x of list){
@@ -121,7 +125,7 @@ function qualityDelta(base,cand){
   const sw=(N(cand.strictWR)||0)-(N(base.strictWR)||0),net=(N(cand.netPip)||0)-(N(base.netPip)||0);
   return {strictWRDelta:snap(sw,2),netPipDelta:snap(net,2)};
 }
-function candidatePass(baseVal,candVal,baseAll,candAll){
+export function recommendedAIPromotionGate(baseVal,candVal,baseAll,candAll){
   if((baseVal.strictDenominator||0)<10||(candVal.strictDenominator||0)<10)return {pass:false,reasons:["VALIDATION_SAMPLE_LT_10"]};
   if(N(baseVal.strictWR)==null||N(candVal.strictWR)==null||N(baseVal.netPip)==null||N(candVal.netPip)==null)return {pass:false,reasons:["VALIDATION_PNL_INCOMPLETE"]};
   const strictGain=candVal.strictWR-baseVal.strictWR,netGain=candVal.netPip-baseVal.netPip,
@@ -170,11 +174,11 @@ export async function runRecommendedAI({symbol="XAUUSD247",tf="M15",indicator="1
   if(shadow&&candidateDefs.length&&rows.length){
     for(const def of candidateDefs){
       try{
-        const profileParams=getEffectiveDynamicProfile(mode,resolved,{params:def.patch});
+        const profileParams=profileParamsOnly(getEffectiveDynamicProfile(mode,resolved,{params:def.patch}));
         const ctx=rebuildV8ContextWithProfile(baselineCtx,{params:def.patch});
         const candRows=ctx.rows||[],candAll=compactMetric(candRows,ctx.symbolResolved),
           candVal=compactMetric(afterCut(candRows,split.cutoff),ctx.symbolResolved),
-          gate=candidatePass(baseVal,candVal,baseAll,candAll);
+          gate=recommendedAIPromotionGate(baseVal,candVal,baseAll,candAll);
         candidateResults.push({...def,effectiveProfile:profileParams,all:candAll,validation:candVal,delta:qualityDelta(baseVal,candVal),gate});
       }catch(e){
         candidateResults.push({...def,error:String(e?.message||e),gate:{pass:false,reasons:["SHADOW_REPLAY_ERROR"]}});
