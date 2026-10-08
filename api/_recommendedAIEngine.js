@@ -151,22 +151,25 @@ function narrative(base,diag,active){
 function recId(mode,symbol,tf,now){return [mode,symbol,tf,String(now).replace(/[-:.TZ]/g,"").slice(0,12)].join("-")}
 
 export async function runRecommendedAI({symbol="XAUUSD247",tf="M15",indicator="105",shadow=true}={}){
-  const mode=canonMode(indicator),now=new Date().toISOString(),key=aiProfileKey(mode,symbol),
-    active=activeAIProfileRecord(mode,symbol),effective=getEffectiveDynamicProfile(mode,symbol);
+  const mode=canonMode(indicator),now=new Date().toISOString();
   const baselineCtx=await fetchV8Context({symbol,tf,indicator:mode});
-  const rows=baselineCtx.rows||[],split=splitCut(rows),baseAll=compactMetric(rows,baselineCtx.symbolResolved),
-    baseTrain=compactMetric(split.training,baselineCtx.symbolResolved),baseVal=compactMetric(split.validation,baselineCtx.symbolResolved),
-    diag=diagnostics(rows,tf),sampleReady=(baseAll.strictDenominator||0)>=40&&(baseVal.strictDenominator||0)>=10,
-    candidateDefs=mode==="gf-news"?[]:candidatesFor(effective,diag,baseTrain),candidateResults=[];
+  const resolved=baselineCtx.symbolResolved||symbol,key=aiProfileKey(mode,resolved),
+    active=activeAIProfileRecord(mode,resolved),effective=getEffectiveDynamicProfile(mode,resolved);
+  const rows=baselineCtx.rows||[],split=splitCut(rows),baseAll=compactMetric(rows,resolved),
+    baseTrain=compactMetric(split.training,resolved),baseVal=compactMetric(split.validation,resolved),
+    diag=diagnostics(rows,tf),trainDiag=diagnostics(split.training,tf),
+    sampleReady=(baseAll.strictDenominator||0)>=40&&(baseVal.strictDenominator||0)>=10,
+    candidateDefs=mode==="gf-news"?[]:candidatesFor(effective,trainDiag,baseTrain),candidateResults=[];
 
   if(shadow&&candidateDefs.length&&rows.length){
     for(const def of candidateDefs){
       try{
+        const profileParams=getEffectiveDynamicProfile(mode,resolved,{params:def.patch});
         const ctx=rebuildV8ContextWithProfile(baselineCtx,{params:def.patch});
         const candRows=ctx.rows||[],candAll=compactMetric(candRows,ctx.symbolResolved),
           candVal=compactMetric(afterCut(candRows,split.cutoff),ctx.symbolResolved),
           gate=candidatePass(baseVal,candVal,baseAll,candAll);
-        candidateResults.push({...def,all:candAll,validation:candVal,delta:qualityDelta(baseVal,candVal),gate});
+        candidateResults.push({...def,effectiveProfile:profileParams,all:candAll,validation:candVal,delta:qualityDelta(baseVal,candVal),gate});
       }catch(e){
         candidateResults.push({...def,error:String(e?.message||e),gate:{pass:false,reasons:["SHADOW_REPLAY_ERROR"]}});
       }
@@ -214,8 +217,8 @@ export async function runRecommendedAI({symbol="XAUUSD247",tf="M15",indicator="1
     recommendation:{summary:narrative(baseAll,diag,active),candidateCount:candidateResults.length,
       note:"Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."},
     candidates:candidateResults,
-    decision:{action,reason,sampleReady,autoPromotionApproved,patch:autoPromotionApproved?best.patch:null,
-      candidateId:autoPromotionApproved?best.id:null,validation:autoPromotionApproved?best.validation:null,
+    decision:{action,reason,sampleReady,autoPromotionApproved,patch:autoPromotionApproved?best.effectiveProfile:null,
+      candidatePatch:autoPromotionApproved?best.patch:null,candidateId:autoPromotionApproved?best.id:null,validation:autoPromotionApproved?best.validation:null,
       guardrails:{minCompleted:40,minValidation:10,minStrictWR:52,minStrictWRGainPP:4,minNetPipGain:"max(10 pip, 10%)",maxLossMagnitudeWorseningPct:5,promotionCooldownHours:72}},
     rollback
   };
