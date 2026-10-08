@@ -308,8 +308,10 @@ async function loadAnalysis(){
         ?"FUND 1.04 WEB STUDY • VALIDATION ONLY • Candidates "+(ind.studyDiagnostics?.patternCandidates??0)+" • Confirmed "+(ind.studyDiagnostics?.confirmedAtClose??0)+" • Invalidated "+(ind.studyDiagnostics?.invalidatedAfterClose??0)+" • Native buffers/macro parity not verified"
         :selectedIndicator==="pvtchart101"
           ?"MQ5 SOURCE PARITY • PVT Chart v1.01 • Next-bar continuation • Native TP1/TP2/TP3 + BE + trail + time-exit history"
-        :(selectedIndicator==="pattern132"||selectedIndicator==="snd107")
-          ?"VALIDATION ONLY • Pattern v1.32 source verified; native MQ5 does not define TP/SL trade outcome"
+        :selectedIndicator==="pattern132"
+          ?"PATTERN 1.32 • ENTRY requires same-direction SND + custom Auto Fibo level inside SND • Near Fibo = WATCH only • no broker order"
+          :selectedIndicator==="snd107"
+            ?"VALIDATION ONLY • SND v1.07 research zone; no broker order"
           :"WIN = TP + TRAIL + BE • LOSE = SL only";
     }
     lastLiveTick=null;renderZones(ind.activeZones||{},null);renderStats(st);renderHistory(ind.history||[]);setTimeout(refreshLiveZoneEntry,0);
@@ -336,6 +338,7 @@ function zoneTradeEligible(x,d){
     var sig=lastAnalysis&&lastAnalysis.indicator&&lastAnalysis.indicator.latestSignal;
     return !!(sig&&sig.confirmed&&Number(sig.direction)===Number(d));
   }
+  if(selectedIndicator==="pattern132")return x?.fiboSnd?.confirmed===true;
   return true;
 }
 function zoneEntryState(x,d,tick){
@@ -352,7 +355,8 @@ function renderZones(z,tick){
     var st=zoneEntryState(x,d,tick),side=d>0?"buy":"sell";
     var action=st.live?'<button class="zoneAction" type="button" data-side="'+side+'" data-index="'+i+'" aria-label="View live entry setup on broker chart">LIVE TRADE • VIEW CHART ↗</button>':"";
     var retest=finite(x.currentRetests)?'<span class="sub">Retest '+x.currentRetests+'</span>':"";var score=finite(x.baseScore)?'<div class="sub">Score '+fmt(x.baseScore,0)+'%</div>':"";
-    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.inZone?"watch":st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div><div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span>'+retest+'</div>'+action+score+'</div>';
+    var fiboLine=x?.fiboSnd?.confirmed?'<div class="sub"><b>FIBO+SND ENTRY</b> • '+(x.fiboSnd.entryLayers||[]).map(function(v){return v.label+" @ "+px(v.price)}).join(" • ")+'</div>':x?.fiboSnd?.watch&&x.fiboSnd.nearestLayer?'<div class="sub">FIBO NEAR • '+x.fiboSnd.nearestLayer.label+' @ '+px(x.fiboSnd.nearestLayer.price)+' • WAIT</div>':"";
+    return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.inZone?"watch":st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div>'+fiboLine+'<div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span>'+retest+'</div>'+action+score+'</div>';
   }).join(""):'<div class="sub">No active zone.</div>'}
   $("buyZones").innerHTML=html(buy,1);$("sellZones").innerHTML=html(sell,-1);
   document.querySelectorAll(".zoneAction").forEach(function(b){b.onclick=function(){
@@ -440,10 +444,11 @@ function drawChart(){
     var fibCurrent=finite(lastAnalysis.price)?Number(lastAnalysis.price):Number(bars[bars.length-1].c);
     var fibColours={MARK:"#f4f4f4",LETTER:"#2ca9ff",LOW_RISK:"#31d6a4",MEDIUM_RISK:"#f2c75b",HIGH_RISK:"#ff7b59",GOLDEN:"#f2c75b",COUNTER:"#a979e8",FULL_MARGIN:"#e056fd",SL:"#ff6079"};
     var fibRanked=fib.levels.slice().sort(function(a,b){return Math.abs(Number(a.price)-fibCurrent)-Math.abs(Number(b.price)-fibCurrent)});
+    var fibEntryKeys=new Set([].concat((ind.activeZones?.buy||[]),(ind.activeZones?.sell||[])).flatMap(function(z){return z?.fiboSnd?.confirmed?(z.fiboSnd.entryLayers||[]):[]}).filter(function(v){return finite(v.price)}).map(function(v){return Number(v.price).toFixed(10)}));
     fib.levels.forEach(function(x){
       if(!finite(x.price))return;
-      var rank=fibRanked.indexOf(x),show=chartLabelMode==="all"||(chartLabelMode==="nearest"&&rank<3);
-      candleSeries.createPriceLine({price:Number(x.price),color:fibColours[x.role]||"#71c3fa",lineWidth:x.role==="MARK"||x.role==="SL"?2:1,lineStyle:0,axisLabelVisible:show,title:show?x.label:""});
+      var entryLayer=fibEntryKeys.has(Number(x.price).toFixed(10)),rank=fibRanked.indexOf(x),show=entryLayer||chartLabelMode==="all"||(chartLabelMode==="nearest"&&rank<3);
+      candleSeries.createPriceLine({price:Number(x.price),color:fibColours[x.role]||"#71c3fa",lineWidth:entryLayer?3:(x.role==="MARK"||x.role==="SL"?2:1),lineStyle:0,axisLabelVisible:show,title:show?(entryLayer?"ENTRY LAYER • "+x.label:x.label):""});
     });
   }
   var allZones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
@@ -467,7 +472,7 @@ function drawChart(){
     markers.push({time:bars[bars.length-1].t,position:focusedZone.currentDirection>0?"belowBar":"aboveBar",color:focusedZone.currentDirection>0?"#31d6a4":"#ff6079",shape:"circle",text:"LIVE ENTRY • PRICE IN ZONE (NOT EXECUTED)"});
   }
   if(candleSeries.setMarkers)candleSeries.setMarkers(markers.sort(function(a,b){return a.time-b.time}));
-  chart.timeScale().fitContent();if(window.GFChartTools)GFChartTools.register("broker",{chart:chart,main:candleSeries,bars:bars,tf:selectedTF,contextKey:(lastAnalysis.symbol||selectedSymbol)+"|"+selectedTF});var fibInfo=fib&&fib.active?" • AUTO FIBO "+(fib.direction>0?"BUY":"SELL")+" • MARK 0/1 confirmed":fib&&fib.reason?" • AUTO FIBO "+String(fib.reason).replaceAll("_"," "):"";$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+fibInfo+" • PENDING = entry area; LIVE = current quote within area, NOT broker order";
+  chart.timeScale().fitContent();if(window.GFChartTools)GFChartTools.register("broker",{chart:chart,main:candleSeries,bars:bars,tf:selectedTF,contextKey:(lastAnalysis.symbol||selectedSymbol)+"|"+selectedTF});var fibInfo=fib&&fib.active?" • AUTO FIBO "+(fib.direction>0?"BUY":"SELL")+" • MARK 0/1 confirmed":fib&&fib.reason?" • AUTO FIBO "+String(fib.reason).replaceAll("_"," "):"";var cf=ind.fiboSndConfluence,cfInfo=selectedIndicator==="pattern132"&&cf?" • "+String(cf.state||"WAIT").replaceAll("_"," ")+" • CONF "+Number(cf.confirmedCount||0)+" / WATCH "+Number(cf.watchCount||0):"";$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+fibInfo+cfInfo+" • LIVE ENTRY only when SND + Fibo confluence is confirmed; NOT broker order";
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
