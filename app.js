@@ -435,6 +435,17 @@ function drawChart(){
     $("chartInfo").textContent=(d.symbol||selectedSymbol)+" • "+d.tf+" • "+indicatorName(selectedIndicator)+" • Vantage MT5 • "+String(d.status||"WAIT").replaceAll("_"," ")+" • all lines retained; nearest labels only";
     return;
   }
+  var fib=selectedIndicator==="pattern132"?ind.autoFibo:null;
+  if(fib&&fib.active&&Array.isArray(fib.levels)&&fib.levels.length){
+    var fibCurrent=finite(lastAnalysis.price)?Number(lastAnalysis.price):Number(bars[bars.length-1].c);
+    var fibColours={MARK:"#f4f4f4",LETTER:"#2ca9ff",LOW_RISK:"#31d6a4",MEDIUM_RISK:"#f2c75b",HIGH_RISK:"#ff7b59",GOLDEN:"#f2c75b",COUNTER:"#a979e8",FULL_MARGIN:"#e056fd",SL:"#ff6079"};
+    var fibRanked=fib.levels.slice().sort(function(a,b){return Math.abs(Number(a.price)-fibCurrent)-Math.abs(Number(b.price)-fibCurrent)});
+    fib.levels.forEach(function(x){
+      if(!finite(x.price))return;
+      var rank=fibRanked.indexOf(x),show=chartLabelMode==="all"||(chartLabelMode==="nearest"&&rank<3);
+      candleSeries.createPriceLine({price:Number(x.price),color:fibColours[x.role]||"#71c3fa",lineWidth:x.role==="MARK"||x.role==="SL"?2:1,lineStyle:0,axisLabelVisible:show,title:show?x.label:""});
+    });
+  }
   var allZones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
   var sortedZones=allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)});
   var zones=focusedZone?[focusedZone]:sortedZones.slice(0,10);
@@ -448,11 +459,15 @@ function drawChart(){
   });
   var barTimes=new Set(bars.map(function(b){return b.t}));
   var markers=(ind.history||[]).filter(function(x){return barTimes.has(x.time)}).slice(-80).map(function(x){return {time:x.time,position:x.direction>0?"belowBar":"aboveBar",color:x.direction>0?"#f2c75b":"#ff6079",shape:x.direction>0?"arrowUp":"arrowDown",text:x.code+" "+Math.round(x.score)+"%"}});
+  if(fib&&fib.active){
+    if(fib.mark0&&barTimes.has(Number(fib.mark0.time)))markers.push({time:Number(fib.mark0.time),position:fib.direction>0?"belowBar":"aboveBar",color:"#f4f4f4",shape:"circle",text:"FIBO MARK 0"});
+    if(fib.mark1&&barTimes.has(Number(fib.mark1.time)))markers.push({time:Number(fib.mark1.time),position:fib.direction>0?"aboveBar":"belowBar",color:"#f4f4f4",shape:"circle",text:"FIBO MARK 1"});
+  }
   if(focusedZone && zoneEntryState(focusedZone,focusedZone.currentDirection,lastLiveTick).live && bars.length){
     markers.push({time:bars[bars.length-1].t,position:focusedZone.currentDirection>0?"belowBar":"aboveBar",color:focusedZone.currentDirection>0?"#31d6a4":"#ff6079",shape:"circle",text:"LIVE ENTRY • PRICE IN ZONE (NOT EXECUTED)"});
   }
   if(candleSeries.setMarkers)candleSeries.setMarkers(markers.sort(function(a,b){return a.time-b.time}));
-  chart.timeScale().fitContent();if(window.GFChartTools)GFChartTools.register("broker",{chart:chart,main:candleSeries,bars:bars,tf:selectedTF,contextKey:(lastAnalysis.symbol||selectedSymbol)+"|"+selectedTF});$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+" • PENDING = entry area; LIVE = current quote within area, NOT broker order";
+  chart.timeScale().fitContent();if(window.GFChartTools)GFChartTools.register("broker",{chart:chart,main:candleSeries,bars:bars,tf:selectedTF,contextKey:(lastAnalysis.symbol||selectedSymbol)+"|"+selectedTF});var fibInfo=fib&&fib.active?" • AUTO FIBO "+(fib.direction>0?"BUY":"SELL")+" • MARK 0/1 confirmed":fib&&fib.reason?" • AUTO FIBO "+String(fib.reason).replaceAll("_"," "):"";$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+fibInfo+" • PENDING = entry area; LIVE = current quote within area, NOT broker order";
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
