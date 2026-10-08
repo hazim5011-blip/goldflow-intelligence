@@ -1,6 +1,6 @@
 import {createHash} from "node:crypto";
 
-export const V8_ENGINE_BUILD="v8.1.1-vantage-broker-utc-normalization";
+export const V8_ENGINE_BUILD="v8.1.3-normalized-trade-plan-net-performance";
 export const TF_SECONDS={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400,W1:604800,MN1:2592000};
 const VALID_OUTCOMES=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","BE_ZERO","SL"]);
 const POSITIVE=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE"]);
@@ -42,35 +42,55 @@ function touchStop(b,d,stop){return d>0?b.l<=stop:b.h>=stop}
 function touchTarget(b,d,target){return d>0?b.h>=target:b.l<=target}
 function move(d,entry,exit){return d*(exit-entry)}
 function stoppedAt(b,d,level){return d>0?Math.min(b.o,level):Math.max(b.o,level)}
+
+const NORMALIZED_MANAGEMENT={beTriggerR:.50,beLockR:.05,trailTriggerR:.75,trailDistanceR:.35};
+export function normalizedTradePlan(signal,mode="105"){
+  const d=parseDirection(signal),entry=n(signal?.entry),sl=n(signal?.invalidation??signal?.originalSL);
+  const rawTp1=n(signal?.tp1),rawTp2=n(signal?.tp2),rawTp3=n(signal?.tp3);
+  if(!d||entry==null||sl==null)return {valid:false,origin:"INCOMPLETE_SIGNAL",direction:d,entry,sl,tp1:rawTp1,tp2:rawTp2,tp3:rawTp3};
+  const risk=Math.abs(entry-sl);
+  if(!(risk>0)||move(d,entry,sl)>=0)return {valid:false,origin:"INVALID_RISK_GEOMETRY",direction:d,entry,sl,tp1:rawTp1,tp2:rawTp2,tp3:rawTp3};
+  const nativeTarget=rawTp1!=null&&move(d,entry,rawTp1)>0;
+  const tp1=nativeTarget?rawTp1:entry+d*risk;
+  const tp2=rawTp2!=null&&move(d,entry,rawTp2)>0?rawTp2:entry+d*risk*2;
+  const tp3=rawTp3!=null&&move(d,entry,rawTp3)>0?rawTp3:entry+d*risk*3;
+  return {valid:true,direction:d,entry,sl,tp1:snap(tp1),tp2:snap(tp2),tp3:snap(tp3),risk:snap(risk),
+    origin:nativeTarget?"ENGINE_TARGET_WITH_NORMALIZED_MANAGEMENT":"GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R",
+    nativeTarget,management:{...NORMALIZED_MANAGEMENT,policy:"CLOSED_OHLC_CONSERVATIVE"}};
+}
 export function replayOutcome(signal,bars=[],tf="M5",mode="105"){
-  const d=parseDirection(signal),entry=n(signal.entry),stop=n(signal.invalidation??signal.originalSL),tp=n(signal.tp1);
+  const plan=normalizedTradePlan(signal,mode),d=plan.direction,entry=plan.entry,stop=plan.sl,tp=plan.tp1;
   const signalOpen=n(signal.time),close=n(signal.closeTime)??(signalOpen!=null?signalOpen+(TF_SECONDS[tf]||300):null);
-  const isValidation=["pattern132","snd107","pattern","snd","fund104"].includes(String(mode).toLowerCase());
-  const blank={exitPrice:null,exitTimeUTC:null,exitRule:null,priceMove:null,outcome:"PENDING",dataQuality:[],replayRule:"OHLC conservative; last forming candle excluded"};
-  if(isValidation||tp==null) return {...blank,outcome:"VALID_ONLY",dataQuality:["NO_DEFINED_EXIT_MODEL"]};
-  if(!d||entry==null||stop==null||signalOpen==null||close==null) return {...blank,outcome:"INVALID",dataQuality:["INVALID_SIGNAL_FIELDS"]};
-  const risk=Math.abs(entry-stop);
-  if(!(risk>0)||move(d,entry,stop)>=0||move(d,entry,tp)<=0)return {...blank,outcome:"INVALID",dataQuality:["INVALID_SL_OR_TP_DIRECTION"]};
+  const blank={exitPrice:null,exitTimeUTC:null,exitRule:null,priceMove:null,outcome:"PENDING",dataQuality:[],
+    replayRule:"OHLC conservative; last forming candle excluded; normalized management applies to all evaluable trade plans",
+    planOrigin:plan.origin,management:plan.management||null};
+  if(!plan.valid||signalOpen==null||close==null)return {...blank,outcome:"VALID_ONLY",dataQuality:["NO_EVALUABLE_ENTRY_SL_PLAN"]};
+  const risk=plan.risk;
+  if(move(d,entry,tp)<=0)return {...blank,outcome:"INVALID",dataQuality:["INVALID_SL_OR_TP_DIRECTION"]};
   const closed=Array.isArray(bars)?bars.slice(0,-1).map(x=>({t:n(x.t??x.time),o:n(x.o??x.open),h:n(x.h??x.high),l:n(x.l??x.low),c:n(x.c??x.close)})).filter(x=>x.t!=null&&x.o!=null&&x.h!=null&&x.l!=null&&x.c!=null&&x.h>=x.l&&x.t>=close).sort((a,b)=>a.t-b.t):[];
   if(!closed.length)return {...blank,outcome:"PENDING",dataQuality:["NO_CLOSED_FUTURE_BARS_IN_WINDOW"]};
   let activeStop=stop,best=entry,source="SL";
-  const managed=String(mode)==="105"||String(mode)==="1.05";
   for(const b of closed){
     const hitStop=touchStop(b,d,activeStop),hitTP=touchTarget(b,d,tp);
     if(hitStop&&hitTP)return {...blank,outcome:"AMBIGUOUS",exitTimeUTC:iso(b.t),exitRule:"TP_AND_STOP_SAME_CANDLE",dataQuality:["INTRABAR_ORDER_UNKNOWN"]};
     if(hitStop){
       const exit=stoppedAt(b,d,activeStop),p=move(d,entry,exit);
-      let outcome=source==="SL"?"SL":p>1e-10?source==="TRAILING"?"TRAILING":"BE_POSITIVE":Math.abs(p)<=1e-10?"BE_ZERO":"SL";
-      return {...blank,outcome,exitPrice:exit,exitTimeUTC:iso(b.t),priceMove:p,exitRule:source==="SL"?"ORIGINAL_SL_WITH_GAP_RULE":source+"_STOP_WITH_GAP_RULE",dataQuality:[]};
+      const outcome=source==="SL"?"SL":p>1e-10?source==="TRAILING"?"TRAILING":"BE_POSITIVE":Math.abs(p)<=1e-10?"BE_ZERO":"SL";
+      return {...blank,outcome,exitPrice:exit,exitTimeUTC:iso(b.t),priceMove:p,
+        exitRule:source==="SL"?"ORIGINAL_SL_WITH_GAP_RULE":source+"_STOP_WITH_GAP_RULE",dataQuality:[]};
     }
     if(hitTP){
       return {...blank,outcome:"TP1",exitPrice:tp,exitTimeUTC:iso(b.t),priceMove:move(d,entry,tp),exitRule:"FIRST_TP_TARGET",dataQuality:[]};
     }
-    if(managed){
-      best=d>0?Math.max(best,b.h):Math.min(best,b.l);
-      const rr=move(d,entry,best)/risk;
-      if(rr>=.5){const lock=entry+d*.05*risk;if(move(d,activeStop,lock)>0){activeStop=lock;source="BE"}}
-      if(rr>=.75){const trail=d>0?best-.35*risk:best+.35*risk;if(move(d,activeStop,trail)>0){activeStop=trail;source="TRAILING"}}
+    best=d>0?Math.max(best,b.h):Math.min(best,b.l);
+    const rr=move(d,entry,best)/risk;
+    if(rr>=NORMALIZED_MANAGEMENT.beTriggerR){
+      const lock=entry+d*NORMALIZED_MANAGEMENT.beLockR*risk;
+      if(move(d,activeStop,lock)>0){activeStop=lock;source="BE"}
+    }
+    if(rr>=NORMALIZED_MANAGEMENT.trailTriggerR){
+      const trail=d>0?best-NORMALIZED_MANAGEMENT.trailDistanceR*risk:best+NORMALIZED_MANAGEMENT.trailDistanceR*risk;
+      if(move(d,activeStop,trail)>0){activeStop=trail;source="TRAILING"}
     }
   }
   return {...blank,outcome:"PENDING",dataQuality:["EXIT_NOT_YET_IN_AVAILABLE_CLOSED_BARS"]};
@@ -85,9 +105,10 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
   const offset=Number.isInteger(ctx.brokerServerUTCOffsetSeconds)?ctx.brokerServerUTCOffsetSeconds:0;
   const spec=ctx.spec||metadataFromCatalog({},ctx.requested,resolved);
   return (Array.isArray(rawHistory)?rawHistory:[]).map(x=>{
-    const d=parseDirection(x),open=n(x.time),entry=n(x.entry),sl=n(x.invalidation);
-    const outcome=replayOutcome(x,brokerBars,tf,mode);
-    const moveVal=n(outcome.priceMove),risk=entry!=null&&sl!=null&&d?Math.abs(entry-sl):null;
+    const d=parseDirection(x),open=n(x.time),plan=normalizedTradePlan(x,mode),entry=plan.entry,sl=plan.sl;
+    const replaySignal={...x,tp1:plan.tp1,tp2:plan.tp2,tp3:plan.tp3,invalidation:plan.sl};
+    const outcome=replayOutcome(replaySignal,brokerBars,tf,mode);
+    const moveVal=n(outcome.priceMove),risk=plan.valid?plan.risk:null;
     const riskQuote=risk!=null?-risk:null;
     const priceUnit=spec.currencyProfit||(/XAU|XAG/i.test(resolved)?"USD quote":"SYMBOL QUOTE");
     const completed=VALID_OUTCOMES.has(outcome.outcome);
@@ -95,7 +116,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       indicatorId:mode,indicatorVersion:ctx.indicatorVersion||mode,tf,
       triggerTF:ctx.triggerTF||tf,setupTF:ctx.setupTF||null,biasTF:ctx.biasTF||null,direction:d,
       signalCandleCloseUTC:n(x.closeTime)!=null?iso(n(x.closeTime)-offset):open!=null?iso(open+(TF_SECONDS[tf]||300)-offset):null,
-      entry,originalSL:sl,tp1:n(x.tp1),tp2:n(x.tp2),tp3:n(x.tp3),score:n(x.score)};
+      entry,originalSL:sl,tp1:plan.tp1,tp2:plan.tp2,tp3:plan.tp3,score:n(x.score)};
     const signalId=hmaclessHash(evidenceBase).slice(0,32);
     const rMultiple=completed&&moveVal!=null&&risk>0?snap(moveVal/risk):null;
     const signedPoints=moveVal!=null&&spec.point>0?snap(moveVal/spec.point,3):null;
@@ -106,6 +127,8 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       sourceBrokerBarEpoch:open,brokerServerUTCOffsetSeconds:offset,
       recordMode:"HISTORICAL_SIM",publishedAtUTC:null,capturedAtUTC:null,
       originalEngineStatus:x.status||null,originalEngineOutcome:n(x.outcome),engineBuildHash:V8_ENGINE_BUILD,
+      planOrigin:plan.origin,nativeTargetDefined:plan.nativeTarget===true,managementPlan:plan.management||null,
+      nativePlan:{entry:n(x.entry),sl:n(x.invalidation),tp1:n(x.tp1),tp2:n(x.tp2),tp3:n(x.tp3)},
       reasons:Array.isArray(x.reasons)?x.reasons.filter(Boolean).map(String):[],
       pipSize:spec.pipSize,pipConvention:spec.pipConvention,point:spec.point,tickSize:spec.tickSize,
       tickValueProfit:spec.tickValueProfit,tickValueLoss:spec.tickValueLoss,contractSize:spec.contractSize,
@@ -118,7 +141,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       riskPips:risk!=null&&spec.pipSize>0?-snap(risk/spec.pipSize,3):null,
       grossPLUSD:gross,grossEstimateNote:gross!=null?"MODEL_GROSS_EXCLUDES_ALL_COSTS":spec.lotExampleSupported?"USD_CONVERSION_OR_CONTRACT_NOT_VERIFIED":"0.01_LOT_UNSUPPORTED_OR_METADATA_MISSING",
       netPLUSD:null,rMultiple,completed,positive:POSITIVE.has(outcome.outcome),negative:NEGATIVE.has(outcome.outcome),
-      dataQuality:[...(outcome.dataQuality||[]),...(spec.metadataStatus==="BROKER_METADATA_INCOMPLETE"?["MISSING_CONTRACT_METADATA"]:[])],
+      dataQuality:[...(outcome.dataQuality||[]),...(plan.nativeTarget===false&&plan.valid?["NORMALIZED_TARGETS_1R_2R_3R_NOT_NATIVE_INDICATOR_TARGETS"]:[]),...(spec.metadataStatus==="BROKER_METADATA_INCOMPLETE"?["MISSING_CONTRACT_METADATA"]:[])],
       evidenceStatus:"BACKTEST_RECONSTRUCTED_NOT_FORWARD_PROOF",sourceUrl:null,newsContextId:null,
       disclaimer:"Historical reconstruction from currently available broker candles, not a contemporaneously published signal, executed trade, or profit guarantee."};
   });
@@ -156,33 +179,34 @@ export function filterHistory(rows=[],f={}){
   });
 }
 export function aggregate(rows=[]){
-  const sum=(arr,key)=>arr.reduce((a,x)=>a+n(x[key]),0);
+  const sum=(arr,key)=>arr.reduce((a,x)=>a+(n(x[key])??0),0);
   const positives=rows.filter(x=>POSITIVE.has(x.outcome)&&n(x.priceMove)>0);
   const negatives=rows.filter(x=>NEGATIVE.has(x.outcome)&&n(x.priceMove)<0);
   const beZero=rows.filter(x=>x.outcome==="BE_ZERO");
   const pending=rows.filter(x=>x.outcome==="PENDING");
   const ambiguous=rows.filter(x=>x.outcome==="AMBIGUOUS");
   const validOnly=rows.filter(x=>x.outcome==="VALID_ONLY");
-  const completed=positives.concat(negatives,beZero);
-  const totals=positives.concat(negatives);
-  const signedR=totals.filter(x=>n(x.rMultiple)!=null);
+  const completed=positives.concat(negatives,beZero),totals=positives.concat(negatives);
+  const signedR=totals.filter(x=>n(x.rMultiple)!=null),posR=positives.filter(x=>n(x.rMultiple)!=null),negR=negatives.filter(x=>n(x.rMultiple)!=null);
   const gross=totals.filter(x=>n(x.grossPLUSD)!=null);
-  const outcomeCounts={};
-  rows.forEach(x=>{const k=x.outcome||"UNKNOWN";outcomeCounts[k]=(outcomeCounts[k]||0)+1});
+  const outcomeCounts={};rows.forEach(x=>{const k=x.outcome||"UNKNOWN";outcomeCounts[k]=(outcomeCounts[k]||0)+1});
+  const symbols=Array.from(new Set(rows.map(x=>x.symbolResolved).filter(Boolean)));
+  const sideBreakdown=(key,sym)=>{
+    const all=rows.filter(r=>r.symbolResolved===sym&&n(r[key])!=null),wins=all.filter(r=>Number(r[key])>0),losses=all.filter(r=>Number(r[key])<0);
+    const winTotal=wins.length?snap(sum(wins,key),3):0,lossTotal=losses.length?snap(sum(losses,key),3):0,total=all.length?snap(sum(all,key),3):null;
+    return {count:all.length,winCount:wins.length,lossCount:losses.length,winTotal,lossTotal,total,
+      status:total==null?"N/A":total>0?"PROFIT":total<0?"LOSS":"FLAT"};
+  };
   return {totalSignals:rows.length,completed:completed.length,positive:positives.length,negative:negatives.length,beZero:beZero.length,
     pending:pending.length,ambiguous:ambiguous.length,validOnly:validOnly.length,outcomes:outcomeCounts,
     strictWinRate:totals.length?100*positives.length/totals.length:null,
     strictDenominator:totals.length,legacyWinRate:(totals.length+beZero.length)?100*(positives.length+beZero.length)/(totals.length+beZero.length):null,
     totalR:signedR.length?snap(sum(signedR,"rMultiple"),4):null,rCoverage:signedR.length,
+    winR:posR.length?snap(sum(posR,"rMultiple"),4):0,lossR:negR.length?snap(sum(negR,"rMultiple"),4):0,
     grossPLUSD:gross.length?snap(sum(gross,"grossPLUSD")):null,grossCoverage:gross.length,
-    // Pips and points are not summed across unrelated assets: group these separately.
     priceUnitMix:Array.from(new Set(rows.filter(x=>x.completed).map(x=>x.symbolResolved))),
-    pipsBySymbol:Object.fromEntries(Array.from(new Set(rows.map(x=>x.symbolResolved))).map(sym=>{
-      const x=rows.filter(r=>r.symbolResolved===sym&&n(r.signedPips)!=null);return [sym,{count:x.length,total:x.length?snap(sum(x,"signedPips"),3):null}];
-    })),
-    pointsBySymbol:Object.fromEntries(Array.from(new Set(rows.map(x=>x.symbolResolved))).map(sym=>{
-      const x=rows.filter(r=>r.symbolResolved===sym&&n(r.signedPoints)!=null);return [sym,{count:x.length,total:x.length?snap(sum(x,"signedPoints"),3):null}];
-    }))};
+    pipsBySymbol:Object.fromEntries(symbols.map(sym=>[sym,sideBreakdown("signedPips",sym)])),
+    pointsBySymbol:Object.fromEntries(symbols.map(sym=>[sym,sideBreakdown("signedPoints",sym)]))};
 }
 export function groupHistory(rows=[],period="month"){
   const m=new Map();
@@ -211,7 +235,7 @@ export function evidenceForRecord(rec,bars=[]){
     .map(b=>({t:n(b.t),o:n(b.o),h:n(b.h),l:n(b.l),c:n(b.c),v:n(b.v)}));
   const audit={signalId:rec.signalId,recordMode:rec.recordMode,signalCandleCloseUTC:rec.signalCandleCloseUTC,
     publishedAtUTC:null,source:rec.source,indicatorId:rec.indicatorId,engineBuildHash:rec.engineBuildHash,
-    tradePlan:{direction:rec.direction,entry:rec.entry,sl:rec.originalSL,tp1:rec.tp1,tp2:rec.tp2,tp3:rec.tp3},
+    tradePlan:{direction:rec.direction,entry:rec.entry,sl:rec.originalSL,tp1:rec.tp1,tp2:rec.tp2,tp3:rec.tp3,planOrigin:rec.planOrigin,managementPlan:rec.managementPlan},
     result:{outcome:rec.outcome,exitPrice:rec.exitPrice,exitTimeUTC:rec.exitTimeUTC,exitRule:rec.exitRule},
     archived:false,ohlc:around};
   return {recordMode:"HISTORICAL_SIM",verification:"NOT_FORWARD_VERIFIED",snapshotKind:"RENDERED_FROM_CURRENT_BROKER_CANDLES",
@@ -227,7 +251,7 @@ export function explainRecord(r){
   const result=r.outcome==="VALID_ONLY"?"Confirmation only: no TP/SL outcome defined.":r.outcome==="AMBIGUOUS"?"Both target and stop were touched in one candle; sequence cannot be verified.":r.outcome==="PENDING"?"Exit not resolved in the available closed candle window.":r.outcome+" at "+r.exitPrice;
   return {kind:"RULE_BASED_EXPLANATION_NOT_GENERATIVE_AI",headline:side+" "+r.symbolResolved+" "+r.tf,
     sections:[{label:"Structure and trigger",text:"The "+side+" research setup was reconstructed after candle close using: "+cause+"."},
-    {label:"Trade plan",text:"Entry "+r.entry+", original SL "+r.originalSL+", target 1 "+r.tp1+". Risk distance "+risk+" quote-price units."},
+    {label:"Trade plan",text:"Entry "+r.entry+", SL "+r.originalSL+", TP1 "+r.tp1+", TP2 "+r.tp2+", TP3 "+r.tp3+". Risk distance "+risk+" quote-price units. Plan source: "+(r.planOrigin||"N/A")+". BE/Trailing management: "+(r.managementPlan?"BE at +0.50R; lock +0.05R; trail from +0.75R by 0.35R.":"N/A")},
     {label:"Replay result",text:result+" The result is historical simulation, not an executed trade."},
     {label:"Risk",text:"OHLC history cannot prove intra-candle order, fill quality or contemporaneous signal publication. Spread, swaps, slippage and fees are not included."}],
     newsContext:"No contemporaneous macro release is linked to this reconstructed signal. Latest Macro Regime is not a valid retrospective explanation unless it was already published at the signal time."};
