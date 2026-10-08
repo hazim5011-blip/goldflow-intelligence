@@ -13,7 +13,7 @@ The web AutoTrend profile also maps the source defaults correctly for supported 
 
 ## Confirmed parity gaps
 
-1. **Auto Fibonacci is absent from the protected web engine.** MQ5 default settings are depth 7, lookback 180 and minimum swing 1.5 ATR. It is chart/display logic and does not participate in Pattern candidate scoring or zone validation.
+1. **Auto Fibonacci is absent from the protected web engine.** MQ5 default settings are depth 3, lookback 180 and minimum swing 1.5 ATR. It is chart/display logic and does not participate in Pattern candidate scoring or zone validation.
 2. **MT5-only presentation is not fully reproduced.** This includes native chart objects, dashboard/buttons, exact arrow/label placement, SND rectangles and Fibonacci object/anchor labels.
 3. **History scan differs.** MQ5 default `InpHistoryScanBars=100`; protected web engine reconstructs from up to 180 trigger bars. This can change reconstructed historical/active zones even when per-bar rules are otherwise equivalent.
 4. **Inputs are fixed to source defaults on web.** MQ5 exposes pattern, validation, pressure, SND, AutoTrend/manual trend and AutoFibo controls; protected web engine currently hard-codes the default values.
@@ -38,9 +38,9 @@ Unit tests cover:
 1. Keep `_indicatorPattern132.js` unchanged until parity additions are validated independently.
 2. Integrate the Auto Fibo helper as display-only data returned beside the Pattern result; never feed it into score, confirmation or signal direction unless a future MQ5 version explicitly does so.
 3. Render the 21 levels on the broker chart using existing chart tooling, while keeping Vantage MT5 as the calculation source of truth.
-4. Address signal-affecting gaps one at a time, beginning with the SND `_Point` floor and history-scan equivalence. Each change requires a regression test proving the old protected behavior remains stable outside the intended parity correction.
-5. Do not validate or merge against stale/public prices. Run fresh XAUUSD247 parity checks only after the local Vantage bridge and named Cloudflare tunnel are healthy.
-6. Preserve fail-closed behavior, closed-candle rules, ambiguity handling, read-only research and no broker auto-execution.
+5. Address signal-affecting source-parity gaps one at a time, beginning with the SND `_Point` floor and history-scan equivalence. Each change requires a regression test proving the old protected behavior remains stable outside the intended parity correction.
+6. Do not validate or merge against stale/public prices. Run fresh XAUUSD247 parity checks only after the local Vantage bridge and named Cloudflare tunnel are healthy.
+7. Preserve fail-closed behavior, closed-candle rules, ambiguity handling, read-only research and no broker auto-execution.
 
 ## Release guard
 
