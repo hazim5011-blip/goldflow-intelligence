@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "updatedAtUTC": null,
+  "policy": "AUTO_PROMOTION_ONLY_AFTER_OOS_GATE",
+  "profiles": {}
+}
