@@ -1,4 +1,4 @@
-// GF-AI MARKET BRAIN v1.20
+// GF-AI MARKET BRAIN v1.60 • ADAPTIVE ENTRY INTELLIGENCE
 // Pure, auditable price-action intelligence. No orders, no trained-ML claims.
 // Reads CLOSED broker candles and returns market structure, liquidity, zones,
 // chart/candle patterns and a market-driven retest plan. Fibonacci is optional
@@ -161,6 +161,33 @@ function regime(a,atr){
  return {type:ratio!==null&&ratio>1.35?"EXPANSION":ratio!==null&&ratio<.72?"COMPRESSION":bias?"TREND":"RANGE",
   atrRatio:ratio===null?null:rnd(ratio,2),structureBias:bias};
 }
+function motionProfile(a,atr){
+ const x=a.slice(-14);if(x.length<8)return {state:"UNKNOWN",efficiency:null,overlap:null,netAtr:null,spike:false};
+ const net=x.at(-1).c-x[0].o,path=x.slice(1).reduce((z,b,i)=>z+Math.abs(b.c-x[i].c),0);
+ const efficiency=path>0?Math.abs(net)/path:0;
+ let overlap=0;
+ for(let i=1;i<x.length;i++){
+  const p=x[i-1],b=x[i],shared=Math.max(0,Math.min(p.h,b.h)-Math.max(p.l,b.l)),den=Math.max(Math.min(p.h-p.l,b.h-b.l),1e-9);
+  if(shared/den>.5)overlap++;
+ }
+ const overlapRatio=overlap/(x.length-1),ranges=x.map(b=>b.h-b.l),maxRange=Math.max(...ranges),netAtr=net/atr;
+ const spike=maxRange>1.8*atr,chop=efficiency<.28&&overlapRatio>.55;
+ const state=chop?"CHOP":Math.abs(netAtr)>1.15&&efficiency>.42?(netAtr>0?"IMPULSE_UP":"IMPULSE_DOWN"):
+  spike?"VOLATILITY_SPIKE":efficiency>.36?(net>0?"DRIFT_UP":"DRIFT_DOWN"):"BALANCED";
+ return {state,efficiency:rnd(efficiency,2),overlap:rnd(overlapRatio,2),netAtr:rnd(netAtr,2),spike};
+}
+function entryEnvironment(a,brain,d,atr){
+ const br=brain.breakEvent,sw=brain.liquidity?.sweep,rg=brain.regime?.type,m=brain.motion||motionProfile(a,atr),st=brain.structure?.bias||0;
+ if(sw?.direction===d&&br?.direction===d&&br.type==="CHOCH")return {type:"SWEEP_CHOCH_REVERSAL",requiresRetest:true,requiresRejection:true,priority:110};
+ if(sw?.direction===d)return {type:"LIQUIDITY_SWEEP_RECLAIM",requiresRetest:true,requiresRejection:true,priority:104};
+ if(rg==="COMPRESSION"&&br?.direction===d)return {type:"COMPRESSION_BREAK_RETEST",requiresRetest:true,requiresRejection:true,priority:102};
+ if(br?.direction===d&&br.type==="CHOCH")return {type:"CHOCH_REVERSAL_RETEST",requiresRetest:true,requiresRejection:true,priority:100};
+ if(br?.direction===d&&br.type==="BOS"&&st===d)return {type:"TREND_BOS_PULLBACK",requiresRetest:true,requiresRejection:true,priority:98};
+ if(br?.direction===d&&br.type==="BOS")return {type:"BREAKOUT_RETEST",requiresRetest:true,requiresRejection:true,priority:94};
+ if(st===d&&rg==="TREND")return {type:"TREND_PULLBACK",requiresRetest:true,requiresRejection:true,priority:88};
+ if(rg==="RANGE"||m.state==="CHOP")return {type:"RANGE_EDGE_ONLY",requiresRetest:true,requiresRejection:true,priority:70};
+ return {type:"DIRECTIONAL_WATCH",requiresRetest:true,requiresRejection:true,priority:60};
+}
 function inZone(px,z,pad=0){return z&&N(px)!==null&&px>=Number(z.low)-pad&&px<=Number(z.high)+pad}
 function evidenceForDirection(brain,d,price,atr){
  let score=0;const evidence=[],blockers=[];const add=(pts,msg)=>{score+=pts;evidence.push({points:pts,text:msg})};
@@ -197,31 +224,68 @@ function nearestTargets(brain,d,entry,atr){
  const uniq=[...new Set(vals.map(x=>rnd(x,6)))].sort((a,b)=>d===1?a-b:b-a);
  return uniq;
 }
-function chooseEntryZone(brain,d,atr,price){
- const br=brain.breakEvent,z=brain.zones,cp=brain.chartPattern,liq=brain.liquidity;
- const candidates=[];
- if(br?.direction===d&&z.flip)candidates.push({priority:100,type:br.type==="CHOCH"?"CHOCH_STRUCTURE_RETEST":z.flip.type+"_STRUCTURE_RETEST",zone:z.flip,source:br.type});
- if(cp?.direction===d&&cp.state==="CONFIRMED"&&N(cp.neckline)!==null)candidates.push({priority:92,type:cp.type+"_NECKLINE_RETEST",zone:{low:cp.neckline-.14*atr,high:cp.neckline+.14*atr},source:cp.type});
- if(liq.sweep?.direction===d){
-  const rz=d===1?z.demand:z.supply;if(rz)candidates.push({priority:90,type:"LIQUIDITY_SWEEP_"+(d===1?"DEMAND":"SUPPLY")+"_RETEST",zone:rz,source:liq.sweep.type});
+function overlapZone(a,b){
+ if(!a||!b)return null;
+ const low=Math.max(Number(a.low),Number(b.low)),high=Math.min(Number(a.high),Number(b.high));
+ return Number.isFinite(low)&&Number.isFinite(high)&&high>low?{low,high}:null;
+}
+function directionalZoneSet(brain,d,atr){
+ const z=brain.zones||{},out=[];
+ const add=(type,zone,base,source)=>{if(zone&&Number(zone.direction||d)===d&&N(zone.low)!==null&&N(zone.high)!==null)out.push({type,zone,base,source})};
+ if(z.flip?.direction===d)add(brain.breakEvent?.type==="CHOCH"?"CHOCH_STRUCTURE_RETEST":z.flip.type+"_STRUCTURE_RETEST",z.flip,108,z.flip.source||z.flip.type);
+ if(brain.chartPattern?.direction===d&&brain.chartPattern.state==="CONFIRMED"&&N(brain.chartPattern.neckline)!==null){
+  const n=Number(brain.chartPattern.neckline);add(brain.chartPattern.type+"_NECKLINE_RETEST",{direction:d,low:n-.13*atr,high:n+.13*atr},96,brain.chartPattern.type);
  }
- if(z.orderBlock?.direction===d)candidates.push({priority:82,type:z.orderBlock.type+"_RETEST",zone:z.orderBlock,source:z.orderBlock.type});
- if(z.fvg?.direction===d)candidates.push({priority:76,type:z.fvg.type+"_REBALANCE",zone:z.fvg,source:z.fvg.type});
- const sd=d===1?z.demand:z.supply;if(sd)candidates.push({priority:68,type:(d===1?"DEMAND":"SUPPLY")+"_REACTION",zone:sd,source:sd.type});
- candidates.sort((a,b)=>b.priority-a.priority);
- const pick=candidates[0]||null;if(!pick)return null;
- const low=Math.min(Number(pick.zone.low),Number(pick.zone.high)),high=Math.max(Number(pick.zone.low),Number(pick.zone.high));
+ if(z.orderBlock?.direction===d)add(z.orderBlock.type+"_RETEST",z.orderBlock,94,z.orderBlock.type);
+ if(z.fvg?.direction===d)add(z.fvg.type+"_REBALANCE",z.fvg,88,z.fvg.type);
+ const sd=d===1?z.demand:z.supply;if(sd)add((d===1?"DEMAND":"SUPPLY")+"_REACTION",sd,82,sd.type);
+ return out;
+}
+function chooseEntryZone(a,brain,d,atr,price){
+ const env=entryEnvironment(a,brain,d,atr),set=directionalZoneSet(brain,d,atr),liq=brain.liquidity?.sweep;
+ if(!set.length)return null;
+ const scored=set.map(c=>{
+  let score=c.base;
+  if(liq?.direction===d&&/DEMAND|SUPPLY|ORDER_BLOCK/.test(c.type))score+=12;
+  if(env.type==="TREND_BOS_PULLBACK"&&/RBS|SBR|ORDER_BLOCK|FVG/.test(c.type))score+=10;
+  if(/REVERSAL|SWEEP/.test(env.type)&&/ORDER_BLOCK|DEMAND|SUPPLY/.test(c.type))score+=10;
+  if(env.type==="COMPRESSION_BREAK_RETEST"&&/RBS|SBR|NECKLINE/.test(c.type))score+=11;
+  let overlapCount=0,precision={low:Number(c.zone.low),high:Number(c.zone.high)};
+  for(const o of set){
+   if(o===c)continue;
+   const ov=overlapZone(precision,o.zone);
+   if(ov&&ov.high-ov.low>=.035*atr){precision=ov;overlapCount++}
+  }
+  score+=Math.min(18,overlapCount*6);
+  return {...c,score,overlapCount,precision};
+ }).sort((a,b)=>b.score-a.score);
+ const pick=scored[0];if(!pick)return null;
+ let low=Math.min(pick.precision.low,pick.precision.high),high=Math.max(pick.precision.low,pick.precision.high);
  if(!Number.isFinite(low)||!Number.isFinite(high)||high<=low)return null;
- return {...pick,low:rnd(low),high:rnd(high),inside:price>=low&&price<=high};
+ // Wide zones create blind-touch entries. Keep only the proximal precision segment;
+ // actual READY still requires a CLOSED rejection/reclaim in the live engine.
+ const maxWidth=.72*atr;
+ if(high-low>maxWidth){if(d===1)low=high-maxWidth;else high=low+maxWidth}
+ const mid=(low+high)/2;
+ return {...pick,environment:env,low:rnd(low),high:rnd(high),mid:rnd(mid),inside:price>=low&&price<=high,
+  noBlindTouch:true,requiresClosedRetest:true,zoneConfluence:pick.overlapCount+1};
 }
 function structuralStop(brain,d,entryZone,atr){
- const p=brain.structure.pivots,z=brain.zones,liq=brain.liquidity;
- if(d===1){
-  const lows=[entryZone.low-.18*atr,z.demand?.low,liq.sweep?.direction===1?liq.sweep.extreme:null,p.low.at(-1)?.price].filter(Number.isFinite);
-  return rnd(Math.min(...lows)-.04*atr);
+ const z=brain.zones||{},p=brain.structure?.pivots||{high:[],low:[]},sw=brain.liquidity?.sweep,mid=(entryZone.low+entryZone.high)/2;
+ let anchor=null,source="ZONE";
+ if(sw?.direction===d&&Number.isFinite(Number(sw.extreme))){anchor=Number(sw.extreme);source="SWEEP_EXTREME"}
+ if(anchor===null&&d===1){
+  const below=[z.orderBlock?.direction===1?z.orderBlock.low:null,z.demand?.low,p.low?.at(-1)?.price,entryZone.low].map(N).filter(x=>x!==null&&x<mid);
+  if(below.length)anchor=Math.max(...below);
+ }else if(anchor===null&&d===-1){
+  const above=[z.orderBlock?.direction===-1?z.orderBlock.high:null,z.supply?.high,p.high?.at(-1)?.price,entryZone.high].map(N).filter(x=>x!==null&&x>mid);
+  if(above.length)anchor=Math.min(...above);
  }
- const highs=[entryZone.high+.18*atr,z.supply?.high,liq.sweep?.direction===-1?liq.sweep.extreme:null,p.high.at(-1)?.price].filter(Number.isFinite);
- return rnd(Math.max(...highs)+.04*atr);
+ if(anchor===null)anchor=d===1?entryZone.low:entryZone.high;
+ let stop=anchor-d*.10*atr,dist=d*(mid-stop);
+ if(dist<.24*atr){stop=mid-d*.24*atr;dist=.24*atr;source+="_ATR_PAD"}
+ if(dist>2.35*atr)return null;
+ return {price:rnd(stop),source,distanceAtr:rnd(dist/atr,2)};
 }
 function optionalFibConfluence(a,d,zone,atr){
  const recent=a.slice(-18);if(recent.length<8)return null;
@@ -233,21 +297,30 @@ function optionalFibConfluence(a,d,zone,atr){
 export function readMarketBrain(c=[],price=null){
  const atr=atrAt(c);if(!atr||c.length<55)return {ok:false,reason:"INSUFFICIENT_MARKET_STRUCTURE_DATA"};
  const structure=structureState(c,atr),breakEvent=latestBreak(c,atr),liq=liquidity(c,atr),z=zones(c,atr,breakEvent),
-  cp=chartPattern(c,atr),cc=candlePattern(c,atr),rg=regime(c,atr);
- const brain={ok:true,atr:rnd(atr),structure,breakEvent,liquidity:liq,zones:z,chartPattern:cp,candlePattern:cc,regime:rg};
+  cp=chartPattern(c,atr),cc=candlePattern(c,atr),rg=regime(c,atr),motion=motionProfile(c,atr);
+ const brain={ok:true,atr:rnd(atr),structure,breakEvent,liquidity:liq,zones:z,chartPattern:cp,candlePattern:cc,regime:rg,motion};
  brain.buy=evidenceForDirection(brain,1,price,atr);brain.sell=evidenceForDirection(brain,-1,price,atr);
  return brain;
 }
 export function buildMarketPlan(c,brain,d,price){
  if(!brain?.ok||![1,-1].includes(d)||!Number.isFinite(Number(price)))return null;
- const atr=Number(brain.atr),entry=chooseEntryZone(brain,d,atr,Number(price));if(!entry)return null;
- const stop=structuralStop(brain,d,entry,atr),mid=(entry.low+entry.high)/2,risk=d*(mid-stop);if(!(risk>.10*atr&&risk<15*atr))return null;
+ const atr=Number(brain.atr),entry=chooseEntryZone(c,brain,d,atr,Number(price));if(!entry)return null;
+ // Choppy/range Gold is the highest false-entry environment. Only permit a range
+ // plan when a liquidity sweep is actually present in the intended direction.
+ if((brain.motion?.state==="CHOP"||brain.regime?.type==="RANGE")&&brain.liquidity?.sweep?.direction!==d)return null;
+ const stopInfo=structuralStop(brain,d,entry,atr);if(!stopInfo)return null;
+ const mid=(entry.low+entry.high)/2,risk=d*(mid-stopInfo.price);if(!(risk>.18*atr&&risk<2.4*atr))return null;
  const liq=nearestTargets(brain,d,mid,atr),targets=[];
- for(const x of liq){if(d*(x-mid)>.45*risk&&(!targets.length||d*(x-targets.at(-1))>.30*risk))targets.push(x);if(targets.length===3)break}
- for(const r of [1,1.6,2.3,3.0,4.0]){if(targets.length===3)break;const x=mid+d*risk*r;if(!targets.length||d*(x-targets.at(-1))>.30*risk)targets.push(x)}
- const plan=riskLevels({side:d===1?"BUY":"SELL",entryLow:entry.low,entryHigh:entry.high,stop,targets:targets.slice(0,3)});
+ for(const x of liq){if(d*(x-mid)>.90*risk&&(!targets.length||d*(x-targets.at(-1))>.30*risk))targets.push(x);if(targets.length===3)break}
+ for(const r of [1.15,1.7,2.4,3.2,4.0]){if(targets.length===3)break;const x=mid+d*risk*r;if(!targets.length||d*(x-targets.at(-1))>.30*risk)targets.push(x)}
+ const plan=riskLevels({side:d===1?"BUY":"SELL",entryLow:entry.low,entryHigh:entry.high,stop:stopInfo.price,targets:targets.slice(0,3)});
  if(!plan)return null;
- const fib=optionalFibConfluence(c,d,entry,atr);
- return {...plan,entryMethod:entry.type,entrySource:entry.source,fibConfluence:fib,
-  targetMethod:"NEXT_LIQUIDITY_THEN_STRUCTURAL_R_MULTIPLE",inside:entry.inside};
+ const fib=optionalFibConfluence(c,d,entry,atr),zoneType=String(entry.type||""),
+  activationLevel=/RBS|SBR|NECKLINE/.test(zoneType)&&brain.breakEvent?.direction===d?brain.breakEvent.level:
+   /SWEEP/.test(entry.environment?.type||"")&&brain.liquidity?.sweep?.direction===d?brain.liquidity.sweep.level:entry.mid;
+ return {...plan,entryMethod:entry.type,entryEnvironment:entry.environment.type,entryZoneMethod:entry.type,entrySource:entry.source,fibConfluence:fib,
+  entryEnvironment:entry.environment.type,motionProfile:brain.motion,zoneConfluence:entry.zoneConfluence,
+  stopSource:stopInfo.source,stopDistanceAtr:stopInfo.distanceAtr,activationLevel:rnd(activationLevel),
+  requiresClosedRetest:true,noBlindTouch:true,chaseBufferAtr:.18,
+  targetMethod:"NEXT_LIQUIDITY_MIN_0.90R_THEN_STRUCTURAL_R",inside:entry.inside};
 }
