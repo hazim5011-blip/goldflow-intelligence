@@ -2,7 +2,7 @@
  "use strict";
  const TFSEC={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400,W1:604800,MN1:2592000};
  const RANGESEC={D1:86400,D5:432000,M1:2592000,M3:7776000,M6:15552000,Y1:31536000,Y5:157680000};
- const DEFAULT={style:"candles",crosshair:true,grid:true,range:"ALL",indicators:{SMA20:false,SMA50:false,SMA200:false,EMA20:true,EMA50:false,EMA200:false,BB20:false}};
+ const DEFAULT={style:"candles",crosshair:true,grid:true,range:"ALL",shiftBars:16,indicators:{SMA20:false,SMA50:false,SMA200:false,EMA20:true,EMA50:false,EMA200:false,BB20:false}};
  const S={};
  const clone=o=>JSON.parse(JSON.stringify(o));
  function state(scope){
@@ -45,17 +45,19 @@
   else{series=chart.addCandlestickSeries({upColor:"#31d6a4",downColor:"#ff6079",borderVisible:false,wickUpColor:"#31d6a4",wickDownColor:"#ff6079"});series.setData(b.map(x=>({time:x.time,open:x.open,high:x.high,low:x.low,close:x.close})))}
   return series;
  }
+ function safeShiftBars(p){const n=Math.trunc(Number(p?.shiftBars));return Number.isFinite(n)?Math.max(0,Math.min(50,n)):16}
+ function applyShift(scope){const s=state(scope),c=s.ctx;if(!c)return;try{c.chart.timeScale().applyOptions({rightOffset:safeShiftBars(s.prefs)})}catch(e){}}
  function applyView(scope){
-  const s=state(scope),c=s.ctx;if(!c)return;const p=s.prefs;
-  c.chart.applyOptions({grid:{vertLines:{visible:p.grid,color:"#10222e"},horzLines:{visible:p.grid,color:"#10222e"}},crosshair:{vertLine:{visible:p.crosshair},horzLine:{visible:p.crosshair}}});
+  const s=state(scope),c=s.ctx;if(!c)return;const p=s.prefs,shift=safeShiftBars(p);
+  c.chart.applyOptions({grid:{vertLines:{visible:p.grid,color:"#10222e"},horzLines:{visible:p.grid,color:"#10222e"}},crosshair:{vertLine:{visible:p.crosshair},horzLine:{visible:p.crosshair}},timeScale:{rightOffset:shift}});
   const bars=normBars(c.bars),range=p.range;
   if(!bars.length)return;
-  if(range==="ALL"){c.chart.timeScale().fitContent();return}
+  if(range==="ALL"){c.chart.timeScale().fitContent();applyShift(scope);return}
   let seconds=RANGESEC[range];
   if(range==="YTD"){const now=new Date(),start=Date.UTC(now.getUTCFullYear(),0,1)/1000,latest=bars.at(-1).time;seconds=Math.max(86400,latest-start)}
-  if(!seconds){c.chart.timeScale().fitContent();return}
+  if(!seconds){c.chart.timeScale().fitContent();applyShift(scope);return}
   const tf=TFSEC[c.tf]||300,count=Math.max(10,Math.ceil(seconds/tf)),len=bars.length;
-  c.chart.timeScale().setVisibleLogicalRange({from:Math.max(-1,len-count-1),to:len+2});
+  c.chart.timeScale().setVisibleLogicalRange({from:Math.max(-1,len-count-1),to:Math.max(len-1,len-1+shift)});
  }
  function drawStored(scope){
   const s=state(scope),c=s.ctx;if(!c)return;
@@ -86,6 +88,7 @@
    ["EMA20","EMA50","EMA200","SMA20","SMA50","SMA200","BB20"].map(k=>'<label><input type="checkbox" data-gf-ind="'+k+'"> '+k.replace("BB20","Bollinger 20,2")+'</label>').join("")+
    '</div></details>'+
    '<button type="button" data-gf-cross>Crosshair</button><button type="button" data-gf-grid>Grid</button>'+
+   '<select data-gf-shift aria-label="Chart shift"><option value="0">Shift OFF</option><option value="8">Shift 8</option><option value="16">Shift 16</option><option value="24">Shift 24</option><option value="32">Shift 32</option></select>'+
    '<button type="button" data-gf-hline>H-Line</button><button type="button" data-gf-trend>Trendline</button>'+
    '<button type="button" data-gf-zoom="in">＋</button><button type="button" data-gf-zoom="out">−</button>'+
    '<button type="button" data-gf-fit>Fit</button><button type="button" data-gf-clear>Clear</button></div></div>'+
@@ -97,10 +100,11 @@
   el.querySelectorAll("[data-gf-range]").forEach(x=>x.onclick=()=>{s.prefs.range=x.dataset.gfRange;save(scope);render(scope,el,{...opts,currentTF:opts.currentTF});applyView(scope)});
   el.querySelector("[data-gf-cross]").onclick=()=>{s.prefs.crosshair=!s.prefs.crosshair;save(scope);opts.redraw?.()};
   el.querySelector("[data-gf-grid]").onclick=()=>{s.prefs.grid=!s.prefs.grid;save(scope);opts.redraw?.()};
+  const shift=el.querySelector("[data-gf-shift]");shift.value=String(safeShiftBars(s.prefs));shift.onchange=()=>{s.prefs.shiftBars=safeShiftBars({shiftBars:shift.value});save(scope);applyView(scope);setStatus(scope,s.prefs.shiftBars?"Chart Shift "+s.prefs.shiftBars+" bars":"Chart Shift OFF")};
   el.querySelector("[data-gf-hline]").onclick=()=>{const raw=prompt("Horizontal line price");if(raw===null)return;const price=Number(raw);if(!Number.isFinite(price))return setStatus(scope,"Invalid price");s.drawings.hlines.push({price});setStatus(scope,"Horizontal line added");opts.redraw?.()};
   el.querySelector("[data-gf-trend]").onclick=()=>{s.drawMode="trend";s.firstPoint=null;setStatus(scope,"Trendline: click first point on chart")};
   el.querySelector('[data-gf-zoom="in"]').onclick=()=>zoom(scope,.72);el.querySelector('[data-gf-zoom="out"]').onclick=()=>zoom(scope,1.38);
-  el.querySelector("[data-gf-fit]").onclick=()=>{s.prefs.range="ALL";save(scope);state(scope).ctx?.chart.timeScale().fitContent();render(scope,el,{...opts,currentTF:opts.currentTF})};
+  el.querySelector("[data-gf-fit]").onclick=()=>{s.prefs.range="ALL";save(scope);render(scope,el,{...opts,currentTF:opts.currentTF});applyView(scope)};
   el.querySelector("[data-gf-clear]").onclick=()=>{s.drawings={hlines:[],trends:[]};s.drawMode=null;s.firstPoint=null;setStatus(scope,"Drawings cleared");opts.redraw?.()};
  }
  root.GFChartTools={render,register,createMainSeries,prefs:scope=>state(scope).prefs};
