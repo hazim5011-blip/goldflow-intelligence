@@ -30,13 +30,16 @@ function fixture(){
 }
 test("identical Gold inputs go through genuinely separate engines, methods, entries and target construction",()=>{
  const f=fixture(),a=evaluateAILive(f),s=evaluateMarketStudy(f);
- assert.equal(a.engine,"GF_AI_REASONING_SCENARIO_LEARNING_V6");
+ assert.equal(a.engine,"GF_AI_PROFESSIONAL_TRADER_PLAYBOOK_V7");
  assert.ok(a.aiPolicy.primaryEngines.includes("BOS_CHOCH"));
  assert.ok(a.aiPolicy.primaryEngines.includes("LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS"));
  assert.equal(a.aiPolicy.fibonacciRole,"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED");
  assert.deepEqual(a.aiPolicy.reasoningModel.scenarios,["BUY","SELL","NO_TRADE"]);
  assert.equal(a.aiPolicy.learningModel.trainedML,false);
  assert.equal(a.aiPolicy.learningModel.maxScoreAdjustment,5);
+ assert.ok(a.aiPolicy.primaryEngines.includes("PROFESSIONAL_TRADER_PLAYBOOK"));
+ assert.ok(a.aiPolicy.primaryEngines.includes("TRADE_IDEA_HIERARCHY"));
+ assert.equal(a.aiPolicy.version,"1.40");
  assert.equal(a.aiPolicy.persistent24hSignalArchive,false);
  assert.equal(s.engine,"GF_MARKET_STRUCTURE_SCENARIO_V2");
  assert.ok(s.confirmation,JSON.stringify({status:s.status,reason:s.reason}));
@@ -108,7 +111,7 @@ test("release period is never promoted to verified news timestamp or fake surpri
  assert.equal(x.macroEvidence.releaseTimeVerified,false);
  assert.equal(x.macroEvidence.forecastSurpriseVerified,false);
  assert.ok(x.macroEvidence.observations.every(o=>o.verifiedReleaseTimestamp===false&&o.consensusSurprise===null));
- assert.equal(x.modelType,"AUDITABLE_REASONING_RULES_PLUS_EXPERIENCE_CALIBRATION_NOT_TRAINED_ML");
+ assert.equal(x.modelType,"AUDITABLE_PROFESSIONAL_TRADER_PLAYBOOK_NOT_TRAINED_ML");
 });
 
 
@@ -144,7 +147,7 @@ test("Market Intelligence never forces a trade when BUY/SELL evidence is balance
  assert.equal(a.canEnter,false);
 });
 
-test("GF-AI v1.30 reads all seven broker timeframes and exposes a visible matrix",()=>{
+test("GF-AI v1.40 reads all seven broker timeframes and exposes a visible matrix",()=>{
  const a=evaluateAILive(fixture());
  assert.deepEqual(a.aiPolicy.timeframes,["M1","M5","M15","M30","H1","H4","D1"]);
  assert.equal(a.aiPolicy.selectedTfOwnsEntry,true);
@@ -156,7 +159,7 @@ test("GF-AI v1.30 reads all seven broker timeframes and exposes a visible matrix
   assert.ok(a.marketBrain.allTimeframes[tf].ok,tf);
  }
 });
-test("GF-AI v1.30 fails closed when fewer than four timeframes are available",()=>{
+test("GF-AI v1.40 fails closed when fewer than four timeframes are available",()=>{
  const f=fixture(),frames={M15:f.frames.M15,H1:f.frames.H1,H4:f.frames.H4};
  const a=evaluateAILive({...f,frames});
  assert.equal(a.status,"DATA_UNVERIFIED");
@@ -171,7 +174,7 @@ test("Backward-compatibility fields prevent cached v1.10 UI from crashing on acc
  assert.ok(Number.isInteger(a.aiPolicy.entryExpiryClosedBars));
 });
 
-test("GF-AI v1.30 returns auditable primary/alternative/no-trade reasoning",()=>{
+test("GF-AI v1.40 returns auditable primary/alternative/no-trade reasoning",()=>{
  const a=evaluateAILive(fixture());
  assert.ok(a.reasoning,JSON.stringify({status:a.status,reason:a.reason}));
  assert.equal(a.reasoning.version,"1.30");
@@ -183,7 +186,7 @@ test("GF-AI v1.30 returns auditable primary/alternative/no-trade reasoning",()=>
  assert.ok(Array.isArray(a.reasoning.decisionSummary.whatWouldChangeMyMind));
  assert.ok(a.reasoning.decisionSummary.whatWouldChangeMyMind.length>=2);
 });
-test("GF-AI v1.30 Experience Learning is capped and cannot masquerade as win probability",()=>{
+test("GF-AI v1.40 Experience Learning is capped and cannot masquerade as win probability",()=>{
  const a=evaluateAILive(fixture());
  assert.ok(a.experienceLearning);
  if(a.experienceLearning.ok){
@@ -193,4 +196,17 @@ test("GF-AI v1.30 Experience Learning is capped and cannot masquerade as win pro
   assert.match(a.experienceLearning.sampleDefinition,/NOT an entry simulation/);
  }
  assert.equal(a.aiPolicy.scoreMeaning,"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY");
+});
+
+test("GF-AI v1.40 exposes Professional Trader Playbook and one parent Trade Idea when directional",()=>{
+ const a=evaluateAILive(fixture());
+ assert.ok(a.professionalPlaybook||a.reasoning?.primaryScenario==="NO_TRADE",JSON.stringify({status:a.status,reason:a.reason}));
+ if(a.professionalPlaybook?.tradeIdea){
+  assert.match(a.professionalPlaybook.tradeIdea.id,/^GF-/);
+  assert.equal(a.professionalPlaybook.tradeIdea.duplicatePolicy,"ONE_PARENT_IDEA_ACROSS_TFS");
+  assert.equal(a.professionalPlaybook.executionHierarchy.rule.includes("SAME Trade Idea"),true);
+  assert.ok(["A+","A","B","C"].includes(a.professionalPlaybook.tradeIdea.quality.grade));
+  assert.ok(a.professionalPlaybook.tfChecklist.some(x=>x.tf==="D1"&&x.role==="REGIME"));
+  assert.ok(a.professionalPlaybook.tfChecklist.some(x=>x.tf==="M1"&&x.role==="PRECISION_TRIGGER"));
+ }
 });
