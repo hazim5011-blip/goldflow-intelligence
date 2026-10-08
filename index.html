@@ -247,7 +247,7 @@
 <section id="v8History" class="page">
   <div class="card">
     <div class="head"><div><small class="eyebrow">BROKER CANDLE RECONSTRUCTION</small><h3 data-i18n="historyPro">History Pro</h3></div><span class="tag y">HISTORICAL SIM • NOT EXECUTED TRADES</span></div>
-    <div class="notice info">Closed-candle OHLC replay. TP and SL touched in the same candle are AMBIGUOUS. Existing indicator history is never advertised as prior publication proof.</div>
+    <div class="notice info">Closed-candle OHLC replay. Every evaluable History trade-plan uses Entry + SL + TP1/TP2/TP3 + BE/Trailing management. If the native indicator did not define TP, History Pro applies a clearly-labelled NORMALIZED STUDY PLAN (1R/2R/3R); it is not relabelled as the native indicator target. TP and SL touched in the same candle remain AMBIGUOUS.</div>
     <div class="v8Filters">
       <div><label for="v8Start" data-i18n="from">From</label><input type="date" id="v8Start"></div>
       <div><label for="v8End" data-i18n="to">To</label><input type="date" id="v8End"></div>
@@ -272,11 +272,11 @@
     <div id="v8Summary" class="v8MetricGrid"></div>
 
     <div class="head sec"><div><small class="eyebrow">SAME SYMBOL • SAME TF • SAME DATE FILTER</small><h3>Win Rate Setiap Indicator</h3></div><span class="tag y">STRICT WR</span></div>
-    <div class="notice info">Perbandingan menggunakan formula yang sama untuk semua indicator: WIN = TP1/TP2/TP3 + trailing + BE positif; LOSE = SL. BE0 dan candle AMBIGUOUS tidak dimasukkan dalam denominator Strict WR. Indicator live yang belum mempunyai arkib outcome sejarah dipaparkan sebagai N/A — tidak diganti dengan data indicator lain.</div>
+    <div class="notice info">Perbandingan menggunakan pengurusan History yang sama: WIN = TP + trailing + BE positif; LOSE = SL. Jadual turut tunjuk WIN PIP, SL PIP dan NET PIP supaya win rate tinggi tidak menyembunyikan kerugian bersih. BE0 dan AMBIGUOUS dikecualikan daripada Strict WR. Indicator live tanpa arkib outcome kekal N/A.</div>
     <div id="v8IndicatorComparison" class="v8Scroll"><p class="sub">Tekan Muat Sejarah untuk bandingkan semua indicator yang mempunyai historical replay.</p></div>
 
     <div class="head sec"><div><small class="eyebrow">DAILY TOTAL • ASIA/KUALA_LUMPUR</small><h3>Win Rate & Jumlah Setiap Hari</h3></div><span class="sub" id="v8DailyIndicatorLabel">Selected indicator</span></div>
-    <div id="v8DailySummary" class="v8Scroll"><p class="sub">Jumlah harian TP/Trailing/BE+, SL, R, pip, point dan USD akan dipaparkan di sini.</p></div>
+    <div id="v8DailySummary" class="v8Scroll"><p class="sub">Setiap hari akan ditanda PROFIT DAY / LOSS DAY berdasarkan NET PIP, bersama WIN PIP, SL PIP, Net Point, R dan USD jika tersedia.</p></div>
 
     <div class="head sec"><h3>Rekod Signal Terperinci</h3><span class="sub">Setiap signal kekal boleh dibuka untuk Entry / SL / TP / Evidence.</span></div>
     <div id="v8Rows" class="v8Rows" aria-live="polite"></div>
@@ -312,7 +312,7 @@
     <div id="v8MonthComparison" class="v8Scroll"></div>
     <div class="head sec"><h3>Results by period</h3><span class="sub">Strict WR excludes BE0 and ambiguous candles.</span></div>
     <div id="v8PeriodTable" class="v8Scroll"></div>
-    <p class="v8Footnote">If broker history does not cover a complete prior month/year, the result is marked N/A rather than invented. Pips/points are not mixed across symbols.</p>
+    <p class="v8Footnote">If broker history does not cover a complete prior month/year, the result is marked N/A rather than invented. Historical normalized targets are a GoldFlow study layer, not proof the original indicator published those TP levels. Pips/points are not mixed across symbols.</p>
   </div>
 </section>
 
