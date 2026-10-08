@@ -2,7 +2,7 @@ import {verifyGptIdentity,quotaCheck} from "./gpt-access.js";
 import {gptFundamentals} from "./gpt-fundamentals.js";
 // Isolated, owner-only OpenAI research endpoint for Cloudflare Pages.
 // No indicator imports, storage writes, browser secrets, MT5 orders or legacy signal overrides.
-const MODEL_IDS=new Set(["gpt-6-astra","gpt-6.1-sol","gpt-6-sol","gpt-6-luna"]);
+const MODEL_IDS=new Set(["gpt-6-sol","gpt-6.1-sol","gpt-6-sol","gpt-6-luna"]);
 const TFS=new Set(["M5","M15","M30","H1","H4"]);
 const SECONDS={M5:300,M15:900,M30:1800,H1:3600,H4:14400};
 const BRIDGE="https://bridge.hazim5011.com";
@@ -69,7 +69,7 @@ export async function handleGptResearch(request,env={},deps={}){
     return json(400,{ok:false,error:"INVALID_QUESTION"});
  if(symbol!=="XAUUSD247"||!TFS.has(tf))
     return json(400,{ok:false,error:"UNSUPPORTED_SYMBOL_OR_TF"});
- const model=env.GF_GPT_MODEL||"gpt-6-astra";
+ const model=env.GF_GPT_MODEL||"gpt-6-sol";
  if(!MODEL_IDS.has(model))return json(503,{ok:false,error:"GPT_MODEL_NOT_ALLOWED"});
  const offset=env.VANTAGE_TICK_UTC_OFFSET_SECONDS===undefined?10800:Number(env.VANTAGE_TICK_UTC_OFFSET_SECONDS);
  if(!Number.isInteger(offset)||Math.abs(offset)>50400)
