@@ -1,0 +1,49 @@
+name: GoldFlow Recommended AI 24H
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goldflow-recommended-ai-24h
+  cancel-in-progress: false
+
+jobs:
+  learn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run Recommended AI learning cycle
+        env:
+          GOLDFLOW_BASE_URL: https://goldflow-intelligence.vercel.app
+          GOLDFLOW_AI_SYMBOL: XAUUSD247
+          GOLDFLOW_AI_TF: M15
+        run: node scripts/recommended-ai-cycle.mjs
+
+      - name: Commit learning memory and approved managed profiles
+        run: |
+          git config user.name "goldflow-recommended-ai"
+          git config user.email "goldflow-recommended-ai@users.noreply.github.com"
+          git add recommended-ai api/_recommendedAIProfiles.js
+          if git diff --cached --quiet; then
+            echo "No learning changes."
+            exit 0
+          fi
+          git commit -m "chore(recommended-ai): hourly learning memory"
+          git pull --rebase origin main
+          git push origin HEAD:main
