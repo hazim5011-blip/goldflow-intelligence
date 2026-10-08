@@ -102,7 +102,7 @@ export default async function handler(req,res){
     }else if(indicatorMode==="pattern132"||indicatorMode==="pattern"||indicatorMode==="1.32"){
       const pattern=runPattern132({triggerBars:bars(tTF),setupBars:bars(sTF),biasBars:bars(bTF),triggerTF:tTF,setupTF:sTF,biasTF:bTF,symbol:meta.symbol||symbol,point:meta.point||0});
       const autoFibo=runPattern132AutoFibo({bars:bars(tTF)});
-      const fiboSnd=buildPattern132FiboSndConfluence({activeZones:pattern.activeZones,autoFibo,point:meta.point||0});
+      const fiboSnd=buildPattern132FiboSndConfluence({activeZones:pattern.activeZones,autoFibo,point:meta.point||0,price:meta.bid??bars(tTF)?.at(-1)?.c??null});
       const {activeZones:confluenceZones,...fiboSndMeta}=fiboSnd;
       indicator={...pattern,activeZones:confluenceZones,autoFibo,fiboSndConfluence:fiboSndMeta,entryMode:"SND_FIBO_CONFLUENCE"};
     }else if(indicatorMode==="snd107"||indicatorMode==="snd"||indicatorMode==="1.07"){
