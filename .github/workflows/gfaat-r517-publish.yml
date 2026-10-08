@@ -85,6 +85,9 @@ jobs:
           assert 'order_send(' not in text, 'Real broker order_send() call detected in aat runtime source'
           print('Safety contract PASS: Research/Paper Only; no order_send() runtime call')
           PY
+          rm -rf .venv data logs backups _updates .pytest_cache
+          find . -type d -name __pycache__ -prune -exec rm -rf {} +
+          rm -f .env
           cd /tmp/gfaat-r517
           mv GF_AAT_R5_15_STABLE GF_AAT_R5_17_STABLE
           zip -qr /tmp/GF_AAT_STABLE.zip GF_AAT_R5_17_STABLE \
