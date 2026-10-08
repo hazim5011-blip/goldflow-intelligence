@@ -1,5 +1,6 @@
 // Pages advanced-mode API gateway. Credentials are exclusively Cloudflare encrypted bindings.
 import {runLegacy} from "./compat.js";
+import {handleGptResearch} from "./gpt-research.js";
 import health from "./health.js";
 import bridgeHealth from "./bridge-health.js";
 import symbols from "../api/symbols.js";
@@ -23,6 +24,7 @@ export default {
  async fetch(request,env){
   const u=new URL(request.url),p=u.pathname.replace(/\/$/,"")||"/";
   if(!p.startsWith("/api/"))return env.ASSETS.fetch(request);
+  if(p==="/api/gpt-research")return handleGptResearch(request,env);
   let fn=ROUTES[p];
   if(!fn&&ALIASES[p]){u.pathname="/api/v8";u.searchParams.set("route",ALIASES[p]);
    fn=v8;request=new Request(u.toString(),request);}
