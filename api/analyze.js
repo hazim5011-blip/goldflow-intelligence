@@ -114,7 +114,7 @@ export default async function handler(req,res){
 
     if(indicator?.latestSignal){
       const nativeLatestSignal=indicator.latestSignal;
-      const managed=applyDynamicPlanToSignal(nativeLatestSignal,bars(tTF),tTF,indicatorMode,meta.point||0);
+      const managed=applyDynamicPlanToSignal(nativeLatestSignal,bars(tTF),tTF,indicatorMode,meta.point||0,meta.symbol||symbol);
       indicator={...indicator,nativeLatestSignal,dynamicTradePlan:managed.plan||null,
         tradeManagement:{mode:"DYNAMIC_ATR_STRUCTURE",...UNIVERSAL_MANAGEMENT},
         latestSignal:managed.signal||nativeLatestSignal};
