@@ -1,12 +1,3384 @@
 {
   "version": "RECOMMENDED_AI_ARCHIVE_V1",
-  "updatedAtUTC": null,
-  "heartbeat": "WAIT_FIRST_HOURLY_CYCLE",
+  "updatedAtUTC": "2026-10-08T21:26:44.442Z",
+  "heartbeat": "OK",
   "primarySymbol": "XAUUSD247",
   "primaryTF": "M15",
   "schedule": {
     "cadence": "hourly",
     "strategy": "rotating indicator batches; every indicator revisited within about 4 hours"
   },
-  "recommendations": {}
+  "lastBatch": {
+    "batchIndex": "MANUAL_SEED",
+    "indicators": [
+      "105",
+      "103",
+      "pvt102",
+      "pvtchart101",
+      "pattern132",
+      "snd107",
+      "owl101",
+      "fund104",
+      "gf-ai",
+      "gf-news",
+      "gf-study"
+    ],
+    "completed": 11,
+    "failed": 0
+  },
+  "recommendations": {
+    "105|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "105-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:03.548Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "105",
+      "indicatorName": "MTF Research v1.05",
+      "profileKey": "105|XAUUSD247",
+      "historyMode": "HISTORICAL_SIM",
+      "dataWindow": {
+        "startUTC": "2026-08-17T19:30:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 4999,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "MTF_RESEARCH",
+        "bufferATR": 0.08,
+        "minRiskATR": 0.25,
+        "maxRiskATR": 3,
+        "lookback": 40,
+        "preferNativeStop": true,
+        "preferNativeTargets": false,
+        "mode": "105",
+        "profileKey": "105|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 18,
+          "completed": 18,
+          "strictDenominator": 18,
+          "strictWR": 76.41,
+          "signalWR": 88.89,
+          "winPip": 736.9,
+          "lossPip": -227.48,
+          "netPip": 509.43,
+          "totalR": 7.218,
+          "positive": 16,
+          "negative": 2,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 12,
+          "completed": 12,
+          "strictDenominator": 12,
+          "strictWR": 69.82,
+          "signalWR": 83.33,
+          "winPip": 526.29,
+          "lossPip": -227.48,
+          "netPip": 298.81,
+          "totalR": 5.463,
+          "positive": 10,
+          "negative": 2,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 6,
+          "completed": 6,
+          "strictDenominator": 6,
+          "strictWR": 100,
+          "signalWR": 100,
+          "winPip": 210.62,
+          "lossPip": 0,
+          "netPip": 210.62,
+          "totalR": 1.756,
+          "positive": 6,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 2,
+        "winCount": 16,
+        "quickStopRate": 100,
+        "targetFallbackRate": 72.2,
+        "wideRiskRate": 5.6,
+        "avgLossRiskATR": 1.635,
+        "avgWinRiskATR": 1.89,
+        "avgLossScore": 77.4,
+        "avgWinScore": 81.5
+      },
+      "recommendation": {
+        "summary": [
+          "Banyak SL berlaku cepat selepas signal; AI menguji buffer/invalidasi structure.",
+          "Banyak TP masih menggunakan dynamic-R fallback; AI menguji pencarian structure/liquidity lebih dalam."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "STRUCTURE_BUFFER_PLUS",
+          "why": "SL losses frequently occur within two bars; test slightly more structural breathing room.",
+          "patch": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.33
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.33,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 76.41,
+            "signalWR": 88.89,
+            "winPip": 736.9,
+            "lossPip": -227.48,
+            "netPip": 509.43,
+            "totalR": 7.218,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 52
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.08,
+            "minRiskATR": 0.25,
+            "maxRiskATR": 3,
+            "lookback": 52,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 77.2,
+            "signalWR": 88.89,
+            "winPip": 770.24,
+            "lossPip": -227.48,
+            "netPip": 542.76,
+            "totalR": 7.699,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "TARGET_BALANCE",
+          "why": "Test slightly nearer fallback targets while preserving structure-first logic.",
+          "patch": {
+            "t2FallbackR": 1.7,
+            "t3FallbackR": 2.85
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.08,
+            "minRiskATR": 0.25,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.7,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.85
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 76.41,
+            "signalWR": 88.89,
+            "winPip": 736.9,
+            "lossPip": -227.48,
+            "netPip": 509.43,
+            "totalR": 7.218,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        }
+      ],
+      "decision": {
+        "action": "COLLECT_DATA",
+        "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "103|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "103-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:07.650Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "103",
+      "indicatorName": "MTF Research v1.03",
+      "profileKey": "103|XAUUSD247",
+      "historyMode": "HISTORICAL_SIM",
+      "dataWindow": {
+        "startUTC": "2026-08-17T19:30:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 4999,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "MTF_RESEARCH_103",
+        "bufferATR": 0.08,
+        "minRiskATR": 0.25,
+        "maxRiskATR": 3,
+        "lookback": 40,
+        "preferNativeStop": true,
+        "preferNativeTargets": false,
+        "mode": "103",
+        "profileKey": "103|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 18,
+          "completed": 18,
+          "strictDenominator": 18,
+          "strictWR": 76.41,
+          "signalWR": 88.89,
+          "winPip": 736.9,
+          "lossPip": -227.48,
+          "netPip": 509.43,
+          "totalR": 7.218,
+          "positive": 16,
+          "negative": 2,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 12,
+          "completed": 12,
+          "strictDenominator": 12,
+          "strictWR": 69.82,
+          "signalWR": 83.33,
+          "winPip": 526.29,
+          "lossPip": -227.48,
+          "netPip": 298.81,
+          "totalR": 5.463,
+          "positive": 10,
+          "negative": 2,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 6,
+          "completed": 6,
+          "strictDenominator": 6,
+          "strictWR": 100,
+          "signalWR": 100,
+          "winPip": 210.62,
+          "lossPip": 0,
+          "netPip": 210.62,
+          "totalR": 1.756,
+          "positive": 6,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 2,
+        "winCount": 16,
+        "quickStopRate": 100,
+        "targetFallbackRate": 72.2,
+        "wideRiskRate": 5.6,
+        "avgLossRiskATR": 1.635,
+        "avgWinRiskATR": 1.89,
+        "avgLossScore": 77.4,
+        "avgWinScore": 81.5
+      },
+      "recommendation": {
+        "summary": [
+          "Banyak SL berlaku cepat selepas signal; AI menguji buffer/invalidasi structure.",
+          "Banyak TP masih menggunakan dynamic-R fallback; AI menguji pencarian structure/liquidity lebih dalam."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "STRUCTURE_BUFFER_PLUS",
+          "why": "SL losses frequently occur within two bars; test slightly more structural breathing room.",
+          "patch": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.33
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.33,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 76.41,
+            "signalWR": 88.89,
+            "winPip": 736.9,
+            "lossPip": -227.48,
+            "netPip": 509.43,
+            "totalR": 7.218,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 52
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.08,
+            "minRiskATR": 0.25,
+            "maxRiskATR": 3,
+            "lookback": 52,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 77.2,
+            "signalWR": 88.89,
+            "winPip": 770.24,
+            "lossPip": -227.48,
+            "netPip": 542.76,
+            "totalR": 7.699,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "TARGET_BALANCE",
+          "why": "Test slightly nearer fallback targets while preserving structure-first logic.",
+          "patch": {
+            "t2FallbackR": 1.7,
+            "t3FallbackR": 2.85
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.08,
+            "minRiskATR": 0.25,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.7,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.85
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 76.41,
+            "signalWR": 88.89,
+            "winPip": 736.9,
+            "lossPip": -227.48,
+            "netPip": 509.43,
+            "totalR": 7.218,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        }
+      ],
+      "decision": {
+        "action": "COLLECT_DATA",
+        "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "PVT102|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "pvt102-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:11.341Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "pvt102",
+      "indicatorName": "PVT v1.02",
+      "profileKey": "pvt102|XAUUSD247",
+      "historyMode": "HISTORICAL_SIM",
+      "dataWindow": {
+        "startUTC": "2026-08-17T19:30:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 4999,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "PVT_102",
+        "bufferATR": 0.12,
+        "minRiskATR": 0.75,
+        "maxRiskATR": 3,
+        "lookback": 34,
+        "preferNativeStop": false,
+        "preferNativeTargets": false,
+        "mode": "pvt102",
+        "profileKey": "pvt102|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 19,
+          "completed": 18,
+          "strictDenominator": 18,
+          "strictWR": 25.33,
+          "signalWR": 66.67,
+          "winPip": 734.03,
+          "lossPip": -2164.39,
+          "netPip": -1430.35,
+          "totalR": -1.919,
+          "positive": 12,
+          "negative": 6,
+          "beZero": 0,
+          "ambiguous": 1,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 13,
+          "completed": 12,
+          "strictDenominator": 12,
+          "strictWR": 10.76,
+          "signalWR": 58.33,
+          "winPip": 228.79,
+          "lossPip": -1897.46,
+          "netPip": -1668.67,
+          "totalR": -4.068,
+          "positive": 7,
+          "negative": 5,
+          "beZero": 0,
+          "ambiguous": 1,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 6,
+          "completed": 6,
+          "strictDenominator": 6,
+          "strictWR": 65.43,
+          "signalWR": 83.33,
+          "winPip": 505.25,
+          "lossPip": -266.93,
+          "netPip": 238.32,
+          "totalR": 2.149,
+          "positive": 5,
+          "negative": 1,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 6,
+        "winCount": 12,
+        "quickStopRate": 16.7,
+        "targetFallbackRate": 88.9,
+        "wideRiskRate": 22.2,
+        "avgLossRiskATR": 3.171,
+        "avgWinRiskATR": 2.506,
+        "avgLossScore": 96.7,
+        "avgWinScore": 94.2
+      },
+      "recommendation": {
+        "summary": [
+          "P/L-weighted Strict WR di bawah breakeven 50%; fokus pada magnitude loss/target efficiency.",
+          "NET PIP negatif dalam broker window; improvement mesti menaikkan net pip, bukan sekadar count win.",
+          "Banyak TP masih menggunakan dynamic-R fallback; AI menguji pencarian structure/liquidity lebih dalam."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "RISK_COMPRESSION",
+          "why": "Test smaller structural risk without altering the signal engine.",
+          "patch": {
+            "bufferATR": 0.105,
+            "minRiskATR": 0.69
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.105,
+            "minRiskATR": 0.69,
+            "maxRiskATR": 3,
+            "lookback": 34,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 19,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 25.1,
+            "signalWR": 61.11,
+            "winPip": 724.44,
+            "lossPip": -2161.8,
+            "netPip": -1437.36,
+            "totalR": -1.997,
+            "positive": 11,
+            "negative": 7,
+            "beZero": 0,
+            "ambiguous": 1,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 65.48,
+            "signalWR": 83.33,
+            "winPip": 503.04,
+            "lossPip": -265.24,
+            "netPip": 237.81,
+            "totalR": 2.159,
+            "positive": 5,
+            "negative": 1,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0.05,
+            "netPipDelta": -0.51
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 46
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.12,
+            "minRiskATR": 0.75,
+            "maxRiskATR": 3,
+            "lookback": 46,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 19,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 25.33,
+            "signalWR": 66.67,
+            "winPip": 734.03,
+            "lossPip": -2164.39,
+            "netPip": -1430.35,
+            "totalR": -1.919,
+            "positive": 12,
+            "negative": 6,
+            "beZero": 0,
+            "ambiguous": 1,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 65.43,
+            "signalWR": 83.33,
+            "winPip": 505.25,
+            "lossPip": -266.93,
+            "netPip": 238.32,
+            "totalR": 2.149,
+            "positive": 5,
+            "negative": 1,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "BANK_EARLIER",
+          "why": "Signal count wins exceed P/L quality; test banking profits earlier to reduce winner/loss-size imbalance.",
+          "patch": {
+            "t1FallbackR": 0.9,
+            "t2FallbackR": 1.65,
+            "t3FallbackR": 2.75,
+            "t1MaxR": 1.5
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.12,
+            "minRiskATR": 0.75,
+            "maxRiskATR": 3,
+            "lookback": 34,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.5,
+            "t1FallbackR": 0.9,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.65,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.75
+          },
+          "all": {
+            "totalSignals": 19,
+            "completed": 17,
+            "strictDenominator": 17,
+            "strictWR": 26.17,
+            "signalWR": 64.71,
+            "winPip": 767.22,
+            "lossPip": -2164.39,
+            "netPip": -1397.16,
+            "totalR": -1.908,
+            "positive": 11,
+            "negative": 6,
+            "beZero": 0,
+            "ambiguous": 2,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 63.52,
+            "signalWR": 80,
+            "winPip": 464.77,
+            "lossPip": -266.93,
+            "netPip": 197.85,
+            "totalR": 1.899,
+            "positive": 4,
+            "negative": 1,
+            "beZero": 0,
+            "ambiguous": 1,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": -1.91,
+            "netPipDelta": -40.47
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        }
+      ],
+      "decision": {
+        "action": "COLLECT_DATA",
+        "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "PVTCHART101|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "pvtchart101-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:15.418Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "pvtchart101",
+      "indicatorName": "PVT Chart Confluence v1.01",
+      "profileKey": "pvtchart101|XAUUSD247",
+      "historyMode": "HISTORICAL_SIM",
+      "dataWindow": {
+        "startUTC": "2026-08-17T19:30:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 4999,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "KEEP_CURRENT",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "PVT_CHART_101",
+        "bufferATR": 0.1,
+        "minRiskATR": 1.35,
+        "maxRiskATR": 3.5,
+        "lookback": 36,
+        "preferNativeStop": true,
+        "preferNativeTargets": false,
+        "mode": "pvtchart101",
+        "profileKey": "pvtchart101|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 52,
+          "completed": 49,
+          "strictDenominator": 49,
+          "strictWR": 46.17,
+          "signalWR": 55.1,
+          "winPip": 2139.2,
+          "lossPip": -2494.47,
+          "netPip": -355.26,
+          "totalR": -5.207,
+          "positive": 27,
+          "negative": 22,
+          "beZero": 0,
+          "ambiguous": 2,
+          "pending": 1,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 36,
+          "completed": 35,
+          "strictDenominator": 35,
+          "strictWR": 55.53,
+          "signalWR": 62.86,
+          "winPip": 1852.24,
+          "lossPip": -1483.18,
+          "netPip": 369.05,
+          "totalR": -0.296,
+          "positive": 22,
+          "negative": 13,
+          "beZero": 0,
+          "ambiguous": 1,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 16,
+          "completed": 14,
+          "strictDenominator": 14,
+          "strictWR": 22.1,
+          "signalWR": 35.71,
+          "winPip": 286.97,
+          "lossPip": -1011.28,
+          "netPip": -724.32,
+          "totalR": -4.912,
+          "positive": 5,
+          "negative": 9,
+          "beZero": 0,
+          "ambiguous": 1,
+          "pending": 1,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 22,
+        "winCount": 27,
+        "quickStopRate": 22.7,
+        "targetFallbackRate": 98,
+        "wideRiskRate": 12.2,
+        "avgLossRiskATR": 2.375,
+        "avgWinRiskATR": 2.364,
+        "avgLossScore": 84.8,
+        "avgWinScore": 78.3
+      },
+      "recommendation": {
+        "summary": [
+          "P/L-weighted Strict WR di bawah breakeven 50%; fokus pada magnitude loss/target efficiency.",
+          "NET PIP negatif dalam broker window; improvement mesti menaikkan net pip, bukan sekadar count win.",
+          "Banyak TP masih menggunakan dynamic-R fallback; AI menguji pencarian structure/liquidity lebih dalam."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "RISK_COMPRESSION",
+          "why": "Test smaller structural risk without altering the signal engine.",
+          "patch": {
+            "bufferATR": 0.085,
+            "minRiskATR": 1.29
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.085,
+            "minRiskATR": 1.29,
+            "maxRiskATR": 3.5,
+            "lookback": 36,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 52,
+            "completed": 49,
+            "strictDenominator": 49,
+            "strictWR": 46.41,
+            "signalWR": 57.14,
+            "winPip": 2145.37,
+            "lossPip": -2477.03,
+            "netPip": -331.67,
+            "totalR": -4.972,
+            "positive": 28,
+            "negative": 21,
+            "beZero": 0,
+            "ambiguous": 2,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 16,
+            "completed": 14,
+            "strictDenominator": 14,
+            "strictWR": 22.81,
+            "signalWR": 42.86,
+            "winPip": 293.68,
+            "lossPip": -993.85,
+            "netPip": -700.17,
+            "totalR": -4.677,
+            "positive": 6,
+            "negative": 8,
+            "beZero": 0,
+            "ambiguous": 1,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0.71,
+            "netPipDelta": 24.15
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_STRICT_WR_LT_52",
+              "STRICT_WR_GAIN_LT_4PP",
+              "NET_PIP_GAIN_TOO_SMALL"
+            ],
+            "strictGain": 0.71,
+            "netGain": 24.15,
+            "minNetGain": 72.43,
+            "validationCoverage": 100,
+            "fullCoverage": 100
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 48
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 1.35,
+            "maxRiskATR": 3.5,
+            "lookback": 48,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 52,
+            "completed": 49,
+            "strictDenominator": 49,
+            "strictWR": 46.17,
+            "signalWR": 55.1,
+            "winPip": 2139.2,
+            "lossPip": -2494.47,
+            "netPip": -355.26,
+            "totalR": -5.207,
+            "positive": 27,
+            "negative": 22,
+            "beZero": 0,
+            "ambiguous": 2,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 16,
+            "completed": 14,
+            "strictDenominator": 14,
+            "strictWR": 22.1,
+            "signalWR": 35.71,
+            "winPip": 286.97,
+            "lossPip": -1011.28,
+            "netPip": -724.32,
+            "totalR": -4.912,
+            "positive": 5,
+            "negative": 9,
+            "beZero": 0,
+            "ambiguous": 1,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_STRICT_WR_LT_52",
+              "STRICT_WR_GAIN_LT_4PP",
+              "NET_PIP_GAIN_TOO_SMALL"
+            ],
+            "strictGain": 0,
+            "netGain": 0,
+            "minNetGain": 72.43,
+            "validationCoverage": 100,
+            "fullCoverage": 100
+          }
+        },
+        {
+          "id": "TARGET_BALANCE",
+          "why": "Test slightly nearer fallback targets while preserving structure-first logic.",
+          "patch": {
+            "t2FallbackR": 1.7,
+            "t3FallbackR": 2.85
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 1.35,
+            "maxRiskATR": 3.5,
+            "lookback": 36,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.7,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.85
+          },
+          "all": {
+            "totalSignals": 52,
+            "completed": 49,
+            "strictDenominator": 49,
+            "strictWR": 46.17,
+            "signalWR": 55.1,
+            "winPip": 2139.2,
+            "lossPip": -2494.47,
+            "netPip": -355.26,
+            "totalR": -5.207,
+            "positive": 27,
+            "negative": 22,
+            "beZero": 0,
+            "ambiguous": 2,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 16,
+            "completed": 14,
+            "strictDenominator": 14,
+            "strictWR": 22.1,
+            "signalWR": 35.71,
+            "winPip": 286.97,
+            "lossPip": -1011.28,
+            "netPip": -724.32,
+            "totalR": -4.912,
+            "positive": 5,
+            "negative": 9,
+            "beZero": 0,
+            "ambiguous": 1,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_STRICT_WR_LT_52",
+              "STRICT_WR_GAIN_LT_4PP",
+              "NET_PIP_GAIN_TOO_SMALL"
+            ],
+            "strictGain": 0,
+            "netGain": 0,
+            "minNetGain": 72.43,
+            "validationCoverage": 100,
+            "fullCoverage": 100
+          }
+        }
+      ],
+      "decision": {
+        "action": "KEEP_CURRENT",
+        "reason": "NO_CANDIDATE_PASSED_OOS_GATE",
+        "sampleReady": true,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "PATTERN132|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "pattern132-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:19.260Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "pattern132",
+      "indicatorName": "Pattern Zone Tutor v1.32",
+      "profileKey": "pattern132|XAUUSD247",
+      "historyMode": "HISTORICAL_SIM",
+      "dataWindow": {
+        "startUTC": "2026-08-17T19:30:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 4999,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "PATTERN_132",
+        "bufferATR": 0.08,
+        "minRiskATR": 0.5,
+        "maxRiskATR": 3,
+        "lookback": 48,
+        "preferNativeStop": true,
+        "preferNativeTargets": false,
+        "mode": "pattern132",
+        "profileKey": "pattern132|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 31,
+          "completed": 28,
+          "strictDenominator": 28,
+          "strictWR": 24.59,
+          "signalWR": 46.43,
+          "winPip": 751.98,
+          "lossPip": -2306.5,
+          "netPip": -1554.53,
+          "totalR": -8.031,
+          "positive": 13,
+          "negative": 15,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 3,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 21,
+          "completed": 21,
+          "strictDenominator": 21,
+          "strictWR": 37.62,
+          "signalWR": 57.14,
+          "winPip": 744.92,
+          "lossPip": -1235.35,
+          "netPip": -490.43,
+          "totalR": -2.082,
+          "positive": 12,
+          "negative": 9,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 10,
+          "completed": 7,
+          "strictDenominator": 7,
+          "strictWR": 0.65,
+          "signalWR": 14.29,
+          "winPip": 7.06,
+          "lossPip": -1071.15,
+          "netPip": -1064.09,
+          "totalR": -5.95,
+          "positive": 1,
+          "negative": 6,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 3,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 15,
+        "winCount": 13,
+        "quickStopRate": 33.3,
+        "targetFallbackRate": 64.3,
+        "wideRiskRate": 0,
+        "avgLossRiskATR": 2.213,
+        "avgWinRiskATR": 1.895,
+        "avgLossScore": 85,
+        "avgWinScore": 86.2
+      },
+      "recommendation": {
+        "summary": [
+          "P/L-weighted Strict WR di bawah breakeven 50%; fokus pada magnitude loss/target efficiency.",
+          "NET PIP negatif dalam broker window; improvement mesti menaikkan net pip, bukan sekadar count win.",
+          "Banyak TP masih menggunakan dynamic-R fallback; AI menguji pencarian structure/liquidity lebih dalam."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "RISK_COMPRESSION",
+          "why": "Test smaller structural risk without altering the signal engine.",
+          "patch": {
+            "bufferATR": 0.065,
+            "minRiskATR": 0.44
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.065,
+            "minRiskATR": 0.44,
+            "maxRiskATR": 3,
+            "lookback": 48,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 31,
+            "completed": 28,
+            "strictDenominator": 28,
+            "strictWR": 24.59,
+            "signalWR": 46.43,
+            "winPip": 751.98,
+            "lossPip": -2306.5,
+            "netPip": -1554.53,
+            "totalR": -8.031,
+            "positive": 13,
+            "negative": 15,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 3,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 10,
+            "completed": 7,
+            "strictDenominator": 7,
+            "strictWR": 0.65,
+            "signalWR": 14.29,
+            "winPip": 7.06,
+            "lossPip": -1071.15,
+            "netPip": -1064.09,
+            "totalR": -5.95,
+            "positive": 1,
+            "negative": 6,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 3,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 60
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.08,
+            "minRiskATR": 0.5,
+            "maxRiskATR": 3,
+            "lookback": 60,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 31,
+            "completed": 28,
+            "strictDenominator": 28,
+            "strictWR": 24.5,
+            "signalWR": 46.43,
+            "winPip": 748.47,
+            "lossPip": -2306.5,
+            "netPip": -1558.04,
+            "totalR": -8.088,
+            "positive": 13,
+            "negative": 15,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 3,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 10,
+            "completed": 7,
+            "strictDenominator": 7,
+            "strictWR": 0.65,
+            "signalWR": 14.29,
+            "winPip": 7.06,
+            "lossPip": -1071.15,
+            "netPip": -1064.09,
+            "totalR": -5.95,
+            "positive": 1,
+            "negative": 6,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 3,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "BANK_EARLIER",
+          "why": "Signal count wins exceed P/L quality; test banking profits earlier to reduce winner/loss-size imbalance.",
+          "patch": {
+            "t1FallbackR": 0.9,
+            "t2FallbackR": 1.65,
+            "t3FallbackR": 2.75,
+            "t1MaxR": 1.5
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.08,
+            "minRiskATR": 0.5,
+            "maxRiskATR": 3,
+            "lookback": 48,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.5,
+            "t1FallbackR": 0.9,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.65,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.75
+          },
+          "all": {
+            "totalSignals": 31,
+            "completed": 28,
+            "strictDenominator": 28,
+            "strictWR": 24.75,
+            "signalWR": 46.43,
+            "winPip": 758.66,
+            "lossPip": -2306.5,
+            "netPip": -1547.84,
+            "totalR": -8.071,
+            "positive": 13,
+            "negative": 15,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 3,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 10,
+            "completed": 7,
+            "strictDenominator": 7,
+            "strictWR": 0.65,
+            "signalWR": 14.29,
+            "winPip": 7.06,
+            "lossPip": -1071.15,
+            "netPip": -1064.09,
+            "totalR": -5.95,
+            "positive": 1,
+            "negative": 6,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 3,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        }
+      ],
+      "decision": {
+        "action": "COLLECT_DATA",
+        "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "SND107|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "snd107-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:23.006Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "snd107",
+      "indicatorName": "SND / SNR / SBR / RBS v1.07",
+      "profileKey": "snd107|XAUUSD247",
+      "historyMode": "HISTORICAL_SIM",
+      "dataWindow": {
+        "startUTC": "2026-10-05T10:07:00.000Z",
+        "endUTC": "2026-10-08T21:25:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 4999,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "KEEP_CURRENT",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "SND_107",
+        "bufferATR": 0.1,
+        "minRiskATR": 0.4,
+        "maxRiskATR": 3,
+        "lookback": 40,
+        "preferNativeStop": true,
+        "preferNativeTargets": false,
+        "mode": "snd107",
+        "profileKey": "snd107|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 41,
+          "completed": 41,
+          "strictDenominator": 41,
+          "strictWR": 41.53,
+          "signalWR": 53.66,
+          "winPip": 645.65,
+          "lossPip": -909.13,
+          "netPip": -263.49,
+          "totalR": -8.172,
+          "positive": 22,
+          "negative": 19,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 28,
+          "completed": 28,
+          "strictDenominator": 28,
+          "strictWR": 38.5,
+          "signalWR": 50,
+          "winPip": 373.46,
+          "lossPip": -596.52,
+          "netPip": -223.06,
+          "totalR": -9.612,
+          "positive": 14,
+          "negative": 14,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 13,
+          "completed": 13,
+          "strictDenominator": 13,
+          "strictWR": 46.54,
+          "signalWR": 61.54,
+          "winPip": 272.19,
+          "lossPip": -312.61,
+          "netPip": -40.42,
+          "totalR": 1.44,
+          "positive": 8,
+          "negative": 5,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 19,
+        "winCount": 22,
+        "quickStopRate": 94.7,
+        "targetFallbackRate": 56.1,
+        "wideRiskRate": 24.4,
+        "avgLossRiskATR": 2.177,
+        "avgWinRiskATR": 2.558,
+        "avgLossScore": 81,
+        "avgWinScore": 85.5
+      },
+      "recommendation": {
+        "summary": [
+          "P/L-weighted Strict WR di bawah breakeven 50%; fokus pada magnitude loss/target efficiency.",
+          "NET PIP negatif dalam broker window; improvement mesti menaikkan net pip, bukan sekadar count win.",
+          "Banyak SL berlaku cepat selepas signal; AI menguji buffer/invalidasi structure.",
+          "Banyak TP masih menggunakan dynamic-R fallback; AI menguji pencarian structure/liquidity lebih dalam."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "STRUCTURE_BUFFER_PLUS",
+          "why": "SL losses frequently occur within two bars; test slightly more structural breathing room.",
+          "patch": {
+            "bufferATR": 0.12,
+            "minRiskATR": 0.48
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.12,
+            "minRiskATR": 0.48,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 41,
+            "completed": 41,
+            "strictDenominator": 41,
+            "strictWR": 41.62,
+            "signalWR": 53.66,
+            "winPip": 648.17,
+            "lossPip": -909.13,
+            "netPip": -260.96,
+            "totalR": -8.172,
+            "positive": 22,
+            "negative": 19,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 13,
+            "completed": 13,
+            "strictDenominator": 13,
+            "strictWR": 46.77,
+            "signalWR": 61.54,
+            "winPip": 274.71,
+            "lossPip": -312.61,
+            "netPip": -37.9,
+            "totalR": 1.44,
+            "positive": 8,
+            "negative": 5,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0.23,
+            "netPipDelta": 2.52
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_STRICT_WR_LT_52",
+              "STRICT_WR_GAIN_LT_4PP",
+              "NET_PIP_GAIN_TOO_SMALL"
+            ],
+            "strictGain": 0.23,
+            "netGain": 2.52,
+            "minNetGain": 10,
+            "validationCoverage": 100,
+            "fullCoverage": 100
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 52
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.4,
+            "maxRiskATR": 3,
+            "lookback": 52,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 41,
+            "completed": 41,
+            "strictDenominator": 41,
+            "strictWR": 41.71,
+            "signalWR": 53.66,
+            "winPip": 650.61,
+            "lossPip": -909.13,
+            "netPip": -258.52,
+            "totalR": -8.021,
+            "positive": 22,
+            "negative": 19,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 13,
+            "completed": 13,
+            "strictDenominator": 13,
+            "strictWR": 46.54,
+            "signalWR": 61.54,
+            "winPip": 272.19,
+            "lossPip": -312.61,
+            "netPip": -40.42,
+            "totalR": 1.44,
+            "positive": 8,
+            "negative": 5,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_STRICT_WR_LT_52",
+              "STRICT_WR_GAIN_LT_4PP",
+              "NET_PIP_GAIN_TOO_SMALL"
+            ],
+            "strictGain": 0,
+            "netGain": 0,
+            "minNetGain": 10,
+            "validationCoverage": 100,
+            "fullCoverage": 100
+          }
+        },
+        {
+          "id": "TARGET_BALANCE",
+          "why": "Test slightly nearer fallback targets while preserving structure-first logic.",
+          "patch": {
+            "t2FallbackR": 1.7,
+            "t3FallbackR": 2.85
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.4,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.7,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.85
+          },
+          "all": {
+            "totalSignals": 41,
+            "completed": 41,
+            "strictDenominator": 41,
+            "strictWR": 41.53,
+            "signalWR": 53.66,
+            "winPip": 645.65,
+            "lossPip": -909.13,
+            "netPip": -263.49,
+            "totalR": -8.172,
+            "positive": 22,
+            "negative": 19,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 13,
+            "completed": 13,
+            "strictDenominator": 13,
+            "strictWR": 46.54,
+            "signalWR": 61.54,
+            "winPip": 272.19,
+            "lossPip": -312.61,
+            "netPip": -40.42,
+            "totalR": 1.44,
+            "positive": 8,
+            "negative": 5,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_STRICT_WR_LT_52",
+              "STRICT_WR_GAIN_LT_4PP",
+              "NET_PIP_GAIN_TOO_SMALL"
+            ],
+            "strictGain": 0,
+            "netGain": 0,
+            "minNetGain": 10,
+            "validationCoverage": 100,
+            "fullCoverage": 100
+          }
+        }
+      ],
+      "decision": {
+        "action": "KEEP_CURRENT",
+        "reason": "NO_CANDIDATE_PASSED_OOS_GATE",
+        "sampleReady": true,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "OWL101|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "owl101-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:26.938Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "owl101",
+      "indicatorName": "OWL Style Research v1.01",
+      "profileKey": "owl101|XAUUSD247",
+      "historyMode": "HISTORICAL_SIM",
+      "dataWindow": {
+        "startUTC": "2026-08-17T19:30:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 4999,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "OWL_RESEARCH",
+        "bufferATR": 0.08,
+        "minRiskATR": 0.25,
+        "maxRiskATR": 3,
+        "lookback": 40,
+        "preferNativeStop": true,
+        "preferNativeTargets": false,
+        "mode": "owl101",
+        "profileKey": "owl101|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 18,
+          "completed": 18,
+          "strictDenominator": 18,
+          "strictWR": 76.41,
+          "signalWR": 88.89,
+          "winPip": 736.9,
+          "lossPip": -227.48,
+          "netPip": 509.43,
+          "totalR": 7.218,
+          "positive": 16,
+          "negative": 2,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 12,
+          "completed": 12,
+          "strictDenominator": 12,
+          "strictWR": 69.82,
+          "signalWR": 83.33,
+          "winPip": 526.29,
+          "lossPip": -227.48,
+          "netPip": 298.81,
+          "totalR": 5.463,
+          "positive": 10,
+          "negative": 2,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 6,
+          "completed": 6,
+          "strictDenominator": 6,
+          "strictWR": 100,
+          "signalWR": 100,
+          "winPip": 210.62,
+          "lossPip": 0,
+          "netPip": 210.62,
+          "totalR": 1.756,
+          "positive": 6,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 2,
+        "winCount": 16,
+        "quickStopRate": 100,
+        "targetFallbackRate": 72.2,
+        "wideRiskRate": 5.6,
+        "avgLossRiskATR": 1.635,
+        "avgWinRiskATR": 1.89,
+        "avgLossScore": 77.4,
+        "avgWinScore": 81.5
+      },
+      "recommendation": {
+        "summary": [
+          "Banyak SL berlaku cepat selepas signal; AI menguji buffer/invalidasi structure.",
+          "Banyak TP masih menggunakan dynamic-R fallback; AI menguji pencarian structure/liquidity lebih dalam."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "STRUCTURE_BUFFER_PLUS",
+          "why": "SL losses frequently occur within two bars; test slightly more structural breathing room.",
+          "patch": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.33
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.33,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 76.41,
+            "signalWR": 88.89,
+            "winPip": 736.9,
+            "lossPip": -227.48,
+            "netPip": 509.43,
+            "totalR": 7.218,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 52
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.08,
+            "minRiskATR": 0.25,
+            "maxRiskATR": 3,
+            "lookback": 52,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 77.2,
+            "signalWR": 88.89,
+            "winPip": 770.24,
+            "lossPip": -227.48,
+            "netPip": 542.76,
+            "totalR": 7.699,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "TARGET_BALANCE",
+          "why": "Test slightly nearer fallback targets while preserving structure-first logic.",
+          "patch": {
+            "t2FallbackR": 1.7,
+            "t3FallbackR": 2.85
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.08,
+            "minRiskATR": 0.25,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.7,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.85
+          },
+          "all": {
+            "totalSignals": 18,
+            "completed": 18,
+            "strictDenominator": 18,
+            "strictWR": 76.41,
+            "signalWR": 88.89,
+            "winPip": 736.9,
+            "lossPip": -227.48,
+            "netPip": 509.43,
+            "totalR": 7.218,
+            "positive": 16,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 6,
+            "completed": 6,
+            "strictDenominator": 6,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 210.62,
+            "lossPip": 0,
+            "netPip": 210.62,
+            "totalR": 1.756,
+            "positive": 6,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        }
+      ],
+      "decision": {
+        "action": "COLLECT_DATA",
+        "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "FUND104|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "fund104-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:31.364Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "fund104",
+      "indicatorName": "Fund Structure A v1.04",
+      "profileKey": "fund104|XAUUSD247",
+      "historyMode": "HISTORICAL_SIM",
+      "dataWindow": {
+        "startUTC": "2026-08-17T19:30:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 4999,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "FUND_104",
+        "bufferATR": 0.18,
+        "minRiskATR": 0.5,
+        "maxRiskATR": 3,
+        "lookback": 40,
+        "preferNativeStop": true,
+        "preferNativeTargets": false,
+        "mode": "fund104",
+        "profileKey": "fund104|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 2,
+          "completed": 2,
+          "strictDenominator": 2,
+          "strictWR": 100,
+          "signalWR": 100,
+          "winPip": 267.7,
+          "lossPip": 0,
+          "netPip": 267.7,
+          "totalR": 1.824,
+          "positive": 2,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 1,
+          "completed": 1,
+          "strictDenominator": 1,
+          "strictWR": 100,
+          "signalWR": 100,
+          "winPip": 137,
+          "lossPip": 0,
+          "netPip": 137,
+          "totalR": 0.902,
+          "positive": 1,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 1,
+          "completed": 1,
+          "strictDenominator": 1,
+          "strictWR": 100,
+          "signalWR": 100,
+          "winPip": 130.7,
+          "lossPip": 0,
+          "netPip": 130.7,
+          "totalR": 0.922,
+          "positive": 1,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 0,
+        "winCount": 2,
+        "quickStopRate": null,
+        "targetFallbackRate": 100,
+        "wideRiskRate": 0,
+        "avgLossRiskATR": null,
+        "avgWinRiskATR": 2.521,
+        "avgLossScore": null,
+        "avgWinScore": 71
+      },
+      "recommendation": {
+        "summary": [
+          "Sample masih kecil; AI kumpul data dan tidak mengubah profile.",
+          "Banyak TP masih menggunakan dynamic-R fallback; AI menguji pencarian structure/liquidity lebih dalam."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "RISK_COMPRESSION",
+          "why": "Test smaller structural risk without altering the signal engine.",
+          "patch": {
+            "bufferATR": 0.165,
+            "minRiskATR": 0.44
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.165,
+            "minRiskATR": 0.44,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 2,
+            "completed": 2,
+            "strictDenominator": 2,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 267.7,
+            "lossPip": 0,
+            "netPip": 267.7,
+            "totalR": 1.824,
+            "positive": 2,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 1,
+            "completed": 1,
+            "strictDenominator": 1,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 130.7,
+            "lossPip": 0,
+            "netPip": 130.7,
+            "totalR": 0.922,
+            "positive": 1,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 52
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.18,
+            "minRiskATR": 0.5,
+            "maxRiskATR": 3,
+            "lookback": 52,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 2,
+            "completed": 2,
+            "strictDenominator": 2,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 267.7,
+            "lossPip": 0,
+            "netPip": 267.7,
+            "totalR": 1.824,
+            "positive": 2,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 1,
+            "completed": 1,
+            "strictDenominator": 1,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 130.7,
+            "lossPip": 0,
+            "netPip": 130.7,
+            "totalR": 0.922,
+            "positive": 1,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "TARGET_BALANCE",
+          "why": "Test slightly nearer fallback targets while preserving structure-first logic.",
+          "patch": {
+            "t2FallbackR": 1.7,
+            "t3FallbackR": 2.85
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.18,
+            "minRiskATR": 0.5,
+            "maxRiskATR": 3,
+            "lookback": 40,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.7,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.85
+          },
+          "all": {
+            "totalSignals": 2,
+            "completed": 2,
+            "strictDenominator": 2,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 267.7,
+            "lossPip": 0,
+            "netPip": 267.7,
+            "totalR": 1.824,
+            "positive": 2,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 1,
+            "completed": 1,
+            "strictDenominator": 1,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 130.7,
+            "lossPip": 0,
+            "netPip": 130.7,
+            "totalR": 0.922,
+            "positive": 1,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        }
+      ],
+      "decision": {
+        "action": "COLLECT_DATA",
+        "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "GF-AI|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "gf-ai-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:35.251Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "gf-ai",
+      "indicatorName": "GF-AI Live Analyst v1.60",
+      "profileKey": "gf-ai|XAUUSD247",
+      "historyMode": "GF_CLOSED_CANDLE_NEXT_OPEN_REPLAY",
+      "dataWindow": {
+        "startUTC": "2026-10-06T14:30:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 219,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "GF_AI",
+        "bufferATR": 0.1,
+        "minRiskATR": 0.24,
+        "maxRiskATR": 2.35,
+        "lookback": 56,
+        "preferNativeStop": true,
+        "preferNativeTargets": true,
+        "mode": "gf-ai",
+        "profileKey": "gf-ai|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 0,
+          "completed": 0,
+          "strictDenominator": 0,
+          "strictWR": null,
+          "signalWR": null,
+          "winPip": null,
+          "lossPip": null,
+          "netPip": null,
+          "totalR": null,
+          "positive": 0,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": null
+        },
+        "training": {
+          "totalSignals": 0,
+          "completed": 0,
+          "strictDenominator": 0,
+          "strictWR": null,
+          "signalWR": null,
+          "winPip": null,
+          "lossPip": null,
+          "netPip": null,
+          "totalR": null,
+          "positive": 0,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": null
+        },
+        "validation": {
+          "totalSignals": 0,
+          "completed": 0,
+          "strictDenominator": 0,
+          "strictWR": null,
+          "signalWR": null,
+          "winPip": null,
+          "lossPip": null,
+          "netPip": null,
+          "totalR": null,
+          "positive": 0,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": null
+        }
+      },
+      "diagnostics": {
+        "lossCount": 0,
+        "winCount": 0,
+        "quickStopRate": null,
+        "targetFallbackRate": null,
+        "wideRiskRate": null,
+        "avgLossRiskATR": null,
+        "avgWinRiskATR": null,
+        "avgLossScore": null,
+        "avgWinScore": null
+      },
+      "recommendation": {
+        "summary": [
+          "Sample masih kecil; AI kumpul data dan tidak mengubah profile."
+        ],
+        "candidateCount": 0,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [],
+      "decision": {
+        "action": "COLLECT_DATA",
+        "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "GF-NEWS|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "gf-news-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:39.732Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "gf-news",
+      "indicatorName": "GF-News Impact Pro",
+      "profileKey": "gf-news|XAUUSD247",
+      "historyMode": "GF_NEWS_FORWARD_ARCHIVE",
+      "dataWindow": {
+        "startUTC": "2026-10-06T12:00:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 229,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_FORWARD_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "GF_NEWS",
+        "bufferATR": 0.1,
+        "minRiskATR": 0.24,
+        "maxRiskATR": 2.35,
+        "lookback": 56,
+        "preferNativeStop": true,
+        "preferNativeTargets": true,
+        "mode": "gf-news",
+        "profileKey": "gf-news|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 0,
+          "completed": 0,
+          "strictDenominator": 0,
+          "strictWR": null,
+          "signalWR": null,
+          "winPip": null,
+          "lossPip": null,
+          "netPip": null,
+          "totalR": null,
+          "positive": 0,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": null
+        },
+        "training": {
+          "totalSignals": 0,
+          "completed": 0,
+          "strictDenominator": 0,
+          "strictWR": null,
+          "signalWR": null,
+          "winPip": null,
+          "lossPip": null,
+          "netPip": null,
+          "totalR": null,
+          "positive": 0,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": null
+        },
+        "validation": {
+          "totalSignals": 0,
+          "completed": 0,
+          "strictDenominator": 0,
+          "strictWR": null,
+          "signalWR": null,
+          "winPip": null,
+          "lossPip": null,
+          "netPip": null,
+          "totalR": null,
+          "positive": 0,
+          "negative": 0,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": null
+        }
+      },
+      "diagnostics": {
+        "lossCount": 0,
+        "winCount": 0,
+        "quickStopRate": null,
+        "targetFallbackRate": null,
+        "wideRiskRate": null,
+        "avgLossRiskATR": null,
+        "avgWinRiskATR": null,
+        "avgLossScore": null,
+        "avgWinScore": null
+      },
+      "recommendation": {
+        "summary": [
+          "Sample masih kecil; AI kumpul data dan tidak mengubah profile."
+        ],
+        "candidateCount": 0,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [],
+      "decision": {
+        "action": "COLLECT_FORWARD_DATA",
+        "reason": "NEWS_MACRO_HISTORY_IS_FORWARD_ONLY",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    },
+    "GF-STUDY|XAUUSD247|M15": {
+      "ok": true,
+      "version": "RECOMMENDED_AI_V1",
+      "recommendationId": "gf-study-XAUUSD247-M15-202610082126",
+      "generatedAtUTC": "2026-10-08T21:26:43.479Z",
+      "symbol": "XAUUSD247",
+      "tf": "M15",
+      "indicator": "gf-study",
+      "indicatorName": "GF-Market Study Pro",
+      "profileKey": "gf-study|XAUUSD247",
+      "historyMode": "GF_CLOSED_CANDLE_NEXT_OPEN_REPLAY",
+      "dataWindow": {
+        "startUTC": "2026-10-06T12:00:00.000Z",
+        "endUTC": "2026-10-08T21:00:00.000Z",
+        "brokerServerUTCOffsetSeconds": 10800,
+        "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
+        "availableClosedCandles": 229,
+        "historyLimitedToAvailableBars": true
+      },
+      "state": "COLLECT_DATA",
+      "activeProfile": null,
+      "effectiveProfile": {
+        "t1MinR": 0.9,
+        "t1MaxR": 1.6,
+        "t1FallbackR": 1,
+        "t2MinR": 1.4,
+        "t2MaxR": 2.6,
+        "t2FallbackR": 1.8,
+        "t3MinR": 2.2,
+        "t3MaxR": 6,
+        "t3FallbackR": 3,
+        "name": "GF_STUDY",
+        "bufferATR": 0.1,
+        "minRiskATR": 0.24,
+        "maxRiskATR": 2.35,
+        "lookback": 56,
+        "preferNativeStop": true,
+        "preferNativeTargets": true,
+        "mode": "gf-study",
+        "profileKey": "gf-study|XAUUSD247",
+        "profileSource": "DEFAULT_DYNAMIC_PROFILE"
+      },
+      "baseline": {
+        "all": {
+          "totalSignals": 11,
+          "completed": 11,
+          "strictDenominator": 10,
+          "strictWR": 60.84,
+          "signalWR": 70,
+          "winPip": 326.24,
+          "lossPip": -210,
+          "netPip": 116.24,
+          "totalR": 2.207,
+          "positive": 7,
+          "negative": 3,
+          "beZero": 1,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "training": {
+          "totalSignals": 6,
+          "completed": 6,
+          "strictDenominator": 5,
+          "strictWR": 100,
+          "signalWR": 100,
+          "winPip": 240.44,
+          "lossPip": 0,
+          "netPip": 240.44,
+          "totalR": 3.865,
+          "positive": 5,
+          "negative": 0,
+          "beZero": 1,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 5,
+          "completed": 5,
+          "strictDenominator": 5,
+          "strictWR": 29.01,
+          "signalWR": 40,
+          "winPip": 85.8,
+          "lossPip": -210,
+          "netPip": -124.2,
+          "totalR": -1.658,
+          "positive": 2,
+          "negative": 3,
+          "beZero": 0,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": "PIP"
+        }
+      },
+      "diagnostics": {
+        "lossCount": 3,
+        "winCount": 7,
+        "quickStopRate": 100,
+        "targetFallbackRate": 27.3,
+        "wideRiskRate": 0,
+        "avgLossRiskATR": 1.021,
+        "avgWinRiskATR": 0.823,
+        "avgLossScore": null,
+        "avgWinScore": null
+      },
+      "recommendation": {
+        "summary": [
+          "Banyak SL berlaku cepat selepas signal; AI menguji buffer/invalidasi structure."
+        ],
+        "candidateCount": 3,
+        "note": "Recommended AI may auto-promote only Dynamic ATR + Structure profile parameters. Protected/native signal engines are never auto-edited."
+      },
+      "candidates": [
+        {
+          "id": "RISK_COMPRESSION",
+          "why": "Test smaller structural risk without altering the signal engine.",
+          "patch": {
+            "bufferATR": 0.085,
+            "minRiskATR": 0.18
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.085,
+            "minRiskATR": 0.18,
+            "maxRiskATR": 2.35,
+            "lookback": 56,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 11,
+            "completed": 11,
+            "strictDenominator": 10,
+            "strictWR": 60.84,
+            "signalWR": 70,
+            "winPip": 326.24,
+            "lossPip": -210,
+            "netPip": 116.24,
+            "totalR": 2.207,
+            "positive": 7,
+            "negative": 3,
+            "beZero": 1,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 5,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 29.01,
+            "signalWR": 40,
+            "winPip": 85.8,
+            "lossPip": -210,
+            "netPip": -124.2,
+            "totalR": -1.658,
+            "positive": 2,
+            "negative": 3,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "DEEPER_STRUCTURE_SEARCH",
+          "why": "Many targets use R fallback; test a deeper pre-signal structure search.",
+          "patch": {
+            "lookback": 68
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.24,
+            "maxRiskATR": 2.35,
+            "lookback": 68,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.8,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 3
+          },
+          "all": {
+            "totalSignals": 11,
+            "completed": 11,
+            "strictDenominator": 10,
+            "strictWR": 60.84,
+            "signalWR": 70,
+            "winPip": 326.24,
+            "lossPip": -210,
+            "netPip": 116.24,
+            "totalR": 2.207,
+            "positive": 7,
+            "negative": 3,
+            "beZero": 1,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 5,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 29.01,
+            "signalWR": 40,
+            "winPip": 85.8,
+            "lossPip": -210,
+            "netPip": -124.2,
+            "totalR": -1.658,
+            "positive": 2,
+            "negative": 3,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        },
+        {
+          "id": "TARGET_BALANCE",
+          "why": "Test slightly nearer fallback targets while preserving structure-first logic.",
+          "patch": {
+            "t2FallbackR": 1.7,
+            "t3FallbackR": 2.85
+          },
+          "effectiveProfile": {
+            "bufferATR": 0.1,
+            "minRiskATR": 0.24,
+            "maxRiskATR": 2.35,
+            "lookback": 56,
+            "t1MinR": 0.9,
+            "t1MaxR": 1.6,
+            "t1FallbackR": 1,
+            "t2MinR": 1.4,
+            "t2MaxR": 2.6,
+            "t2FallbackR": 1.7,
+            "t3MinR": 2.2,
+            "t3MaxR": 6,
+            "t3FallbackR": 2.85
+          },
+          "all": {
+            "totalSignals": 11,
+            "completed": 11,
+            "strictDenominator": 10,
+            "strictWR": 60.84,
+            "signalWR": 70,
+            "winPip": 326.24,
+            "lossPip": -210,
+            "netPip": 116.24,
+            "totalR": 2.207,
+            "positive": 7,
+            "negative": 3,
+            "beZero": 1,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 5,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 29.01,
+            "signalWR": 40,
+            "winPip": 85.8,
+            "lossPip": -210,
+            "netPip": -124.2,
+            "totalR": -1.658,
+            "positive": 2,
+            "negative": 3,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "delta": {
+            "strictWRDelta": 0,
+            "netPipDelta": 0
+          },
+          "gate": {
+            "pass": false,
+            "reasons": [
+              "VALIDATION_SAMPLE_LT_10"
+            ]
+          }
+        }
+      ],
+      "decision": {
+        "action": "COLLECT_DATA",
+        "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+        "sampleReady": false,
+        "autoPromotionApproved": false,
+        "patch": null,
+        "candidatePatch": null,
+        "candidateId": null,
+        "validation": null,
+        "guardrails": {
+          "minCompleted": 40,
+          "minValidation": 10,
+          "minStrictWR": 52,
+          "minStrictWRGainPP": 4,
+          "minNetPipGain": "max(10 pip, 10%)",
+          "maxLossMagnitudeWorseningPct": 5,
+          "promotionCooldownHours": 72
+        }
+      },
+      "rollback": null
+    }
+  }
 }
