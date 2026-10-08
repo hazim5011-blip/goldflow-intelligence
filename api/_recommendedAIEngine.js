@@ -128,14 +128,20 @@ function candidatePass(baseVal,candVal,baseAll,candAll){
     minNetGain=Math.max(10,Math.abs(baseVal.netPip)*.10);
   const lossOk=N(baseVal.lossPip)==null||N(candVal.lossPip)==null||Math.abs(candVal.lossPip)<=Math.abs(baseVal.lossPip)*1.05+1e-9;
   const allOk=N(candAll.netPip)!=null&&N(baseAll.netPip)!=null&&candAll.netPip>=baseAll.netPip;
-  const pass=candVal.strictWR>=52&&strictGain>=4&&netGain>=minNetGain&&lossOk&&allOk;
+  const validationCoverageOk=(candVal.strictDenominator||0)>=(baseVal.strictDenominator||0)*.95;
+  const fullCoverageOk=(candAll.strictDenominator||0)>=(baseAll.strictDenominator||0)*.95;
+  const pass=candVal.strictWR>=52&&strictGain>=4&&netGain>=minNetGain&&lossOk&&allOk&&validationCoverageOk&&fullCoverageOk;
   const reasons=[];
   if(candVal.strictWR<52)reasons.push("VALIDATION_STRICT_WR_LT_52");
   if(strictGain<4)reasons.push("STRICT_WR_GAIN_LT_4PP");
   if(netGain<minNetGain)reasons.push("NET_PIP_GAIN_TOO_SMALL");
   if(!lossOk)reasons.push("LOSS_MAGNITUDE_WORSE_GT_5PCT");
   if(!allOk)reasons.push("FULL_WINDOW_NET_NOT_BETTER");
-  return {pass,reasons,strictGain:snap(strictGain,2),netGain:snap(netGain,2),minNetGain:snap(minNetGain,2)};
+  if(!validationCoverageOk)reasons.push("VALIDATION_COVERAGE_DROPPED_GT_5PCT");
+  if(!fullCoverageOk)reasons.push("FULL_WINDOW_COVERAGE_DROPPED_GT_5PCT");
+  return {pass,reasons,strictGain:snap(strictGain,2),netGain:snap(netGain,2),minNetGain:snap(minNetGain,2),
+    validationCoverage:snap(pct(candVal.strictDenominator||0,baseVal.strictDenominator||0),1),
+    fullCoverage:snap(pct(candAll.strictDenominator||0,baseAll.strictDenominator||0),1)};
 }
 function narrative(base,diag,active){
   const out=[];
