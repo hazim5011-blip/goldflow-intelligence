@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {handleGptResearch} from "../cloudflare/gpt-research.js";
 const NOW=1800000000,OFFSET=10800,TOKEN="g".repeat(48);
 const ENV={GF_GPT_ENABLED:"1",GF_GPT_ADMIN_TOKEN:TOKEN,OPENAI_API_KEY:"sk-test-only",
- BROKER_BRIDGE_KEY:"bridge-test-only",GF_GPT_MODEL:"gpt-6-astra",VANTAGE_TICK_UTC_OFFSET_SECONDS:"10800"};
+ BROKER_BRIDGE_KEY:"bridge-test-only",GF_GPT_MODEL:"gpt-6-sol",VANTAGE_TICK_UTC_OFFSET_SECONDS:"10800"};
 const SC={M5:300,M15:900,M30:1800,H1:3600,H4:14400};
 function candles(seconds){
  return Array.from({length:115},(_,i)=>{
@@ -66,7 +66,7 @@ test("only trusted closed MT5 candles reach GPT-6 and output is research-only",a
  assert.equal(calls[0].opt.headers["X-Bridge-Key"],ENV.BROKER_BRIDGE_KEY);
  assert.equal(calls[1].url,"https://api.openai.com/v1/responses");
  const p=JSON.parse(calls[1].opt.body),d=JSON.parse(p.input[1].content);
- assert.equal(p.model,"gpt-6-astra");assert.equal(p.store,false);
+ assert.equal(p.model,"gpt-6-sol");assert.equal(p.store,false);
  assert.equal(d.fundamentalFeed.status,"UNAVAILABLE");
  assert.equal(d.closedBars.M15.length,60);assert.equal(d.closedBars.H1.length,60);
  assert.equal(JSON.stringify(x.data).includes(ENV.OPENAI_API_KEY),false);
