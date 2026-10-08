@@ -153,3 +153,10 @@
 
 .gfPlaybookCard{border-color:#35546a;background:linear-gradient(180deg,#0a202b,#08151d)}
 #gfTradeIdeaId{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+
+/* GF-AI v1.50 Live Management + Recovery */
+.gfAIManageCard{border-color:#355b6b;background:linear-gradient(180deg,#0a1f29,#07141c)}
+#gfAIManageBadge.active-buy{color:var(--g);border-color:#27705a;background:#0a281f}
+#gfAIManageBadge.active-sell{color:var(--r);border-color:#7b3542;background:#2b1118}
+#gfAIManageBadge.terminal{color:var(--y);border-color:#8a6d24;background:#2a240f}
+#gfAIManageAction{font-size:18px}
