@@ -23,6 +23,7 @@ Current automatic gate:
 - at least +4 percentage-point P/L Strict WR improvement;
 - NET PIP improvement of at least max(10 pip, 10% of baseline magnitude);
 - loss magnitude may not worsen by more than 5%;
+- validation and full-window evaluated-signal coverage must remain at least 95% of baseline;
 - 72-hour promotion cooldown;
 - rollback eligibility after at least 12 post-promotion signals if Strict WR < 42% and NET PIP is negative.
 
