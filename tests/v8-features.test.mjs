@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import vm from "node:vm";
 import {impactForType,classifyReleaseEvent} from "../api/_v8Impact.js";
 import {runFund104,fund104InvalidatedByClosedBars,fund104InvalidationAtByClosedBars,fund104WilderRSI} from "../api/_indicatorFund104.js";
+import {runPVTChart101} from "../api/_indicatorPVTChart101.js";
 import {replayOutcome} from "../api/_v8Core.js";
 
 const source = p=>readFileSync(new URL(p,import.meta.url),"utf8");
@@ -192,4 +193,41 @@ test("Fund104 audit retains later invalidated studies without claiming trade win
  assert.equal(study.stats.losses,0);
  assert.equal(study.stats.winRate,null);
  if(study.latestSignal.status?.includes("WATCH"))assert.equal(study.latestSignal.confirmed,false);
+});
+
+
+test("PVT Chart Confluence v1.01 web port is closed-candle, same-TF, and preserves MQ5 risk semantics",()=>{
+ const bars=gen(420);
+ const a=runPVTChart101({triggerBars:bars,triggerTF:"M5",symbol:"XAUUSD247",point:.01});
+ assert.equal(a.ready,true);
+ assert.match(a.engine,/PVT_Chart_Confluence_XAU_v1\.01/);
+ assert.equal(a.profile.triggerTF,"M5");
+ assert.equal(a.profile.setupTF,"M5");
+ assert.equal(a.profile.biasTF,"M5");
+ assert.equal(a.sourceAudit.currentChartTimeframeOnly,true);
+ assert.equal(a.sourceAudit.closedCandleSignals,true);
+ assert.equal(a.sourceAudit.nextBarContinuation,true);
+ assert.equal(a.sourceAudit.scoreIsProbability,false);
+ assert.equal(a.sourceAudit.management.tp1R,1);
+ assert.equal(a.sourceAudit.management.tp2R,1.8);
+ assert.equal(a.sourceAudit.management.tp3R,3);
+ assert.equal(a.sourceAudit.management.beAtTP1Fraction,.5);
+ assert.equal(a.sourceAudit.management.beOffsetR,.05);
+ assert.equal(a.sourceAudit.management.trailStartTP1,1);
+ assert.equal(a.sourceAudit.management.trailDistanceTP1,.5);
+ assert.equal(a.sourceAudit.management.maxHoldingBars,96);
+ const changed=bars.slice();changed[changed.length-1]={...changed.at(-1),o:1,h:99999,l:1,c:99999,v:999999};
+ const b=runPVTChart101({triggerBars:changed,triggerTF:"M5",symbol:"XAUUSD247",point:.01});
+ assert.deepEqual(b.history,a.history,"forming candle must never change closed-candle history");
+});
+
+test("Production UI contains both user MQ5 indicators and converts raw gateway failures into readable errors",()=>{
+ const html=source("../index.html"),app=source("../app.js"),broker=source("../api/_broker.js"),v8=source("../v8.js");
+ assert.ok(html.includes("PVT Chart Confluence XAU v1.01 • MQ5 Source"));
+ assert.ok(html.includes("Pattern Zone Tutor v1.32 • MQ5 Verified"));
+ assert.ok(app.includes('"pvtchart101":"PVT CHART CONFLUENCE 1.01"'));
+ assert.ok(app.includes("WEB/API GATEWAY ERROR"));
+ assert.ok(broker.includes("BRIDGE_TIMEOUT"));
+ assert.ok(broker.includes("BRIDGE_TUNNEL_ORIGIN_UNAVAILABLE"));
+ assert.ok(v8.includes('id:"pvtchart101"'));
 });
