@@ -181,3 +181,12 @@
 .raiCard{background:#081721;border:1px solid #274451;border-radius:11px;padding:12px;min-width:0}.raiCardTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.raiCardTop small{color:#7899aa;font-size:9px;font-weight:900}.raiCardTop h4{margin:3px 0;font-size:14px}.raiCardTop span{color:var(--muted);font-size:10px}.raiCardTop>b{font-size:10px;white-space:nowrap}
 .raiMetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}.raiMetrics>div{background:#06131b;border:1px solid #1d3440;border-radius:8px;padding:7px}.raiMetrics small,.raiCandidate small,.raiDecision small{display:block;color:var(--muted);font-size:8px}.raiMetrics strong{display:block;margin-top:3px;font-size:16px}.raiDiag{font-size:10px;color:#9db5c3;line-height:1.6}.raiWhy{font-size:11px;line-height:1.55;margin-top:8px;padding-top:8px;border-top:1px solid #1c3440}.raiCandidate,.raiDecision{display:flex;flex-direction:column;gap:3px;margin-top:9px;padding:8px;border-radius:8px;background:#0a1b26;border:1px solid #223e4c}.raiCandidate b,.raiDecision b{font-size:11px}.raiCandidate span,.raiDecision span{font-size:9px;color:#96aebb}.raiFoot{margin-top:8px;color:#607b8a;font-size:8px}
 @media(max-width:900px){.raiGrid{grid-template-columns:1fr}.raiMetrics{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.raiActions{width:100%}.raiActions button{flex:1}.raiMetrics{grid-template-columns:1fr 1fr}}
+
+/* Recommended AI Internet Knowledge Scout */
+.raiInternetCard{border-color:#3b6070;background:linear-gradient(180deg,#0a1c27,#07151e)}
+.raiInternetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.raiInternetItem{border:1px solid #294754;border-radius:9px;background:#081822;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.raiInternetItem small{color:#7fa4b6;font-size:8px;font-weight:850}.raiInternetItem b{font-size:12px;line-height:1.45;color:#edf7fb}
+.raiInternetItem p{font-size:10px;line-height:1.55;color:#bcd0da;margin:0}.raiInternetItem span{font-size:9px;color:#e0c87a}
+.raiInternetItem a{font-size:9px;color:#91d1ff;text-decoration:underline;text-underline-offset:2px}.raiInternetItem.hypothesis{border-left:4px solid #8c73db}
+@media(max-width:850px){.raiInternetGrid{grid-template-columns:1fr}}
