@@ -205,8 +205,10 @@ test("History Pro exposes explicit per-indicator WR and daily TP/SL total logic 
   assert.match(js,/HISTORY_CATALOG/);
   assert.match(js,/data indicator lain tidak digunakan sebagai pengganti/);
   assert.match(js,/STRICT WR/);
-  assert.match(js,/Σ PIP/);
-  assert.match(js,/Σ POINT/);
+  assert.match(js,/WIN PIP/);
+  assert.match(js,/SL PIP/);
+  assert.match(js,/NET PIP/);
+  assert.match(js,/NET POINT/);
   assert.match(js,/period=day/);
   assert.match(js,/strictDenominator/);
 });
