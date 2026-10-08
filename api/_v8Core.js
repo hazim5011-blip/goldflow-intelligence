@@ -1,6 +1,7 @@
 import {createHash} from "node:crypto";
+import {buildDynamicTradePlan,UNIVERSAL_MANAGEMENT} from "./_dynamicTradeManagement.js";
 
-export const V8_ENGINE_BUILD="v8.1.3-normalized-trade-plan-net-performance";
+export const V8_ENGINE_BUILD="v8.1.4-dynamic-atr-structure-management";
 export const TF_SECONDS={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400,W1:604800,MN1:2592000};
 const VALID_OUTCOMES=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","BE_ZERO","SL","TIME_WIN","TIME_LOSS","GAP_LOSS"]);
 const POSITIVE=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","TIME_WIN"]);
@@ -43,26 +44,16 @@ function touchTarget(b,d,target){return d>0?b.h>=target:b.l<=target}
 function move(d,entry,exit){return d*(exit-entry)}
 function stoppedAt(b,d,level){return d>0?Math.min(b.o,level):Math.max(b.o,level)}
 
-const NORMALIZED_MANAGEMENT={beTriggerR:.50,beLockR:.05,trailTriggerR:.75,trailDistanceR:.35};
-export function normalizedTradePlan(signal,mode="105"){
-  const d=parseDirection(signal),entry=n(signal?.entry),sl=n(signal?.invalidation??signal?.originalSL);
-  const rawTp1=n(signal?.tp1),rawTp2=n(signal?.tp2),rawTp3=n(signal?.tp3);
-  if(!d||entry==null||sl==null)return {valid:false,origin:"INCOMPLETE_SIGNAL",direction:d,entry,sl,tp1:rawTp1,tp2:rawTp2,tp3:rawTp3};
-  const risk=Math.abs(entry-sl);
-  if(!(risk>0)||move(d,entry,sl)>=0)return {valid:false,origin:"INVALID_RISK_GEOMETRY",direction:d,entry,sl,tp1:rawTp1,tp2:rawTp2,tp3:rawTp3};
-  const nativeTarget=rawTp1!=null&&move(d,entry,rawTp1)>0;
-  const tp1=nativeTarget?rawTp1:entry+d*risk;
-  const tp2=rawTp2!=null&&move(d,entry,rawTp2)>0?rawTp2:entry+d*risk*2;
-  const tp3=rawTp3!=null&&move(d,entry,rawTp3)>0?rawTp3:entry+d*risk*3;
-  return {valid:true,direction:d,entry,sl,tp1:snap(tp1),tp2:snap(tp2),tp3:snap(tp3),risk:snap(risk),
-    origin:nativeTarget?"ENGINE_TARGET_WITH_NORMALIZED_MANAGEMENT":"GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R",
-    nativeTarget,management:{...NORMALIZED_MANAGEMENT,policy:"CLOSED_OHLC_CONSERVATIVE"}};
+export const NORMALIZED_MANAGEMENT=UNIVERSAL_MANAGEMENT;
+export function normalizedTradePlan(signal,mode="105",bars=[],tf="M5",point=0){
+  return buildDynamicTradePlan({signal,bars,tf,mode,point});
 }
-export function replayOutcome(signal,bars=[],tf="M5",mode="105"){
-  const plan=normalizedTradePlan(signal,mode),d=plan.direction,entry=plan.entry,stop=plan.sl,tp=plan.tp1;
+export function replayOutcome(signal,bars=[],tf="M5",mode="105",point=0,precomputedPlan=null){
+  const plan=precomputedPlan?.valid?precomputedPlan:buildDynamicTradePlan({signal,bars,tf,mode,point,locked:signal?.lockedTradePlan===true});
+  const d=plan.direction,entry=plan.entry,stop=plan.sl,tp=plan.tp1;
   const signalOpen=n(signal.time),close=n(signal.closeTime)??(signalOpen!=null?signalOpen+(TF_SECONDS[tf]||300):null);
   const blank={exitPrice:null,exitTimeUTC:null,exitRule:null,priceMove:null,outcome:"PENDING",dataQuality:[],
-    replayRule:"OHLC conservative; last forming candle excluded; normalized management applies to all evaluable trade plans",
+    replayRule:"OHLC conservative; last forming candle excluded; universal Dynamic ATR + Structure management applies to evaluable trade plans",
     planOrigin:plan.origin,management:plan.management||null};
   if(!plan.valid||signalOpen==null||close==null)return {...blank,outcome:"VALID_ONLY",dataQuality:["NO_EVALUABLE_ENTRY_SL_PLAN"]};
   const risk=plan.risk;
@@ -84,12 +75,12 @@ export function replayOutcome(signal,bars=[],tf="M5",mode="105"){
     }
     best=d>0?Math.max(best,b.h):Math.min(best,b.l);
     const rr=move(d,entry,best)/risk;
-    if(rr>=NORMALIZED_MANAGEMENT.beTriggerR){
-      const lock=entry+d*NORMALIZED_MANAGEMENT.beLockR*risk;
+    if(rr>=UNIVERSAL_MANAGEMENT.beTriggerR){
+      const lock=entry+d*UNIVERSAL_MANAGEMENT.beLockR*risk;
       if(move(d,activeStop,lock)>0){activeStop=lock;source="BE"}
     }
-    if(rr>=NORMALIZED_MANAGEMENT.trailTriggerR){
-      const trail=d>0?best-NORMALIZED_MANAGEMENT.trailDistanceR*risk:best+NORMALIZED_MANAGEMENT.trailDistanceR*risk;
+    if(rr>=UNIVERSAL_MANAGEMENT.trailTriggerR){
+      const trail=d>0?best-UNIVERSAL_MANAGEMENT.trailDistanceR*risk:best+UNIVERSAL_MANAGEMENT.trailDistanceR*risk;
       if(move(d,activeStop,trail)>0){activeStop=trail;source="TRAILING"}
     }
   }
@@ -124,9 +115,10 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
   const offset=Number.isInteger(ctx.brokerServerUTCOffsetSeconds)?ctx.brokerServerUTCOffsetSeconds:0;
   const spec=ctx.spec||metadataFromCatalog({},ctx.requested,resolved);
   return (Array.isArray(rawHistory)?rawHistory:[]).map(x=>{
-    const d=parseDirection(x),open=n(x.time),nativePVT101=mode==="pvtchart101",plan=nativePVT101?pvtChart101Plan(x):normalizedTradePlan(x,mode),entry=plan.entry,sl=plan.sl;
+    const d=parseDirection(x),open=n(x.time),nativePVT101=mode==="pvtchart101",
+      plan=buildDynamicTradePlan({signal:x,bars:brokerBars,tf,mode,point:spec.point||0}),entry=plan.entry,sl=plan.sl;
     const replaySignal={...x,tp1:plan.tp1,tp2:plan.tp2,tp3:plan.tp3,invalidation:plan.sl};
-    const outcome=nativePVT101?pvtChart101Outcome(x):replayOutcome(replaySignal,brokerBars,tf,mode);
+    const outcome=replayOutcome(replaySignal,brokerBars,tf,mode,spec.point||0,plan);
     const moveVal=n(outcome.priceMove),risk=plan.valid?plan.risk:null;
     const riskQuote=risk!=null?-risk:null;
     const priceUnit=spec.currencyProfit||(/XAU|XAG/i.test(resolved)?"USD quote":"SYMBOL QUOTE");
@@ -146,7 +138,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       sourceBrokerBarEpoch:open,brokerServerUTCOffsetSeconds:offset,
       recordMode:"HISTORICAL_SIM",publishedAtUTC:null,capturedAtUTC:null,
       originalEngineStatus:x.status||null,originalEngineOutcome:n(x.outcome)??x.nativeOutcome??null,engineBuildHash:V8_ENGINE_BUILD,
-      planOrigin:plan.origin,nativeTargetDefined:plan.nativeTarget===true,managementPlan:plan.management||null,
+      planOrigin:plan.origin,nativeTargetDefined:false,managementPlan:plan.management||null,
       nativePlan:{entry:n(x.entry),sl:n(x.invalidation),tp1:n(x.tp1),tp2:n(x.tp2),tp3:n(x.tp3)},
       reasons:Array.isArray(x.reasons)?x.reasons.filter(Boolean).map(String):[],
       pipSize:spec.pipSize,pipConvention:spec.pipConvention,point:spec.point,tickSize:spec.tickSize,
@@ -160,7 +152,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       riskPips:risk!=null&&spec.pipSize>0?-snap(risk/spec.pipSize,3):null,
       grossPLUSD:gross,grossEstimateNote:gross!=null?"MODEL_GROSS_EXCLUDES_ALL_COSTS":spec.lotExampleSupported?"USD_CONVERSION_OR_CONTRACT_NOT_VERIFIED":"0.01_LOT_UNSUPPORTED_OR_METADATA_MISSING",
       netPLUSD:null,rMultiple,completed,positive:POSITIVE.has(outcome.outcome),negative:NEGATIVE.has(outcome.outcome),
-      dataQuality:[...(outcome.dataQuality||[]),...(!nativePVT101&&plan.nativeTarget===false&&plan.valid?["NORMALIZED_TARGETS_1R_2R_3R_NOT_NATIVE_INDICATOR_TARGETS"]:[]),...(spec.metadataStatus==="BROKER_METADATA_INCOMPLETE"?["MISSING_CONTRACT_METADATA"]:[])],
+      dataQuality:[...(outcome.dataQuality||[]),...(plan.valid?["GOLDFLOW_DYNAMIC_ATR_STRUCTURE_MANAGED_PLAN"]:[]),...(nativePVT101?["PVT101_NATIVE_PLAN_RETAINED_IN_AUDIT_ONLY"]:[]),...(spec.metadataStatus==="BROKER_METADATA_INCOMPLETE"?["MISSING_CONTRACT_METADATA"]:[])],
       evidenceStatus:"BACKTEST_RECONSTRUCTED_NOT_FORWARD_PROOF",sourceUrl:null,newsContextId:null,
       disclaimer:"Historical reconstruction from currently available broker candles, not a contemporaneously published signal, executed trade, or profit guarantee."};
   });
