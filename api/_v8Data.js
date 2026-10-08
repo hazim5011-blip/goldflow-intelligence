@@ -57,7 +57,18 @@ function forwardGFRows(pairs,spec){
       disclaimer:"Forward-logged GoldFlow research signal with immutable plan/outcome events. It is not a broker execution record or profit guarantee."};
   });
 }
-async function fetchGFContext({symbol,tf,indicator}){
+function attachReplaySource(ctx,source){
+  if(ctx&&source)Object.defineProperty(ctx,"_replaySource",{value:source,enumerable:false,writable:false,configurable:false});
+  return ctx;
+}
+export function rebuildV8ContextWithProfile(ctx,managementProfile){
+  const s=ctx?._replaySource;
+  if(!s)throw new Error("REPLAY_SOURCE_NOT_AVAILABLE_FOR_THIS_CONTEXT");
+  const rows=buildHistory(s.rawHistory,s.brokerBars,{...s.buildCtx,managementProfile});
+  const out={...ctx,rows,capturedAtUTC:new Date().toISOString()};
+  return attachReplaySource(out,s);
+}
+async function fetchGFContext({symbol,tf,indicator,managementProfile=null}){
   const frames=indicator==="gf-ai"?AI_FRAMES:[...new Set([tf,"H1","H4"])];
   const offset=vantageBrokerUtcOffsetSeconds();
   if(offset===null)throw new Error("BROKER_UTC_OFFSET_UNVERIFIED");
@@ -79,10 +90,10 @@ async function fetchGFContext({symbol,tf,indicator}){
   }else{
     replay=buildGFHistoricalSignals({mode:indicator,symbol:resolved,tf,frames:bridge.frames||{},offsetSeconds:offset,maxCandidates:indicator==="gf-ai"?72:100});
     rows=buildHistory(replay.rawHistory,barWindow,{requested,resolved,tf,indicator,spec,indicatorVersion:gfVersion(indicator),
-      triggerTF:tf,setupTF:tf,biasTF:indicator==="gf-ai"?"ALL_TF":"H1_H4",brokerServer:bridge.server||catalog?.server||null,brokerServerUTCOffsetSeconds:offset});
+      triggerTF:tf,setupTF:tf,biasTF:indicator==="gf-ai"?"ALL_TF":"H1_H4",brokerServer:bridge.server||catalog?.server||null,brokerServerUTCOffsetSeconds:offset,managementProfile});
   }
   const closed=barWindow.slice(0,-1);
-  return {symbolRequested:requested,symbolResolved:resolved,broker:bridge.broker||"Vantage",brokerServer:bridge.server||catalog?.server||null,
+  const ctx={symbolRequested:requested,symbolResolved:resolved,broker:bridge.broker||"Vantage",brokerServer:bridge.server||catalog?.server||null,
     marketState:"MT5_HISTORY",indicator,tf,profile:indicator==="gf-ai"?"M1_D1_OWN_ENGINE_REPLAY":indicator==="gf-study"?"STRUCTURE_OWN_ENGINE_REPLAY":"FORWARD_NEWS_MACRO_ONLY",
     historyMode:replay.historyMode,historyNote:replay.historyNote,rows,spec,brokerBars:barWindow,
     dataWindow:{startUTC:closed[0]?.t?new Date((closed[0].t-offset)*1000).toISOString():null,
@@ -93,6 +104,12 @@ async function fetchGFContext({symbol,tf,indicator}){
     warning:indicator==="gf-news"?
       "GF-News historical outcomes are forward-only because historical verified macro/news snapshots were not archived. No current macro is backfilled into old candles.":
       "GF history is a closed-candle reconstruction of the selected GF engine using Vantage MT5 bars and next-bar-open entry validation; it is not forward publication or broker execution proof."};
+  if(indicator!=="gf-news"&&Array.isArray(replay.rawHistory)){
+    const buildCtx={requested,resolved,tf,indicator,spec,indicatorVersion:gfVersion(indicator),triggerTF:tf,setupTF:tf,
+      biasTF:indicator==="gf-ai"?"ALL_TF":"H1_H4",brokerServer:bridge.server||catalog?.server||null,brokerServerUTCOffsetSeconds:offset};
+    return attachReplaySource(ctx,{rawHistory:replay.rawHistory,brokerBars:barWindow,buildCtx});
+  }
+  return ctx;
 }
 export async function fetchV8Context(query={}){
   const symbol=String(query.symbol||"XAUUSD").trim();
@@ -101,7 +118,8 @@ export async function fetchV8Context(query={}){
   if(!validSymbol(symbol))throw new Error("INVALID_SYMBOL");
   if(!TF_ALLOWED.has(tf))throw new Error("INVALID_TIMEFRAME");
   if(!MODES.has(indicator))throw new Error("INVALID_INDICATOR");
-  if(GF_MODES.has(indicator))return fetchGFContext({symbol,tf,indicator});
+  const managementProfile=query.managementProfile&&typeof query.managementProfile==="object"?query.managementProfile:null;
+  if(GF_MODES.has(indicator))return fetchGFContext({symbol,tf,indicator,managementProfile});
   const mock=fakeResponse();
   const catalogPromise=brokerGet("/catalog",{filter:symbol,limit:120},13000,1).catch(()=>null);
   await analyzeHandler({method:"GET",query:{symbol,tf,indicator,history:"1"}},mock.res);
@@ -120,8 +138,8 @@ export async function fetchV8Context(query={}){
   if(brokerServerUTCOffsetSeconds===null)throw new Error("BROKER_UTC_OFFSET_UNVERIFIED");
   const rows=buildHistory(raw,barWindow,{requested,resolved,tf,indicator,spec,
     indicatorVersion:payload.indicator?.engine||indicator,triggerTF:payload.triggerTF||tf,
-    setupTF:payload.setupTF||null,biasTF:payload.biasTF||null,brokerServer,brokerServerUTCOffsetSeconds});
-  return {symbolRequested:requested,symbolResolved:resolved,broker:payload.broker||"Vantage",brokerServer,marketState:payload.marketState||"UNKNOWN",
+    setupTF:payload.setupTF||null,biasTF:payload.biasTF||null,brokerServer,brokerServerUTCOffsetSeconds,managementProfile});
+  const ctx={symbolRequested:requested,symbolResolved:resolved,broker:payload.broker||"Vantage",brokerServer,marketState:payload.marketState||"UNKNOWN",
     indicator,tf,profile:payload.indicator?.profile||null,
     historyMode:"HISTORICAL_SIM",rows,spec,
     brokerBars:barWindow,
@@ -131,5 +149,8 @@ export async function fetchV8Context(query={}){
       availableClosedCandles:closed.length,historyLimitedToAvailableBars:true},
     capturedAtUTC:new Date().toISOString(),
     warning:"This is a reconstruction from currently accessible Vantage MT5 closed candles. It is not a forward-logged publication or executed-trade statement."};
+  const buildCtx={requested,resolved,tf,indicator,spec,indicatorVersion:payload.indicator?.engine||indicator,triggerTF:payload.triggerTF||tf,
+    setupTF:payload.setupTF||null,biasTF:payload.biasTF||null,brokerServer,brokerServerUTCOffsetSeconds};
+  return attachReplaySource(ctx,{rawHistory:raw,brokerBars:barWindow,buildCtx});
 }
 export {filterHistory,aggregate,groupHistory,compareMonths,evidenceForRecord,explainRecord,DISCLAIMER};

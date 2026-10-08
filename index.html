@@ -56,6 +56,7 @@
   <button class="tab" data-page="tvPage">TradingView</button>
   <button class="tab" data-page="v8History" data-i18n="historyPro">History Pro</button>
   <button class="tab" data-page="v8Performance" data-i18n="performance">Performance</button>
+  <button class="tab" data-page="recommendedAIPage">Recommended AI</button>
   <button class="tab" data-page="v8Evidence" data-i18n="evidence">Evidence</button>
   <button class="tab" data-page="symbolsPage">All Symbols</button>
   <button class="tab" data-page="macroPage">Macro Regime</button>
@@ -356,6 +357,29 @@
     <div class="v8Footnote" data-i18n="disclaimer">Market research only. This is not financial advice, a guaranteed signal or proof of past market causation. Users make their own trading decisions and bear the risks.</div>
   </div>
 </section>
+<section id="recommendedAIPage" class="page">
+  <div class="card">
+    <div class="head">
+      <div><small class="eyebrow">24H AUTONOMOUS LEARNING • LOSS DIAGNOSIS • SHADOW VALIDATION</small><h3>Recommended AI</h3></div>
+      <div class="raiActions"><button type="button" class="primary mini" id="raiRefresh">Refresh Archive</button><button type="button" class="primary mini" id="raiRunNow">Study Selected Now</button></div>
+    </div>
+    <div id="raiStatus" class="notice info">Loading persistent AI learning archive…</div>
+    <div class="v8MetricGrid">
+      <div class="v8Metric"><small>AI HEARTBEAT</small><strong id="raiHeartbeat">—</strong><span>Hourly learning cycle</span></div>
+      <div class="v8Metric"><small>LAST ARCHIVE</small><strong id="raiUpdated">—</strong><span>Persistent Git history</span></div>
+      <div class="v8Metric"><small>PRIMARY 24H STREAM</small><strong id="raiPrimary">—</strong><span>XAUUSD247 first persistent stream</span></div>
+      <div class="v8Metric"><small>LAST BATCH</small><strong id="raiBatch">—</strong><span>All indicator brains rotate</span></div>
+    </div>
+    <div class="notice">Recommended AI learns each indicator separately. It may auto-promote only <b>symbol-scoped Dynamic ATR + Structure management</b> after minimum sample + out-of-sample gates pass. Protected/native signal-engine code is never auto-edited.</div>
+    <div id="raiCards" class="raiGrid" aria-live="polite"></div>
+    <div class="card sec" id="raiLiveCard">
+      <div class="head"><div><small class="eyebrow">ON-DEMAND SHADOW STUDY</small><h3>Selected Indicator Study</h3></div><span id="raiLiveBadge" class="tag y">WAIT</span></div>
+      <div id="raiLiveResult" class="reason">Choose a symbol, timeframe and indicator above, then press “Study Selected Now”. This live study does not alter production by itself; only the guarded 24H promotion cycle can activate a profile.</div>
+    </div>
+    <p class="v8Footnote"><b>Mandatory update gate:</b> before future indicator changes, read this Recommended AI page / archive first. A high signal-count win rate is never enough; promotion requires P/L-weighted Strict WR and NET PIP improvement on held-out validation data.</p>
+  </div>
+</section>
+
 <section id="blogPage" class="page">
   <div class="card">
     <div class="head"><div><small class="eyebrow">RESEARCH • INDICATOR CHANGELOG</small><h3>GoldFlow Blog & Indicator Updates</h3></div><button type="button" class="primary" id="gfBlogRefresh">Refresh Blog</button></div>

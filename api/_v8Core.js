@@ -45,11 +45,11 @@ function move(d,entry,exit){return d*(exit-entry)}
 function stoppedAt(b,d,level){return d>0?Math.min(b.o,level):Math.max(b.o,level)}
 
 export const NORMALIZED_MANAGEMENT=UNIVERSAL_MANAGEMENT;
-export function normalizedTradePlan(signal,mode="105",bars=[],tf="M5",point=0){
-  return buildDynamicTradePlan({signal,bars,tf,mode,point});
+export function normalizedTradePlan(signal,mode="105",bars=[],tf="M5",point=0,symbol="*",profileOverride=null){
+  return buildDynamicTradePlan({signal,bars,tf,mode,point,symbol,profileOverride});
 }
-export function replayOutcome(signal,bars=[],tf="M5",mode="105",point=0,precomputedPlan=null){
-  const plan=precomputedPlan?.valid?precomputedPlan:buildDynamicTradePlan({signal,bars,tf,mode,point,locked:signal?.lockedTradePlan===true});
+export function replayOutcome(signal,bars=[],tf="M5",mode="105",point=0,precomputedPlan=null,symbol="*",profileOverride=null){
+  const plan=precomputedPlan?.valid?precomputedPlan:buildDynamicTradePlan({signal,bars,tf,mode,point,symbol,profileOverride,locked:signal?.lockedTradePlan===true});
   const d=plan.direction,entry=plan.entry,stop=plan.sl,tp=plan.tp1;
   const signalOpen=n(signal.time),close=n(signal.closeTime)??(signalOpen!=null?signalOpen+(TF_SECONDS[tf]||300):null);
   const blank={exitPrice:null,exitTimeUTC:null,exitRule:null,priceMove:null,outcome:"PENDING",dataQuality:[],
@@ -116,9 +116,9 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
   const spec=ctx.spec||metadataFromCatalog({},ctx.requested,resolved);
   return (Array.isArray(rawHistory)?rawHistory:[]).map(x=>{
     const d=parseDirection(x),open=n(x.time),nativePVT101=mode==="pvtchart101",
-      plan=buildDynamicTradePlan({signal:x,bars:brokerBars,tf,mode,point:spec.point||0}),entry=plan.entry,sl=plan.sl;
+      plan=buildDynamicTradePlan({signal:x,bars:brokerBars,tf,mode,symbol:resolved,point:spec.point||0,profileOverride:ctx.managementProfile||null}),entry=plan.entry,sl=plan.sl;
     const replaySignal={...x,tp1:plan.tp1,tp2:plan.tp2,tp3:plan.tp3,invalidation:plan.sl};
-    const outcome=replayOutcome(replaySignal,brokerBars,tf,mode,spec.point||0,plan);
+    const outcome=replayOutcome(replaySignal,brokerBars,tf,mode,spec.point||0,plan,resolved,ctx.managementProfile||null);
     const moveVal=n(outcome.priceMove),risk=plan.valid?plan.risk:null;
     const riskQuote=risk!=null?-risk:null;
     const priceUnit=spec.currencyProfit||(/XAU|XAG/i.test(resolved)?"USD quote":"SYMBOL QUOTE");
@@ -139,6 +139,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       recordMode:"HISTORICAL_SIM",publishedAtUTC:null,capturedAtUTC:null,
       originalEngineStatus:x.status||null,originalEngineOutcome:n(x.outcome)??x.nativeOutcome??null,engineBuildHash:V8_ENGINE_BUILD,
       planOrigin:plan.origin,nativeTargetDefined:false,managementPlan:plan.management||null,
+      managedPlan:{profileKey:plan.profileKey||null,profileSource:plan.profileSource||null,profileParams:plan.profileParams||null,atr:n(plan.atr),riskATR:n(plan.riskATR),wideRisk:plan.wideRisk===true,stopSource:plan.stopSource||null,targetSources:Array.isArray(plan.targetSources)?plan.targetSources:[],targets:Array.isArray(plan.targets)?plan.targets:[]},
       nativePlan:{entry:n(x.entry),sl:n(x.invalidation),tp1:n(x.tp1),tp2:n(x.tp2),tp3:n(x.tp3)},
       reasons:Array.isArray(x.reasons)?x.reasons.filter(Boolean).map(String):[],
       pipSize:spec.pipSize,pipConvention:spec.pipConvention,point:spec.point,tickSize:spec.tickSize,
