@@ -514,7 +514,7 @@ async function init(){
   document.addEventListener("visibilitychange",function(){if(!document.hidden)refreshLiveZoneEntry()});
   setInterval(function(){
     // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
-    var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on,#gfStudyPage.on");
+    var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on,#gfStudyPage.on,#recommendedAIPage.on");
     if(selectedSymbol&&!v8Active)loadAnalysis();
   },30000);
 }
