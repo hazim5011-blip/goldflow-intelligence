@@ -98,7 +98,7 @@
  function invalidate(){
   state.last=null;state.context=null;state.seq++;
   const m=mode();
-  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.50 • Live Management + Recovery":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
+  put("gfStudyModeTitle",m==="ai"?"GF-AI Live Analyst v1.60 • Adaptive Entry Intelligence":m==="study"?"GF-Market Study Pro • Technical Entry Lifecycle":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose","Loading the NEW mode. Previous signal/entry plan deliberately cleared; NO ENTRY until verified.");
   put("gfStudyState","REFRESHING");if($("gfStudyState"))$("gfStudyState").className="y";
   put("gfStudyReason","Waiting for a new verified response for this symbol / timeframe / study mode.");
@@ -107,7 +107,7 @@
   put("gfEntryHint","Old mode's confirmation is cleared. Never act on a previous selection.");
   put("gfOppositeDirection","NO CURRENT VERIFIED DIRECTION");
   put("gfConfirmTime","—");put("gfStudyFresh","—");
-  for(const id of ["gfEntryRange","gfInvalidate","gfTP1","gfTP2","gfTP3","gfStudyTechnical","gfStudyMacro","gfReasoningHeadline","gfReasoningBuy","gfReasoningBuyWhy","gfReasoningSell","gfReasoningSellWhy","gfReasoningNoTrade","gfReasoningNoTradeWhy","gfReasoningChange","gfLearningSummary","gfTradeIdeaId","gfPlaybookState","gfPlaybookQuality","gfPlaybookHierarchy","gfPlaybookTfRole","gfPlaybookRR","gfPlaybookRisk","gfPlaybookChecklist","gfAIManageBadge","gfAIManageIdea","gfAIManageEntry","gfAIManageAction","gfAIManageRisk","gfAIRecoveryState","gfAIRecoveryNote"])put(id,"—");
+  for(const id of ["gfEntryRange","gfInvalidate","gfTP1","gfTP2","gfTP3","gfStudyTechnical","gfStudyMacro","gfReasoningHeadline","gfReasoningBuy","gfReasoningBuyWhy","gfReasoningSell","gfReasoningSellWhy","gfReasoningNoTrade","gfReasoningNoTradeWhy","gfReasoningChange","gfLearningSummary","gfTradeIdeaId","gfPlaybookState","gfPlaybookQuality","gfPlaybookHierarchy","gfPlaybookTfRole","gfPlaybookRR","gfPlaybookRisk","gfPlaybookChecklist","gfEntryIntelBadge","gfEntryMotion","gfEntryMotionWhy","gfEntryModel","gfEntryZoneMethod","gfEntryValidation","gfEntryValidationWhy","gfAIManageBadge","gfAIManageIdea","gfAIManageEntry","gfAIManageAction","gfAIManageRisk","gfAIRecoveryState","gfAIRecoveryNote"])put(id,"—");
   if(studyChart){studyChart.remove();studyChart=null}
   if($("gfStudyChart"))$("gfStudyChart").textContent="Waiting for broker data for the newly selected study.";
  }
@@ -164,7 +164,7 @@
    studyChart.timeScale().fitContent();
    put("gfStudyChartNote",d.mode==="study"?
     "GF-MARKET STUDY • support/resistance + explicit SBR/RBS break/retest lifecycle. RBS = broken resistance retested as support; SBR = broken support retested as resistance. PENDING/WATCH lines are NOT entry-ready. Closed-candle confirmation only.":
-    d.mode==="ai"?"GF-AI v1.50 • professional top-down structure + live management/recovery lifecycle. Entry, SL and targets remain broker-research levels; no automatic order.":
+    d.mode==="ai"?"GF-AI v1.60 • adaptive Gold motion + setup-specific precision entry + CLOSED retest/rejection validation. Zone touch alone never produces ENTRY READY.":
     "Vantage MT5 • broker clock normalized to UTC. Confirmation uses CLOSED candles only. Never an executed trade.");
   }catch(e){if(studyChart){studyChart.remove();studyChart=null}node.textContent="Broker chart rendering unavailable.";put("gfStudyChartNote","Data visualization unavailable; trade-ready status does not depend on chart rendering.")}
  }
@@ -178,11 +178,11 @@
   const activeLifecycle=technicalMode?renderActiveLifecycle(d):null;
   const aiLifecycle=m==="ai"?renderAILifecycle(d):null;
   put("gfStudyModeTitle",technicalMode?"GF-Market Study Pro • Technical Entry Lifecycle":
-      m==="ai"?"GF-AI Live Analyst v1.50 • Live Management + Recovery":"GF-News Impact Pro • Gold Context Study");
+      m==="ai"?"GF-AI Live Analyst v1.60 • Adaptive Entry Intelligence":"GF-News Impact Pro • Gold Context Study");
   put("gfStudyModePurpose",technicalMode?
     "STRUCTURE-DRIVEN: closed-candle rejection/break-retest; H1/H4 may be neutral but cannot oppose. Entry comes from dynamic pivots, targets from liquidity levels; Gold macro/yields are commentary ONLY, never entry gate.":
-    m==="ai"?(gold?"PROFESSIONAL TRADER AI v1.50: D1/H4 regime → H1/M30 thesis → M15/M5 setup → M1 precision, then HOLD/PROTECT/CUT/RECOVERY management on the same Trade Idea. A++ is quality, NOT 90% certainty; full-margin/martingale are blocked.":
-    "PROFESSIONAL TRADER TECHNICAL AI v1.50: top-down setup plus live management and no-martingale recovery. No fabricated asset fundamental and no trained-ML probability."):
+    m==="ai"?(gold?"ADAPTIVE ENTRY AI v1.60: D1/H4 regime → H1/M30 thesis → M15/M5 setup → M1 precision. Then classify current Gold motion, choose the correct entry model, wait for CLOSED retest/rejection/reclaim, and block blind zone touches or chased entries.":
+    "ADAPTIVE ENTRY TECHNICAL AI v1.60: top-down setup plus motion-aware precision entry and CLOSED retest validation. No blind-touch entry, fabricated asset fundamental or trained-ML probability."):
     "GOLD NEWS CONTEXT: official macro context and closed-candle confirmation; no verified event-release timestamp or consensus surprise is asserted.");
 
   const aiMode=m==="ai",research=d?.macroEvidence,structure=d?.structureLevels,scenario=d?.explanation;
@@ -244,6 +244,20 @@
   put("gfPlaybookRR",idea?.riskGeometry?.rr1!==null&&idea?.riskGeometry?.rr1!==undefined?("TP1 RR "+safe(idea.riskGeometry.rr1)+" • TP2 "+safe(idea.riskGeometry.rr2)+" • TP3 "+safe(idea.riskGeometry.rr3)):"—");
   put("gfPlaybookRisk",idea?("Entry model: "+safe(idea.entryModel)+"\nLocation: "+((idea.locationEvidence||[]).join(" / ")||"NO STRONG OVERLAP")+"\nCountertrend: "+(idea.counterTrend?.isCounterTrend?(idea.counterTrend?.strongException?"YES • reversal exception passed":"YES • NOT YET QUALIFIED"):"NO")+"\n"+safe(idea.professionalRule)):"—");
   put("gfPlaybookChecklist",pb?.tfChecklist?pb.tfChecklist.map(x=>x.tf+" ["+x.role+"] "+x.direction+" • "+x.structure+(x.breakEvent?" • "+x.breakEvent:"")).join("\n"):"—");
+  const ev=aiMode?d?.analysis?.entryValidation:null,mp=aiMode?(d?.analysis?.marketMotion||d?.marketBrain?.selected?.motion):null,ep=aiMode?(p||d?.candidatePlan):null;
+  put("gfEntryIntelBadge",aiMode?(d?.canEnter?"CLOSED ENTRY PROOF PASSED":ev?.state||"WAIT PROOF"):"—");
+  if($("gfEntryIntelBadge"))$("gfEntryIntelBadge").className="tag "+(d?.canEnter?"g":ev?.overextended?"r":"y");
+  put("gfEntryMotion",aiMode?(mp?.state||"UNKNOWN"):"—");
+  put("gfEntryMotionWhy",aiMode&&mp?("Efficiency "+safe(mp.efficiency)+" • overlap "+safe(mp.overlap)+" • net "+safe(mp.netAtr)+" ATR • spike "+(mp.spike?"YES":"NO")):"—");
+  put("gfEntryModel",aiMode?(ep?.entryEnvironment||ep?.entryMethod||"WAIT MODEL"):"—");
+  put("gfEntryZoneMethod",aiMode&&ep?("Zone: "+(ep.entryZoneMethod||ep.entrySource||"market-driven")+"\nConfluence zones: "+safe(ep.zoneConfluence)+" • SL source "+(ep.stopSource||"STRUCTURE")+" • SL distance "+safe(ep.stopDistanceAtr)+" ATR"):"—");
+  put("gfEntryValidation",aiMode?(ev?.state||"WAIT CLOSED RETEST"):"—");
+  put("gfEntryValidationWhy",aiMode&&ev?[
+    "Touched: "+(ev.touched?"YES":"NO"),
+    ev.confirmation?"Closed proof: "+ev.confirmation.type+" • body "+safe(ev.confirmation.bodyAtr)+" ATR • wick "+safe(ev.confirmation.wickAtr)+" ATR":"Closed proof: NOT YET",
+    ev.executionBand?"Execution band: "+safe(ev.executionBand.low)+" — "+safe(ev.executionBand.high):"",
+    "Rule: ZONE ≠ ENTRY • no blind touch • no chase"
+   ].filter(Boolean).join("\n"):"—");
   put("gfStudyState",d?.transportUnavailable?("DATA UNVERIFIED • LAST KNOWN "+String(d?.previousStatus||rawStatus).replaceAll("_"," ")):st.replaceAll("_"," "));
   $("gfStudyState").className=colors[st]||(st.endsWith("READY")?"g":st.endsWith("INVALID")||st==="AI_INVALIDATED"?"r":"y");
   put("gfStudyReason",d?.transportUnavailable?("BRIDGE UNAVAILABLE • Last known study is reference only and cannot create a new entry. "+(d?.transportReason||"")):(d?.reason||"No verified study state."));
@@ -257,9 +271,9 @@
     decision="CUT SETUP • ORIGINAL THESIS INVALID";
     hint=aiLifecycle.assessment.reason+" Recovery risk remains NORMAL only; no martingale.";
   }else if(d?.canEnter && ["AI_BUY_READY","AI_SELL_READY","BUY_ENTRY_READY","SELL_ENTRY_READY"].includes(st)){
-    decision=p?.side+" • ENTRY READY"+(aiMode&&d.researchScope==="TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE"?" • TECHNICAL ONLY":"");hint="Verified CLOSED candle + FRESH "+d.entryQuoteSide+" inside mode-specific entry area. "+(aiMode&&d.researchScope==="TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE"?"Fundamental for this pair unavailable; decision is based ONLY on valid broker technical evidence. ":"")+"Study ONLY; confirm your own trade.";
+    decision=p?.side+" • ENTRY READY"+(aiMode&&d.researchScope==="TECHNICAL_ONLY_FUNDAMENTAL_UNAVAILABLE"?" • TECHNICAL ONLY":"");hint=aiMode?"ENTRY PROOF PASSED: CLOSED retest/rejection/reclaim is verified and fresh "+d.entryQuoteSide+" remains inside the anti-chase execution band. Zone touch alone did NOT trigger this entry. Research only; confirm your own risk.":"Verified CLOSED candle + FRESH "+d.entryQuoteSide+" inside mode-specific entry area. Study ONLY; confirm your own trade.";
   }else if(["AI_BUY_CONFIRMED","AI_SELL_CONFIRMED","BUY_CONFIRMED","SELL_CONFIRMED"].includes(st)){
-    decision=p?.side+" CONFIRMED • WAIT RETEST";hint="The direction has confirmed but the quote is OUTSIDE the entry range. Do not chase.";
+    decision=p?.side+" CONFIRMED • WAIT ENTRY PROOF";hint=aiMode?("Direction/thesis is confirmed, but entry is blocked until the adaptive entry engine passes: "+(d?.analysis?.entryValidation?.state||"CLOSED_RETEST_REJECTION_REQUIRED")+". Do not enter on a blind zone touch and do not chase."):"The direction has confirmed but the quote is OUTSIDE the entry range. Do not chase.";
   }else if(["AI_INVALIDATED","BUY_INVALID","SELL_INVALID"].includes(st)){
     decision=p?.side+" INVALID • NO ENTRY";hint=d?.invalidationBasis==="INTRABAR_QUOTE"?"Live price crossed study invalidation; close validation is pending but entry blocked.":"The original study invalidation was breached by broker candles. Previous setup is cancelled.";
   }else if(st==="MISSED_ENTRY"){decision="MISSED ENTRY • NO CHASE";hint="Price already moved beyond the safe retest band. Wait for a NEW closed-candle setup."}
@@ -326,6 +340,9 @@
     aiMode&&d?.reasoning?"REASONING: PRIMARY "+d.reasoning.primaryScenario+" • ALT "+d.reasoning.alternativeScenario+" • "+(d.reasoning.decisionSummary?.whyPrimary||""):"",
     aiMode&&d?.professionalPlaybook?.tradeIdea?"TRADE IDEA: "+d.professionalPlaybook.tradeIdea.id+" • "+d.professionalPlaybook.tradeIdea.direction+" • "+d.professionalPlaybook.tradeIdea.state+" • grade "+d.professionalPlaybook.tradeIdea.quality?.grade+" • anchor "+d.professionalPlaybook.tradeIdea.anchorTf:"",
     aiMode&&d?.professionalPlaybook?"PLAYBOOK: D1/H4 regime → H1/M30 thesis → M15/M5 setup → M1 precision • ONE_PARENT_IDEA_ACROSS_TFS":"",
+    aiMode&&d?.analysis?.marketMotion?"GOLD MOTION: "+d.analysis.marketMotion.state+" • efficiency "+safe(d.analysis.marketMotion.efficiency)+" • overlap "+safe(d.analysis.marketMotion.overlap)+" • net "+safe(d.analysis.marketMotion.netAtr)+" ATR":"",
+    aiMode&&(p||d?.candidatePlan)?"ENTRY MODEL: "+((p||d.candidatePlan).entryEnvironment||(p||d.candidatePlan).entryMethod)+" • ZONE METHOD "+((p||d.candidatePlan).entryZoneMethod||"N/A")+" • NO BLIND TOUCH":"",
+    aiMode&&d?.analysis?.entryValidation?"ENTRY PROOF: "+d.analysis.entryValidation.state+(d.analysis.entryValidation.confirmation?" • "+d.analysis.entryValidation.confirmation.type:"")+" • CLOSED RETEST REQUIRED":"",
     aiMode&&aiLifecycle?.setup?"LIVE LIFECYCLE: "+aiLifecycle.setup.id+" • "+aiLifecycle.assessment.state+" • "+(aiLifecycle.assessment.action||"WAIT")+" • "+(aiLifecycle.assessment.rNow===null||aiLifecycle.assessment.rNow===undefined?"R N/A":"R "+Number(aiLifecycle.assessment.rNow).toFixed(2)):"",
     aiMode&&aiLifecycle?.recovery?"RECOVERY: "+aiLifecycle.recovery.state+" • "+aiLifecycle.recovery.reason:"",
     aiMode&&d?.experienceLearning?.ok?"EXPERIENCE: BUY "+(d.experienceLearning.buyAdjustment>=0?"+":"")+safe(d.experienceLearning.buyAdjustment)+" • SELL "+(d.experienceLearning.sellAdjustment>=0?"+":"")+safe(d.experienceLearning.sellAdjustment)+" • "+safe(d.experienceLearning.overall?.decidable)+" decidable samples (NOT win probability)":"",
