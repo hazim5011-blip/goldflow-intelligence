@@ -2,9 +2,9 @@ import {createHash} from "node:crypto";
 
 export const V8_ENGINE_BUILD="v8.1.3-normalized-trade-plan-net-performance";
 export const TF_SECONDS={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400,W1:604800,MN1:2592000};
-const VALID_OUTCOMES=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","BE_ZERO","SL"]);
-const POSITIVE=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE"]);
-const NEGATIVE=new Set(["SL"]);
+const VALID_OUTCOMES=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","BE_ZERO","SL","TIME_WIN","TIME_LOSS","GAP_LOSS"]);
+const POSITIVE=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","TIME_WIN"]);
+const NEGATIVE=new Set(["SL","TIME_LOSS","GAP_LOSS"]);
 const n=v=>v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))?Number(v):null;
 const iso=sec=>n(sec)!=null?new Date(Number(sec)*1000).toISOString():null;
 const snap=(x,digits=10)=>n(x)==null?null:Number(Number(x).toFixed(Math.min(12,Math.max(2,digits))));
@@ -100,14 +100,33 @@ function grossEstimate(m,spec){
   // Only use broker catalog contract size for linear contracts quoted and settled in USD.
   return snap(m*spec.contractSize*spec.lotExample);
 }
+
+function pvtChart101Plan(x){
+  const d=parseDirection(x),entry=n(x?.entry),sl=n(x?.invalidation),tp1=n(x?.tp1),tp2=n(x?.tp2),tp3=n(x?.tp3);
+  const risk=entry!=null&&sl!=null&&d?Math.abs(entry-sl):null;
+  return {valid:!!(d&&entry!=null&&sl!=null&&risk>0),direction:d,entry,sl,tp1,tp2,tp3,risk,
+    origin:"PVT_CHART_CONFLUENCE_V1_01_NATIVE",
+    nativeTarget:true,
+    management:{beTriggerR:.50,beLockR:.05,trailTriggerR:1.0,trailDistanceR:.50,trailStepR:.10,maxHoldingBars:96,policy:"MQ5_SOURCE_OHLC_STOP_FIRST"}};
+}
+function pvtChart101Outcome(x){
+  let out=String(x?.nativeOutcome||x?.status||"").toUpperCase();
+  if(out==="TIME_FLAT")out="BE_ZERO";
+  const d=parseDirection(x),entry=n(x?.entry),exit=n(x?.exitPrice),moveVal=d&&entry!=null&&exit!=null?move(d,entry,exit):null;
+  const terminal=["TP3","TRAILING","BE_POSITIVE","SL","TIME_WIN","TIME_LOSS","GAP_LOSS","BE_ZERO"].includes(out);
+  return {outcome:out||"PENDING",exitPrice:exit,exitTimeUTC:n(x?.exitTime)!=null?iso(n(x.exitTime)):null,
+    exitRule:"PVT101_NATIVE_"+(out||"PENDING"),priceMove:moveVal,
+    dataQuality:["PVT101_MQ5_SOURCE_OUTCOME_MODEL"],planOrigin:"PVT_CHART_CONFLUENCE_V1_01_NATIVE",
+    management:pvtChart101Plan(x).management,terminal};
+}
 export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
   const tf=ctx.tf||"M5",mode=String(ctx.indicator||"105").toLowerCase(),resolved=ctx.resolved||ctx.requested||"";
   const offset=Number.isInteger(ctx.brokerServerUTCOffsetSeconds)?ctx.brokerServerUTCOffsetSeconds:0;
   const spec=ctx.spec||metadataFromCatalog({},ctx.requested,resolved);
   return (Array.isArray(rawHistory)?rawHistory:[]).map(x=>{
-    const d=parseDirection(x),open=n(x.time),plan=normalizedTradePlan(x,mode),entry=plan.entry,sl=plan.sl;
+    const d=parseDirection(x),open=n(x.time),nativePVT101=mode==="pvtchart101",plan=nativePVT101?pvtChart101Plan(x):normalizedTradePlan(x,mode),entry=plan.entry,sl=plan.sl;
     const replaySignal={...x,tp1:plan.tp1,tp2:plan.tp2,tp3:plan.tp3,invalidation:plan.sl};
-    const outcome=replayOutcome(replaySignal,brokerBars,tf,mode);
+    const outcome=nativePVT101?pvtChart101Outcome(x):replayOutcome(replaySignal,brokerBars,tf,mode);
     const moveVal=n(outcome.priceMove),risk=plan.valid?plan.risk:null;
     const riskQuote=risk!=null?-risk:null;
     const priceUnit=spec.currencyProfit||(/XAU|XAG/i.test(resolved)?"USD quote":"SYMBOL QUOTE");
@@ -126,7 +145,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       source:"VANTAGE_MT5_CANDLES",brokerServer:ctx.brokerServer||null,
       sourceBrokerBarEpoch:open,brokerServerUTCOffsetSeconds:offset,
       recordMode:"HISTORICAL_SIM",publishedAtUTC:null,capturedAtUTC:null,
-      originalEngineStatus:x.status||null,originalEngineOutcome:n(x.outcome),engineBuildHash:V8_ENGINE_BUILD,
+      originalEngineStatus:x.status||null,originalEngineOutcome:n(x.outcome)??x.nativeOutcome??null,engineBuildHash:V8_ENGINE_BUILD,
       planOrigin:plan.origin,nativeTargetDefined:plan.nativeTarget===true,managementPlan:plan.management||null,
       nativePlan:{entry:n(x.entry),sl:n(x.invalidation),tp1:n(x.tp1),tp2:n(x.tp2),tp3:n(x.tp3)},
       reasons:Array.isArray(x.reasons)?x.reasons.filter(Boolean).map(String):[],
@@ -141,7 +160,7 @@ export function buildHistory(rawHistory=[],brokerBars=[],ctx={}){
       riskPips:risk!=null&&spec.pipSize>0?-snap(risk/spec.pipSize,3):null,
       grossPLUSD:gross,grossEstimateNote:gross!=null?"MODEL_GROSS_EXCLUDES_ALL_COSTS":spec.lotExampleSupported?"USD_CONVERSION_OR_CONTRACT_NOT_VERIFIED":"0.01_LOT_UNSUPPORTED_OR_METADATA_MISSING",
       netPLUSD:null,rMultiple,completed,positive:POSITIVE.has(outcome.outcome),negative:NEGATIVE.has(outcome.outcome),
-      dataQuality:[...(outcome.dataQuality||[]),...(plan.nativeTarget===false&&plan.valid?["NORMALIZED_TARGETS_1R_2R_3R_NOT_NATIVE_INDICATOR_TARGETS"]:[]),...(spec.metadataStatus==="BROKER_METADATA_INCOMPLETE"?["MISSING_CONTRACT_METADATA"]:[])],
+      dataQuality:[...(outcome.dataQuality||[]),...(!nativePVT101&&plan.nativeTarget===false&&plan.valid?["NORMALIZED_TARGETS_1R_2R_3R_NOT_NATIVE_INDICATOR_TARGETS"]:[]),...(spec.metadataStatus==="BROKER_METADATA_INCOMPLETE"?["MISSING_CONTRACT_METADATA"]:[])],
       evidenceStatus:"BACKTEST_RECONSTRUCTED_NOT_FORWARD_PROOF",sourceUrl:null,newsContextId:null,
       disclaimer:"Historical reconstruction from currently available broker candles, not a contemporaneously published signal, executed trade, or profit guarantee."};
   });
@@ -251,7 +270,7 @@ export function explainRecord(r){
   const result=r.outcome==="VALID_ONLY"?"Confirmation only: no TP/SL outcome defined.":r.outcome==="AMBIGUOUS"?"Both target and stop were touched in one candle; sequence cannot be verified.":r.outcome==="PENDING"?"Exit not resolved in the available closed candle window.":r.outcome+" at "+r.exitPrice;
   return {kind:"RULE_BASED_EXPLANATION_NOT_GENERATIVE_AI",headline:side+" "+r.symbolResolved+" "+r.tf,
     sections:[{label:"Structure and trigger",text:"The "+side+" research setup was reconstructed after candle close using: "+cause+"."},
-    {label:"Trade plan",text:"Entry "+r.entry+", SL "+r.originalSL+", TP1 "+r.tp1+", TP2 "+r.tp2+", TP3 "+r.tp3+". Risk distance "+risk+" quote-price units. Plan source: "+(r.planOrigin||"N/A")+". BE/Trailing management: "+(r.managementPlan?"BE at +0.50R; lock +0.05R; trail from +0.75R by 0.35R.":"N/A")},
+    {label:"Trade plan",text:"Entry "+r.entry+", SL "+r.originalSL+", TP1 "+r.tp1+", TP2 "+r.tp2+", TP3 "+r.tp3+". Risk distance "+risk+" quote-price units. Plan source: "+(r.planOrigin||"N/A")+". BE/Trailing management: "+(r.managementPlan?("BE at +"+r.managementPlan.beTriggerR+"R; lock +"+r.managementPlan.beLockR+"R; trail from +"+r.managementPlan.trailTriggerR+"R by "+r.managementPlan.trailDistanceR+"R"+(r.managementPlan.trailStepR!=null?"; step "+r.managementPlan.trailStepR+"R":"")+"."):"N/A")},
     {label:"Replay result",text:result+" The result is historical simulation, not an executed trade."},
     {label:"Risk",text:"OHLC history cannot prove intra-candle order, fill quality or contemporaneous signal publication. Spread, swaps, slippage and fees are not included."}],
     newsContext:"No contemporaneous macro release is linked to this reconstructed signal. Latest Macro Regime is not a valid retrospective explanation unless it was already published at the signal time."};

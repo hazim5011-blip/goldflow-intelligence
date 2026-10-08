@@ -21,8 +21,20 @@ const KEY=(process.env.BROKER_BRIDGE_KEY||"").trim();
 export function bridgeConfigured(){ return !!BASE; }
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function cleanBridgeError(error,status=0,raw=""){
+  const name=String(error?.name||""),code=String(error?.code||""),msg=String(error?.message||error||"");
+  if(name==="AbortError"||code==="20"||/aborted|aborterror/i.test(msg)){
+    const e=new Error("BRIDGE_TIMEOUT • Vantage bridge/tunnel did not answer before the safety timeout.");
+    e.code="BRIDGE_TIMEOUT";e.status=status||504;return e;
+  }
+  if([520,521,522,523,524].includes(Number(status))||/cloudflare|origin web server|web server returned an invalid|connection timed out/i.test(raw+" "+msg)){
+    const e=new Error("BRIDGE_TUNNEL_ORIGIN_UNAVAILABLE • Cloudflare tunnel cannot reach the local MT5 bridge.");
+    e.code="BRIDGE_TUNNEL_ORIGIN_UNAVAILABLE";e.status=Number(status)||503;return e;
+  }
+  return error instanceof Error?error:new Error(msg||"Bridge request failed");
+}
 
-export async function brokerGet(path,params={},timeoutMs=15000,attempts=3){
+export async function brokerGet(path,params={},timeoutMs=15000,attempts=2){
   if(!BASE) throw new Error("BROKER_BRIDGE_URL_NOT_CONFIGURED");
   const u=new URL(BASE+path);
   for(const [k,v] of Object.entries(params)){
@@ -40,18 +52,18 @@ export async function brokerGet(path,params={},timeoutMs=15000,attempts=3){
       let data;
       try{data=JSON.parse(txt)}catch{data={raw:txt}}
       if(!r.ok){
-        const detail=data?.detail||data?.error||txt||("HTTP "+r.status);
-        const e=new Error(String(detail));
-        e.status=r.status;
-        throw e;
+        const detail=data?.detail||data?.error||("HTTP "+r.status);
+        const base=new Error(String(detail));base.status=r.status;
+        throw cleanBridgeError(base,r.status,txt);
       }
       return data;
     }catch(e){
-      lastErr=e;
-      const status=Number(e?.status||0);
+      const clean=cleanBridgeError(e,Number(e?.status||0),"");
+      lastErr=clean;
+      const status=Number(clean?.status||0);
       const retryable=!status || status===408 || status===425 || status===429 || status>=500;
-      if(!retryable || attempt>=attempts) throw e;
-      await sleep(attempt===1?350:attempt===2?900:1600);
+      if(!retryable || attempt>=attempts) throw clean;
+      await sleep(attempt===1?400:1000);
     }finally{
       clearTimeout(t);
     }
@@ -65,9 +77,11 @@ export function apiError(res,error,status=200,extra={}){
   // Surface only machine-readable error codes (never URL, token or bridge key).
   const causes=Array.isArray(error?.cause?.errors)?error.cause.errors:[error?.cause];
   const errorCodes=[...new Set(causes.map(x=>String(x?.code||"").trim()).filter(Boolean))];
-  const errorCode=errorCodes[0]||String(error?.code||"")||null;
+  const errorCode=String(error?.code||"")||errorCodes[0]||null;
+  const userError=errorCode==="BRIDGE_TIMEOUT"?"BRIDGE TIMEOUT • Local MT5 bridge / Cloudflare tunnel is not responding. No new signal will be issued until broker data returns.":
+    errorCode==="BRIDGE_TUNNEL_ORIGIN_UNAVAILABLE"?"BRIDGE TUNNEL OFFLINE • Cloudflare cannot reach the local MT5 bridge. Check the bridge PC and named tunnel. No new signal is issued.":msg;
   if(errorCode) console.error("[GoldFlow broker transport]",{error:msg,code:errorCode,subCodes:errorCodes});
-  return res.status(status).json({ok:false,bridgeConfigured:bridgeConfigured(),error:msg,errorCode,errorCodes,...extra});
+  return res.status(status).json({ok:false,bridgeConfigured:bridgeConfigured(),error:userError,errorCode,errorCodes,...extra});
 }
 
 export function classifySymbol(name="",path="",description=""){

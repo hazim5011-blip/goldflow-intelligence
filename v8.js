@@ -7,7 +7,8 @@
     {id:"105",label:"MTF Research v1.05",historical:true},
     {id:"103",label:"MTF Research v1.03",historical:true},
     {id:"pvt",label:"PVT v1.02",historical:true},
-    {id:"pattern132",label:"Pattern Zone Tutor v1.32",historical:true},
+    {id:"pvtchart101",label:"PVT Chart Confluence XAU v1.01 • MQ5 Source",historical:true},
+    {id:"pattern132",label:"Pattern Zone Tutor v1.32 • MQ5 Verified",historical:true},
     {id:"snd107",label:"SND / SNR / SBR / RBS v1.07",historical:true},
     {id:"owl101",label:"OWL Style Research v1.01",historical:true},
     {id:"fund104",label:"Fund Structure A v1.04 — Web Study",historical:true,validationOnly:true},
@@ -142,7 +143,7 @@
     if($("v8IndicatorComparison"))$("v8IndicatorComparison").innerHTML='<p class="sub">Mengira win rate setiap indicator daripada broker candle window yang sama…</p>';
     if($("v8DailySummary"))$("v8DailySummary").innerHTML='<p class="sub">Mengira jumlah TP/SL, R, pip dan point setiap hari…</p>';
     var extra=analyticsQuery(filters?.direction,filters?.from,filters?.to);
-    var results=await mapLimit(HISTORY_IDS,2,async function(id){
+    var results=await mapLimit(HISTORY_IDS,1,async function(id){
       try{return {id,data:await json("/api/performance?"+uriForIndicator(id,extra))}}
       catch(e){return {id,error:String(e.message||e)}}
     });
@@ -242,8 +243,9 @@
       '<span><b>'+signed(r.signedPoints,0)+'</b><small>'+t("points")+'</small></span>'+
       '</summary><div class="v8RecordDetails"><div class="v8Plan">'+
       stat(t("entry"),number(r.entry,5))+stat("SL",number(r.originalSL,5))+stat("TP1",number(r.tp1,5))+stat("TP2",number(r.tp2,5))+
-      stat("TP3",number(r.tp3,5))+stat("BE RULE",r.managementPlan?"Trigger +0.50R":"N/A",r.managementPlan?"Lock +0.05R":"")+
-      stat("TRAIL RULE",r.managementPlan?"Start +0.75R":"N/A",r.managementPlan?"Distance 0.35R":"")+stat("PLAN SOURCE",r.nativeTargetDefined?"NATIVE TP + NORMALIZED MGMT":"NORMALIZED 1R/2R/3R",r.planOrigin||"")+
+      stat("TP3",number(r.tp3,5))+stat("BE RULE",r.managementPlan&&finite(r.managementPlan.beTriggerR)?"Trigger +"+number(r.managementPlan.beTriggerR,2)+"R":"N/A",r.managementPlan&&finite(r.managementPlan.beLockR)?"Lock +"+number(r.managementPlan.beLockR,2)+"R":"")+
+      stat("TRAIL RULE",r.managementPlan&&finite(r.managementPlan.trailTriggerR)?"Start +"+number(r.managementPlan.trailTriggerR,2)+"R":"N/A",r.managementPlan&&finite(r.managementPlan.trailDistanceR)?"Distance "+number(r.managementPlan.trailDistanceR,2)+"R"+(finite(r.managementPlan.trailStepR)?" • Step "+number(r.managementPlan.trailStepR,2)+"R":""):"")+
+      stat("PLAN SOURCE",String(r.planOrigin||"").indexOf("PVT_CHART_CONFLUENCE")===0?"NATIVE PVT v1.01 PLAN":r.nativeTargetDefined?"NATIVE TP + HISTORY MGMT":"NORMALIZED 1R/2R/3R",r.planOrigin||"")+
       stat(t("exit"),number(r.exitPrice,5))+stat(t("riskToSL"),signed(r.riskPoints,0)+" points")+
       stat(t("grossPL"),pl,"0.01 lot • excludes costs")+stat(t("totalR"),signed(r.rMultiple,2))+
       '</div><p><b>'+t("technicalReasons")+':</b> '+safe((r.reasons||[]).join(" • ")||"N/A")+'</p>'+

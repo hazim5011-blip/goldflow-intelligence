@@ -34,7 +34,7 @@ export default async function handler(req,res){
   if(!bridgeConfigured()) return res.status(200).json({ok:true,configured:false,online:false,status:"BRIDGE OFF"});
   const diagnostic=String(req.query?.dns||"")==="1";
   try{
-    const h=await brokerGet("/health",{},15000);
+    const h=await brokerGet("/health",{},8000,2);
     return res.status(200).json({ok:true,configured:true,online:!!h?.connected,status:h?.connected?"MT5 LIVE":"BRIDGE DATA",bridgeRoute:bridgeEndpointMode(),...h,...(diagnostic?{dns:await safeDnsDiagnostic()}:{})});
   }catch(e){
     const extra={configured:true,online:false,status:"BRIDGE ERROR",bridgeRoute:bridgeEndpointMode()};

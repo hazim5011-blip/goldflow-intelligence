@@ -9,14 +9,26 @@ function px(v){return fmt(v,digits())}
 function clsDir(d){return Number(d)>0?"g":Number(d)<0?"r":"y"}
 function stateText(d){return Number(d)>0?"BULLISH":Number(d)<0?"BEARISH":"RANGE"}
 function chip(id,type,text){var e=$(id);e.className="chip "+type;e.textContent=text}
-async function getJson(url){var r=await fetch(url,{cache:"no-store"});var j=await r.json();if(!r.ok)throw new Error(j.error||("HTTP "+r.status));return j}
+function bridgeErrorText(v){
+  var s=String(v&&v.error||v&&v.message||v||"Bridge request failed");
+  if(/BRIDGE_TIMEOUT|operation was aborted|aborterror/i.test(s))return "BRIDGE TIMEOUT • Local MT5 bridge / Cloudflare tunnel tidak menjawab. Tiada signal baru dikeluarkan sehingga data broker kembali.";
+  if(/BRIDGE_TUNNEL_ORIGIN_UNAVAILABLE|origin web server|cloudflare/i.test(s))return "BRIDGE TUNNEL OFFLINE • Cloudflare tidak dapat mencapai local MT5 bridge. Semak bridge PC + named tunnel; tiada signal baru dikeluarkan.";
+  return s;
+}
+async function getJson(url){
+  var r=await fetch(url,{cache:"no-store"}),txt=await r.text(),j=null;
+  try{j=JSON.parse(txt)}catch(e){throw new Error(bridgeErrorText(txt||("HTTP "+r.status)))}
+  if(!r.ok)throw new Error(bridgeErrorText(j.error||("HTTP "+r.status)));
+  return j;
+}
 function rootSymbol(s){return String(s||"").replace(/[.#].*$/,"")}
 function indicatorName(v){
   return ({
     "105":"MTF 1.05",
     "103":"MTF 1.03",
     "pvt":"PVT 1.02",
-    "pattern132":"Pattern Tutor 1.32",
+    "pvtchart101":"PVT CHART CONFLUENCE 1.01",
+    "pattern132":"PATTERN TUTOR 1.32 • MQ5 VERIFIED",
     "snd107":"SND/SNR 1.07",
     "owl101":"OWL 1.01",
     "fund104":"Fund Structure A 1.04 • WEB STUDY",
@@ -111,8 +123,13 @@ async function checkBridge(){
       $("connectionNotice").innerHTML="<b>Vantage MT5 LIVE.</b> "+(h.server||"")+" • Bridge "+(h.version||"")+" • "+(h.terminal||"");
       return true;
     }
-    lastLiveTick=null;if(lastAnalysis?.ready)renderZones(lastAnalysis.indicator?.activeZones||{},null);window.GFStudy?.transportLost?.(h.error||"Bridge configured but offline.");chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=h.error||"Bridge configured but offline.";return false;
-  }catch(e){lastLiveTick=null;if(lastAnalysis?.ready)renderZones(lastAnalysis.indicator?.activeZones||{},null);window.GFStudy?.transportLost?.(e.message||"Bridge request failed");chip("bridgeChip","bad","BRIDGE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;return false}
+    var msg=bridgeErrorText(h);lastLiveTick=null;if(lastAnalysis?.ready)renderZones(lastAnalysis.indicator?.activeZones||{},null);window.GFStudy?.transportLost?.(msg);
+    chip("bridgeChip","bad","BRIDGE ERROR");chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","NO BROKER DATA");
+    $("connectionNotice").className="notice bad";$("connectionNotice").textContent=msg;return false;
+  }catch(e){
+    var msg=bridgeErrorText(e);lastLiveTick=null;if(lastAnalysis?.ready)renderZones(lastAnalysis.indicator?.activeZones||{},null);window.GFStudy?.transportLost?.(msg);
+    chip("bridgeChip","bad","BRIDGE ERROR");chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","NO BROKER DATA");
+    $("connectionNotice").className="notice bad";$("connectionNotice").textContent=msg;return false}
 }
 async function loadSymbols(force){
   try{
@@ -185,6 +202,14 @@ function renderNewsWhy(d){
   b.className="tag "+(decision.includes("READY")?(dir==="BUY"?"g":"r"):decision.includes("CONFLICT")||decision.includes("WAIT")?"y":"");
 }
 function renderGFDashboard(d,requestedSymbol,requestedTF,requestedIndicator){
+  if(!d||d.ok===false){
+    var msg=bridgeErrorText(d||"Study unavailable");
+    lastAnalysis=null;lastLiveTick=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null);renderStats({});
+    chip("bridgeChip","bad","BRIDGE ERROR");chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","NO VERIFIED DATA");
+    $("connectionNotice").className="notice bad";$("connectionNotice").textContent=msg;
+    if($("statsNote"))$("statsNote").textContent="GF LIVE STUDY • Broker transport unavailable; no stale/legacy signal is substituted.";
+    clearChart();return;
+  }
   var dir=gfDir(d),p=d&&d.confirmation,zones=gfZones(d),price=finite(d&&d.bid)?Number(d.bid):finite(d&&d.ask)?Number(d.ask):null;
   var quoteFresh=finite(d&&d.bid)&&finite(d&&d.ask)&&finite(d&&d.quoteAgeSeconds)&&Number(d.quoteAgeSeconds)>=-20&&Number(d.quoteAgeSeconds)<=35;
   lastLiveTick=quoteFresh?{bid:Number(d.bid),ask:Number(d.ask),seenAtMs:Date.now()}:null;
@@ -236,7 +261,8 @@ async function loadGFAnalysis(){
   }catch(e){
     lastAnalysis=null;lastLiveTick=null;focusedZone=null;resetDashboard();renderZones({buy:[],sell:[]},null);renderStats({});
     if($("statsNote"))$("statsNote").textContent="GF LIVE STUDY • Data unavailable; no legacy result is substituted.";
-    chip("engineChip","bad","GF STUDY ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;clearChart();
+    var msg=bridgeErrorText(e);chip("bridgeChip","bad","BRIDGE ERROR");chip("engineChip","warn","GF STUDY WAIT");chip("marketChip","warn","NO BROKER DATA");
+    $("connectionNotice").className="notice bad";$("connectionNotice").textContent=msg;clearChart();
   }
 }
 async function loadAnalysis(){
@@ -255,8 +281,9 @@ async function loadAnalysis(){
     if(requestedSymbol!==selectedSymbol||requestedTF!==selectedTF||requestedIndicator!==selectedIndicator){setTimeout(loadAnalysis,0);return}
     lastAnalysis=r;
     if(!r.ok||!r.ready){
-      chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","WAIT");
-      lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();$("connectionNotice").className="notice bad";$("connectionNotice").textContent=r.error||"Indicator engine not ready.";clearChart();return;
+      var msg=bridgeErrorText(r.error||"Indicator engine not ready.");
+      chip("bridgeChip",r.bridgeConfigured?"bad":"warn",r.bridgeConfigured?"BRIDGE ERROR":"BRIDGE OFF");chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","NO VERIFIED DATA");
+      lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();$("connectionNotice").className="notice bad";$("connectionNotice").textContent=msg;clearChart();return;
     }
     var ind=r.indicator||{},sig=ind.latestSignal||{},st=ind.stats||{},pd=ind.premiumDiscount||null;
     var engName=indicatorName(selectedIndicator);
@@ -279,8 +306,10 @@ async function loadAnalysis(){
     if($("statsNote")){
       $("statsNote").textContent=selectedIndicator==="fund104"
         ?"FUND 1.04 WEB STUDY • VALIDATION ONLY • Candidates "+(ind.studyDiagnostics?.patternCandidates??0)+" • Confirmed "+(ind.studyDiagnostics?.confirmedAtClose??0)+" • Invalidated "+(ind.studyDiagnostics?.invalidatedAfterClose??0)+" • Native buffers/macro parity not verified"
+        :selectedIndicator==="pvtchart101"
+          ?"MQ5 SOURCE PARITY • PVT Chart v1.01 • Next-bar continuation • Native TP1/TP2/TP3 + BE + trail + time-exit history"
         :(selectedIndicator==="pattern132"||selectedIndicator==="snd107")
-          ?"VALIDATION ONLY • TP/SL outcome not defined by indicator source"
+          ?"VALIDATION ONLY • Pattern v1.32 source verified; native MQ5 does not define TP/SL trade outcome"
           :"WIN = TP + TRAIL + BE • LOSE = SL only";
     }
     lastLiveTick=null;renderZones(ind.activeZones||{},null);renderStats(st);renderHistory(ind.history||[]);setTimeout(refreshLiveZoneEntry,0);
@@ -288,7 +317,9 @@ async function loadAnalysis(){
     $("chartTitle").textContent=(r.symbol||selectedSymbol)+" • VANTAGE MT5";$("chartTag").textContent=r.triggerTF;
     if($("chartPage").classList.contains("on"))drawChart();
   }catch(e){
-    lastAnalysis=null;lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();chip("engineChip","bad","ENGINE ERROR");$("connectionNotice").className="notice bad";$("connectionNotice").textContent=e.message;
+    lastAnalysis=null;lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();var msg=bridgeErrorText(e);
+    chip("bridgeChip","bad","BRIDGE ERROR");chip("engineChip","warn","ENGINE WAIT");chip("marketChip","warn","NO BROKER DATA");
+    $("connectionNotice").className="notice bad";$("connectionNotice").textContent=msg;
   }finally{loading=false}
 }
 
