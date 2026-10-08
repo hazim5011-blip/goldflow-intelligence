@@ -67,7 +67,7 @@ async function archiveAndSettleGF(output,mode,bridge,tf,offset,nowSec){
   const p=pair.published,close=Math.floor(Date.parse(p.signalCandleCloseUTC)/1000);
   if(!Number.isFinite(close))continue;
   const sig={time:close-(TF_SECONDS[tf]||300),closeTime:close,direction:p.direction,entry:p.entry,originalSL:p.originalSL,
-   invalidation:p.originalSL,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3};
+   invalidation:p.originalSL,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3,lockedTradePlan:true};
   const out=replayOutcome(sig,replayBars,tf,indicator);
   if(!["TP1","TP2","TP3","TRAILING","BE_POSITIVE","BE_ZERO","SL"].includes(out.outcome))continue;
   try{
