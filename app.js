@@ -46,7 +46,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
   if(b.dataset.page==="gfStudyPage"&&/^gf-/.test(selectedIndicator))setTimeout(function(){window.GFStudy?.load()},50);
-  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(false)},50);
+  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(false);loadRecommendedAIInternet(false)},50);
 }});
 
 $("tfSelect").value=selectedTF;
@@ -60,6 +60,8 @@ $("symbolSelect").onchange=function(){selectSymbol(this.value)};
 if($("macroRefresh"))$("macroRefresh").onclick=function(){loadMacro(true)};
 if($("raiRefresh"))$("raiRefresh").onclick=function(){loadRecommendedAI(true)};
 if($("raiRunNow"))$("raiRunNow").onclick=function(){runRecommendedAINow()};
+if($("raiInternetRefresh"))$("raiInternetRefresh").onclick=function(){loadRecommendedAIInternet(true)};
+if($("raiInternetNow"))$("raiInternetNow").onclick=function(){runRecommendedAIInternetNow()};
 if($("chartLabelMode")){
   if(!["nearest","all","hide"].includes(chartLabelMode))chartLabelMode="nearest";
   $("chartLabelMode").value=chartLabelMode;
@@ -749,6 +751,58 @@ async function runRecommendedAINow(){
       '<br><b>Decision:</b> '+raiEsc(dec.action||"WAIT")+" • "+raiEsc(dec.reason||"");
   }catch(e){
     $("raiLiveBadge").className="tag r";$("raiLiveBadge").textContent="ERROR";$("raiLiveResult").textContent=String(e.message||e);
+  }
+}
+
+
+
+function raiSafeUrl(v){try{var u=new URL(String(v||""));return /^https?:$/.test(u.protocol)?u.href:""}catch(e){return ""}}
+function raiInternetSourceCard(x){
+  var url=raiSafeUrl(x&&x.url),title=raiEsc(x&&x.title||"Untitled source"),src=raiEsc(x&&x.sourceId||x&&x.category||"WEB"),sum=raiEsc(x&&x.summary||"");
+  return '<article class="raiInternetItem"><div><small>'+src+'</small><b>'+title+'</b></div>'+(sum?'<p>'+sum+'</p>':'')+(url?'<a href="'+raiEsc(url)+'" target="_blank" rel="noopener noreferrer">Open source</a>':'')+'</article>';
+}
+function raiHypothesisCard(h){
+  var links=(h.sources||[]).map(function(v){var u=raiSafeUrl(v);return u?'<a href="'+raiEsc(u)+'" target="_blank" rel="noopener noreferrer">source</a>':""}).filter(Boolean).join(" • ");
+  var patch=h.patch&&typeof h.patch==="object"?Object.entries(h.patch).map(function(kv){return raiEsc(kv[0])+"="+raiEsc(kv[1])}).join(" • "):"—";
+  return '<article class="raiInternetItem hypothesis"><div><small>'+raiEsc(h.indicator||"*")+' • confidence '+raiNum(Number(h.confidence||0)*100,0)+'%</small><b>'+raiEsc(h.title||"Research hypothesis")+'</b></div><p>'+raiEsc(h.hypothesis||h.rationale||"")+'</p><span>Patch candidate: '+patch+'</span>'+(links?'<div>'+links+'</div>':'')+'</article>';
+}
+function renderRecommendedAIInternet(archive){
+  var r=archive&&archive.research||archive||{},ev=r.evidence||{},rs=r.reasoning||{},items=Array.isArray(ev.items)?ev.items:[],hyp=Array.isArray(rs.hypotheses)?rs.hypotheses:[];
+  if($("raiInternetBadge")){$("raiInternetBadge").textContent=archive&&archive.heartbeat==="OK"?"ONLINE":"WAIT";$("raiInternetBadge").className="tag "+(archive&&archive.heartbeat==="OK"?"g":"y")}
+  if($("raiInternetMode"))$("raiInternetMode").textContent=r.mode||archive&&archive.mode||"—";
+  if($("raiInternetUpdated"))$("raiInternetUpdated").textContent=raiWhen(archive&&archive.updatedAtUTC||r.generatedAtUTC);
+  if($("raiInternetSources"))$("raiInternetSources").textContent=String(items.length);
+  if($("raiInternetHypotheses"))$("raiInternetHypotheses").textContent=String(hyp.length);
+  if($("raiInternetStatus")){
+    var reasoning=rs.status||"UNKNOWN";
+    $("raiInternetStatus").className="notice "+(/ONLINE/.test(reasoning)?"good":"info");
+    $("raiInternetStatus").textContent=/ONLINE/.test(reasoning)?
+      "Internet Scout + reasoning brain online • web evidence becomes testable hypotheses only after source linking.":
+      "Free Internet Scout aktif • reasoning model status: "+reasoning+". Evidence masih disimpan walaupun model reasoning belum disambungkan.";
+  }
+  if($("raiInternetFindings")){
+    var cards=hyp.slice(0,6).map(raiHypothesisCard);
+    if(!cards.length)cards=items.slice(0,8).map(raiInternetSourceCard);
+    $("raiInternetFindings").innerHTML=cards.length?cards.join(""):'<div class="notice info">Belum ada internet evidence yang disimpan.</div>';
+  }
+}
+async function loadRecommendedAIInternet(force){
+  try{
+    var data=await getJson("/recommended-ai/research/latest.json?ts="+(force?Date.now():"1"));
+    renderRecommendedAIInternet(data);
+  }catch(e){
+    if($("raiInternetStatus")){$("raiInternetStatus").className="notice bad";$("raiInternetStatus").textContent="Internet research archive unavailable • "+String(e.message||e)}
+  }
+}
+async function runRecommendedAIInternetNow(){
+  if($("raiInternetBadge")){$("raiInternetBadge").className="tag y";$("raiInternetBadge").textContent="RESEARCHING"}
+  if($("raiInternetStatus")){$("raiInternetStatus").className="notice info";$("raiInternetStatus").textContent="Internet Scout sedang mencari evidence rasmi/news research dan menjalankan reasoning jika model key tersedia…"}
+  try{
+    var x=await getJson("/api/recommended-ai-research?reasoning=1&ts="+Date.now());
+    renderRecommendedAIInternet({heartbeat:"OK",updatedAtUTC:x.generatedAtUTC,mode:x.mode,research:x});
+  }catch(e){
+    if($("raiInternetBadge")){$("raiInternetBadge").className="tag r";$("raiInternetBadge").textContent="ERROR"}
+    if($("raiInternetStatus")){$("raiInternetStatus").className="notice bad";$("raiInternetStatus").textContent=String(e.message||e)}
   }
 }
 
