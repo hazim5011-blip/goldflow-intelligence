@@ -160,3 +160,8 @@
 #gfAIManageBadge.active-sell{color:var(--r);border-color:#7b3542;background:#2b1118}
 #gfAIManageBadge.terminal{color:var(--y);border-color:#8a6d24;background:#2a240f}
 #gfAIManageAction{font-size:18px}
+
+/* GF-AI v1.60 Adaptive Entry Intelligence */
+.gfEntryIntelCard{border-color:#315e72;background:linear-gradient(180deg,#09212d,#07151e)}
+#gfEntryIntelBadge.g{box-shadow:0 0 0 1px rgba(49,214,164,.12) inset}
+#gfEntryValidation{font-size:16px}
