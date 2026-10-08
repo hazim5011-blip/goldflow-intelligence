@@ -10,7 +10,7 @@ async function jwtSetup(){
  const now=Math.floor(Date.now()/1000),issuer="https://test-goldflow.cloudflareaccess.com",aud="aud-123";
  async function sign(body={}){
   const head=raw({alg:"RS256",typ:"JWT",kid:"goldflow-test-key"});
-  const payload=raw({iss:issuer,aud:[aud],sub:"owner-001",iat:now,exp:now+3600,...body});
+  const payload=raw({iss:issuer,aud:[aud],sub:"owner-001",email:"owner@example.com",iat:now,exp:now+3600,...body});
   const sig=await crypto.subtle.sign("RSASSA-PKCS1-v1_5",keys.privateKey,new TextEncoder().encode(head+"."+payload));
   return head+"."+payload+"."+Buffer.from(sig).toString("base64url");
  }
@@ -21,20 +21,20 @@ test("verified Cloudflare Access JWT signs owner identity without browser shared
  const {sign,network,aud}=await jwtSetup();
  const token=await sign();
  const req=new Request("https://gf.test/api/gpt-research",{headers:{"Cf-Access-Jwt-Assertion":token}});
- const user=await verifyGptIdentity(req,{GF_GPT_ACCESS_TEAM:"test-goldflow",GF_GPT_ACCESS_AUD:aud},network);
+ const user=await verifyGptIdentity(req,{GF_GPT_ACCESS_TEAM:"test-goldflow",GF_GPT_ACCESS_AUD:aud,GF_GPT_OWNER_EMAIL:"owner@example.com"},network);
  assert.deepEqual(user,{id:"owner-001",mode:"ACCESS"});
 });
 test("forged Cloudflare header is not authentication",async()=>{
  const {sign,network,aud}=await jwtSetup();
  const token=(await sign()).slice(0,-4)+"xxxx";
  const req=new Request("https://gf.test/api/gpt-research",{headers:{"Cf-Access-Jwt-Assertion":token}});
- assert.equal(await verifyGptIdentity(req,{GF_GPT_ACCESS_TEAM:"test-goldflow",GF_GPT_ACCESS_AUD:aud},network),null);
+ assert.equal(await verifyGptIdentity(req,{GF_GPT_ACCESS_TEAM:"test-goldflow",GF_GPT_ACCESS_AUD:aud,GF_GPT_OWNER_EMAIL:"owner@example.com"},network),null);
 });
 test("Access JWT with wrong audience and expired token denied",async()=>{
  const {sign,network,aud}=await jwtSetup();
  for(const body of [{aud:["unrelated"]},{exp:Math.floor(Date.now()/1000)-10}]){
   const req=new Request("https://gf.test/api/gpt-research",{headers:{"Cf-Access-Jwt-Assertion":await sign(body)}});
-  assert.equal(await verifyGptIdentity(req,{GF_GPT_ACCESS_TEAM:"test-goldflow",GF_GPT_ACCESS_AUD:aud},network),null);
+  assert.equal(await verifyGptIdentity(req,{GF_GPT_ACCESS_TEAM:"test-goldflow",GF_GPT_ACCESS_AUD:aud,GF_GPT_OWNER_EMAIL:"owner@example.com"},network),null);
  }
 });
 test("KV quota disabled without binding; repeated request blocked",async()=>{
@@ -59,4 +59,13 @@ test("enabled macro allows dated official values but excludes stale/derived rows
  const result=await gptFundamentals({GF_GPT_INCLUDE_MACRO:"1"},provider,Date.now());
  assert.equal(result.status,"PARTIAL");assert.equal(result.cards.length,1);
  assert.equal(result.cards[0].source,"Bureau of Labor Statistics");
+});
+
+test("signed JWT for a different owner email denied even when audience matches",async()=>{
+ const {sign,network,aud}=await jwtSetup();
+ const req=new Request("https://gf.test/api/gpt-research",{headers:{
+  "Cf-Access-Jwt-Assertion":await sign({email:"stranger@example.com"})}});
+ const x=await verifyGptIdentity(req,{GF_GPT_ACCESS_TEAM:"test-goldflow",
+   GF_GPT_ACCESS_AUD:aud,GF_GPT_OWNER_EMAIL:"owner@example.com"},network);
+ assert.equal(x,null);
 });
