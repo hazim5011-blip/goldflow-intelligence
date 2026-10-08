@@ -286,21 +286,33 @@ async function loadAnalysis(){
       lastLiveTick=null;renderZones({buy:[],sell:[]},null);resetDashboard();$("connectionNotice").className="notice bad";$("connectionNotice").textContent=msg;clearChart();return;
     }
     var ind=r.indicator||{},sig=ind.latestSignal||{},st=ind.stats||{},pd=ind.premiumDiscount||null;
+    var fibPlan=selectedIndicator==="pattern132"?ind.fiboSndConfluence?.bestPlan:null,fibDir=fibPlan?Number(fibPlan.direction)||0:0;
     var engName=indicatorName(selectedIndicator);
     chip("bridgeChip","good","● VANTAGE MT5");chip("engineChip","good","● "+engName+" ENGINE");chip("marketChip",String(r.marketState).indexOf("STALE")>=0?"warn":"good",r.marketState||"MT5 LIVE");
     $("connectionNotice").className="notice good";$("connectionNotice").innerHTML="<b>"+selectedSymbol+"</b> • "+r.symbol+" • "+engName+" • "+r.triggerTF+" → "+r.setupTF+" → "+r.biasTF+" • direct Vantage MT5 candles"+(selectedIndicator==="fund104"?" • WEB STUDY SUBSET: native iCustom / full macro parity unavailable; A++ blocked; VALID_ONLY results.":"");
     $("price").textContent=px(r.price);$("spread").textContent=finite(r.tick&&r.tick.spread)?"Spread "+px(r.tick.spread):"";
     $("source").textContent=(r.broker||"Vantage")+" • "+r.symbol+" • MT5_BRIDGE";
-    $("signal").textContent=sig.code||"WAIT";$("signal").className=clsDir(sig.direction);
-    $("signalScore").textContent=finite(sig.score)?fmt(sig.score,0)+"%":"—";$("signalStatus").textContent=(sig.grade?(sig.grade+(selectedIndicator==="fund104"?" WEB STUDY":"")+" • "):"")+(sig.status||"WAIT");
+    var shownCode=fibPlan?(fibDir>0?"B FIBO+SND":"S FIBO+SND"):(sig.code||"WAIT"),shownDir=fibPlan?fibDir:sig.direction;
+    $("signal").textContent=shownCode;$("signal").className=clsDir(shownDir);
+    $("signalScore").textContent=finite(sig.score)?fmt(sig.score,0)+"%":"—";$("signalStatus").textContent=fibPlan?("ENTRY CONFLUENCE • "+fibPlan.layerCount+" LAYER"+(fibPlan.layerCount===1?"":"S")):((sig.grade?(sig.grade+(selectedIndicator==="fund104"?" WEB STUDY":"")+" • "):"")+(sig.status||"WAIT"));
     $("biasState").textContent=stateText(ind.biasState&&ind.biasState.trend);$("biasState").className=clsDir(ind.biasState&&ind.biasState.trend);
     $("biasStrength").textContent=finite(ind.biasState&&ind.biasState.strength)?fmt(ind.biasState.strength,0)+"%":"—";$("biasEvent").textContent=(ind.biasState&&ind.biasState.lastEvent)||"—";
     $("setupState").textContent=stateText(ind.setupState&&ind.setupState.trend);$("setupState").className=clsDir(ind.setupState&&ind.setupState.trend);
     $("setupStrength").textContent=finite(ind.setupState&&ind.setupState.strength)?fmt(ind.setupState.strength,0)+"%":"—";$("setupEvent").textContent=(ind.setupState&&ind.setupState.lastEvent)||"—";
     $("profile").textContent=r.triggerTF+"→"+r.setupTF+"→"+r.biasTF;$("lastAge").textContent=finite(r.ageMin)?(Number(r.ageMin)<60?Math.round(r.ageMin)+" min":(Number(r.ageMin)/60).toFixed(1)+" h"):"—";$("resolvedSymbol").textContent=r.symbol;
-    $("entry").textContent=px(sig.entry);$("sl").textContent=px(sig.invalidation);$("tp1").textContent=px(sig.tp1);$("tp2").textContent=px(sig.tp2);
-    $("planBadge").textContent=sig.code||"WAIT";$("planBadge").className="tag "+clsDir(sig.direction);
-    $("reasons").textContent=(sig.reasons||[]).join(" + ")||sig.reason||"Wait for closed-candle confirmation.";
+    if(fibPlan){
+      $("entry").textContent=fibPlan.primaryEntry?px(fibPlan.primaryEntry.price)+" "+fibPlan.primaryEntry.layerCode:"—";
+      $("sl").textContent=fibPlan.protectiveStop?px(fibPlan.protectiveStop.price):"—";
+      $("tp1").textContent=fibPlan.tp1?px(fibPlan.tp1.price):"—";$("tp2").textContent=fibPlan.tp2?px(fibPlan.tp2.price):"—";
+      $("planBadge").textContent=fibDir>0?"BUY F+S":"SELL F+S";$("planBadge").className="tag "+clsDir(fibDir);
+      var layerText=(fibPlan.layers||[]).map(function(x){return x.layerCode+" "+x.label+" @ "+px(x.price)}).join(" • ");
+      var targetText=(fibPlan.targets||[]).map(function(x){return x.targetCode+" "+x.label+" @ "+px(x.price)}).join(" • ");
+      $("reasons").textContent="SND + AUTO FIBO CONFIRMED"+(layerText?" • "+layerText:"")+(fibPlan.protectiveStop?" • SL "+fibPlan.protectiveStop.label+" @ "+px(fibPlan.protectiveStop.price):"")+(targetText?" • "+targetText:"");
+    }else{
+      $("entry").textContent=px(sig.entry);$("sl").textContent=px(sig.invalidation);$("tp1").textContent=px(sig.tp1);$("tp2").textContent=px(sig.tp2);
+      $("planBadge").textContent=sig.code||"WAIT";$("planBadge").className="tag "+clsDir(sig.direction);
+      $("reasons").textContent=(sig.reasons||[]).join(" + ")||sig.reason||"Wait for SND + Auto Fibo confluence.";
+    }
     if(pd){$("pdHigh").textContent=px(pd.high);$("pdEq").textContent=px(pd.equilibrium);$("pdLow").textContent=px(pd.low);$("pdPos").textContent=pd.position}else{$("pdHigh").textContent=$("pdEq").textContent=$("pdLow").textContent=$("pdPos").textContent="—"}
     if(ind.watch&&ind.watch.zone){$("watch").textContent=ind.watch.reason+" • "+px(ind.watch.zone.low)+" - "+px(ind.watch.zone.high)}else $("watch").textContent="No active zone nearby.";
     if($("statsNote")){
@@ -309,7 +321,7 @@ async function loadAnalysis(){
         :selectedIndicator==="pvtchart101"
           ?"MQ5 SOURCE PARITY • PVT Chart v1.01 • Next-bar continuation • Native TP1/TP2/TP3 + BE + trail + time-exit history"
         :selectedIndicator==="pattern132"
-          ?"PATTERN 1.32 • ENTRY requires same-direction SND + custom Auto Fibo level inside SND • Near Fibo = WATCH only • no broker order"
+          ?"PATTERN 1.32 • Universal SND+Auto Fibo plan: ENTRY/L2/L3 from Fibo inside SND, adverse Fibo SL (fallback SND invalidation), nearest 3 favorable Fibo references = TP1/TP2/TP3 • no broker order"
           :selectedIndicator==="snd107"
             ?"VALIDATION ONLY • SND v1.07 research zone; no broker order"
           :"WIN = TP + TRAIL + BE • LOSE = SL only";
@@ -355,7 +367,13 @@ function renderZones(z,tick){
     var st=zoneEntryState(x,d,tick),side=d>0?"buy":"sell";
     var action=st.live?'<button class="zoneAction" type="button" data-side="'+side+'" data-index="'+i+'" aria-label="View live entry setup on broker chart">LIVE TRADE • VIEW CHART ↗</button>':"";
     var retest=finite(x.currentRetests)?'<span class="sub">Retest '+x.currentRetests+'</span>':"";var score=finite(x.baseScore)?'<div class="sub">Score '+fmt(x.baseScore,0)+'%</div>':"";
-    var fiboLine=x?.fiboSnd?.confirmed?'<div class="sub"><b>FIBO+SND ENTRY</b> • '+(x.fiboSnd.entryLayers||[]).map(function(v){return v.label+" @ "+px(v.price)}).join(" • ")+'</div>':x?.fiboSnd?.watch&&x.fiboSnd.nearestLayer?'<div class="sub">FIBO NEAR • '+x.fiboSnd.nearestLayer.label+' @ '+px(x.fiboSnd.nearestLayer.price)+' • WAIT</div>':"";
+    var fiboLine="";
+    if(x?.fiboSnd?.confirmed){
+      var layers=(x.fiboSnd.entryLayers||[]).map(function(v){return v.layerCode+" "+v.label+" @ "+px(v.price)}).join(" • ");
+      var stops=x.fiboSnd.protectiveStop?(" • SL "+x.fiboSnd.protectiveStop.label+" @ "+px(x.fiboSnd.protectiveStop.price)):"";
+      var tps=(x.fiboSnd.targetReferences||[]).map(function(v){return v.targetCode+" "+v.label+" @ "+px(v.price)}).join(" • ");
+      fiboLine='<div class="sub"><b>FIBO+SND ENTRY</b> • '+layers+stops+(tps?" • "+tps:"")+'</div>';
+    }else if(x?.fiboSnd?.watch&&x.fiboSnd.nearestLayer)fiboLine='<div class="sub">FIBO NEAR • '+x.fiboSnd.nearestLayer.label+' @ '+px(x.fiboSnd.nearestLayer.price)+' • WAIT</div>';
     return '<div class="zone '+(st.live?("zoneLive "+side):"")+'"><div class="zoneTop"><b class="'+(d>0?"g":"r")+'">'+(d>0?"BUY":"SELL")+(x.swapped?" SWAP":"")+' • '+x.sourceEvent+'</b><span class="zoneStatus '+(st.live?("live "+side):st.inZone?"watch":st.ready?"pending":"offline")+'">'+(st.live?"● ":"")+st.label+'</span></div><div class="zonePrice">'+px(x.low)+" — "+px(x.high)+'</div>'+fiboLine+'<div class="zoneLiveLine"><span class="sub">LIVE '+st.side+' '+(finite(st.quote)?px(st.quote):"—")+'</span>'+retest+'</div>'+action+score+'</div>';
   }).join(""):'<div class="sub">No active zone.</div>'}
   $("buyZones").innerHTML=html(buy,1);$("sellZones").innerHTML=html(sell,-1);
@@ -444,14 +462,26 @@ function drawChart(){
     var fibCurrent=finite(lastAnalysis.price)?Number(lastAnalysis.price):Number(bars[bars.length-1].c);
     var fibColours={MARK:"#f4f4f4",LETTER:"#2ca9ff",LOW_RISK:"#31d6a4",MEDIUM_RISK:"#f2c75b",HIGH_RISK:"#ff7b59",GOLDEN:"#f2c75b",COUNTER:"#a979e8",FULL_MARGIN:"#e056fd",SL:"#ff6079"};
     var fibRanked=fib.levels.slice().sort(function(a,b){return Math.abs(Number(a.price)-fibCurrent)-Math.abs(Number(b.price)-fibCurrent)});
-    var fibEntryKeys=new Set([].concat((ind.activeZones?.buy||[]),(ind.activeZones?.sell||[])).flatMap(function(z){return z?.fiboSnd?.confirmed?(z.fiboSnd.entryLayers||[]):[]}).filter(function(v){return finite(v.price)}).map(function(v){return Number(v.price).toFixed(10)}));
+    var fibZones=[].concat((ind.activeZones?.buy||[]),(ind.activeZones?.sell||[]));
+    var fibEntryMap=new Map(),fibTargetMap=new Map(),fibStopKeys=new Set();
+    fibZones.forEach(function(z){
+      if(!z?.fiboSnd?.confirmed)return;
+      (z.fiboSnd.entryLayers||[]).forEach(function(v){if(finite(v.price))fibEntryMap.set(Number(v.price).toFixed(10),v.layerCode||"ENTRY")});
+      (z.fiboSnd.targetReferences||[]).forEach(function(v){if(finite(v.price))fibTargetMap.set(Number(v.price).toFixed(10),v.targetCode||"TP")});
+      if(z.fiboSnd.protectiveStop&&finite(z.fiboSnd.protectiveStop.price))fibStopKeys.add(Number(z.fiboSnd.protectiveStop.price).toFixed(10));
+    });
     fib.levels.forEach(function(x){
       if(!finite(x.price))return;
-      var entryLayer=fibEntryKeys.has(Number(x.price).toFixed(10)),rank=fibRanked.indexOf(x),show=entryLayer||chartLabelMode==="all"||(chartLabelMode==="nearest"&&rank<3);
-      candleSeries.createPriceLine({price:Number(x.price),color:fibColours[x.role]||"#71c3fa",lineWidth:entryLayer?3:(x.role==="MARK"||x.role==="SL"?2:1),lineStyle:0,axisLabelVisible:show,title:show?(entryLayer?"ENTRY LAYER • "+x.label:x.label):""});
+      var key=Number(x.price).toFixed(10),entryCode=fibEntryMap.get(key),targetCode=fibTargetMap.get(key),stop=fibStopKeys.has(key),rank=fibRanked.indexOf(x),special=!!(entryCode||targetCode||stop),show=special||chartLabelMode==="all"||(chartLabelMode==="nearest"&&rank<3);
+      var title=entryCode?(entryCode+" • "+x.label):targetCode?(targetCode+" • "+x.label):stop?("SL • "+x.label):x.label;
+      candleSeries.createPriceLine({price:Number(x.price),color:fibColours[x.role]||"#71c3fa",lineWidth:entryCode?3:(targetCode||stop?2:(x.role==="MARK"||x.role==="SL"?2:1)),lineStyle:0,axisLabelVisible:show,title:show?title:""});
     });
   }
   var allZones=[].concat((ind.activeZones&&ind.activeZones.buy)||[],(ind.activeZones&&ind.activeZones.sell)||[]);
+  if(selectedIndicator==="pattern132"){
+    var fallbackStops=new Set();
+    allZones.forEach(function(z){var ps=z?.fiboSnd?.protectiveStop;if(z?.fiboSnd?.confirmed&&ps&&ps.source==="SND_FALLBACK"&&finite(ps.price)){var k=Number(ps.price).toFixed(10);if(!fallbackStops.has(k)){fallbackStops.add(k);candleSeries.createPriceLine({price:Number(ps.price),color:"#ff6079",lineWidth:2,lineStyle:2,axisLabelVisible:true,title:"SL • SND INVALIDATION"})}}});
+  }
   var sortedZones=allZones.slice().sort(function(a,b){var p=Number(lastAnalysis.price);return Math.abs((a.low+a.high)/2-p)-Math.abs((b.low+b.high)/2-p)});
   var zones=focusedZone?[focusedZone]:sortedZones.slice(0,10);
   zones.forEach(function(z,i){
@@ -472,7 +502,7 @@ function drawChart(){
     markers.push({time:bars[bars.length-1].t,position:focusedZone.currentDirection>0?"belowBar":"aboveBar",color:focusedZone.currentDirection>0?"#31d6a4":"#ff6079",shape:"circle",text:"LIVE ENTRY • PRICE IN ZONE (NOT EXECUTED)"});
   }
   if(candleSeries.setMarkers)candleSeries.setMarkers(markers.sort(function(a,b){return a.time-b.time}));
-  chart.timeScale().fitContent();if(window.GFChartTools)GFChartTools.register("broker",{chart:chart,main:candleSeries,bars:bars,tf:selectedTF,contextKey:(lastAnalysis.symbol||selectedSymbol)+"|"+selectedTF});var fibInfo=fib&&fib.active?" • AUTO FIBO "+(fib.direction>0?"BUY":"SELL")+" • MARK 0/1 confirmed":fib&&fib.reason?" • AUTO FIBO "+String(fib.reason).replaceAll("_"," "):"";var cf=ind.fiboSndConfluence,cfInfo=selectedIndicator==="pattern132"&&cf?" • "+String(cf.state||"WAIT").replaceAll("_"," ")+" • CONF "+Number(cf.confirmedCount||0)+" / WATCH "+Number(cf.watchCount||0):"";$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+fibInfo+cfInfo+" • LIVE ENTRY only when SND + Fibo confluence is confirmed; NOT broker order";
+  chart.timeScale().fitContent();if(window.GFChartTools)GFChartTools.register("broker",{chart:chart,main:candleSeries,bars:bars,tf:selectedTF,contextKey:(lastAnalysis.symbol||selectedSymbol)+"|"+selectedTF});var fibInfo=fib&&fib.active?" • AUTO FIBO "+(fib.direction>0?"BUY":"SELL")+" • MARK 0/1 confirmed":fib&&fib.reason?" • AUTO FIBO "+String(fib.reason).replaceAll("_"," "):"";var cf=ind.fiboSndConfluence,cfInfo=selectedIndicator==="pattern132"&&cf?" • "+String(cf.state||"WAIT").replaceAll("_"," ")+" • CONF "+Number(cf.confirmedCount||0)+" / WATCH "+Number(cf.watchCount||0):"";var shiftInfo=window.GFChartTools?(" • CHART SHIFT "+Number(GFChartTools.prefs("broker")?.shiftBars||0)+" bars"):"";var planInfo=cf?.bestPlan?(" • PLAN "+(cf.bestPlan.direction>0?"BUY":"SELL")+" "+cf.bestPlan.layerCount+"L"):"";$("chartInfo").textContent=(lastAnalysis.symbol||selectedSymbol)+" • "+lastAnalysis.triggerTF+" • Vantage MT5 • "+(lastAnalysis.marketState||"")+fibInfo+cfInfo+planInfo+shiftInfo+" • LIVE ENTRY only when SND + Fibo confluence is confirmed; NOT broker order";
 }
 async function init(){
   await checkBridge();await loadSymbols(false);
