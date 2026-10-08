@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.8",
-  "build_id": "gf-aat-1.6.3-r5.8-professional-trade-coach",
+  "version": "1.6.3-r5.9",
+  "build_id": "gf-aat-1.6.3-r5.9-profile-integrity-runtime-contract",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "ced071862ed87bdd40088ba02955520142cc4899b3ad32e1359be33a43eb0dec",
-  "restart_cmd": "RESTART_GF_AAT_R5_8.bat",
+  "sha256": "c3c3a3d10052e04085e6fcc14f9feb9424413db5268a1647f9c1511654290b89",
+  "restart_cmd": "RESTART_GF_AAT_R5_9.bat",
   "minimum_updater": 2
 }
