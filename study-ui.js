@@ -251,7 +251,7 @@
   put("gfEntryMotionWhy",aiMode&&mp?("Efficiency "+safe(mp.efficiency)+" • overlap "+safe(mp.overlap)+" • net "+safe(mp.netAtr)+" ATR • spike "+(mp.spike?"YES":"NO")):"—");
   put("gfEntryModel",aiMode?(ep?.entryEnvironment||ep?.entryMethod||"WAIT MODEL"):"—");
   put("gfEntryZoneMethod",aiMode&&ep?("Zone: "+(ep.entryZoneMethod||ep.entrySource||"market-driven")+"\nConfluence zones: "+safe(ep.zoneConfluence)+" • SL source "+(ep.stopSource||"STRUCTURE")+" • SL distance "+safe(ep.stopDistanceAtr)+" ATR"):"—");
-  put("gfEntryValidation",aiMode?(ev?.state||"WAIT CLOSED RETEST"):"—");
+  put("gfEntryValidation",aiMode?((ev?.state||"WAIT CLOSED RETEST")+(ev?.executionTf?" • "+ev.executionTf:"")):"—");
   put("gfEntryValidationWhy",aiMode&&ev?[
     "Touched: "+(ev.touched?"YES":"NO"),
     ev.confirmation?"Closed proof: "+ev.confirmation.type+" • body "+safe(ev.confirmation.bodyAtr)+" ATR • wick "+safe(ev.confirmation.wickAtr)+" ATR":"Closed proof: NOT YET",
@@ -342,7 +342,7 @@
     aiMode&&d?.professionalPlaybook?"PLAYBOOK: D1/H4 regime → H1/M30 thesis → M15/M5 setup → M1 precision • ONE_PARENT_IDEA_ACROSS_TFS":"",
     aiMode&&d?.analysis?.marketMotion?"GOLD MOTION: "+d.analysis.marketMotion.state+" • efficiency "+safe(d.analysis.marketMotion.efficiency)+" • overlap "+safe(d.analysis.marketMotion.overlap)+" • net "+safe(d.analysis.marketMotion.netAtr)+" ATR":"",
     aiMode&&(p||d?.candidatePlan)?"ENTRY MODEL: "+((p||d.candidatePlan).entryEnvironment||(p||d.candidatePlan).entryMethod)+" • ZONE METHOD "+((p||d.candidatePlan).entryZoneMethod||"N/A")+" • NO BLIND TOUCH":"",
-    aiMode&&d?.analysis?.entryValidation?"ENTRY PROOF: "+d.analysis.entryValidation.state+(d.analysis.entryValidation.confirmation?" • "+d.analysis.entryValidation.confirmation.type:"")+" • CLOSED RETEST REQUIRED":"",
+    aiMode&&d?.analysis?.entryValidation?"ENTRY PROOF: "+d.analysis.entryValidation.state+" on "+(d.analysis.entryValidation.executionTf||d.analysis.executionTf||d.tf)+(d.analysis.entryValidation.confirmation?" • "+d.analysis.entryValidation.confirmation.type:"")+" • CLOSED RETEST REQUIRED":"",
     aiMode&&aiLifecycle?.setup?"LIVE LIFECYCLE: "+aiLifecycle.setup.id+" • "+aiLifecycle.assessment.state+" • "+(aiLifecycle.assessment.action||"WAIT")+" • "+(aiLifecycle.assessment.rNow===null||aiLifecycle.assessment.rNow===undefined?"R N/A":"R "+Number(aiLifecycle.assessment.rNow).toFixed(2)):"",
     aiMode&&aiLifecycle?.recovery?"RECOVERY: "+aiLifecycle.recovery.state+" • "+aiLifecycle.recovery.reason:"",
     aiMode&&d?.experienceLearning?.ok?"EXPERIENCE: BUY "+(d.experienceLearning.buyAdjustment>=0?"+":"")+safe(d.experienceLearning.buyAdjustment)+" • SELL "+(d.experienceLearning.sellAdjustment>=0?"+":"")+safe(d.experienceLearning.sellAdjustment)+" • "+safe(d.experienceLearning.overall?.decidable)+" decidable samples (NOT win probability)":"",
