@@ -28,14 +28,16 @@ test("no crypto-biased 90-instrument cap; attempted all broker tradables with fa
  assert.ok(s.includes('status:"UNKNOWN"'));
  assert.ok(s.includes("weekendUTC"));
 });
-test("Evidence tab auto-loads first reconstruction, never fabricates GF-AI proof",()=>{
+test("Evidence tab auto-loads first reconstruction and follows the explicit History Indicator selector",()=>{
  const v=readFileSync(new URL("../v8.js",import.meta.url),"utf8");
  assert.ok(v.includes('if(b.dataset.page==="v8Evidence")'));
  assert.ok(v.includes("await loadEvidence(first)"));
- assert.ok(v.includes('GF-AI/News/Market Study have no forward-published evidence archive yet'));
+ assert.ok(v.includes("Evidence follows the explicit History Indicator selector"));
+ assert.ok(v.includes("data indicator lain tidak digunakan sebagai pengganti"));
  assert.ok(v.includes('function historyIndicator()'));
  const ui=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  assert.ok(ui.includes('id="v8EvidenceContext"'));
+ assert.ok(ui.includes('id="v8HistoryIndicator"'));
 });
 test("TradingView never relies only on blank third-party iframe: authenticated Vantage OHLC fallback and official external link",()=>{
  const app=readFileSync(new URL("../app.js",import.meta.url),"utf8");

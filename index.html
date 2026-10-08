@@ -252,10 +252,33 @@
       <div><label for="v8Start" data-i18n="from">From</label><input type="date" id="v8Start"></div>
       <div><label for="v8End" data-i18n="to">To</label><input type="date" id="v8End"></div>
       <div><label for="v8Direction" data-i18n="direction">Direction</label><select id="v8Direction"><option value="ALL">ALL</option><option>BUY</option><option>SELL</option></select></div>
+      <div class="v8IndicatorFilter"><label for="v8HistoryIndicator">Indicator Sejarah</label><select id="v8HistoryIndicator">
+          <option value="105">MTF Research v1.05</option>
+          <option value="103">MTF Research v1.03</option>
+          <option value="pvt">PVT v1.02</option>
+          <option value="pattern132">Pattern Zone Tutor v1.32</option>
+          <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
+          <option value="owl101">OWL Style Research v1.01</option>
+          <option value="fund104">Fund Structure A v1.04 — Web Study</option>
+          <optgroup label="Live study — historical WR archive not available">
+            <option value="gf-ai" disabled>GF-AI Live Analyst v1.60 — N/A</option>
+            <option value="gf-news" disabled>GF-News Impact Pro — N/A</option>
+            <option value="gf-study" disabled>GF-Market Study Pro — N/A</option>
+          </optgroup>
+        </select></div>
       <button type="button" id="v8HistoryRefresh" class="primary" data-i18n="refreshHistory">Load History</button>
     </div>
-    <div id="v8HistoryStatus" class="sub">Select a Vantage symbol, indicator and timeframe above.</div>
+    <div id="v8HistoryStatus" class="sub">Pilih simbol Vantage, timeframe dan Indicator Sejarah.</div>
     <div id="v8Summary" class="v8MetricGrid"></div>
+
+    <div class="head sec"><div><small class="eyebrow">SAME SYMBOL • SAME TF • SAME DATE FILTER</small><h3>Win Rate Setiap Indicator</h3></div><span class="tag y">STRICT WR</span></div>
+    <div class="notice info">Perbandingan menggunakan formula yang sama untuk semua indicator: WIN = TP1/TP2/TP3 + trailing + BE positif; LOSE = SL. BE0 dan candle AMBIGUOUS tidak dimasukkan dalam denominator Strict WR. Indicator live yang belum mempunyai arkib outcome sejarah dipaparkan sebagai N/A — tidak diganti dengan data indicator lain.</div>
+    <div id="v8IndicatorComparison" class="v8Scroll"><p class="sub">Tekan Muat Sejarah untuk bandingkan semua indicator yang mempunyai historical replay.</p></div>
+
+    <div class="head sec"><div><small class="eyebrow">DAILY TOTAL • ASIA/KUALA_LUMPUR</small><h3>Win Rate & Jumlah Setiap Hari</h3></div><span class="sub" id="v8DailyIndicatorLabel">Selected indicator</span></div>
+    <div id="v8DailySummary" class="v8Scroll"><p class="sub">Jumlah harian TP/Trailing/BE+, SL, R, pip, point dan USD akan dipaparkan di sini.</p></div>
+
+    <div class="head sec"><h3>Rekod Signal Terperinci</h3><span class="sub">Setiap signal kekal boleh dibuka untuk Entry / SL / TP / Evidence.</span></div>
     <div id="v8Rows" class="v8Rows" aria-live="polite"></div>
     <p class="v8Footnote">Pips are instrument display conventions, not identical units across asset classes. Gross P/L is shown only when Vantage contract metadata verifies a supported 0.01 lot and USD settlement.</p>
   </div>
@@ -267,6 +290,20 @@
     <div class="v8Filters">
       <div><label for="v8Period" data-i18n="period">Period</label><select id="v8Period"><option value="day">Daily</option><option value="week">ISO Weekly</option><option value="month" selected>Monthly</option><option value="year">Yearly</option></select></div>
       <div><label for="v8PerformanceDirection" data-i18n="direction">Direction</label><select id="v8PerformanceDirection"><option value="ALL">ALL</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+      <div class="v8IndicatorFilter"><label for="v8PerformanceIndicator">Indicator Prestasi</label><select id="v8PerformanceIndicator">
+          <option value="105">MTF Research v1.05</option>
+          <option value="103">MTF Research v1.03</option>
+          <option value="pvt">PVT v1.02</option>
+          <option value="pattern132">Pattern Zone Tutor v1.32</option>
+          <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
+          <option value="owl101">OWL Style Research v1.01</option>
+          <option value="fund104">Fund Structure A v1.04 — Web Study</option>
+          <optgroup label="Live study — historical WR archive not available">
+            <option value="gf-ai" disabled>GF-AI Live Analyst v1.60 — N/A</option>
+            <option value="gf-news" disabled>GF-News Impact Pro — N/A</option>
+            <option value="gf-study" disabled>GF-Market Study Pro — N/A</option>
+          </optgroup>
+        </select></div>
       <button class="primary" id="v8PerformanceRefresh" type="button" data-i18n="refreshPerformance">Refresh Performance</button>
     </div>
     <div id="v8PerformanceStatus" class="notice info">Select period to compare historical results.</div>

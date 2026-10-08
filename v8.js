@@ -1,8 +1,28 @@
 "use strict";
 (function(){
-  var state={history:null,performance:null,evidence:null,news:null,locale:"en",en:{},dict:{},voices:[],speech:null,lastSpeechText:"",tvReady:false,evidenceChart:null,lastFocus:"history"};
+  var state={history:null,performance:null,evidence:null,news:null,locale:"en",en:{},dict:{},voices:[],speech:null,lastSpeechText:"",tvReady:false,evidenceChart:null,lastFocus:"history",historyIndicator:null,historyAnalytics:null,historyAnalyticsToken:0};
   var SUPPORTED=["ms","en","id","zh-CN","zh-TW","ar","hi","es","fr","de","pt","ru","ja","ko","tr","th","vi","fil","ur","bn","ta","it"];
   var NAMES={"ms":"Bahasa Melayu","en":"English","id":"Bahasa Indonesia","zh-CN":"简体中文","zh-TW":"繁體中文","ar":"العربية","hi":"हिन्दी","es":"Español","fr":"Français","de":"Deutsch","pt":"Português","ru":"Русский","ja":"日本語","ko":"한국어","tr":"Türkçe","th":"ไทย","vi":"Tiếng Việt","fil":"Filipino","ur":"اردو","bn":"বাংলা","ta":"தமிழ்","it":"Italiano"};
+  var HISTORY_CATALOG=[
+    {id:"105",label:"MTF Research v1.05",historical:true},
+    {id:"103",label:"MTF Research v1.03",historical:true},
+    {id:"pvt",label:"PVT v1.02",historical:true},
+    {id:"pattern132",label:"Pattern Zone Tutor v1.32",historical:true},
+    {id:"snd107",label:"SND / SNR / SBR / RBS v1.07",historical:true},
+    {id:"owl101",label:"OWL Style Research v1.01",historical:true},
+    {id:"fund104",label:"Fund Structure A v1.04 — Web Study",historical:true,validationOnly:true},
+    {id:"gf-ai",label:"GF-AI Live Analyst v1.60",historical:false,note:"No historical outcome archive yet"},
+    {id:"gf-news",label:"GF-News Impact Pro",historical:false,note:"No historical outcome archive yet"},
+    {id:"gf-study",label:"GF-Market Study Pro",historical:false,note:"No historical outcome archive yet"}
+  ];
+  var HISTORY_IDS=HISTORY_CATALOG.filter(function(x){return x.historical}).map(function(x){return x.id});
+  function historyMeta(id){return HISTORY_CATALOG.find(function(x){return x.id===String(id||"").toLowerCase()})||{id:String(id||""),label:String(id||"UNKNOWN"),historical:false}}
+  function setHistoryIndicator(id){
+    var x=String(id||"").toLowerCase();if(!HISTORY_IDS.includes(x))x="105";
+    state.historyIndicator=x;
+    ["v8HistoryIndicator","v8PerformanceIndicator"].forEach(function(k){if($(k)&&$(k).value!==x)$(k).value=x});
+    return x;
+  }
   var $=function(id){return document.getElementById(id)};
   function safe(v){return String(v==null?"":v).replace(/[&<>"']/g,function(x){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]})}
   function finite(v){return v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))}
@@ -12,15 +32,18 @@
   function money(v){return finite(v)?signed(v,2)+" USD":"N/A"}
   function dt(v){if(!v)return "N/A";var x=new Date(v);return Number.isNaN(x.getTime())?"N/A":new Intl.DateTimeFormat(state.locale,{timeZone:"Asia/Kuala_Lumpur",year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(x)+" MYT"}
   function historyIndicator(){
-    // GF AI/News/Market Study are read-only conditional research, not the legacy
-    // forward/history engine. Never mislabel a legacy reconstruction as AI proof.
+    if(HISTORY_IDS.includes(String(state.historyIndicator||"").toLowerCase()))return String(state.historyIndicator).toLowerCase();
     var sel=String(window.selectedIndicator||"105").toLowerCase();
-    return ["105","103","pvt","pvt102","pattern132","snd107","owl101","fund104"].includes(sel)?sel:"105";
+    return setHistoryIndicator(HISTORY_IDS.includes(sel)?sel:"105");
   }
   function historyContext(){
     return [window.selectedSymbol||$("symbolSelect")?.value||"XAUUSD",window.selectedTF||"M5",historyIndicator()].join("|");
   }
-  function uri(params){return "symbol="+encodeURIComponent(window.selectedSymbol||document.getElementById("symbolSelect")?.value||"XAUUSD")+"&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(historyIndicator())+(params||"")}
+  function uriForIndicator(indicator,params){
+    return "symbol="+encodeURIComponent(window.selectedSymbol||document.getElementById("symbolSelect")?.value||"XAUUSD")+
+      "&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(indicator)+(params||"");
+  }
+  function uri(params){return uriForIndicator(historyIndicator(),params)}
   async function json(url){var r=await fetch(url,{cache:"no-store"}),j=await r.json();if(!r.ok||j.ok===false)throw Error(j.error||("HTTP "+r.status));return j}
   function notice(id,msg,bad){if($(id)){$(id).className=bad?"notice bad":"notice info";$(id).textContent=msg}}
   function stat(label,value,detail){
@@ -28,16 +51,87 @@
   }
   function outcomeStyle(o){return ["TP1","TP2","TP3","BE_POSITIVE","TRAILING"].includes(o)?"g":o==="SL"?"r":"y"}
   function unitText(r){return /XAU|XAG/.test(r.symbolResolved||"")?"USD/oz (quote move)":(r.currencyProfit||"symbol quote")+" price move"}
-  function resultStats(st){
+  function metricTotal(st,key,symbol){
+    var obj=st?.[key]||{},sym=String(symbol||"");
+    if(sym&&obj[sym]&&finite(obj[sym].total))return Number(obj[sym].total);
+    var vals=Object.keys(obj).map(function(k){return obj[k]}).filter(function(x){return finite(x?.total)});
+    return vals.length===1?Number(vals[0].total):null;
+  }
+  function tpTrailCount(st){return Number(st?.outcomes?.TP1||0)+Number(st?.outcomes?.TP2||0)+Number(st?.outcomes?.TP3||0)+Number(st?.outcomes?.TRAILING||0)}
+  function wrClass(st){
+    if(!finite(st?.strictWinRate))return "y";
+    var n=Number(st?.strictDenominator||0),w=Number(st.strictWinRate);
+    if(n<5)return "y";
+    return w>=70?"g":w<50?"r":"y";
+  }
+  function resultStats(st,symbol){
     if(!st)return "";
     return stat(t("strictWR"),finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A",t("strictFormula"))+
       stat(t("positive"),number(st.positive,0),t("tpTrailingBePositive"))+
       stat(t("negative"),number(st.negative,0),"SL")+
       stat(t("beZero"),number(st.beZero,0),t("excludedWR"))+
       stat(t("ambiguous"),number(st.ambiguous,0),t("intrabarUnknown"))+
+      stat("TOTAL PIP",signed(metricTotal(st,"pipsBySymbol",symbol),1),"selected symbol only")+
+      stat("TOTAL POINT",signed(metricTotal(st,"pointsBySymbol",symbol),0),"selected symbol only")+
       stat(t("grossPL"),money(st.grossPLUSD),"0.01 lot • "+(st.grossCoverage||0)+" records • excludes costs")+
       stat(t("totalR"),signed(st.totalR,2),(st.rCoverage||0)+" records")+
       stat(t("legacyWR"),finite(st.legacyWinRate)?number(st.legacyWinRate,1)+"%":"N/A","includes BE0");
+  }
+  function analyticsQuery(direction,from,to){
+    var q="&period=day&direction="+encodeURIComponent(direction||"ALL");
+    if(from)q+="&from="+encodeURIComponent(from);
+    if(to)q+="&to="+encodeURIComponent(to);
+    return q;
+  }
+  async function mapLimit(items,limit,worker){
+    var out=new Array(items.length),next=0;
+    async function run(){while(true){var i=next++;if(i>=items.length)return;out[i]=await worker(items[i],i)}}
+    await Promise.all(Array.from({length:Math.min(limit,items.length)},run));return out;
+  }
+  function analyticsRow(meta,st,symbol,error){
+    if(error)return '<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="12" class="r">UNAVAILABLE • '+safe(error)+'</td></tr>';
+    var tp=tpTrailCount(st),be=Number(st?.outcomes?.BE_POSITIVE||0),den=Number(st?.strictDenominator||0);
+    return '<tr><td><b>'+safe(meta.label)+'</b>'+(meta.validationOnly?'<br><small>VALIDATION-ONLY ENGINE</small>':'')+'</td>'+
+      '<td>'+number(st?.totalSignals,0)+'</td><td class="g">'+number(st?.positive,0)+'</td><td>'+number(tp,0)+'</td><td>'+number(be,0)+'</td>'+
+      '<td class="r">'+number(st?.negative,0)+'</td><td>'+number(st?.beZero,0)+'</td><td>'+number(st?.ambiguous,0)+'</td>'+
+      '<td class="'+wrClass(st)+'"><b>'+(finite(st?.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>n='+number(den,0)+'</small></td>'+
+      '<td>'+signed(st?.totalR,2)+'</td><td>'+signed(metricTotal(st,"pipsBySymbol",symbol),1)+'</td><td>'+signed(metricTotal(st,"pointsBySymbol",symbol),0)+'</td><td>'+money(st?.grossPLUSD)+'</td></tr>';
+  }
+  function renderIndicatorComparison(results,symbol){
+    if(!$("v8IndicatorComparison"))return;
+    var rows=(results||[]).map(function(x){return analyticsRow(historyMeta(x.id),x.data?.summary,symbol,x.error)});
+    HISTORY_CATALOG.filter(function(x){return !x.historical}).forEach(function(meta){
+      rows.push('<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="12" class="y">N/A • '+safe(meta.note||"Historical WR unavailable")+' • data indicator lain tidak digunakan sebagai pengganti.</td></tr>');
+    });
+    $("v8IndicatorComparison").innerHTML='<table class="v8Table v8WideTable"><thead><tr><th>INDICATOR</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>ΣR</th><th>Σ PIP</th><th>Σ POINT</th><th>GROSS USD*</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>'+
+      '<p class="v8Footnote">* Gross USD ialah anggaran 0.01 lot hanya apabila metadata kontrak broker menyokong pengiraan. Strict WR tidak termasuk BE0 dan AMBIGUOUS. Warna hijau hanya digunakan apabila denominator sekurang-kurangnya 5 rekod.</p>';
+  }
+  function renderDailySummary(data){
+    if(!$("v8DailySummary"))return;
+    var meta=historyMeta(historyIndicator()),symbol=data?.symbol||state.history?.symbolResolved||"";
+    if($("v8DailyIndicatorLabel"))$("v8DailyIndicatorLabel").textContent=meta.label+" • "+symbol+" • "+(data?.tf||window.selectedTF||"");
+    var arr=(data?.groups||[]).slice().reverse();
+    $("v8DailySummary").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>DATE (MYT)</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>ΣR</th><th>Σ PIP</th><th>Σ POINT</th><th>GROSS USD*</th></tr></thead><tbody>'+
+      arr.map(function(st){return '<tr><td><b>'+safe(st.period)+'</b></td><td>'+number(st.totalSignals,0)+'</td><td class="g">'+number(st.positive,0)+'</td>'+
+        '<td>'+number(tpTrailCount(st),0)+'</td><td>'+number(st.outcomes?.BE_POSITIVE||0,0)+'</td><td class="r">'+number(st.negative,0)+'</td><td>'+number(st.beZero,0)+'</td><td>'+number(st.ambiguous,0)+'</td>'+
+        '<td class="'+wrClass(st)+'"><b>'+(finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>n='+number(st.strictDenominator||0,0)+'</small></td>'+
+        '<td>'+signed(st.totalR,2)+'</td><td>'+signed(metricTotal(st,"pipsBySymbol",symbol),1)+'</td><td>'+signed(metricTotal(st,"pointsBySymbol",symbol),0)+'</td><td>'+money(st.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':
+      '<p>'+t("noSignalsInWindow")+'</p>';
+  }
+  async function loadHistoryAnalytics(filters){
+    var token=++state.historyAnalyticsToken,selected=historyIndicator(),symbol=window.selectedSymbol||$("symbolSelect")?.value||"XAUUSD";
+    if($("v8IndicatorComparison"))$("v8IndicatorComparison").innerHTML='<p class="sub">Mengira win rate setiap indicator daripada broker candle window yang sama…</p>';
+    if($("v8DailySummary"))$("v8DailySummary").innerHTML='<p class="sub">Mengira jumlah TP/SL, R, pip dan point setiap hari…</p>';
+    var extra=analyticsQuery(filters?.direction,filters?.from,filters?.to);
+    var results=await mapLimit(HISTORY_IDS,2,async function(id){
+      try{return {id,data:await json("/api/performance?"+uriForIndicator(id,extra))}}
+      catch(e){return {id,error:String(e.message||e)}}
+    });
+    if(token!==state.historyAnalyticsToken)return;
+    state.historyAnalytics=results;renderIndicatorComparison(results,symbol);
+    var pick=results.find(function(x){return x.id===selected&&x.data});
+    if(pick)renderDailySummary(pick.data);
+    else if($("v8DailySummary"))$("v8DailySummary").innerHTML='<p class="r">Daily summary unavailable for '+safe(historyMeta(selected).label)+'.</p>';
   }
   function key(r){return r?.signalId||""}
   function explainText(r){
@@ -78,6 +172,7 @@
     try{localStorage.setItem("gf_v8_locale",code)}catch(e){}
     document.querySelectorAll("[data-i18n]").forEach(function(el){el.textContent=t(el.dataset.i18n)});
     if(state.history)renderHistory(state.history);
+    if(state.historyAnalytics){renderIndicatorComparison(state.historyAnalytics,window.selectedSymbol||$("symbolSelect")?.value||"");var hp=state.historyAnalytics.find(function(x){return x.id===historyIndicator()&&x.data});if(hp)renderDailySummary(hp.data)}
     if(state.performance)renderPerformance(state.performance);
     if(state.news)renderNews(state.news);
     if(liveNewsCache)renderWorldNews(liveNewsCache);
@@ -94,16 +189,27 @@
   async function loadHistory(force){
     var status=$("v8HistoryStatus"),rows=$("v8Rows");
     if(!status||!rows)return;
+    setHistoryIndicator($("v8HistoryIndicator")?.value||historyIndicator());
     notice("v8HistoryStatus",t("loadingBroker"));
     try{
+      var filters={from:$("v8Start")?.value||"",to:$("v8End")?.value||"",direction:$("v8Direction")?.value||"ALL"};
       var params="&limit=160";
-      if($("v8Start").value)params+="&from="+encodeURIComponent($("v8Start").value);
-      if($("v8End").value)params+="&to="+encodeURIComponent($("v8End").value);
-      params+="&direction="+encodeURIComponent($("v8Direction").value);
+      if(filters.from)params+="&from="+encodeURIComponent(filters.from);
+      if(filters.to)params+="&to="+encodeURIComponent(filters.to);
+      params+="&direction="+encodeURIComponent(filters.direction);
       var data=await json("/api/history?"+uri(params));
       state.history=data;state.historyContext=historyContext();renderHistory(data);
       fillEvidenceChoices(data.rows||[]);
-    }catch(e){state.history=null;rows.innerHTML="";$("v8Summary").innerHTML="";notice("v8HistoryStatus",e.message,true)}
+      loadHistoryAnalytics(filters).catch(function(e){
+        if($("v8IndicatorComparison"))$("v8IndicatorComparison").innerHTML='<p class="r">Indicator comparison failed: '+safe(e.message||e)+'</p>';
+        if($("v8DailySummary"))$("v8DailySummary").innerHTML='<p class="r">Daily summary failed: '+safe(e.message||e)+'</p>';
+      });
+    }catch(e){
+      state.history=null;rows.innerHTML="";$("v8Summary").innerHTML="";
+      if($("v8IndicatorComparison"))$("v8IndicatorComparison").innerHTML="";
+      if($("v8DailySummary"))$("v8DailySummary").innerHTML="";
+      notice("v8HistoryStatus",e.message,true);
+    }
   }
   function historyRow(r){
     var direct=r.direction>0?t("buy"):t("sell"),out=r.outcome||"PENDING",valid=r.outcome!=="VALID_ONLY";
@@ -127,8 +233,8 @@
   }
   function renderHistory(data){
     if(!data)return;
-    $("v8HistoryStatus").textContent=data.symbolResolved+" • "+data.tf+" • "+data.availableSignals+" "+t("availableSignals")+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC);
-    $("v8Summary").innerHTML=resultStats(data.stats);
+    $("v8HistoryStatus").textContent=data.symbolResolved+" • "+data.tf+" • "+historyMeta(historyIndicator()).label+" • "+data.availableSignals+" "+t("availableSignals")+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC);
+    $("v8Summary").innerHTML=resultStats(data.stats,data.symbolResolved);
     $("v8Rows").innerHTML=data.rows?.length?data.rows.map(historyRow).join(""):"<p>"+t("noSignalsInWindow")+"</p>";
     $("v8Rows").querySelectorAll(".v8ProofBtn").forEach(function(btn){btn.onclick=function(){
       $("v8EvidenceSelect").value=btn.dataset.id;state.lastFocus="history";
@@ -153,13 +259,14 @@
   function renderPerformance(data){
     if(!data)return;
     var perfMsg=safe(data.symbol)+" • "+data.indicator+" • "+data.tf+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC);if(String(data.indicator).toLowerCase()==="fund104")perfMsg+=" • FUND 1.04 WEB STUDY is validation-only: native TP/SL outcome semantics are not defined, therefore WR/R/P&L remain N/A unless validated outcome rules exist.";notice("v8PerformanceStatus",perfMsg);
-    $("v8PerformanceSummary").innerHTML=resultStats(data.summary);
+    $("v8PerformanceSummary").innerHTML=resultStats(data.summary,data.symbol);
     $("v8MonthComparison").innerHTML=renderComparison(data.comparison);
     var arr=data.groups||[];
-    $("v8PeriodTable").innerHTML=arr.length?'<table class="v8Table"><thead><tr><th>'+t("period")+'</th><th>'+t("totalSignals")+'</th><th>'+t("completed")+'</th><th>'+t("positive")+'</th><th>'+t("negative")+'</th><th>'+t("beZero")+'</th><th>'+t("ambiguous")+'</th><th>'+t("strictWR")+'</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
-      arr.map(function(s){return '<tr><td><b>'+safe(s.period)+'</b></td><td>'+number(s.totalSignals,0)+'</td><td>'+number(s.completed,0)+'</td><td class="g">'+number(s.positive,0)+'</td><td class="r">'+number(s.negative,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.ambiguous,0)+'</td><td>'+(finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'</td><td>'+signed(s.totalR,2)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':'<p>'+t("noSignalsInWindow")+'</p>';
+    $("v8PeriodTable").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>'+t("period")+'</th><th>'+t("totalSignals")+'</th><th>'+t("completed")+'</th><th>'+t("positive")+'</th><th>'+t("negative")+'</th><th>'+t("beZero")+'</th><th>'+t("ambiguous")+'</th><th>'+t("strictWR")+'</th><th>'+t("totalR")+'</th><th>Σ PIP</th><th>Σ POINT</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
+      arr.map(function(s){return '<tr><td><b>'+safe(s.period)+'</b></td><td>'+number(s.totalSignals,0)+'</td><td>'+number(s.completed,0)+'</td><td class="g">'+number(s.positive,0)+'</td><td class="r">'+number(s.negative,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.ambiguous,0)+'</td><td class="'+wrClass(s)+'">'+(finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'</td><td>'+signed(s.totalR,2)+'</td><td>'+signed(metricTotal(s,"pipsBySymbol",data.symbol),1)+'</td><td>'+signed(metricTotal(s,"pointsBySymbol",data.symbol),0)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':'<p>'+t("noSignalsInWindow")+'</p>';
   }
   async function loadPerformance(){
+    setHistoryIndicator($("v8PerformanceIndicator")?.value||historyIndicator());
     notice("v8PerformanceStatus",t("loadingBroker"));
     try{state.performance=await json("/api/performance?"+uri("&period="+encodeURIComponent($("v8Period").value)+"&direction="+encodeURIComponent($("v8PerformanceDirection").value)));renderPerformance(state.performance)}
     catch(e){state.performance=null;notice("v8PerformanceStatus",e.message,true);$("v8PerformanceSummary").innerHTML="";$("v8MonthComparison").innerHTML="";$("v8PeriodTable").innerHTML=""}
@@ -545,6 +652,15 @@
       renderTVMarketFallback);
   }
   function attach(){
+    setHistoryIndicator(HISTORY_IDS.includes(String(window.selectedIndicator||"").toLowerCase())?String(window.selectedIndicator).toLowerCase():"105");
+    ["v8HistoryIndicator","v8PerformanceIndicator"].forEach(function(id){
+      if(!$(id))return;$(id).value=historyIndicator();
+      $(id).addEventListener("change",function(){
+        setHistoryIndicator(this.value);state.history=null;state.performance=null;state.evidence=null;state.historyContext=null;
+        if($("v8History")?.classList.contains("on"))loadHistory(true);
+        else if($("v8Performance")?.classList.contains("on"))loadPerformance();
+      });
+    });
     $("gfLocale").onchange=function(){applyLocale(this.value)};
     $("gfSpeakGlobal").onclick=function(){var r=state.evidence?.signal||state.history?.rows?.[0];speechPlay(r?explainText(r):t("researchOnly")+" "+t("disclaimer"))};
     $("gfStop").onclick=speechStop;
@@ -575,9 +691,8 @@
           var rows=state.history?.rows||[];
           fillEvidenceChoices(rows);
           if($("v8EvidenceContext")){
-           $("v8EvidenceContext").textContent=/^gf-/.test(String(window.selectedIndicator||""))?
-             "GF-AI/News/Market Study have no forward-published evidence archive yet. Below is an explicitly labelled HISTORICAL RECONSTRUCTION using original MTF Research v1.05, not GF-AI proof.":
-             "Historical reconstruction • "+context+". The report is generated from currently available broker candles, NOT a forward-published signal.";
+           $("v8EvidenceContext").textContent="Historical reconstruction • "+context+" • "+historyMeta(historyIndicator()).label+
+             ". Evidence follows the explicit History Indicator selector, not a different live indicator. Generated from currently available broker candles; NOT forward-published trade proof.";
           }
           var first=rows[0]?.signalId;
           if(first){$("v8EvidenceSelect").value=first;await loadEvidence(first)}
