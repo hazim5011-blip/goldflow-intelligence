@@ -262,10 +262,10 @@
           <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
           <option value="owl101">OWL Style Research v1.01</option>
           <option value="fund104">Fund Structure A v1.04 — Web Study</option>
-          <optgroup label="Live study — historical WR archive not available">
-            <option value="gf-ai" disabled>GF-AI Live Analyst v1.60 — N/A</option>
-            <option value="gf-news" disabled>GF-News Impact Pro — N/A</option>
-            <option value="gf-study" disabled>GF-Market Study Pro — N/A</option>
+          <optgroup label="GF engines — own Entry / SL / TP history">
+            <option value="gf-ai">GF-AI Live Analyst v1.60</option>
+            <option value="gf-news">GF-News Impact Pro • Forward Archive</option>
+            <option value="gf-study">GF-Market Study Pro</option>
           </optgroup>
         </select></div>
       <button type="button" id="v8HistoryRefresh" class="primary" data-i18n="refreshHistory">Load History</button>
@@ -274,7 +274,7 @@
     <div id="v8Summary" class="v8MetricGrid"></div>
 
     <div class="head sec"><div><small class="eyebrow">SAME SYMBOL • SAME TF • SAME DATE FILTER</small><h3>Win Rate Setiap Indicator</h3></div><span class="tag y">STRICT WR</span></div>
-    <div class="notice info">Perbandingan menggunakan pengurusan History yang sama: WIN = TP + trailing + BE positif; LOSE = SL. Jadual turut tunjuk WIN PIP, SL PIP dan NET PIP supaya win rate tinggi tidak menyembunyikan kerugian bersih. BE0 dan AMBIGUOUS dikecualikan daripada Strict WR. Indicator live tanpa arkib outcome kekal N/A.</div>
+    <div class="notice info">Semua signal directional wajib mempunyai ENTRY + SL + TP1 + TP2 + TP3. GF-AI dan GF-Market Study menggunakan replay engine mereka sendiri pada candle Vantage tertutup; GF-News hanya menggunakan forward archive kerana macro/news lama tidak boleh direka semula dengan data hari ini. WIN = TP + trailing + BE positif; LOSE = SL.</div>
     <div id="v8IndicatorComparison" class="v8Scroll"><p class="sub">Tekan Muat Sejarah untuk bandingkan semua indicator yang mempunyai historical replay.</p></div>
 
     <div class="head sec"><div><small class="eyebrow">DAILY TOTAL • ASIA/KUALA_LUMPUR</small><h3>Win Rate & Jumlah Setiap Hari</h3></div><span class="sub" id="v8DailyIndicatorLabel">Selected indicator</span></div>
@@ -301,10 +301,10 @@
           <option value="snd107">SND / SNR / SBR / RBS v1.07</option>
           <option value="owl101">OWL Style Research v1.01</option>
           <option value="fund104">Fund Structure A v1.04 — Web Study</option>
-          <optgroup label="Live study — historical WR archive not available">
-            <option value="gf-ai" disabled>GF-AI Live Analyst v1.60 — N/A</option>
-            <option value="gf-news" disabled>GF-News Impact Pro — N/A</option>
-            <option value="gf-study" disabled>GF-Market Study Pro — N/A</option>
+          <optgroup label="GF engines — own Entry / SL / TP history">
+            <option value="gf-ai">GF-AI Live Analyst v1.60</option>
+            <option value="gf-news">GF-News Impact Pro • Forward Archive</option>
+            <option value="gf-study">GF-Market Study Pro</option>
           </optgroup>
         </select></div>
       <button class="primary" id="v8PerformanceRefresh" type="button" data-i18n="refreshPerformance">Refresh Performance</button>
