@@ -6,10 +6,11 @@ export default async function handler(req,res){
   try{
     const ctx=await fetchV8Context(req.query||{});
     const period=["day","week","month","year"].includes(String(req.query?.period||"month"))?String(req.query.period):"month";
+    const recordMode=ctx.historyMode==="GF_NEWS_FORWARD_ARCHIVE"?"FORWARD_LOGGED":"HISTORICAL_SIM";
     const filtered=filterHistory(ctx.rows,{direction:String(req.query?.direction||"ALL").toUpperCase(),
-      from:String(req.query?.from||""),to:String(req.query?.to||""),recordMode:"HISTORICAL_SIM"});
+      from:String(req.query?.from||""),to:String(req.query?.to||""),recordMode});
     return res.status(200).json({ok:true,version:"8.0.0",symbol:ctx.symbolResolved,indicator:ctx.indicator,tf:ctx.tf,
-      recordMode:"HISTORICAL_SIM",dataWindow:ctx.dataWindow,summary:aggregate(filtered),
+      recordMode,historyMode:ctx.historyMode||"HISTORICAL_SIM",historyNote:ctx.historyNote||null,dataWindow:ctx.dataWindow,summary:aggregate(filtered),
       period,groups:groupHistory(filtered,period),comparison:compareMonths(filtered),
       metricDefinition:{strictWinRate:"positive / (positive + negative); BE_ZERO excluded",legacyWinRate:"(positive + BE_ZERO) / (positive + negative + BE_ZERO)",
         ambiguous:"excluded from completion denominator",pips:"Per-symbol only; WIN PIP + SL PIP = NET PIP.",RMultiple:"signed quote-price move / original SL risk",
