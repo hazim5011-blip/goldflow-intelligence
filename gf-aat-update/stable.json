@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.15",
-  "build_id": "gf-aat-1.6.3-r5.15-loss-self-review-signal-time",
+  "version": "1.6.3-r5.17",
+  "build_id": "gf-aat-1.6.3-r5.17-correction-effectiveness",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "f75c19a5eb95af7270aa3bd269ff5d6a98ff9202a132d2b3eb2b8a92ca4b7f17",
-  "restart_cmd": "RESTART_GF_AAT_R5_15.bat",
+  "sha256": "404cef85c28b667b652b5dc869d796af606a0c1bc47903143d1a684a29ef265d",
+  "restart_cmd": "RESTART_GF_AAT_R5_17.bat",
   "minimum_updater": 2
 }
