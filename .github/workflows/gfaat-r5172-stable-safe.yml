@@ -56,7 +56,7 @@ jobs:
           unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5172
           test -d /tmp/gfaat-r5172/GF_AAT_R5_17_1_STABLE
           cd /tmp/gfaat-r5172/GF_AAT_R5_17_1_STABLE
-          patch -p2 < /tmp/r5172.patch
+          patch --batch -p4 < /tmp/r5172.patch
           python3 - <<'PY'
           import json, pathlib
           expected='gf-aat-1.6.3-r5.17.2-outcome-calibrated-technical-evidence'
