@@ -76,10 +76,17 @@
     if(n<5)return "y";
     return w>=70?"g":w<50?"r":"y";
   }
+  function strictBasisLabel(st){return st?.strictBasis==="USD_GROSS"?"USD-WEIGHTED":st?.strictBasis==="PIP"?"PIP-WEIGHTED":"NO COMPLETE P/L BASIS"}
+  function strictDetail(st){
+    if(!finite(st?.strictWinRate))return strictBasisLabel(st);
+    var unit=st?.strictBasis==="USD_GROSS"?"USD":st?.strictBasis==="PIP"?"PIP":"VALUE";
+    return strictBasisLabel(st)+" • WIN "+signed(st?.strictWinValue,1)+" "+unit+" / LOSS "+signed(st?.strictLossValue,1)+" "+unit+" • 50% = BREAKEVEN";
+  }
   function resultStats(st,symbol){
     if(!st)return "";
     var winP=metricPart(st,"pipsBySymbol",symbol,"winTotal"),lossP=metricPart(st,"pipsBySymbol",symbol,"lossTotal"),netP=metricTotal(st,"pipsBySymbol",symbol);
-    return stat(t("strictWR"),finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A",t("strictFormula"))+
+    return stat("STRICT WR",finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A",strictDetail(st))+
+      stat("SIGNAL WR",finite(st.signalWinRate)?number(st.signalWinRate,1)+"%":"N/A","COUNT ONLY • "+number(st.positive,0)+" WIN / "+number(st.negative,0)+" LOSS")+
       stat(t("positive"),number(st.positive,0),t("tpTrailingBePositive"))+
       stat(t("negative"),number(st.negative,0),"SL")+
       stat("WIN PIP",signed(winP,1),"jumlah semua TP / trailing / BE+")+
@@ -89,8 +96,7 @@
       stat(t("totalR"),signed(st.totalR,2),"WIN R "+signed(st.winR,2)+" • LOSS R "+signed(st.lossR,2))+
       stat(t("beZero"),number(st.beZero,0),t("excludedWR"))+
       stat(t("ambiguous"),number(st.ambiguous,0),t("intrabarUnknown"))+
-      stat(t("grossPL"),money(st.grossPLUSD),"0.01 lot estimate when broker metadata supports it")+
-      stat(t("legacyWR"),finite(st.legacyWinRate)?number(st.legacyWinRate,1)+"%":"N/A","includes BE0");
+      stat(t("grossPL"),money(st.grossPLUSD),"0.01 lot estimate when broker metadata supports it");
   }
   function analyticsQuery(direction,from,to){
     var q="&period=day&direction="+encodeURIComponent(direction||"ALL");
@@ -104,23 +110,24 @@
     await Promise.all(Array.from({length:Math.min(limit,items.length)},run));return out;
   }
   function analyticsRow(meta,st,symbol,error,data){
-    if(error)return '<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="14" class="r">UNAVAILABLE • '+safe(error)+'</td></tr>';
+    if(error)return '<tr><td><b>'+safe(meta.label)+'</b></td><td colspan="15" class="r">UNAVAILABLE • '+safe(error)+'</td></tr>';
     if(meta.forwardOnly&&String(data?.historyMode||"").indexOf("FORWARD")>=0&&!Number(st?.totalSignals||0)){
       return '<tr><td><b>'+safe(meta.label)+'</b><br><small>OWN ENTRY / SL / TP1 / TP2 / TP3</small></td>'+
         '<td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>'+
-        '<td class="y"><b>WAIT ARCHIVE</b><br><small>n=0</small></td><td>0.0</td><td>0.0</td><td>0.0</td><td>0</td><td>0.00</td><td>—</td></tr>';
+        '<td class="y"><b>WAIT ARCHIVE</b><br><small>n=0</small></td><td class="y">N/A</td><td>0.0</td><td>0.0</td><td>0.0</td><td>0</td><td>0.00</td><td>—</td></tr>';
     }
     if(st&&!Number(st.totalSignals||0)){
       return '<tr><td><b>'+safe(meta.label)+'</b><br><small>OWN ENTRY / SL / TP1 / TP2 / TP3</small></td>'+
         '<td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>'+
-        '<td class="y"><b>NO SIGNAL</b><br><small>n=0</small></td><td>0.0</td><td>0.0</td><td>0.0</td><td>0</td><td>0.00</td><td>—</td></tr>';
+        '<td class="y"><b>NO SIGNAL</b><br><small>n=0</small></td><td class="y">N/A</td><td>0.0</td><td>0.0</td><td>0.0</td><td>0</td><td>0.00</td><td>—</td></tr>';
     }
     var tp=tpTrailCount(st),be=Number(st?.outcomes?.BE_POSITIVE||0),den=Number(st?.strictDenominator||0),
       winP=metricPart(st,"pipsBySymbol",symbol,"winTotal"),lossP=metricPart(st,"pipsBySymbol",symbol,"lossTotal"),netP=metricTotal(st,"pipsBySymbol",symbol);
     return '<tr><td><b>'+safe(meta.label)+'</b>'+(meta.validationOnly?'<br><small>NATIVE VALIDATION • NORMALIZED TRADE PLAN</small>':'')+'</td>'+
       '<td>'+number(st?.totalSignals,0)+'</td><td class="g">'+number(st?.positive,0)+'</td><td>'+number(tp,0)+'</td><td>'+number(be,0)+'</td>'+
       '<td class="r">'+number(st?.negative,0)+'</td><td>'+number(st?.beZero,0)+'</td><td>'+number(st?.ambiguous,0)+'</td>'+
-      '<td class="'+wrClass(st)+'"><b>'+(finite(st?.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>n='+number(den,0)+'</small></td>'+
+      '<td class="'+wrClass(st)+'"><b>'+(finite(st?.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>'+safe(strictBasisLabel(st))+'</small></td>'+
+      '<td><b>'+(finite(st?.signalWinRate)?number(st.signalWinRate,1)+"%":"N/A")+'</b><br><small>'+number(st?.positive,0)+'W / '+number(st?.negative,0)+'L</small></td>'+
       '<td class="g">'+signed(winP,1)+'</td><td class="r">'+signed(lossP,1)+'</td><td class="'+netClass(netP)+'"><b>'+signed(netP,1)+'</b></td>'+
       '<td class="'+netClass(metricTotal(st,"pointsBySymbol",symbol))+'">'+signed(metricTotal(st,"pointsBySymbol",symbol),0)+'</td>'+
       '<td>'+signed(st?.totalR,2)+'</td><td>'+money(st?.grossPLUSD)+'</td></tr>';
@@ -128,18 +135,19 @@
   function renderIndicatorComparison(results,symbol){
     if(!$("v8IndicatorComparison"))return;
     var rows=(results||[]).map(function(x){return analyticsRow(historyMeta(x.id),x.data?.summary,symbol,x.error,x.data)});
-    $("v8IndicatorComparison").innerHTML='<table class="v8Table v8WideTable"><thead><tr><th>INDICATOR</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>'+
-      '<p class="v8Footnote">Semua signal directional mesti ada ENTRY + SL + TP1 + TP2 + TP3. GF-AI dan GF-Market Study menggunakan plan native engine masing-masing semasa replay; GF-News tidak backfill macro/news lama dan menunggu forward archive. WIN PIP + SL PIP = NET PIP. Strict WR tidak termasuk BE0 dan AMBIGUOUS.</p>';
+    $("v8IndicatorComparison").innerHTML='<table class="v8Table v8WideTable"><thead><tr><th>INDICATOR</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR<br><small>P/L WEIGHTED</small></th><th>SIGNAL WR<br><small>COUNT ONLY</small></th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>'+
+      '<p class="v8Footnote">STRICT WR kini berdasarkan nilai P/L, bukan bilangan trade: WIN USD ÷ (WIN USD + |LOSS USD|) jika Gross USD lengkap; jika tidak, WIN PIP ÷ (WIN PIP + |SL PIP|). 50% = breakeven sebelum kos. SIGNAL WR hanyalah nisbah bilangan win/loss dan tidak boleh menutup NET LOSS. BE0 dan AMBIGUOUS tidak menambah nilai win/loss.</p>';
   }
   function renderDailySummary(data){
     if(!$("v8DailySummary"))return;
     var meta=historyMeta(historyIndicator()),symbol=data?.symbol||state.history?.symbolResolved||"";
     if($("v8DailyIndicatorLabel"))$("v8DailyIndicatorLabel").textContent=meta.label+" • "+symbol+" • "+(data?.tf||window.selectedTF||"");
     var arr=(data?.groups||[]).slice().reverse();
-    $("v8DailySummary").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>DATE (MYT)</th><th>DAY RESULT</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+
+    $("v8DailySummary").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>DATE (MYT)</th><th>DAY RESULT</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR<br><small>P/L</small></th><th>SIGNAL WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+
       arr.map(function(st){var netP=metricTotal(st,"pipsBySymbol",symbol),day=dayStatus(st,symbol);return '<tr><td><b>'+safe(st.period)+'</b></td><td class="'+netClass(netP)+'"><b>'+day+'</b></td><td>'+number(st.totalSignals,0)+'</td><td class="g">'+number(st.positive,0)+'</td>'+
         '<td>'+number(tpTrailCount(st),0)+'</td><td>'+number(st.outcomes?.BE_POSITIVE||0,0)+'</td><td class="r">'+number(st.negative,0)+'</td><td>'+number(st.beZero,0)+'</td><td>'+number(st.ambiguous,0)+'</td>'+
-        '<td class="'+wrClass(st)+'"><b>'+(finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>n='+number(st.strictDenominator||0,0)+'</small></td>'+
+        '<td class="'+wrClass(st)+'"><b>'+(finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>'+safe(strictBasisLabel(st))+'</small></td>'+
+        '<td>'+(finite(st.signalWinRate)?number(st.signalWinRate,1)+"%":"N/A")+'</td>'+
         '<td class="g">'+signed(metricPart(st,"pipsBySymbol",symbol,"winTotal"),1)+'</td><td class="r">'+signed(metricPart(st,"pipsBySymbol",symbol,"lossTotal"),1)+'</td>'+
         '<td class="'+netClass(netP)+'"><b>'+signed(netP,1)+'</b></td><td class="'+netClass(metricTotal(st,"pointsBySymbol",symbol))+'">'+signed(metricTotal(st,"pointsBySymbol",symbol),0)+'</td>'+
         '<td>'+signed(st.totalR,2)+'</td><td>'+money(st.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':
@@ -280,11 +288,12 @@
   }
   function renderComparison(obj){
     var rows=[obj?.previous,obj?.previousMatched,obj?.current].filter(Boolean);
-    return '<table class="v8Table"><thead><tr><th>'+t("period")+'</th><th>'+t("completed")+'</th><th>TP/TR</th><th>BE+</th><th>BE0</th><th>SL</th><th>'+t("strictWR")+'</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
+    return '<table class="v8Table"><thead><tr><th>'+t("period")+'</th><th>'+t("completed")+'</th><th>TP/TR</th><th>BE+</th><th>BE0</th><th>SL</th><th>STRICT WR<br><small>P/L</small></th><th>SIGNAL WR</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
       rows.map(function(s){return '<tr><td><b>'+safe(s.period)+'</b><br><small>'+safe(s.label||"")+'</small></td>'+
         '<td>'+number(s.completed,0)+'</td><td>'+number((s.outcomes?.TP1||0)+(s.outcomes?.TP2||0)+(s.outcomes?.TP3||0)+(s.outcomes?.TRAILING||0),0)+'</td>'+
         '<td>'+number(s.outcomes?.BE_POSITIVE||0,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.negative,0)+'</td>'+
-        '<td>'+ (finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'</td><td>'+signed(s.totalR,2)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>';
+        '<td class="'+wrClass(s)+'">'+ (finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'<br><small>'+safe(strictBasisLabel(s))+'</small></td>'+
+        '<td>'+(finite(s.signalWinRate)?number(s.signalWinRate,1)+"%":"N/A")+'</td><td>'+signed(s.totalR,2)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>';
   }
   function renderPerformance(data){
     if(!data)return;
@@ -292,8 +301,8 @@
     $("v8PerformanceSummary").innerHTML=resultStats(data.summary,data.symbol);
     $("v8MonthComparison").innerHTML=renderComparison(data.comparison);
     var arr=data.groups||[];
-    $("v8PeriodTable").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>'+t("period")+'</th><th>'+t("totalSignals")+'</th><th>'+t("completed")+'</th><th>'+t("positive")+'</th><th>'+t("negative")+'</th><th>'+t("beZero")+'</th><th>'+t("ambiguous")+'</th><th>'+t("strictWR")+'</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
-      arr.map(function(s){var net=metricTotal(s,"pipsBySymbol",data.symbol);return '<tr><td><b>'+safe(s.period)+'</b></td><td>'+number(s.totalSignals,0)+'</td><td>'+number(s.completed,0)+'</td><td class="g">'+number(s.positive,0)+'</td><td class="r">'+number(s.negative,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.ambiguous,0)+'</td><td class="'+wrClass(s)+'">'+(finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'</td><td class="g">'+signed(metricPart(s,"pipsBySymbol",data.symbol,"winTotal"),1)+'</td><td class="r">'+signed(metricPart(s,"pipsBySymbol",data.symbol,"lossTotal"),1)+'</td><td class="'+netClass(net)+'">'+signed(net,1)+'</td><td>'+signed(metricTotal(s,"pointsBySymbol",data.symbol),0)+'</td><td>'+signed(s.totalR,2)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':'<p>'+t("noSignalsInWindow")+'</p>';
+    $("v8PeriodTable").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>'+t("period")+'</th><th>'+t("totalSignals")+'</th><th>'+t("completed")+'</th><th>'+t("positive")+'</th><th>'+t("negative")+'</th><th>'+t("beZero")+'</th><th>'+t("ambiguous")+'</th><th>STRICT WR<br><small>P/L</small></th><th>SIGNAL WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
+      arr.map(function(s){var net=metricTotal(s,"pipsBySymbol",data.symbol);return '<tr><td><b>'+safe(s.period)+'</b></td><td>'+number(s.totalSignals,0)+'</td><td>'+number(s.completed,0)+'</td><td class="g">'+number(s.positive,0)+'</td><td class="r">'+number(s.negative,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.ambiguous,0)+'</td><td class="'+wrClass(s)+'">'+(finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'<br><small>'+safe(strictBasisLabel(s))+'</small></td><td>'+(finite(s.signalWinRate)?number(s.signalWinRate,1)+"%":"N/A")+'</td><td class="g">'+signed(metricPart(s,"pipsBySymbol",data.symbol,"winTotal"),1)+'</td><td class="r">'+signed(metricPart(s,"pipsBySymbol",data.symbol,"lossTotal"),1)+'</td><td class="'+netClass(net)+'">'+signed(net,1)+'</td><td>'+signed(metricTotal(s,"pointsBySymbol",data.symbol),0)+'</td><td>'+signed(s.totalR,2)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':'<p>'+t("noSignalsInWindow")+'</p>';
   }
   async function loadPerformance(){
     setHistoryIndicator($("v8PerformanceIndicator")?.value||historyIndicator());

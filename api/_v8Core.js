@@ -216,15 +216,32 @@ export function aggregate(rows=[]){
     return {count:all.length,winCount:wins.length,lossCount:losses.length,winTotal,lossTotal,total,
       status:total==null?"N/A":total>0?"PROFIT":total<0?"LOSS":"FLAT"};
   };
+  const pipBreakdown=symbols.length===1?sideBreakdown("signedPips",symbols[0]):null;
+  const grossComplete=totals.length>0&&gross.length===totals.length;
+  const pipComplete=totals.length>0&&symbols.length===1&&pipBreakdown?.count===totals.length;
+  let strictBasis=null,strictWinValue=null,strictLossValue=null;
+  if(grossComplete){
+    strictBasis="USD_GROSS";
+    strictWinValue=snap(sum(gross.filter(x=>Number(x.grossPLUSD)>0),"grossPLUSD"),4);
+    strictLossValue=snap(sum(gross.filter(x=>Number(x.grossPLUSD)<0),"grossPLUSD"),4);
+  }else if(pipComplete){
+    strictBasis="PIP";
+    strictWinValue=pipBreakdown.winTotal;
+    strictLossValue=pipBreakdown.lossTotal;
+  }
+  const strictValueDenominator=strictWinValue!=null&&strictLossValue!=null?strictWinValue+Math.abs(strictLossValue):null;
+  const strictWinRate=strictValueDenominator>0?100*strictWinValue/strictValueDenominator:null;
+  const signalWinRate=totals.length?100*positives.length/totals.length:null;
   return {totalSignals:rows.length,completed:completed.length,positive:positives.length,negative:negatives.length,beZero:beZero.length,
     pending:pending.length,ambiguous:ambiguous.length,validOnly:validOnly.length,outcomes:outcomeCounts,
-    strictWinRate:totals.length?100*positives.length/totals.length:null,
-    strictDenominator:totals.length,legacyWinRate:(totals.length+beZero.length)?100*(positives.length+beZero.length)/(totals.length+beZero.length):null,
+    strictWinRate,strictBasis,strictWinValue,strictLossValue,strictValueDenominator,
+    strictDenominator:totals.length,signalWinRate,signalDenominator:totals.length,
+    legacyWinRate:(totals.length+beZero.length)?100*(positives.length+beZero.length)/(totals.length+beZero.length):null,
     totalR:signedR.length?snap(sum(signedR,"rMultiple"),4):null,rCoverage:signedR.length,
     winR:posR.length?snap(sum(posR,"rMultiple"),4):0,lossR:negR.length?snap(sum(negR,"rMultiple"),4):0,
     grossPLUSD:gross.length?snap(sum(gross,"grossPLUSD")):null,grossCoverage:gross.length,
     priceUnitMix:Array.from(new Set(rows.filter(x=>x.completed).map(x=>x.symbolResolved))),
-    pipsBySymbol:Object.fromEntries(symbols.map(sym=>[sym,sideBreakdown("signedPips",sym)])),
+    pipsBySymbol:Object.fromEntries(symbols.map(sym=>[sym,sym===symbols[0]&&pipBreakdown?pipBreakdown:sideBreakdown("signedPips",sym)])),
     pointsBySymbol:Object.fromEntries(symbols.map(sym=>[sym,sideBreakdown("signedPoints",sym)]))};
 }
 export function groupHistory(rows=[],period="month"){

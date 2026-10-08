@@ -273,8 +273,8 @@
     <div id="v8HistoryStatus" class="sub">Pilih simbol Vantage, timeframe dan Indicator Sejarah.</div>
     <div id="v8Summary" class="v8MetricGrid"></div>
 
-    <div class="head sec"><div><small class="eyebrow">SAME SYMBOL • SAME TF • SAME DATE FILTER</small><h3>Win Rate Setiap Indicator</h3></div><span class="tag y">STRICT WR</span></div>
-    <div class="notice info">Semua signal directional wajib mempunyai ENTRY + SL + TP1 + TP2 + TP3. GF-AI dan GF-Market Study menggunakan replay engine mereka sendiri pada candle Vantage tertutup; GF-News hanya menggunakan forward archive kerana macro/news lama tidak boleh direka semula dengan data hari ini. WIN = TP + trailing + BE positif; LOSE = SL.</div>
+    <div class="head sec"><div><small class="eyebrow">SAME SYMBOL • SAME TF • SAME DATE FILTER</small><h3>Win Rate Setiap Indicator</h3></div><span class="tag y">STRICT WR • P/L WEIGHTED</span></div>
+    <div class="notice info">STRICT WR tidak lagi berdasarkan jumlah trade menang. Ia menggunakan magnitud P/L: Gross USD jika coverage lengkap, jika tidak jumlah PIP. Formula: WIN VALUE ÷ (WIN VALUE + |LOSS VALUE|). 50% = breakeven sebelum kos. SIGNAL WR dipaparkan berasingan sebagai nisbah bilangan win/loss. Semua signal directional tetap wajib mempunyai ENTRY + SL + TP1 + TP2 + TP3.</div>
     <div id="v8IndicatorComparison" class="v8Scroll"><p class="sub">Tekan Muat Sejarah untuk bandingkan semua indicator yang mempunyai historical replay.</p></div>
 
     <div class="head sec"><div><small class="eyebrow">DAILY TOTAL • ASIA/KUALA_LUMPUR</small><h3>Win Rate & Jumlah Setiap Hari</h3></div><span class="sub" id="v8DailyIndicatorLabel">Selected indicator</span></div>
@@ -313,7 +313,7 @@
     <div id="v8PerformanceSummary" class="v8MetricGrid"></div>
     <div class="head sec"><h3>Last month vs this month</h3><span class="sub">This month is MTD; matched days-to-date shown separately.</span></div>
     <div id="v8MonthComparison" class="v8Scroll"></div>
-    <div class="head sec"><h3>Results by period</h3><span class="sub">Strict WR excludes BE0 and ambiguous candles.</span></div>
+    <div class="head sec"><h3>Results by period</h3><span class="sub">Strict WR is P/L-weighted; 50% = breakeven. Signal WR is count-only.</span></div>
     <div id="v8PeriodTable" class="v8Scroll"></div>
     <p class="v8Footnote">If broker history does not cover a complete prior month/year, the result is marked N/A rather than invented. Historical normalized targets are a GoldFlow study layer, not proof the original indicator published those TP levels. Pips/points are not mixed across symbols.</p>
   </div>
