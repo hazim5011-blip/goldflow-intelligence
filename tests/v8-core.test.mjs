@@ -151,7 +151,8 @@ test("All 22 locale packs parse and partial packs fallback to English",()=>{
 test("V8 page references each new accessible section exactly once",()=>{
   const here=path.dirname(fileURLToPath(import.meta.url));
   const html=readFileSync(path.join(here,"../index.html"),"utf8");
-  for(const id of ["v8History","v8Performance","v8Evidence","v8News","gfLocale","gfSpeakGlobal","gfReplay","v8EvidencePng","v8EvidenceChart"]){
+  for(const id of ["v8History","v8Performance","v8Evidence","v8News","gfLocale","gfSpeakGlobal","gfReplay","v8EvidencePng","v8EvidenceChart",
+    "v8HistoryIndicator","v8PerformanceIndicator","v8IndicatorComparison","v8DailySummary"]){
     assert.equal([...html.matchAll(new RegExp('id="'+id+'"',"g"))].length,1,id);
   }
 });
@@ -184,4 +185,20 @@ test("Vantage broker UTC+3 is normalized ONLY in published historical timestamps
   assert.equal(row.priceMove,10,"correcting time must not change quote move");
   const backwardCompatible=buildHistory([signal],bars,{...ctx,brokerServerUTCOffsetSeconds:0})[0];
   assert.equal(backwardCompatible.signalCandleCloseUTC,"2026-10-01T23:35:00.000Z");
+});
+
+test("History Pro exposes explicit per-indicator WR and daily TP/SL total logic without substituting GF live modes",()=>{
+  const here=path.dirname(fileURLToPath(import.meta.url));
+  const html=readFileSync(path.join(here,"../index.html"),"utf8");
+  const js=readFileSync(path.join(here,"../v8.js"),"utf8");
+  assert.match(html,/Win Rate Setiap Indicator/);
+  assert.match(html,/Win Rate & Jumlah Setiap Hari/);
+  assert.match(html,/GF-AI Live Analyst v1\.60 — N\/A/);
+  assert.match(js,/HISTORY_CATALOG/);
+  assert.match(js,/data indicator lain tidak digunakan sebagai pengganti/);
+  assert.match(js,/STRICT WR/);
+  assert.match(js,/Σ PIP/);
+  assert.match(js,/Σ POINT/);
+  assert.match(js,/period=day/);
+  assert.match(js,/strictDenominator/);
 });
