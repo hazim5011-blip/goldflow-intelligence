@@ -248,7 +248,7 @@
 <section id="v8History" class="page">
   <div class="card">
     <div class="head"><div><small class="eyebrow">BROKER CANDLE RECONSTRUCTION</small><h3 data-i18n="historyPro">History Pro</h3></div><span class="tag y">HISTORICAL SIM • NOT EXECUTED TRADES</span></div>
-    <div class="notice info">Closed-candle OHLC replay. Every evaluable History trade-plan uses Entry + SL + TP1/TP2/TP3 + BE/Trailing management. If the native indicator did not define TP, History Pro applies a clearly-labelled NORMALIZED STUDY PLAN (1R/2R/3R); it is not relabelled as the native indicator target. TP and SL touched in the same candle remain AMBIGUOUS.</div>
+    <div class="notice info">Closed-candle OHLC replay. Semua indicator menggunakan GoldFlow Dynamic ATR + Structure management: setup/zone/structure indicator masing-masing menentukan anchor SL, ATR semasa memberi volatility buffer, dan TP1/TP2/TP3 mengutamakan structure/liquidity yang sudah confirmed sebelum signal. Dynamic R hanya fallback jika structure tidak cukup. BE +0.50R, lock +0.05R, trailing mula +0.75R, jarak 0.35R. TP dan SL disentuh dalam candle sama kekal AMBIGUOUS.</div>
     <div class="v8Filters">
       <div><label for="v8Start" data-i18n="from">From</label><input type="date" id="v8Start"></div>
       <div><label for="v8End" data-i18n="to">To</label><input type="date" id="v8End"></div>
@@ -315,7 +315,7 @@
     <div id="v8MonthComparison" class="v8Scroll"></div>
     <div class="head sec"><h3>Results by period</h3><span class="sub">Strict WR is P/L-weighted; 50% = breakeven. Signal WR is count-only.</span></div>
     <div id="v8PeriodTable" class="v8Scroll"></div>
-    <p class="v8Footnote">If broker history does not cover a complete prior month/year, the result is marked N/A rather than invented. Historical normalized targets are a GoldFlow study layer, not proof the original indicator published those TP levels. Pips/points are not mixed across symbols.</p>
+    <p class="v8Footnote">If broker history does not cover a complete prior month/year, the result is marked N/A rather than invented. Dynamic ATR + Structure targets are a GoldFlow management layer; native indicator Entry/SL/TP values remain retained separately for audit. Pips/points are not mixed across symbols.</p>
   </div>
 </section>
 
