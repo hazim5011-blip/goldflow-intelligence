@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.14",
-  "build_id": "gf-aat-1.6.3-r5.14-pattern-brain-adaptive-tools",
+  "version": "1.6.3-r5.15",
+  "build_id": "gf-aat-1.6.3-r5.15-loss-self-review-signal-time",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "a845743f0684a464d339a26ae722a234b55385bfcaecc0e8616ab893aba50b30",
-  "restart_cmd": "RESTART_GF_AAT_R5_14.bat",
+  "sha256": "f75c19a5eb95af7270aa3bd269ff5d6a98ff9202a132d2b3eb2b8a92ca4b7f17",
+  "restart_cmd": "RESTART_GF_AAT_R5_15.bat",
   "minimum_updater": 2
 }
