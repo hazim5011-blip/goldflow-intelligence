@@ -1,4 +1,5 @@
-export const PATTERN132_FIBO_DEFAULTS=Object.freeze({swingDepth:3,lookback:180,minSwingATR:1.50,atrPeriod:14});\nconst CFG=PATTERN132_FIBO_DEFAULTS;
+export const PATTERN132_FIBO_DEFAULTS=Object.freeze({swingDepth:3,lookback:180,minSwingATR:1.50,atrPeriod:14});
+const CFG=PATTERN132_FIBO_DEFAULTS;
 
 export const PATTERN132_FIBO_LEVELS=[
   {value:0.0,label:"0 MARK 0",role:"MARK"},
