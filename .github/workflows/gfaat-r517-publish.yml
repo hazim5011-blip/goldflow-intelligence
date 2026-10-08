@@ -36,7 +36,7 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/gfaat-r517 /tmp/r517.patch.gz /tmp/r517.patch /tmp/GF_AAT_STABLE.zip
           mkdir -p /tmp/gfaat-r517
-          cat gf-aat-update/staging/r517.b64.* | base64 -d > /tmp/r517.patch.gz
+          cat gf-aat-update/staging/r517.b64.00 gf-aat-update/staging/r517.b64.01 gf-aat-update/staging/r517.b64.02 gf-aat-update/staging/r517.b64.03 gf-aat-update/staging/r517.b64.04 gf-aat-update/staging/r517.b64.05 gf-aat-update/staging/r517.b64.06 gf-aat-update/staging/r517.b64.07 gf-aat-update/staging/r517.b64.08 gf-aat-update/staging/r517.b64.09 gf-aat-update/staging/r517.b64.10a gf-aat-update/staging/r517.b64.10b gf-aat-update/staging/r517.b64.11 | base64 -d > /tmp/r517.patch.gz
           echo '8b1342b53f963ef3eedf8321bc5f98256ccdacac4513cf5a73fe82abaf502416  /tmp/r517.patch.gz' | sha256sum -c -
           gzip -dc /tmp/r517.patch.gz > /tmp/r517.patch
           echo '1fac0cbd1c9723efc1363f602da470744f4b9a2410a6cd1d54427e5fe94bb9f3  /tmp/r517.patch' | sha256sum -c -
