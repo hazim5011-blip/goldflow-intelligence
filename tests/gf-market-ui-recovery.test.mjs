@@ -291,7 +291,7 @@ test("GF-AI v1.40 UI proves M1-to-D1 hierarchy and guards mixed-version policy f
  const ui=readFileSync(new URL("../study-ui.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const api=readFileSync(new URL("../api/study.js",import.meta.url),"utf8");
- assert.ok(html.includes("M1→D1 market hierarchy"));
+ assert.ok(html.includes("D1/H4 regime → H1/M30 thesis → M15/M5 setup → M1 precision trigger"));
  assert.ok(api.includes('const allAiFrames=["M1","M5","M15","M30","H1","H4","D1"]'));
  assert.ok(api.includes('frames:mode==="ai"?(bridge.frames||{}):undefined'));
  assert.ok(ui.includes("ALL TF MATRIX:"));
@@ -314,7 +314,7 @@ test("GF-AI v1.40 UI renders BUY SELL NO-TRADE scenarios and Experience Learning
  assert.ok(ui.includes("ALTERNATIVE: "));
  assert.ok(ui.includes("Historical follow-through only; NOT trade win rate / ML probability."));
  assert.ok(app.includes("PRIMARY "));
- assert.ok(app.includes("REASONING v1.30"));
+ assert.ok(app.includes("TRADER PLAYBOOK v1.40"));
 });
 
 test("GF-AI v1.40 UI exposes one Trade Idea and professional top-down hierarchy",()=>{
