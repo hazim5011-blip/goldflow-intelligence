@@ -1,0 +1,2 @@
+GF-AAT R5.17 stable release trigger.
+Build: gf-aat-1.6.3-r5.17-correction-effectiveness
