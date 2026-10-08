@@ -117,7 +117,7 @@ export function buildProfessionalPlaybook({symbol,selectedTf,matrix,selected,rea
   status:"NO_TRADE",reason:"Scenario Reasoning has no directional PRIMARY thesis. No Trade Idea is created."};
  const p=phase({selectedTf,matrix,primaryDirection:d,selected,plan,currentPrice}),counter=countertrend({d,matrix,selected,selectedTf}),
   risk=riskGeometry(plan,d),loc=locationEvidence(selected,d,Number(currentPrice)),q=quality({score:analysis?.directionScore,selectedTf,phaseInfo:p,counter,risk,locationHits:loc,macroHeadwind,reasoning}),
-  anchor=anchorTf({d,matrix,selectedTf}),event=p.event,id=ideaId({symbol,d,anchor,event,plan});
+  anchor=anchorTf({d,matrix,selectedTf}),event=p.event,anchorRow=tfRow(matrix,anchor),anchorEvent=anchorRow?.breakEvent||event,id=ideaId({symbol,d,anchor,event:anchorEvent,plan});
  const executionHierarchy={
   regime:["D1","H4"],
   thesis:["H1","M30"],
