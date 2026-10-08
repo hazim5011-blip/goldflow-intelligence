@@ -2,6 +2,8 @@ import analyzeHandler from "./analyze.js";
 import {brokerGet,vantageBrokerUtcOffsetSeconds} from "./_broker.js";
 import {buildHistory,metadataFromCatalog,filterHistory,aggregate,groupHistory,compareMonths,evidenceForRecord,explainRecord,DISCLAIMER} from "./_v8Core.js";
 import {buildGFHistoricalSignals} from "./_gfHistoryAdapters.js";
+import {listForwardPrivate} from "./_v8Ledger.js";
+import {GF_HISTORY_MANAGEMENT} from "./_gfTradePlan.js";
 
 const TF_ALLOWED=new Set(["M1","M5","M15","M30","H1","H4","D1"]);
 const MODES=new Set(["105","103","pvt","pvt102","pvtchart101","pattern132","snd107","owl101","fund104","gf-ai","gf-news","gf-study"]);
@@ -25,6 +27,36 @@ function gfVersion(indicator){
     indicator==="gf-news"?"GF_NEWS_IMPACT_PRO_FORWARD_ARCHIVE":
     "GF_MARKET_STRUCTURE_SCENARIO_V2";
 }
+const POSITIVE=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE"]);
+const NEGATIVE=new Set(["SL"]);
+function forwardGFRows(pairs,spec){
+  return (Array.isArray(pairs)?pairs:[]).map(({published:p,outcome:o})=>{
+    const entry=Number(p.entry),sl=Number(p.originalSL),d=Number(p.direction),risk=Math.abs(entry-sl),
+      outcome=String(o?.outcome||"PENDING"),move=o?.priceMove==null?null:Number(o.priceMove),
+      signedPoints=move!=null&&spec.point>0?move/spec.point:null,
+      signedPips=move!=null&&spec.pipSize>0?move/spec.pipSize:null;
+    return {signalId:p.signalId,recordMode:"FORWARD_LOGGED",symbolRequested:p.symbolResolved,symbolResolved:p.symbolResolved,
+      broker:"Vantage",brokerServer:p.brokerServer||null,indicatorId:p.indicatorId,indicatorVersion:p.indicatorVersion||p.indicatorId,
+      engineBuildHash:p.engineBuildHash||null,tf:p.tf,triggerTF:p.tf,setupTF:p.tf,biasTF:"NEWS_MACRO_CONTEXT",
+      direction:d,signalCandleCloseUTC:p.signalCandleCloseUTC,entry,originalSL:sl,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3,
+      score:p.score,code:d>0?"NEWS BUY":"NEWS SELL",zone:p.zone||null,reasons:Array.isArray(p.reasons)?p.reasons:[],
+      source:"VANTAGE_MT5_CANDLES",sourceBrokerBarEpoch:null,brokerServerUTCOffsetSeconds:null,publishedAtUTC:p.receivedAtUTC,capturedAtUTC:p.receivedAtUTC,
+      originalEngineStatus:"FORWARD_ENTRY_READY",originalEngineOutcome:o?.outcome||null,
+      planOrigin:"GF_NEWS_FORWARD_NATIVE_PLAN",nativeTargetDefined:true,managementPlan:{...GF_HISTORY_MANAGEMENT},
+      nativePlan:{entry,sl,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3},
+      pipSize:spec.pipSize,pipConvention:spec.pipConvention,point:spec.point,tickSize:spec.tickSize,
+      tickValueProfit:spec.tickValueProfit,tickValueLoss:spec.tickValueLoss,contractSize:spec.contractSize,currencyProfit:spec.currencyProfit,
+      volumeMin:spec.volumeMin,volumeStep:spec.volumeStep,lotExample:spec.lotExample,lotExampleSupported:spec.lotExampleSupported,
+      outcome,status:outcome,exitPrice:o?.exitPrice??null,exitTimeUTC:o?.exitTimeUTC??null,exitRule:o?.exitRule??null,
+      priceMove:move,priceMoveUnit:spec.currencyProfit||"SYMBOL QUOTE",signedPoints,signedPips,
+      riskQuote:-risk,riskPoints:spec.point>0?-risk/spec.point:null,riskPips:spec.pipSize>0?-risk/spec.pipSize:null,
+      grossPLUSD:null,grossEstimateNote:"FORWARD_ARCHIVE_RESEARCH_NO_BROKER_FILL_PNL",netPLUSD:null,
+      rMultiple:o?.rMultiple??(move!=null&&risk>0?move/risk:null),completed:!!o,positive:POSITIVE.has(outcome),negative:NEGATIVE.has(outcome),
+      dataQuality:["FORWARD_ARCHIVED_ENTRY_PLAN","OUTCOME_FROM_VANTAGE_CLOSED_CANDLE_REPLAY","NOT_BROKER_FILL_CERTIFICATION"],
+      evidenceStatus:"FORWARD_LOGGED_RESEARCH_SIGNAL",sourceUrl:null,newsContextId:null,
+      disclaimer:"Forward-logged GoldFlow research signal with immutable plan/outcome events. It is not a broker execution record or profit guarantee."};
+  });
+}
 async function fetchGFContext({symbol,tf,indicator}){
   const frames=indicator==="gf-ai"?AI_FRAMES:[...new Set([tf,"H1","H4"])];
   const offset=vantageBrokerUtcOffsetSeconds();
@@ -39,9 +71,16 @@ async function fetchGFContext({symbol,tf,indicator}){
     spec=metadataFromCatalog(matched||{point:bridge.point,digits:bridge.digits},requested,resolved),
     barWindow=Array.isArray(bridge.frames?.[tf])?bridge.frames[tf]:[];
   if(barWindow.length<20)throw new Error("INSUFFICIENT_GF_HISTORY_BARS");
-  const replay=buildGFHistoricalSignals({mode:indicator,symbol:resolved,tf,frames:bridge.frames||{},offsetSeconds:offset,maxCandidates:indicator==="gf-ai"?72:100});
-  const rows=buildHistory(replay.rawHistory,barWindow,{requested,resolved,tf,indicator,spec,indicatorVersion:gfVersion(indicator),
-    triggerTF:tf,setupTF:tf,biasTF:indicator==="gf-ai"?"ALL_TF":"H1_H4",brokerServer:bridge.server||catalog?.server||null,brokerServerUTCOffsetSeconds:offset});
+  let replay,rows;
+  if(indicator==="gf-news"){
+    const pairs=await listForwardPrivate({indicator,symbol:resolved,tf,limit:240}).catch(()=>[]);
+    replay={historyMode:"GF_NEWS_FORWARD_ARCHIVE",historyNote:"GF-News uses only forward-archived ENTRY READY plans with verified live macro/news context. Old news signals are not backfilled."};
+    rows=forwardGFRows(pairs,spec);
+  }else{
+    replay=buildGFHistoricalSignals({mode:indicator,symbol:resolved,tf,frames:bridge.frames||{},offsetSeconds:offset,maxCandidates:indicator==="gf-ai"?72:100});
+    rows=buildHistory(replay.rawHistory,barWindow,{requested,resolved,tf,indicator,spec,indicatorVersion:gfVersion(indicator),
+      triggerTF:tf,setupTF:tf,biasTF:indicator==="gf-ai"?"ALL_TF":"H1_H4",brokerServer:bridge.server||catalog?.server||null,brokerServerUTCOffsetSeconds:offset});
+  }
   const closed=barWindow.slice(0,-1);
   return {symbolRequested:requested,symbolResolved:resolved,broker:bridge.broker||"Vantage",brokerServer:bridge.server||catalog?.server||null,
     marketState:"MT5_HISTORY",indicator,tf,profile:indicator==="gf-ai"?"M1_D1_OWN_ENGINE_REPLAY":indicator==="gf-study"?"STRUCTURE_OWN_ENGINE_REPLAY":"FORWARD_NEWS_MACRO_ONLY",
