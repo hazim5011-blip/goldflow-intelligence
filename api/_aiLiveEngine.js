@@ -158,12 +158,15 @@ function validateRetestCore(bars,startIndex,plan,d,zoneAtr,currentPrice,candleAt
   return {valid:false,state:"NO_ENTRY_VALIDATION_DATA",touched:false,confirmation:null,executionTf};
  const lo=Number(plan.entryLow),hi=Number(plan.entryHigh),mid=(lo+hi)/2,act=Number(plan.activationLevel),ZA=Number(zoneAtr),CA=Number(candleAtr)||ZA;
  if(![lo,hi,mid].every(Number.isFinite)||!(hi>lo))return {valid:false,state:"INVALID_ENTRY_ZONE",touched:false,confirmation:null,executionTf};
- const pad=.035*ZA;let touchIndex=-1,confirmation=null;
+ const pad=.035*ZA,sweepModel=/SWEEP/.test(String(plan.entryEnvironment||plan.entryMethod||""));let touchIndex=-1,confirmation=null,failedRetest=null;
  for(let i=Math.max(0,startIndex);i<bars.length;i++){
   const b=bars[i];if(!b)continue;
   const touches=Number(b.h)>=lo-pad&&Number(b.l)<=hi+pad;
   if(touches&&touchIndex<0)touchIndex=i;
   if(touchIndex<0||i<touchIndex)continue;
+  const failBuffer=(sweepModel?.20:.12)*ZA;
+  const closedWrongSide=d===1?Number(b.c)<lo-failBuffer:Number(b.c)>hi+failBuffer;
+  if(closedWrongSide){failedRetest={index:i,time:b.t,close:rnd(b.c)};break}
   const range=Math.max(Number(b.h)-Number(b.l),1e-9),body=Math.abs(Number(b.c)-Number(b.o));
   const wick=d===1?Math.min(Number(b.o),Number(b.c))-Number(b.l):Number(b.h)-Math.max(Number(b.o),Number(b.c));
   const directional=d===1?Number(b.c)>Number(b.o):Number(b.c)<Number(b.o);
@@ -178,6 +181,7 @@ function validateRetestCore(bars,startIndex,plan,d,zoneAtr,currentPrice,candleAt
   }
  }
  if(touchIndex<0)return {valid:false,state:"WAIT_FIRST_RETEST",touched:false,confirmation:null,executionTf};
+ if(failedRetest)return {valid:false,state:"RETEST_FAILED_CLOSED_THROUGH_ZONE",touched:true,touchIndex,confirmation:null,failedRetest,executionTf};
  if(!confirmation)return {valid:false,state:"ZONE_TOUCHED_WAIT_CLOSED_REJECTION",touched:true,touchIndex,confirmation:null,executionTf};
  const age=bars.length-1-confirmation.index,fresh=age<=2;
  if(!fresh)return {valid:false,state:"RETEST_CONFIRMATION_STALE",touched:true,touchIndex,confirmation,ageClosedBars:age,executionTf};
