@@ -1,4 +1,4 @@
-// GF-AI LIVE ANALYST v1.30 • REASONING + SCENARIO + LEARNING
+// GF-AI LIVE ANALYST v1.40 • PROFESSIONAL TRADER PLAYBOOK
 // Reads M1/M5/M15/M30/H1/H4/D1 as one hierarchy, then compares BUY/SELL/NO_TRADE scenarios.
 // Selected TF owns the entry trigger/zone; every other TF is contextual evidence.
 // Market structure, BOS/CHOCH, liquidity, SND/SNR/SBR/RBS, OB/FVG,
@@ -9,6 +9,7 @@ import {impactForType} from "./_v8Impact.js";
 import {readMarketBrain,buildMarketPlan} from "./_aiMarketBrain.js";
 import {learnFromClosedBars} from "./_aiLearningBrain.js";
 import {buildReasoningBrain} from "./_aiReasoningBrain.js";
+import {buildProfessionalPlaybook} from "./_aiTraderPlaybook.js";
 
 const ids=["CPI","COREPCE","PAYEMS","UNRATE","FEDUPPER","US2Y","US10Y","REAL10Y","USDBROAD","NETLIQ"];
 const ALL_TFS=["M1","M5","M15","M30","H1","H4","D1"];
@@ -154,8 +155,8 @@ function observedSince(args,k,t){
 }
 function response(status,k,e,extra={}){
  const expiry=EXPIRY[k?.tf]||5;
- const aiPolicy={version:"1.30",entryPolicy:"REASONING_SCENARIO_LEARNING_MARKET_INTELLIGENCE",timeframes:ALL_TFS,selectedTfOwnsEntry:true,
-  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT","MACRO_CONTEXT","SCENARIO_REASONING","EXPERIENCE_CALIBRATION"],
+ const aiPolicy={version:"1.40",entryPolicy:"PROFESSIONAL_TRADER_PLAYBOOK_REASONING_LEARNING",timeframes:ALL_TFS,selectedTfOwnsEntry:true,
+  primaryEngines:["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT","MACRO_CONTEXT","SCENARIO_REASONING","EXPERIENCE_CALIBRATION","PROFESSIONAL_TRADER_PLAYBOOK","TRADE_IDEA_HIERARCHY"],
   reasoningModel:{scenarios:["BUY","SELL","NO_TRADE"],primaryAlternative:true,whatWouldChangeMyMind:true,evidenceVsContradiction:true},
   learningModel:{type:"RETROSPECTIVE_DIRECTIONAL_FOLLOW_THROUGH",trainedML:false,maxScoreAdjustment:5,minDecidableSamples:5,persistentLongTermMemory:false},
   chartPatterns:["DOUBLE_TOP_BOTTOM","HEAD_AND_SHOULDERS","INVERSE_HEAD_AND_SHOULDERS","ASCENDING_DESCENDING_TRIANGLE"],
@@ -165,9 +166,9 @@ function response(status,k,e,extra={}){
   // Backward compatibility for browser clients that still have v1.10 UI cached.
   requiresH1H4Alignment:false,acceptedClosedPatterns:["BOS","CHOCH","LIQUIDITY_SWEEP","CHART_PATTERN","CANDLE_FORENSICS"],
   triggerLookbackClosedBars:6,entryExpiryClosedBars:expiry,entryRetest:"MARKET_DRIVEN",scoreThresholdAligned:66,scoreThresholdPartialMTF:74,
-  note:"AI compares BUY, SELL and NO_TRADE. M1→D1 context, scenario reasoning and capped broker-history calibration are auditable. Fibonacci never creates the setup."};
- return {ok:true,engine:"GF_AI_REASONING_SCENARIO_LEARNING_V6",mode:"ai",modeProfile:"ALL_TF_REASONING_SCENARIO_LEARNING",
-  modelType:"AUDITABLE_REASONING_RULES_PLUS_EXPERIENCE_CALIBRATION_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
+  note:"AI compares BUY, SELL and NO_TRADE, then applies the Professional Trader Playbook: D1/H4 regime, H1/M30 thesis, M15/M5 setup, M1 precision trigger, one parent Trade Idea ID across TFs. Fibonacci never creates the setup."};
+ return {ok:true,engine:"GF_AI_PROFESSIONAL_TRADER_PLAYBOOK_V7",mode:"ai",modeProfile:"ALL_TF_PROFESSIONAL_TRADER_REASONING",
+  modelType:"AUDITABLE_PROFESSIONAL_TRADER_PLAYBOOK_NOT_TRAINED_ML",marketResearchOnly:true,canEnter:false,isExecutedTrade:false,
   source:"VANTAGE_MT5",...publicFields(k),macroBias:e.bias,macroScore:e.score,macroEvidence:e,fundamentalApplied:!!(e.assetSpecific&&e.available),aiPolicy,
   caution:"Confluence score is not win probability and cannot guarantee direction.",status,...extra};
 }
@@ -193,11 +194,15 @@ export function evaluateAILive(args={}){
  const reasoning=buildReasoningBrain({symbol:args.symbol,selectedTf:k.tf,selected,matrix:scores.matrix,consensus:scores.consensus,
   coverage:map.coverage,buyScore:scores.buy,sellScore:scores.sell,buyPlan,sellPlan,currentPrice:price,macroEvidence:e,
   macroDirection:scores.macroDirection,learning:experience,nowSec:k.nowSec});
- if(!pick.direction||reasoning.primaryScenario==="NO_TRADE")return response("AI_MARKET_BALANCED",k,e,{direction:0,researchScope:fullGold?"VERIFIED_GOLD_MACRO_PLUS_ALL_TF_MARKET_BRAIN":"ALL_TF_TECHNICAL_MARKET_BRAIN",
-  reason:reasoning.decisionSummary?.whyPrimary||(pick.reason==="BUY_SELL_EVIDENCE_TOO_CLOSE"?"BUY and SELL evidence are too balanced across M1→D1. AI will not force a trade.":"All-TF evidence is too weak for a directional thesis."),
-  marketBrain:map,experienceLearning:experience,reasoning,
-  analysis:{buyScore:rnd(scores.buy,1),sellScore:rnd(scores.sell,1),directionScore:rnd(pick.score,1),scoreGap:pick.gap,
-   scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",timeframeMatrix:scores.matrix,allTfConsensus:scores.consensus,blockers:[pick.reason||"NO_TRADE_REASONING"]}});
+ if(!pick.direction||reasoning.primaryScenario==="NO_TRADE"){
+  const noTradeAnalysis={buyScore:rnd(scores.buy,1),sellScore:rnd(scores.sell,1),directionScore:rnd(pick.score,1),scoreGap:pick.gap,
+   scoreMeaning:"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY",timeframeMatrix:scores.matrix,allTfConsensus:scores.consensus,blockers:[pick.reason||"NO_TRADE_REASONING"]};
+  const professionalPlaybook=buildProfessionalPlaybook({symbol:args.symbol,selectedTf:k.tf,matrix:scores.matrix,selected,reasoning,analysis:noTradeAnalysis,
+   plan:null,currentPrice:price,macroHeadwind:false});
+  return response("AI_MARKET_BALANCED",k,e,{direction:0,researchScope:fullGold?"VERIFIED_GOLD_MACRO_PLUS_ALL_TF_MARKET_BRAIN":"ALL_TF_TECHNICAL_MARKET_BRAIN",
+   reason:reasoning.decisionSummary?.whyPrimary||(pick.reason==="BUY_SELL_EVIDENCE_TOO_CLOSE"?"BUY and SELL evidence are too balanced across M1→D1. AI will not force a trade.":"All-TF evidence is too weak for a directional thesis."),
+   marketBrain:map,experienceLearning:experience,reasoning,professionalPlaybook,analysis:noTradeAnalysis});
+ }
  const d=pick.direction,th=thesis(selected,d,rows),trigger=triggerFor(selected,d),macroDir=scores.macroDirection,
   macroHeadwind=Boolean(macroDir&&macroDir!==d),higher=contextualOpposition(rows,k.tf,d),rev=reversalException(selected,rows,k.tf,d),
   counterTrend=higher.counterTrend&&!rev.strong,limits=thresholds(th.type,macroHeadwind,counterTrend,scores.coverage);
@@ -220,10 +225,12 @@ export function evaluateAILive(args={}){
   selectedEvidence:Array.isArray(selectedEvidence?.evidence)?selectedEvidence.evidence:[],allTfEvidence:allEvidence.slice(0,18),blockers,entryModel:plan?.entryMethod||null,
   fibonacci:plan?.fibConfluence||{overlap:false,bonus:0,role:"OPTIONAL_ONLY"},marketRegime:selected.regime,
   experienceAdjustment:d===1?(experience?.buyAdjustment||0):(experience?.sellAdjustment||0),reasoningPrimary:reasoning.primaryScenario};
+ const professionalPlaybook=buildProfessionalPlaybook({symbol:args.symbol,selectedTf:k.tf,matrix:scores.matrix,selected,reasoning,analysis,
+  plan,currentPrice:d===1?k.ask:k.bid,macroHeadwind});
  const scope=fullGold?"VERIFIED_GOLD_MACRO_PLUS_ALL_TF_MARKET_BRAIN":"ALL_TF_TECHNICAL_MARKET_BRAIN";
- if(!trigger||!plan||confluence<limits.confirm||counterTrend){
-  return response(d===1?"AI_BUY_WATCH":"AI_SELL_WATCH",k,e,{direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,
-   candidatePlan:plan?{...plan,researchOnly:true,status:"WATCH_NOT_ENTRY_READY"}:null,
+ if(!trigger||!plan||confluence<limits.confirm||counterTrend||!professionalPlaybook?.tradeIdea?.quality?.eligible){
+  return response(d===1?"AI_BUY_WATCH":"AI_SELL_WATCH",k,e,{direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,professionalPlaybook,
+   candidatePlan:plan?{...plan,researchOnly:true,status:"WATCH_NOT_ENTRY_READY",tradeIdeaId:professionalPlaybook?.tradeIdea?.id||null}:null,
    reason:counterTrend?side(d)+" evidence exists, but weighted higher-timeframe structure still opposes it. AI keeps WATCH until structural transition strengthens.":
     !trigger?side(d)+" thesis exists across M1→D1, but selected "+k.tf+" has no fresh BOS/CHOCH/liquidity/pattern/candle trigger yet.":
     !plan?"A selected-TF trigger exists, but there is no defensible structure/liquidity/zone retest for SL/TP geometry.":
@@ -243,7 +250,8 @@ export function evaluateAILive(args={}){
    selected.chartPattern?"Chart pattern: "+selected.chartPattern.type+" • "+selected.chartPattern.state:null,
    "Entry model: "+plan.entryMethod,plan.fibConfluence?.overlap?"Fibonacci overlaps chosen market zone (+4 only).":"Fibonacci not required.",
    "Confluence "+rnd(confluence,1)+"/100 (NOT win probability)"].filter(Boolean)};
- const elapsed=selectedRow.bars.length-1-triggerIndex,entryPx=d===1?k.ask:k.bid,overlay={direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,confirmation:conf,
+ conf.tradeIdeaId=professionalPlaybook?.tradeIdea?.id||null;
+ const elapsed=selectedRow.bars.length-1-triggerIndex,entryPx=d===1?k.ask:k.bid,overlay={direction:d,researchScope:scope,marketBrain:map,analysis,experienceLearning:experience,reasoning,professionalPlaybook,confirmation:conf,
   entryQuote:entryPx,entryQuoteSide:d===1?"ASK":"BID",elapsedClosedBars:elapsed,
   explanation:{headline:(gold?"GOLD":String(args.symbol||"SYMBOL"))+" "+side(d)+" • "+th.type,drivers:conf.explanation,basis:plan.entryMethod,researchScope:scope}};
  const later=observedSince(args,k,triggerBar.t),stopped=later.some(x=>d===1?x.l<=plan.invalidation:x.h>=plan.invalidation),reached=later.some(x=>d===1?x.h>=plan.tp1:x.l<=plan.tp1);
@@ -253,7 +261,7 @@ export function evaluateAILive(args={}){
  if(elapsed>expiry)return response("AI_EXPIRED",k,e,{...overlay,reason:"Market-driven retest window expired. Wait for new structure."});
  const inside=entryPx>=plan.entryLow&&entryPx<=plan.entryHigh,far=d===1?entryPx>plan.entryHigh+.75*selected.atr:entryPx<plan.entryLow-.75*selected.atr;
  if(far)return response("AI_MISSED_ENTRY",k,e,{...overlay,reason:"Price moved too far beyond the selected-TF retest zone. Do not chase."});
- const ready=inside&&confluence>=limits.ready;
+ const ready=inside&&confluence>=limits.ready&&professionalPlaybook?.tradeIdea?.quality?.eligible===true;
  return response(ready?(d===1?"AI_BUY_READY":"AI_SELL_READY"):d===1?"AI_BUY_CONFIRMED":"AI_SELL_CONFIRMED",k,e,{...overlay,canEnter:ready,
   entryState:ready?"REASONING_SCENARIO_ENTRY_VALIDATED":"WAIT_MARKET_DRIVEN_RETEST",
   reason:ready?side(d)+" ENTRY READY: all-TF context supports the selected "+k.tf+" thesis and Vantage price is inside "+plan.entryMethod+"."+
