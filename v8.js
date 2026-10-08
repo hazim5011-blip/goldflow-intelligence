@@ -123,7 +123,7 @@
     }
     var tp=tpTrailCount(st),be=Number(st?.outcomes?.BE_POSITIVE||0),den=Number(st?.strictDenominator||0),
       winP=metricPart(st,"pipsBySymbol",symbol,"winTotal"),lossP=metricPart(st,"pipsBySymbol",symbol,"lossTotal"),netP=metricTotal(st,"pipsBySymbol",symbol);
-    return '<tr><td><b>'+safe(meta.label)+'</b>'+(meta.validationOnly?'<br><small>NATIVE VALIDATION • NORMALIZED TRADE PLAN</small>':'')+'</td>'+
+    return '<tr><td><b>'+safe(meta.label)+'</b>'+(meta.validationOnly?'<br><small>NATIVE VALIDATION • DYNAMIC ATR+STRUCTURE PLAN</small>':'')+'</td>'+
       '<td>'+number(st?.totalSignals,0)+'</td><td class="g">'+number(st?.positive,0)+'</td><td>'+number(tp,0)+'</td><td>'+number(be,0)+'</td>'+
       '<td class="r">'+number(st?.negative,0)+'</td><td>'+number(st?.beZero,0)+'</td><td>'+number(st?.ambiguous,0)+'</td>'+
       '<td class="'+wrClass(st)+'"><b>'+(finite(st?.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>'+safe(strictBasisLabel(st))+'</small></td>'+
@@ -260,7 +260,7 @@
       stat(t("entry"),number(r.entry,5))+stat("SL",number(r.originalSL,5))+stat("TP1",number(r.tp1,5))+stat("TP2",number(r.tp2,5))+
       stat("TP3",number(r.tp3,5))+stat("BE RULE",r.managementPlan&&finite(r.managementPlan.beTriggerR)?"Trigger +"+number(r.managementPlan.beTriggerR,2)+"R":"N/A",r.managementPlan&&finite(r.managementPlan.beLockR)?"Lock +"+number(r.managementPlan.beLockR,2)+"R":"")+
       stat("TRAIL RULE",r.managementPlan&&finite(r.managementPlan.trailTriggerR)?"Start +"+number(r.managementPlan.trailTriggerR,2)+"R":"N/A",r.managementPlan&&finite(r.managementPlan.trailDistanceR)?"Distance "+number(r.managementPlan.trailDistanceR,2)+"R"+(finite(r.managementPlan.trailStepR)?" • Step "+number(r.managementPlan.trailStepR,2)+"R":""):"")+
-      stat("PLAN SOURCE",String(r.planOrigin||"").indexOf("PVT_CHART_CONFLUENCE")===0?"NATIVE PVT v1.01 PLAN":r.nativeTargetDefined?"NATIVE TP + HISTORY MGMT":"NORMALIZED 1R/2R/3R",r.planOrigin||"")+
+      stat("PLAN SOURCE",String(r.planOrigin||"").indexOf("GOLDFLOW_DYNAMIC_ATR_STRUCTURE")===0?"DYNAMIC ATR + STRUCTURE":"LOCKED NATIVE DYNAMIC PLAN",r.planOrigin||"")+
       stat(t("exit"),number(r.exitPrice,5))+stat(t("riskToSL"),signed(r.riskPoints,0)+" points")+
       stat(t("grossPL"),pl,"0.01 lot • excludes costs")+stat(t("totalR"),signed(r.rMultiple,2))+
       '</div><p><b>'+t("technicalReasons")+':</b> '+safe((r.reasons||[]).join(" • ")||"N/A")+'</p>'+
@@ -297,7 +297,7 @@
   }
   function renderPerformance(data){
     if(!data)return;
-    var perfMsg=safe(data.symbol)+" • "+data.indicator+" • "+data.tf+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC)+" • History performance uses Entry+SL and a transparent normalized 1R/2R/3R plan when the native indicator has no TP.";notice("v8PerformanceStatus",perfMsg);
+    var perfMsg=safe(data.symbol)+" • "+data.indicator+" • "+data.tf+" • "+t("brokerWindow")+" "+dt(data.dataWindow?.startUTC)+" – "+dt(data.dataWindow?.endUTC)+" • History performance uses Dynamic ATR + Structure management for Entry/SL/TP1/TP2/TP3; native indicator values remain in the audit record.";notice("v8PerformanceStatus",perfMsg);
     $("v8PerformanceSummary").innerHTML=resultStats(data.summary,data.symbol);
     $("v8MonthComparison").innerHTML=renderComparison(data.comparison);
     var arr=data.groups||[];
