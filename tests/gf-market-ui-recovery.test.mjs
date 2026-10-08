@@ -340,7 +340,7 @@ test("GF-AI v1.50 UI exposes live HOLD/CUT/RECOVERY lifecycle without full-margi
  assert.ok(html.includes('id="gfAIManageAction"'));
  assert.ok(html.includes('id="gfAIRecoveryState"'));
  assert.ok(html.includes('/ai-lifecycle.js'));
- assert.ok(html.includes("full-margin, martingale and loss-chasing are explicitly disallowed"));
+ assert.ok(html.includes("Full-margin, martingale and loss-chasing are explicitly disallowed"));
  assert.ok(ui.includes("CUT SETUP • ORIGINAL THESIS INVALID"));
  assert.ok(ui.includes("Recovery risk remains NORMAL only; no martingale."));
  assert.ok(app.includes("A++ HIGH CONVICTION • ENTRY CONDITIONS MET"));
