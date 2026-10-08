@@ -4,6 +4,7 @@ import macroHandler from "./macro.js";
 import {evaluateStudy,TF_SECONDS} from "./_studyEngine.js";
 import {evaluateAILive} from "./_aiLiveEngine.js";
 import {evaluateMarketStudy} from "./_marketStudyEngine.js";
+import {enforceGFTradePlan} from "./_gfTradePlan.js";
 
 const memo={time:0,value:null,pending:null};
 function capture(){let status=200,body=null;const res={setHeader(){return res},status(v){status=v;return res},json(x){body=x;return res},end(){return res}};return {res,get:()=>({status,body})}}
