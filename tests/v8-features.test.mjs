@@ -44,13 +44,14 @@ test("Fund104 is ready for clean broker window and excludes last forming candle"
  assert.deepEqual(z.history,x.history);
  assert.deepEqual(z.latestSignal,x.latestSignal);
 });
-test("Fund104 does not claim broker trade outcomes or retrospective TP/SL",()=>{
+test("Fund104 native engine remains targetless while History layer can add an explicitly normalized plan",()=>{
  const h=source("../api/_v8Core.js");
- assert.ok(h.includes('"fund104"'));
+ assert.ok(h.includes("GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R"));
  const rec={time:1700000000,closeTime:1700000300,direction:1,entry:4100,invalidation:4090,tp1:null};
- const bars=[bar(1700000000,4100,4103,4099,4102),bar(1700000300,4102,4110,4080,4090)];
+ const bars=[bar(1700000000,4100,4103,4099,4102),bar(1700000300,4102,4110,4080,4090),bar(1700000600,4090,4092,4088,4091)];
  const outcome=replayOutcome(rec,bars,"M5","fund104");
- assert.equal(outcome.outcome,"VALID_ONLY");
+ assert.equal(outcome.planOrigin,"GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R");
+ assert.equal(outcome.outcome,"AMBIGUOUS","same candle touches normalized 1R TP and original SL, so sequence must not be invented");
 });
 test("Blog has valid articles with non-fabricated release provenance",()=>{
  const j=JSON.parse(source("../blog/posts.json"));
