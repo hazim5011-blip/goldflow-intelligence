@@ -54,9 +54,9 @@ test("enabled macro allows dated official values but excludes stale/derived rows
  const current=new Date().toISOString(),observed=current.slice(0,10);
  const provider=async()=>new Response(JSON.stringify({ok:true,fetchedAt:current,
    provider:"official",quality:{fresh:1,official:1,primarySourceHealth:"OK",secondaryMirror:[]},
-   cards:[{id:"CPI",name:"CPI",value:3.1,date:observed,source:"BLS",status:"OFFICIAL",stale:false},
+   cards:[{id:"CPI",name:"CPI",value:3.1,date:observed,source:"Bureau of Labor Statistics",status:"OFFICIAL",stale:false},
     {id:"FAKE",value:99,date:observed,source:"model",status:"DERIVED",stale:false}]}));
  const result=await gptFundamentals({GF_GPT_INCLUDE_MACRO:"1"},provider,Date.now());
  assert.equal(result.status,"PARTIAL");assert.equal(result.cards.length,1);
- assert.equal(result.cards[0].source,"BLS");
+ assert.equal(result.cards[0].source,"Bureau of Labor Statistics");
 });
