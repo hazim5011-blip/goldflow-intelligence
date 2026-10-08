@@ -100,7 +100,44 @@ jobs:
                'GF_AAT_R5_17_STABLE/**/__pycache__/*' \
                'GF_AAT_R5_17_STABLE/.env'
           unzip -t /tmp/GF_AAT_STABLE.zip
-          test -z "$(unzip -Z1 /tmp/GF_AAT_STABLE.zip | grep -E '(^|/)(\.env|data/|logs/|\.venv/)' || true)"
+          FORBIDDEN="$(unzip -Z1 /tmp/GF_AAT_STABLE.zip | grep -E '(^|/)(data/|logs/|backups/|_updates/|\.venv/|\.pytest_cache/|__pycache__/)|(^|/)\.env
+
+      - name: Publish stable manifest and package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/GF_AAT_STABLE.zip gf-aat-update/GF_AAT_STABLE.zip
+          HASH="$(sha256sum gf-aat-update/GF_AAT_STABLE.zip | awk '{print $1}')"
+          cat > gf-aat-update/stable.json <<EOF
+          {
+            "channel": "stable",
+            "version": "1.6.3-r5.17",
+            "build_id": "gf-aat-1.6.3-r5.17-correction-effectiveness",
+            "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
+            "sha256": "$HASH",
+            "restart_cmd": "RESTART_GF_AAT_R5_17.bat",
+            "minimum_updater": 2
+          }
+          EOF
+          python3 -m json.tool gf-aat-update/stable.json >/dev/null
+          echo "Published candidate SHA256: $HASH"
+
+      - name: Commit stable channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gf-aat-update/GF_AAT_STABLE.zip gf-aat-update/stable.json
+          git diff --cached --quiet && { echo 'No stable changes to publish'; exit 1; }
+          git commit -m "Publish GF-AAT R5.17 correction effectiveness stable update"
+          git push
+ || true)"
+          if [ -n "$FORBIDDEN" ]; then
+            echo "Forbidden persistent-state paths found in stable package:"
+            echo "$FORBIDDEN"
+            exit 1
+          fi
 
       - name: Publish stable manifest and package
         shell: bash
