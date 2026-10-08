@@ -315,8 +315,9 @@ export function buildMarketPlan(c,brain,d,price){
  for(const r of [1.15,1.7,2.4,3.2,4.0]){if(targets.length===3)break;const x=mid+d*risk*r;if(!targets.length||d*(x-targets.at(-1))>.30*risk)targets.push(x)}
  const plan=riskLevels({side:d===1?"BUY":"SELL",entryLow:entry.low,entryHigh:entry.high,stop:stopInfo.price,targets:targets.slice(0,3)});
  if(!plan)return null;
- const fib=optionalFibConfluence(c,d,entry,atr),activationLevel=brain.breakEvent?.direction===d?brain.breakEvent.level:
-  brain.liquidity?.sweep?.direction===d?brain.liquidity.sweep.level:entry.mid;
+ const fib=optionalFibConfluence(c,d,entry,atr),zoneType=String(entry.type||""),
+  activationLevel=/RBS|SBR|NECKLINE/.test(zoneType)&&brain.breakEvent?.direction===d?brain.breakEvent.level:
+   /SWEEP/.test(entry.environment?.type||"")&&brain.liquidity?.sweep?.direction===d?brain.liquidity.sweep.level:entry.mid;
  return {...plan,entryMethod:entry.environment.type,entryZoneMethod:entry.type,entrySource:entry.source,fibConfluence:fib,
   entryEnvironment:entry.environment.type,motionProfile:brain.motion,zoneConfluence:entry.zoneConfluence,
   stopSource:stopInfo.source,stopDistanceAtr:stopInfo.distanceAtr,activationLevel:rnd(activationLevel),
