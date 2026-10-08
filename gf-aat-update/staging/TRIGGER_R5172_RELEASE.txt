@@ -1,0 +1,2 @@
+Trigger GF-AAT R5.17.2 stable release.
+Build: gf-aat-1.6.3-r5.17.2-outcome-calibrated-technical-evidence
