@@ -317,7 +317,7 @@ export function buildMarketPlan(c,brain,d,price){
  if(!plan)return null;
  const fib=optionalFibConfluence(c,d,entry,atr),activationLevel=brain.breakEvent?.direction===d?brain.breakEvent.level:
   brain.liquidity?.sweep?.direction===d?brain.liquidity.sweep.level:entry.mid;
- return {...plan,entryMethod:entry.environment.type+" • "+entry.type,entrySource:entry.source,fibConfluence:fib,
+ return {...plan,entryMethod:entry.environment.type,entryZoneMethod:entry.type,entrySource:entry.source,fibConfluence:fib,
   entryEnvironment:entry.environment.type,motionProfile:brain.motion,zoneConfluence:entry.zoneConfluence,
   stopSource:stopInfo.source,stopDistanceAtr:stopInfo.distanceAtr,activationLevel:rnd(activationLevel),
   requiresClosedRetest:true,noBlindTouch:true,chaseBufferAtr:.18,
