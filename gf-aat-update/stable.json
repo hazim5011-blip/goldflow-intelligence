@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.10",
-  "build_id": "gf-aat-1.6.3-r5.10-signal-outcomes-live-management",
+  "version": "1.6.3-r5.10.1",
+  "build_id": "gf-aat-1.6.3-r5.10.1-startup-contract-hotfix",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "78c8b1aa20157a91b51acfcbb460b66ff4dfb2b5c5851ed52fcd8db8f5ef5399",
-  "restart_cmd": "RESTART_GF_AAT_R5_10.bat",
+  "sha256": "adaf63c2e76899bba60d4eb04ba4ff2bc98f7ec18710acfdd72e82bfab3d8314",
+  "restart_cmd": "RESTART_GF_AAT_R5_10_1.bat",
   "minimum_updater": 2
 }
