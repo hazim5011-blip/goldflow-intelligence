@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.9",
-  "build_id": "gf-aat-1.6.3-r5.9-profile-integrity-runtime-contract",
+  "version": "1.6.3-r5.10",
+  "build_id": "gf-aat-1.6.3-r5.10-signal-outcomes-live-management",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "c3c3a3d10052e04085e6fcc14f9feb9424413db5268a1647f9c1511654290b89",
-  "restart_cmd": "RESTART_GF_AAT_R5_9.bat",
+  "sha256": "78c8b1aa20157a91b51acfcbb460b66ff4dfb2b5c5851ed52fcd8db8f5ef5399",
+  "restart_cmd": "RESTART_GF_AAT_R5_10.bat",
   "minimum_updater": 2
 }
