@@ -1,4 +1,4 @@
-// GF-AI PROFESSIONAL TRADER PLAYBOOK v1.40
+// GF-AI PROFESSIONAL TRADER PLAYBOOK v1.60 • ADAPTIVE ENTRY INTELLIGENCE
 // Converts all-TF evidence into one coherent Trade Idea instead of one "signal" per timeframe.
 // Deterministic research logic only. No copied ChatGPT model, no trained ML, no broker execution.
 import {TF_SECONDS,rnd,clamp} from "./_researchInputs.js";
@@ -56,9 +56,10 @@ function riskGeometry(plan,d){
  const r1=rr(tp1),r2=rr(tp2),r3=rr(tp3);
  return {valid:r1!==null&&r1>=.9,rr1:r1,rr2:r2,rr3:r3,reason:r1!==null&&r1>=.9?"ACCEPTABLE":"TP1_RR_TOO_SMALL"};
 }
-function locationEvidence(selected,d,price){
+function locationEvidence(selected,d,price,plan){
  const z=selected?.zones||{},hits=[];
- const add=(name,obj)=>{if(!obj)return;const lo=Number(obj.low),hi=Number(obj.high);if(Number.isFinite(lo)&&Number.isFinite(hi)&&price>=Math.min(lo,hi)&&price<=Math.max(lo,hi))hits.push(name)};
+ const probe=plan&&Number.isFinite(Number(plan.entryLow))&&Number.isFinite(Number(plan.entryHigh))?(Number(plan.entryLow)+Number(plan.entryHigh))/2:Number(price);
+ const add=(name,obj)=>{if(!obj)return;const lo=Number(obj.low),hi=Number(obj.high);if(Number.isFinite(lo)&&Number.isFinite(hi)&&probe>=Math.min(lo,hi)&&probe<=Math.max(lo,hi))hits.push(name)};
  add(d===1?"DEMAND":"SUPPLY",d===1?z.demand:z.supply);
  add(d===1?"RBS":"SBR",z.flip?.direction===d?z.flip:null);
  add("ORDER_BLOCK",z.orderBlock?.direction===d?z.orderBlock:null);
@@ -67,7 +68,9 @@ function locationEvidence(selected,d,price){
 }
 function phase({selectedTf,matrix,primaryDirection,selected,plan,currentPrice}){
  const major=bucket(matrix,["D1","H4"]),operating=bucket(matrix,["H1","M30"]),entry=bucket(matrix,["M15","M5","M1"]);
- const event=structureEvent(selected,primaryDirection),inside=plan&&Number.isFinite(currentPrice)&&currentPrice>=Number(plan.entryLow)&&currentPrice<=Number(plan.entryHigh);
+ const pad=plan&&Number.isFinite(Number(selected?.atr))?Number(plan.chaseBufferAtr||0)*Number(selected.atr):0;
+ const inside=plan&&Number.isFinite(currentPrice)&&(primaryDirection===1?(currentPrice>=Number(plan.entryLow)&&currentPrice<=Number(plan.entryHigh)+pad):(currentPrice>=Number(plan.entryLow)-pad&&currentPrice<=Number(plan.entryHigh)));
+ const event=structureEvent(selected,primaryDirection);
  let state="THESIS";
  if(event)state="SETUP_CONFIRMED";
  if(event&&plan)state="WAIT_RETEST";
@@ -116,10 +119,10 @@ function ideaId({symbol,d,anchor,event,plan}){
 export function buildProfessionalPlaybook({symbol,selectedTf,matrix,selected,reasoning,analysis,plan,currentPrice,macroHeadwind=false}={}){
  const d=reasoning?.primaryScenario==="BUY"?1:reasoning?.primaryScenario==="SELL"?-1:Number(analysis?.directionScore)>=0?0:0;
  const role=ROLE[selectedTf]||ROLE.M15;
- if(!d)return {version:"1.40",mode:"PROFESSIONAL_TRADER_PLAYBOOK",selectedTf,selectedTfRole:role,tradeIdea:null,
+ if(!d)return {version:"1.60",mode:"PROFESSIONAL_TRADER_PLAYBOOK",selectedTf,selectedTfRole:role,tradeIdea:null,
   status:"NO_TRADE",reason:"Scenario Reasoning has no directional PRIMARY thesis. No Trade Idea is created."};
  const p=phase({selectedTf,matrix,primaryDirection:d,selected,plan,currentPrice}),counter=countertrend({d,matrix,selected,selectedTf}),
-  risk=riskGeometry(plan,d),loc=locationEvidence(selected,d,Number(currentPrice)),q=quality({score:analysis?.directionScore,selectedTf,phaseInfo:p,counter,risk,locationHits:loc,macroHeadwind,reasoning}),
+  risk=riskGeometry(plan,d),loc=locationEvidence(selected,d,Number(currentPrice),plan),q=quality({score:analysis?.directionScore,selectedTf,phaseInfo:p,counter,risk,locationHits:loc,macroHeadwind,reasoning}),
   anchor=anchorTf({d,matrix,selectedTf}),event=p.event,anchorRow=tfRow(matrix,anchor),anchorEvent=anchorRow?.breakEvent||event,id=ideaId({symbol,d,anchor,event:anchorEvent,plan});
  const executionHierarchy={
   regime:["D1","H4"],
@@ -134,14 +137,14 @@ export function buildProfessionalPlaybook({symbol,selectedTf,matrix,selected,rea
    structure:r?.structureLabel||"N/A",breakEvent:r?.breakEvent?.type||null,rawBuy:r?.buyScore??null,rawSell:r?.sellScore??null};
  });
  const state=!q.eligible?"WATCH":p.state==="ENTRY_WINDOW"?"ENTRY_READY":p.state==="WAIT_RETEST"?"CONFIRMED_WAIT_RETEST":"WATCH";
- return {version:"1.40",mode:"PROFESSIONAL_TRADER_PLAYBOOK",selectedTf,selectedTfRole:role,tradeIdea:{
+ return {version:"1.60",mode:"PROFESSIONAL_TRADER_PLAYBOOK",selectedTf,selectedTfRole:role,tradeIdea:{
    id,symbol,direction:side(d),anchorTf:anchor,state,quality:q,phase:p.state,entryModel:plan?.entryMethod||null,
    entryRange:plan?{low:plan.entryLow,high:plan.entryHigh}:null,structuralStop:plan?.invalidation??null,
    targets:plan?[plan.tp1,plan.tp2,plan.tp3].filter(Number.isFinite):[],riskGeometry:risk,locationEvidence:loc,
    counterTrend:counter,macroHeadwind:Boolean(macroHeadwind),
    duplicatePolicy:"ONE_PARENT_IDEA_ACROSS_TFS",entryOwner:role.entryOwner,
    cadenceGuidance:role.cadence,highConvictionLabel:q.highConviction?"A++ HIGH CONVICTION":"STANDARD QUALIFIED",
-   riskPolicy:{fullMarginAllowed:false,recoveryRisk:"NORMAL_RISK_ONLY",martingaleAllowed:false,lossChasingAllowed:false},
+   riskPolicy:{fullMarginAllowed:false,recoveryRisk:"NORMAL_RISK_ONLY",martingaleAllowed:false,lossChasingAllowed:false,blindZoneTouchAllowed:false,chaseAfterDisplacementAllowed:false},
    professionalRule:state==="ENTRY_READY"?"Entry is permitted by playbook research gates; still not broker execution.":
     "Do not force or chase. Wait until market location, structural trigger and risk geometry are simultaneously acceptable."
   },executionHierarchy,tfChecklist,
