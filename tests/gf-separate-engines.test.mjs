@@ -30,7 +30,7 @@ function fixture(){
 }
 test("identical Gold inputs go through genuinely separate engines, methods, entries and target construction",()=>{
  const f=fixture(),a=evaluateAILive(f),s=evaluateMarketStudy(f);
- assert.equal(a.engine,"GF_AI_LIVE_MANAGEMENT_RECOVERY_V8");
+ assert.equal(a.engine,"GF_AI_ADAPTIVE_ENTRY_INTELLIGENCE_V9");
  assert.ok(a.aiPolicy.primaryEngines.includes("BOS_CHOCH"));
  assert.ok(a.aiPolicy.primaryEngines.includes("LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS"));
  assert.equal(a.aiPolicy.fibonacciRole,"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED");
@@ -39,10 +39,15 @@ test("identical Gold inputs go through genuinely separate engines, methods, entr
  assert.equal(a.aiPolicy.learningModel.maxScoreAdjustment,5);
  assert.ok(a.aiPolicy.primaryEngines.includes("PROFESSIONAL_TRADER_PLAYBOOK"));
  assert.ok(a.aiPolicy.primaryEngines.includes("TRADE_IDEA_HIERARCHY"));
- assert.equal(a.aiPolicy.version,"1.50");
+ assert.equal(a.aiPolicy.version,"1.60");
  assert.equal(a.aiPolicy.managementPolicy.fullMarginAllowed,false);
  assert.equal(a.aiPolicy.managementPolicy.martingaleAllowed,false);
  assert.equal(a.aiPolicy.managementPolicy.recoveryRisk,"NORMAL_RISK_ONLY");
+ assert.equal(a.aiPolicy.entryRetest,"CLOSED_RETEST_REJECTION_REQUIRED");
+ assert.equal(a.aiPolicy.executionLadder.M15,"M5");
+ assert.equal(a.aiPolicy.executionLadder.M5,"M1");
+ assert.ok(a.aiPolicy.hardSafety.includes("BLIND_ZONE_TOUCH"));
+ assert.ok(a.aiPolicy.hardSafety.includes("CHASE_AFTER_DISPLACEMENT"));
  assert.equal(a.aiPolicy.persistent24hSignalArchive,false);
  assert.equal(s.engine,"GF_MARKET_STRUCTURE_SCENARIO_V2");
  assert.ok(s.confirmation,JSON.stringify({status:s.status,reason:s.reason}));
@@ -54,6 +59,10 @@ test("identical Gold inputs go through genuinely separate engines, methods, entr
  if(a.confirmation){
   assert.ok(a.aiPolicy.entryModels.includes(a.confirmation.entryMethod));
   assert.ok(!/FIB/i.test(a.confirmation.entryMethod),"Fibonacci must not be the primary AI entry method");
+  assert.equal(a.confirmation.requiresClosedRetest,true);
+  assert.ok(a.analysis?.entryValidation);
+  assert.ok(a.analysis?.executionTf);
+  if(a.canEnter)assert.equal(a.analysis.entryValidation.valid,true);
  }
  assert.equal(a.macroEvidence.assetSpecific,true);
  assert.equal(s.macroContext.appliedAsGate,false);
@@ -114,7 +123,7 @@ test("release period is never promoted to verified news timestamp or fake surpri
  assert.equal(x.macroEvidence.releaseTimeVerified,false);
  assert.equal(x.macroEvidence.forecastSurpriseVerified,false);
  assert.ok(x.macroEvidence.observations.every(o=>o.verifiedReleaseTimestamp===false&&o.consensusSurprise===null));
- assert.equal(x.modelType,"AUDITABLE_PROFESSIONAL_TRADER_LIFECYCLE_NOT_TRAINED_ML");
+ assert.equal(x.modelType,"AUDITABLE_ADAPTIVE_ENTRY_INTELLIGENCE_NOT_TRAINED_ML");
 });
 
 
@@ -136,8 +145,10 @@ test("Market Intelligence policy contains structure, BOS/CHOCH, liquidity, SND/S
  for(const id of ["MARKET_STRUCTURE_HH_HL_LH_LL","BOS_CHOCH","LIQUIDITY_SWEEP_EQUAL_HIGHS_LOWS","SND_SNR_SBR_RBS","ORDER_BLOCK","FVG","CHART_PATTERNS","CANDLE_FORENSICS","ALL_TF_CONTEXT"]){
   assert.ok(e.includes(id),id);
  }
- assert.ok(a.aiPolicy.entryModels.includes("BOS_RBS_SBR_RETEST"));
- assert.ok(a.aiPolicy.entryModels.includes("CHOCH_STRUCTURE_RETEST"));
+ assert.ok(a.aiPolicy.entryModels.includes("TREND_BOS_PULLBACK"));
+ assert.ok(a.aiPolicy.entryModels.includes("SWEEP_CHOCH_REVERSAL"));
+ assert.ok(a.aiPolicy.primaryEngines.includes("GOLD_MOTION_PROFILE"));
+ assert.ok(a.aiPolicy.primaryEngines.includes("CLOSED_RETEST_REJECTION"));
  assert.equal(a.aiPolicy.fibonacciRole,"OPTIONAL_OVERLAP_BONUS_ONLY_NOT_REQUIRED");
 });
 
@@ -150,7 +161,7 @@ test("Market Intelligence never forces a trade when BUY/SELL evidence is balance
  assert.equal(a.canEnter,false);
 });
 
-test("GF-AI v1.50 reads all seven broker timeframes and exposes a visible matrix",()=>{
+test("GF-AI v1.60 reads all seven broker timeframes and exposes a visible matrix",()=>{
  const a=evaluateAILive(fixture());
  assert.deepEqual(a.aiPolicy.timeframes,["M1","M5","M15","M30","H1","H4","D1"]);
  assert.equal(a.aiPolicy.selectedTfOwnsEntry,true);
@@ -162,7 +173,7 @@ test("GF-AI v1.50 reads all seven broker timeframes and exposes a visible matrix
   assert.ok(a.marketBrain.allTimeframes[tf].ok,tf);
  }
 });
-test("GF-AI v1.50 fails closed when fewer than four timeframes are available",()=>{
+test("GF-AI v1.60 fails closed when fewer than four timeframes are available",()=>{
  const f=fixture(),frames={M15:f.frames.M15,H1:f.frames.H1,H4:f.frames.H4};
  const a=evaluateAILive({...f,frames});
  assert.equal(a.status,"DATA_UNVERIFIED");
@@ -177,7 +188,7 @@ test("Backward-compatibility fields prevent cached v1.10 UI from crashing on acc
  assert.ok(Number.isInteger(a.aiPolicy.entryExpiryClosedBars));
 });
 
-test("GF-AI v1.50 returns auditable primary/alternative/no-trade reasoning",()=>{
+test("GF-AI v1.60 returns auditable primary/alternative/no-trade reasoning",()=>{
  const a=evaluateAILive(fixture());
  assert.ok(a.reasoning,JSON.stringify({status:a.status,reason:a.reason}));
  assert.equal(a.reasoning.version,"1.30");
@@ -189,7 +200,7 @@ test("GF-AI v1.50 returns auditable primary/alternative/no-trade reasoning",()=>
  assert.ok(Array.isArray(a.reasoning.decisionSummary.whatWouldChangeMyMind));
  assert.ok(a.reasoning.decisionSummary.whatWouldChangeMyMind.length>=2);
 });
-test("GF-AI v1.50 Experience Learning is capped and cannot masquerade as win probability",()=>{
+test("GF-AI v1.60 Experience Learning is capped and cannot masquerade as win probability",()=>{
  const a=evaluateAILive(fixture());
  assert.ok(a.experienceLearning);
  if(a.experienceLearning.ok){
@@ -201,7 +212,7 @@ test("GF-AI v1.50 Experience Learning is capped and cannot masquerade as win pro
  assert.equal(a.aiPolicy.scoreMeaning,"AUDITABLE_CONFLUENCE_NOT_WIN_PROBABILITY");
 });
 
-test("GF-AI v1.50 exposes Professional Trader Playbook and one parent Trade Idea when directional",()=>{
+test("GF-AI v1.60 exposes Professional Trader Playbook and one parent Trade Idea when directional",()=>{
  const a=evaluateAILive(fixture());
  assert.ok(a.professionalPlaybook||a.reasoning?.primaryScenario==="NO_TRADE",JSON.stringify({status:a.status,reason:a.reason}));
  if(a.professionalPlaybook?.tradeIdea){
@@ -214,4 +225,20 @@ test("GF-AI v1.50 exposes Professional Trader Playbook and one parent Trade Idea
   assert.ok(a.professionalPlaybook.tfChecklist.some(x=>x.tf==="D1"&&x.role==="REGIME"));
   assert.ok(a.professionalPlaybook.tfChecklist.some(x=>x.tf==="M1"&&x.role==="PRECISION_TRIGGER"));
  }
+});
+
+test("GF-AI v1.60 never treats a zone touch alone as ENTRY READY",()=>{
+ const a=evaluateAILive(fixture());
+ assert.equal(a.aiPolicy.entryRetest,"CLOSED_RETEST_REJECTION_REQUIRED");
+ if(a.analysis?.entryValidation){
+  assert.equal(a.analysis.entryValidation.rule||"NO_BLIND_TOUCH_ENTRY_CLOSED_RETEST_REJECTION_REQUIRED","NO_BLIND_TOUCH_ENTRY_CLOSED_RETEST_REJECTION_REQUIRED");
+  if(!a.analysis.entryValidation.valid)assert.equal(a.canEnter,false);
+ }
+});
+test("GF-AI v1.60 exposes current Gold motion and lower-TF execution ladder",()=>{
+ const a=evaluateAILive(fixture());
+ assert.ok(a.marketBrain?.selected?.motion);
+ assert.ok(["CHOP","IMPULSE_UP","IMPULSE_DOWN","VOLATILITY_SPIKE","DRIFT_UP","DRIFT_DOWN","BALANCED","UNKNOWN"].includes(a.marketBrain.selected.motion.state));
+ assert.equal(a.aiPolicy.executionLadder.H1,"M15");
+ assert.equal(a.aiPolicy.executionLadder.M30,"M5");
 });
