@@ -182,6 +182,188 @@
           "rollback": null
         }
       ]
+    },
+    {
+      "atUTC": "2026-10-09T09:12:00.494Z",
+      "batchIndex": 1,
+      "indicators": [
+        "pvtchart101",
+        "pattern132",
+        "snd107"
+      ],
+      "results": [
+        {
+          "ok": true,
+          "indicator": "pvtchart101",
+          "indicatorName": "PVT Chart Confluence v1.01",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "KEEP_CURRENT",
+          "recommendationId": "pvtchart101-XAUUSD247-M15-202610090911",
+          "baseline": {
+            "totalSignals": 53,
+            "completed": 51,
+            "strictDenominator": 51,
+            "strictWR": 48.91,
+            "signalWR": 56.86,
+            "winPip": 2387.66,
+            "lossPip": -2494.47,
+            "netPip": -106.8,
+            "totalR": -3.208,
+            "positive": 29,
+            "negative": 22,
+            "beZero": 0,
+            "ambiguous": 2,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "diagnostics": {
+            "lossCount": 22,
+            "winCount": 29,
+            "quickStopRate": 22.7,
+            "targetFallbackRate": 98,
+            "wideRiskRate": 11.8,
+            "avgLossRiskATR": 2.375,
+            "avgWinRiskATR": 2.422,
+            "avgLossScore": 84.8,
+            "avgWinScore": 78.3
+          },
+          "decision": {
+            "action": "KEEP_CURRENT",
+            "reason": "NO_CANDIDATE_PASSED_OOS_GATE",
+            "sampleReady": true,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null
+        },
+        {
+          "ok": true,
+          "indicator": "pattern132",
+          "indicatorName": "Pattern Zone Tutor v1.32",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_DATA",
+          "recommendationId": "pattern132-XAUUSD247-M15-202610090911",
+          "baseline": {
+            "totalSignals": 29,
+            "completed": 29,
+            "strictDenominator": 29,
+            "strictWR": 27.47,
+            "signalWR": 44.83,
+            "winPip": 946.06,
+            "lossPip": -2497.82,
+            "netPip": -1551.77,
+            "totalR": -8.672,
+            "positive": 13,
+            "negative": 16,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "diagnostics": {
+            "lossCount": 16,
+            "winCount": 13,
+            "quickStopRate": 31.3,
+            "targetFallbackRate": 69,
+            "wideRiskRate": 0,
+            "avgLossRiskATR": 2.207,
+            "avgWinRiskATR": 2.11,
+            "avgLossScore": 84.7,
+            "avgWinScore": 77.7
+          },
+          "decision": {
+            "action": "COLLECT_DATA",
+            "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null
+        },
+        {
+          "ok": true,
+          "indicator": "snd107",
+          "indicatorName": "SND / SNR / SBR / RBS v1.07",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_DATA",
+          "recommendationId": "snd107-XAUUSD247-M15-202610090911",
+          "baseline": {
+            "totalSignals": 37,
+            "completed": 36,
+            "strictDenominator": 36,
+            "strictWR": 51.52,
+            "signalWR": 55.56,
+            "winPip": 709.51,
+            "lossPip": -667.64,
+            "netPip": 41.87,
+            "totalR": -2.458,
+            "positive": 20,
+            "negative": 16,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "diagnostics": {
+            "lossCount": 16,
+            "winCount": 20,
+            "quickStopRate": 100,
+            "targetFallbackRate": 52.8,
+            "wideRiskRate": 27.8,
+            "avgLossRiskATR": 1.944,
+            "avgWinRiskATR": 2.9,
+            "avgLossScore": 80.8,
+            "avgWinScore": 81
+          },
+          "decision": {
+            "action": "COLLECT_DATA",
+            "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null
+        }
+      ]
     }
   ]
 }
