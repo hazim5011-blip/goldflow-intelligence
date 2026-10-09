@@ -1,11 +1,10 @@
-// Real-market smoke test: fetch only PUBLIC, READ-ONLY Production proxy endpoints.
+// Real-market smoke test: fetch only PUBLIC, READ-ONLY Cloudflare proxy endpoints.
 // This exercises current Vantage broker candles with the proposed Fund104
 // staging module without exposing bridge credentials or modifying Production.
 import test from "node:test";
 import assert from "node:assert/strict";
 import {runFund104} from "../api/_indicatorFund104.js";
-
-const BASE="https://goldflow-intelligence.vercel.app";
+import {LIVE_BASE as BASE} from "./_liveBase.mjs";
 const SYM="XAUUSD247";
 const expectLive=process.env.GOLDFLOW_LIVE_SMOKE==="1";
 
