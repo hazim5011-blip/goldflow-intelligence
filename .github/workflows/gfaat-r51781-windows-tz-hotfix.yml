@@ -57,6 +57,7 @@ jobs:
               s=s.replace(old_build,new_build)
               s=s.replace('1.6.3-r5.17.8','1.6.3-r5.17.8.1')
               s=s.replace('R5.17.8','R5.17.8.1')
+              s=s.replace('gf-aat-1.6.3-r5.17.8.1.1-openai-0600-windows-tz-hotfix',new_build)
               p.write_text(s,encoding='utf-8')
 
           b=json.loads((root/'CURRENT_BUILD.json').read_text(encoding='utf-8'))
