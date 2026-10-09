@@ -82,6 +82,11 @@ jobs:
               s=s.replace("'R5.17.3'","'R5.17.4'")
               s=s.replace('"R5.17.3"','"R5.17.4"')
               s=s.replace('RESTART_GF_AAT_R5_17_3.bat','RESTART_GF_AAT_R5_17_4.bat')
+              old_api='mission-asset-fleet-cognitive-reasoning-contextual-playbook-context-lens-pattern-brain-adaptive-tools-knowledge-scout-outcomes-closed-loop-lessons-false-block-correction-effectiveness-v15'
+              new_api='mission-asset-fleet-cognitive-reasoning-contextual-playbook-context-lens-pattern-brain-adaptive-tools-knowledge-scout-outcomes-closed-loop-lessons-false-block-correction-effectiveness-openai-critic-news-quality-v16'
+              s=s.replace(old_api,new_api)
+              s=s.replace("endswith('v15')","endswith('v16')")
+              s=s.replace('endswith("v15")','endswith("v16")')
               if p.name=='test_v140_causal_performance.py':
                   needle="endswith('1.4.0')"
                   if needle in s:
