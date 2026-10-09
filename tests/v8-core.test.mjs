@@ -195,7 +195,7 @@ test("Vantage broker UTC+3 is normalized ONLY in published historical timestamps
   assert.equal(backwardCompatible.signalCandleCloseUTC,"2026-10-01T23:35:00.000Z");
 });
 
-test("History Pro exposes explicit per-indicator WR and daily TP/SL total logic without substituting GF live modes",()=>{
+test("History Pro exposes explicit per-indicator WR plus own-engine GF replay and forward-only News semantics",()=>{
   const here=path.dirname(fileURLToPath(import.meta.url));
   const html=readFileSync(path.join(here,"../index.html"),"utf8");
   const js=readFileSync(path.join(here,"../v8.js"),"utf8");
@@ -206,7 +206,9 @@ test("History Pro exposes explicit per-indicator WR and daily TP/SL total logic 
   assert.match(js,/HISTORY_CATALOG/);
   assert.match(js,/pvtchart101/);
   assert.match(html,/PVT Chart Confluence XAU v1\.01/);
-  assert.match(js,/data indicator lain tidak digunakan sebagai pengganti/);
+  assert.match(js,/{id:"gf-ai",label:"GF-AI Live Analyst v1\.60",historical:true,note:"Own-engine closed-candle replay"}/);
+  assert.match(js,/{id:"gf-news",label:"GF-News Impact Pro",historical:true,forwardOnly:true,note:"Forward archive only; historical macro\/news is not backfilled"}/);
+  assert.match(js,/{id:"gf-study",label:"GF-Market Study Pro",historical:true,note:"Own-engine closed-candle replay"}/);
   assert.match(js,/STRICT WR/);
   assert.match(js,/WIN PIP/);
   assert.match(js,/SL PIP/);
