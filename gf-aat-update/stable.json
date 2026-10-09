@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.17.2",
-  "build_id": "gf-aat-1.6.3-r5.17.2-outcome-calibrated-technical-evidence",
+  "version": "1.6.3-r5.17.3",
+  "build_id": "gf-aat-1.6.3-r5.17.3-structural-entry-geometry",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "468c3396b680345162b87d684e99d6df46411757b4a1861bfb821a54c68be125",
-  "restart_cmd": "RESTART_GF_AAT_R5_17_2.bat",
+  "sha256": "c2b5dea3c6db11472fddff90dbc143b4bef80f1fa907c2031affa2e52eb80aea",
+  "restart_cmd": "RESTART_GF_AAT_R5_17_3.bat",
   "minimum_updater": 2
 }
