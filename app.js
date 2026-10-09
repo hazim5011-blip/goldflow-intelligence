@@ -724,10 +724,15 @@ function renderRecommendedAIArchive(data){
       "Recommended AI menunggu cycle hourly pertama. Manual study masih boleh dijalankan.";
   }
 }
+async function latestRecommendedAIJson(path,force){
+  var ts=force?Date.now():"1";
+  var remote="https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/"+path+"?ts="+ts;
+  try{return await getJson(remote)}catch(e){return getJson("/"+path+"?ts="+ts)}
+}
 async function loadRecommendedAI(force){
   if(raiLoading&&!force)return;raiLoading=true;
   try{
-    var data=await getJson("/recommended-ai/latest.json?ts="+(force?Date.now():"1"));
+    var data=await latestRecommendedAIJson("recommended-ai/latest.json",force);
     renderRecommendedAIArchive(data);
   }catch(e){
     if($("raiStatus")){$("raiStatus").className="notice bad";$("raiStatus").textContent="Recommended AI archive unavailable • "+String(e.message||e)}
@@ -789,7 +794,7 @@ function renderRecommendedAIInternet(archive){
 }
 async function loadRecommendedAIInternet(force){
   try{
-    var data=await getJson("/recommended-ai/research/latest.json?ts="+(force?Date.now():"1"));
+    var data=await latestRecommendedAIJson("recommended-ai/research/latest.json",force);
     renderRecommendedAIInternet(data);
   }catch(e){
     if($("raiInternetStatus")){$("raiInternetStatus").className="notice bad";$("raiInternetStatus").textContent="Internet research archive unavailable • "+String(e.message||e)}
