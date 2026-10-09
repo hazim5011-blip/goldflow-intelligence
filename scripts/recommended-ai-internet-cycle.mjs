@@ -1,7 +1,7 @@
 import {readFile,writeFile,mkdir} from "node:fs/promises";
 import path from "node:path";
 
-const base=String(process.env.GOLDFLOW_BASE_URL||"https://goldflow-intelligence.vercel.app").replace(/\/$/,"");
+const base=String(process.env.GOLDFLOW_BASE_URL||"https://goldflow-intelligence-cf-test.pages.dev").replace(/\/$/,"");
 const root=process.cwd();
 const researchDir=path.join(root,"recommended-ai","research");
 const latestPath=path.join(researchDir,"latest.json");

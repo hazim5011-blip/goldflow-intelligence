@@ -4,6 +4,7 @@ import {buildHistory,metadataFromCatalog,filterHistory,aggregate,groupHistory,co
 import {buildGFHistoricalSignals} from "./_gfHistoryAdapters.js";
 import {listForwardPrivate} from "./_v8Ledger.js";
 import {GF_HISTORY_MANAGEMENT} from "./_gfTradePlan.js";
+import {runtimeManagementOverride} from "./_recommendedAIRuntimeState.js";
 
 const TF_ALLOWED=new Set(["M1","M5","M15","M30","H1","H4","D1"]);
 const MODES=new Set(["105","103","pvt","pvt102","pvtchart101","pattern132","snd107","owl101","fund104","gf-ai","gf-news","gf-study"]);
@@ -118,7 +119,8 @@ export async function fetchV8Context(query={}){
   if(!validSymbol(symbol))throw new Error("INVALID_SYMBOL");
   if(!TF_ALLOWED.has(tf))throw new Error("INVALID_TIMEFRAME");
   if(!MODES.has(indicator))throw new Error("INVALID_INDICATOR");
-  const managementProfile=query.managementProfile&&typeof query.managementProfile==="object"?query.managementProfile:null;
+  let managementProfile=query.managementProfile&&typeof query.managementProfile==="object"?query.managementProfile:null;
+  if(!managementProfile)managementProfile=await runtimeManagementOverride(indicator,symbol);
   if(GF_MODES.has(indicator))return fetchGFContext({symbol,tf,indicator,managementProfile});
   const mock=fakeResponse();
   const catalogPromise=brokerGet("/catalog",{filter:symbol,limit:120},13000,1).catch(()=>null);

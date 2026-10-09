@@ -202,7 +202,7 @@ export async function reasonWithInternet({evidence,recommendedArchive}={}){
 }
 
 async function loadRecommendedArchive(){
-  const base=String(process.env.GOLDFLOW_PUBLIC_BASE_URL||"https://goldflow-intelligence.vercel.app").replace(/\/$/,"");
+  const base=String(process.env.GOLDFLOW_PUBLIC_BASE_URL||"https://goldflow-intelligence-cf-test.pages.dev").replace(/\/$/,"");
   try{
     const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),7000);
     const r=await fetch(base+"/recommended-ai/latest.json?ts="+Date.now(),{headers:{"user-agent":UA},signal:ctl.signal,cache:"no-store"});

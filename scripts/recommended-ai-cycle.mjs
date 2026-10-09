@@ -1,7 +1,7 @@
 import {readFile,writeFile,mkdir} from "node:fs/promises";
 import path from "node:path";
 
-const base=String(process.env.GOLDFLOW_BASE_URL||"https://goldflow-intelligence.vercel.app").replace(/\/$/,"");
+const base=String(process.env.GOLDFLOW_BASE_URL||"https://goldflow-intelligence-cf-test.pages.dev").replace(/\/$/,"");
 const symbol=String(process.env.GOLDFLOW_AI_SYMBOL||"XAUUSD247");
 const tf=String(process.env.GOLDFLOW_AI_TF||"M15").toUpperCase();
 const groups=[

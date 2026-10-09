@@ -30,7 +30,7 @@ jobs:
 
       - name: Run internet research scout
         env:
-          GOLDFLOW_BASE_URL: https://goldflow-intelligence.vercel.app
+          GOLDFLOW_BASE_URL: https://goldflow-intelligence-cf-test.pages.dev
         run: node scripts/recommended-ai-internet-cycle.mjs
 
       - name: Commit internet research memory
