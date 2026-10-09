@@ -1,15 +1,15 @@
 {
   "version": "RECOMMENDED_AI_INTERNET_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-09T15:33:06.280Z",
+  "updatedAtUTC": "2026-10-09T21:13:12.913Z",
   "heartbeat": "OK",
   "mode": "INTERNET_SCOUT_PLUS_REASONING",
   "research": {
     "ok": true,
     "version": "RECOMMENDED_AI_INTERNET_RESEARCH_V1",
-    "generatedAtUTC": "2026-10-09T15:33:06.280Z",
+    "generatedAtUTC": "2026-10-09T21:13:12.913Z",
     "mode": "INTERNET_SCOUT_PLUS_REASONING",
     "evidence": {
-      "collectedAtUTC": "2026-10-09T15:32:39.872Z",
+      "collectedAtUTC": "2026-10-09T21:12:54.643Z",
       "feedStatus": [
         {
           "id": "FED_ALL",
@@ -62,7 +62,7 @@
           "category": "TRADING_RESEARCH",
           "ok": false,
           "count": 0,
-          "error": "The operation was aborted",
+          "error": "HTTP_503",
           "url": "https://news.google.com/rss/search?q=market+structure+liquidity+volatility+trading+research&hl=en-US&gl=US&ceid=US:en"
         }
       ],
@@ -182,24 +182,24 @@
         {
           "id": "DGS2",
           "label": "US 2Y Treasury",
-          "date": "2026-10-07",
-          "value": 4.77,
+          "date": "2026-10-08",
+          "value": 4.75,
           "source": "FRED",
           "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS2"
         },
         {
           "id": "DGS10",
           "label": "US 10Y Treasury",
-          "date": "2026-10-07",
-          "value": 5.28,
+          "date": "2026-10-08",
+          "value": 5.22,
           "source": "FRED",
           "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
         },
         {
           "id": "DFII10",
           "label": "US 10Y Real Yield",
-          "date": "2026-10-07",
-          "value": 2.92,
+          "date": "2026-10-08",
+          "value": 2.87,
           "source": "FRED",
           "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFII10"
         },
@@ -224,20 +224,20 @@
       "reasoningEffort": "medium",
       "maxToolCalls": 2,
       "maxOutputTokens": 1800,
-      "summary": "No defensible numeric patches yet. Current parameter values and management semantics were not supplied, so an absolute replacement cannot be established as a small, conservative change. Official checks corroborate the supplied BLS headline figures, October 7, 2026 FOMC-minutes release, and October 7 real yield of 2.92%, but these do not establish an M15 ATR-management effect. ([bls.gov](https://www.bls.gov/bls/)) From the supplied diagnostics, pvt102 warrants investigation: 66.67% signal win rate coexists with -1430.35 net pips and -1.919R; wider average losing risk is descriptive, not causal evidence for lowering maxRiskATR. snd107's +41.87 net pips but -2.458R is not demonstrated success. pattern132 is negative in both measures; its diagnostics do not identify a defensible parameter adjustment. Preserve pvtchart101's KEEP_CURRENT state. For 105, 103 and owl101, 100% quick-stop rates involve only two losses each; do not widen buffers from those samples. Identical 105/103 results require an overlap check before treating them as independent evidence. fund104, gf-study and the zero-signal indicators need more data. Obtain current allowed-key settings, parameter semantics, timestamped",
+      "summary": "No defensible numeric patches yet. Current parameter values, parameter semantics, trade timestamps, execution costs, and per-trade excursion data are missing; an absolute replacement cannot be established as small or conservative. Official sources confirm the October 7, 2026 FOMC minutes release and October 8 real-yield observation, but neither establishes an indicator-specific M15 management adjustment. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/monetary20261007a.htm)) Based on supplied diagnostics: pvt102's 66.67% signal win rate is not success alongside -1430.35 net pips and -1.919R; its wider losing risks warrant investigation, not an inferred maxRiskATR cutoff. snd107's +41.87 net pips conflict with -2.458R, so reconcile accounting before optimization; widening buffers could increase losses. pattern132 is negative without a demonstrated management cause. Preserve pvtchart101's KEEP_CURRENT state. For 105, 103, owl101, and gf-study, quick-stop percentages involve only two or three losses and do not justify buffer changes; identical 105/103 results should not be treated as independent confirmation. fund104 has only two outcomes; gf-ai, gf-news,",
       "hypotheses": [],
-      "responseId": "resp_0aa6af6104f65122016ac90918f2ac87d2accabeec03932a58",
+      "responseId": "resp_054f571c0f10da30016ac958d7c76087d29e1b0f41e2b0ae95",
       "usage": {
-        "input_tokens": 16924,
+        "input_tokens": 14016,
         "input_tokens_details": {
           "cache_write_tokens": 8198,
           "cached_tokens": 0
         },
-        "output_tokens": 663,
+        "output_tokens": 593,
         "output_tokens_details": {
-          "reasoning_tokens": 305
+          "reasoning_tokens": 238
         },
-        "total_tokens": 17587
+        "total_tokens": 14609
       }
     },
     "safety": {

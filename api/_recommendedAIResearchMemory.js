@@ -2,7 +2,7 @@ const clean=x=>String(x||"").toLowerCase();
 
 export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
   "version": 1,
-  "updatedAtUTC": "2026-10-09T15:33:06.280Z",
+  "updatedAtUTC": "2026-10-09T21:13:12.913Z",
   "mode": "INTERNET_SCOUT_PLUS_REASONING",
   "reasoning": {
     "enabled": true,
@@ -125,24 +125,24 @@ export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
     {
       "id": "DGS2",
       "label": "US 2Y Treasury",
-      "date": "2026-10-07",
-      "value": 4.77,
+      "date": "2026-10-08",
+      "value": 4.75,
       "source": "FRED",
       "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS2"
     },
     {
       "id": "DGS10",
       "label": "US 10Y Treasury",
-      "date": "2026-10-07",
-      "value": 5.28,
+      "date": "2026-10-08",
+      "value": 5.22,
       "source": "FRED",
       "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
     },
     {
       "id": "DFII10",
       "label": "US 10Y Real Yield",
-      "date": "2026-10-07",
-      "value": 2.92,
+      "date": "2026-10-08",
+      "value": 2.87,
       "source": "FRED",
       "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFII10"
     },
