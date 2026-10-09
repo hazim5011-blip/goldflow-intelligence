@@ -201,8 +201,8 @@ test("History Pro exposes explicit per-indicator WR and daily TP/SL total logic 
   const js=readFileSync(path.join(here,"../v8.js"),"utf8");
   assert.match(html,/Win Rate Setiap Indicator/);
   assert.match(html,/Win Rate & Jumlah Setiap Hari/);
-  assert.match(html,/GF-AI Live Analyst v1\\.60/);
-  assert.match(html,/GF engines — own Entry \\/ SL \\/ TP history/);
+  assert.match(html,/GF-AI Live Analyst v1\.60/);
+  assert.match(html,/GF engines — own Entry \/ SL \/ TP history/);
   assert.match(js,/HISTORY_CATALOG/);
   assert.match(js,/pvtchart101/);
   assert.match(html,/PVT Chart Confluence XAU v1\.01/);
