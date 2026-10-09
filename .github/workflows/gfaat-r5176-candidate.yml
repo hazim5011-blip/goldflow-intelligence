@@ -1,0 +1,104 @@
+name: GF-AAT R5.17.6 OpenAI Live Trader Candidate
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5176_CANDIDATE.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify R5.17.5 stable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          m=json.loads(pathlib.Path('gf-aat-update/stable.json').read_text(encoding='utf-8'))
+          assert m['version']=='1.6.3-r5.17.5',m
+          assert m['build_id']=='gf-aat-1.6.3-r5.17.5-day-signal-rebalance',m
+          p=pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual==m['sha256'],(actual,m['sha256'])
+          print('R5.17.5 baseline PASS',actual)
+          PY
+
+      - name: Build R5.17.6 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-r5176 /tmp/r5176_transform.py.gz /tmp/r5176_transform.py
+          mkdir -p /tmp/gfaat-r5176
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5176
+          ROOT=/tmp/gfaat-r5176/GF_AAT_R5_17_5_STABLE
+          test -d "$ROOT"
+          cat gf-aat-update/staging/r5176_transform.b64.00 gf-aat-update/staging/r5176_transform.b64.01 gf-aat-update/staging/r5176_transform.b64.02 gf-aat-update/staging/r5176_transform.b64.03 | base64 -d > /tmp/r5176_transform.py.gz
+          echo '6e3aadad9853682e369e0c4fd93b7fd6b769c2e89a21502c7588929e7aeb3c57  /tmp/r5176_transform.py.gz' | sha256sum -c -
+          gzip -dc /tmp/r5176_transform.py.gz > /tmp/r5176_transform.py
+          echo '122503d8962752ccad57853e08c1f276bfc5a4bda767fa93d433e2eb77695567  /tmp/r5176_transform.py' | sha256sum -c -
+          python3 -m py_compile /tmp/r5176_transform.py
+          python3 /tmp/r5176_transform.py "$ROOT"
+          cd "$ROOT"
+          python3 -m py_compile aat/openai_client.py aat/openai_brain.py aat/service.py aat/web.py setup_openai_brain.py
+          python3 - <<'PY'
+          import json
+          b=json.load(open('CURRENT_BUILD.json',encoding='utf-8'))
+          assert b['version']=='1.6.3-r5.17.6',b
+          assert b['runtime_revision']=='R5.17.6',b
+          assert b['build_id']=='gf-aat-1.6.3-r5.17.6-openai-live-trader',b
+          assert b['restart_cmd']=='RESTART_GF_AAT_R5_17_6.bat',b
+          assert b['research_only'] is True and int(b['orders_sent'])==0,b
+          print('R5.17.6 exact build PASS')
+          PY
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check -r /tmp/gfaat-r5176/GF_AAT_R5_17_5_STABLE/requirements.txt
+
+      - name: Run full tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5176/GF_AAT_R5_17_5_STABLE
+          python3 -m pytest -q | tee /tmp/gfaat-r5176-pytest.txt
+          grep -Eq '225 passed' /tmp/gfaat-r5176-pytest.txt
+
+      - name: Safety and secret audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5176/GF_AAT_R5_17_5_STABLE
+          python3 - <<'PY'
+          import ast,pathlib,json
+          bad=[]
+          for p in pathlib.Path('aat').rglob('*.py'):
+              tree=ast.parse(p.read_text(encoding='utf-8',errors='ignore'),filename=str(p))
+              for n in ast.walk(tree):
+                  if isinstance(n,ast.Call):
+                      f=n.func
+                      if isinstance(f,ast.Name) and f.id=='order_send': bad.append((str(p),n.lineno))
+                      if isinstance(f,ast.Attribute) and f.attr=='order_send': bad.append((str(p),n.lineno))
+          assert not bad,bad
+          from aat.openai_brain import LIVE_VERSION,live_profile_enabled
+          from aat.openai_client import LIVE_SIGNAL_SCHEMA
+          assert LIVE_VERSION=='GF-AAT-OPENAI-LIVE-TRADER-BRAIN-1.0.0'
+          assert LIVE_SIGNAL_SCHEMA['properties']['market_call']['enum']==['BUY','SELL','WAIT']
+          src=pathlib.Path('aat/dashboard.html').read_text(encoding='utf-8')
+          assert 'OpenAI Live Trader Brain' in src and 'AI LIVE CALL' in src
+          env=pathlib.Path('.env.example').read_text(encoding='utf-8')
+          assert 'AAT_OPENAI_LIVE_PROFILES=DAY' in env
+          for p in pathlib.Path('.').rglob('*'):
+              if p.is_file() and p.name!='.env' and p.stat().st_size<2_000_000:
+                  txt=p.read_text(encoding='utf-8',errors='ignore')
+                  assert 'sk-proj-' not in txt and 'sk-live-' not in txt
+          print('SAFETY PASS: no broker order call')
+          print('SECRET PASS: no API key committed')
+          print('LIVE TRADER CONTRACT PASS')
+          PY
