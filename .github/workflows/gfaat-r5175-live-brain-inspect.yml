@@ -1,0 +1,32 @@
+name: GF-AAT R5.17.5 Live Brain Inspect
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5175_LIVE_BRAIN_INSPECT.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect live brain integration points
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-livebrain && mkdir -p /tmp/gfaat-livebrain
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-livebrain
+          ROOT="$(find /tmp/gfaat-livebrain -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo '=== BUILD ==='; cat "$ROOT/CURRENT_BUILD.json"
+          echo '=== ENV ==='; cat "$ROOT/.env.example" || true
+          echo '=== OPENAI CLIENT ==='; sed -n '1,360p' "$ROOT/aat/openai_client.py"
+          echo '=== OPENAI BRAIN ==='; sed -n '1,620p' "$ROOT/aat/openai_brain.py"
+          echo '=== STORAGE OPENAI ==='; grep -n -C 8 -E 'openai|critic|mentor|recommend|analysis' "$ROOT/aat/storage.py" | head -n 700 || true
+          echo '=== SERVICE OPENAI ==='; grep -n -C 12 -E 'openai|critic|mentor|review|signal_gate|publish|run_once|cycle' "$ROOT/aat/service.py" | head -n 1200 || true
+          echo '=== WEB OPENAI ==='; grep -n -C 10 -E 'openai|AI Analyst|Mentor|ask|critic|analysis|signal' "$ROOT/aat/web.py" | head -n 900 || true
+          echo '=== DASHBOARD OPENAI ==='; grep -n -C 8 -E 'openai|AI Analyst|Mentor|critic|ask|Recommended AI|signal' "$ROOT/aat/dashboard.html" | head -n 1200 || true
+          echo '=== RAW NEWS ==='; sed -n '1,480p' "$ROOT/aat/raw_news.py"
+          echo '=== OPENAI TESTS ==='; grep -RIn -C 4 -E 'openai_brain|OPENAI|critic|news_quality|shadow' "$ROOT/tests" | head -n 1200 || true
