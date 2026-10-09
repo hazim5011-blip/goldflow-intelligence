@@ -720,10 +720,10 @@ function raiCard(x){
       patch=dec.patch?Object.entries(dec.patch).map(function(kv){return raiEsc(kv[0])+"="+raiEsc(kv[1])}).join(" • "):"—";
   return '<article class="raiCard">'+
     '<div class="raiCardTop"><div><small>'+raiEsc(x.indicator)+'</small><h4>'+raiEsc(x.indicatorName||x.indicator)+'</h4><span>'+raiEsc(x.symbol||"")+" • "+raiEsc(x.tf||"")+'</span></div><b class="'+raiStateClass(x.state)+'">'+raiEsc(x.state||"WAIT")+'</b></div>'+
-    '<div class="raiMetrics"><div><small>STRICT WR</small><strong>'+raiNum(a.strictWR,1)+'%</strong></div><div><small>SIGNAL WR</small><strong>'+raiNum(a.signalWR,1)+'%</strong></div><div><small>NET PIP</small><strong class="'+(Number(a.netPip)>=0?"g":"r")+'">'+raiNum(a.netPip,1)+'</strong></div><div><small>SAMPLE</small><strong>'+raiNum(a.strictDenominator,0)+'</strong></div></div>'+
+    '<div class="raiMetrics"><div><small>P/L WINRATE</small><strong>'+raiNum(a.strictWR,1)+'%</strong></div><div><small>SIGNAL WR</small><strong>'+raiNum(a.signalWR,1)+'%</strong></div><div><small>NET PIP</small><strong class="'+(Number(a.netPip)>=0?"g":"r")+'">'+raiNum(a.netPip,1)+'</strong></div><div><small>SAMPLE</small><strong>'+raiNum(a.strictDenominator,0)+'</strong></div></div>'+
     '<div class="raiDiag">Quick SL <b>'+raiNum(d.quickStopRate,0)+'%</b> • Target fallback <b>'+raiNum(d.targetFallbackRate,0)+'%</b> • Avg loss risk <b>'+raiNum(d.avgLossRiskATR,2)+' ATR</b></div>'+
     '<div class="raiWhy">'+(rec.length?rec.map(function(v){return "• "+raiEsc(v)}).join("<br>"):"No diagnosis yet.")+'</div>'+
-    '<div class="raiCandidate"><small>BEST SHADOW CANDIDATE</small><b>'+(best?raiEsc(best.id):"—")+'</b><span>'+(best&&best.delta?("Δ Strict "+raiNum(best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta.netPipDelta,1)+" pip"):"Waiting for sample / replay")+'</span></div>'+
+    '<div class="raiCandidate"><small>BEST SHADOW CANDIDATE</small><b>'+(best?raiEsc(best.id):"—")+'</b><span>'+(best&&best.delta?("Δ P/L WR "+raiNum(best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta.netPipDelta,1)+" pip"):"Waiting for sample / replay")+'</span></div>'+
     '<div class="raiDecision"><small>AI DECISION</small><b class="'+raiStateClass(dec.action)+'">'+raiEsc(dec.action||"WAIT")+'</b><span>'+raiEsc(dec.reason||"")+'</span><span>Patch: '+patch+'</span></div>'+
     '<div class="raiFoot">Updated '+raiWhen(x.generatedAtUTC)+' • '+raiEsc(x.recommendationId||"")+'</div>'+
   '</article>';
@@ -772,10 +772,10 @@ async function runRecommendedAINow(){
     var a=x.baseline&&x.baseline.all||{},d=x.diagnostics||{},dec=x.decision||{},best=(x.candidates||[]).slice().sort(function(m,n){return Number(n.delta&&n.delta.strictWRDelta||-999)-Number(m.delta&&m.delta.strictWRDelta||-999)})[0];
     $("raiLiveBadge").className="tag "+raiStateClass(dec.action);$("raiLiveBadge").textContent=dec.action||"DONE";
     $("raiLiveResult").innerHTML='<b>'+raiEsc(x.indicatorName)+' • '+raiEsc(x.symbol)+' • '+raiEsc(x.tf)+'</b><br>'+
-      'Strict WR '+raiNum(a.strictWR,1)+'% • Signal WR '+raiNum(a.signalWR,1)+'% • NET '+raiNum(a.netPip,1)+' pip • sample '+raiNum(a.strictDenominator,0)+'<br>'+
+      'P/L Winrate '+raiNum(a.strictWR,1)+'% • Signal WR '+raiNum(a.signalWR,1)+'% • NET '+raiNum(a.netPip,1)+' pip • sample '+raiNum(a.strictDenominator,0)+'<br>'+
       'Quick SL '+raiNum(d.quickStopRate,0)+'% • target fallback '+raiNum(d.targetFallbackRate,0)+'% • avg loss risk '+raiNum(d.avgLossRiskATR,2)+' ATR<br>'+
       (x.recommendation&&x.recommendation.summary?x.recommendation.summary.map(function(v){return "• "+raiEsc(v)}).join("<br>"):"")+
-      '<br><b>Shadow:</b> '+(best?raiEsc(best.id)+" • Δ Strict "+raiNum(best.delta&&best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta&&best.delta.netPipDelta,1)+" pip":"No candidate")+
+      '<br><b>Shadow:</b> '+(best?raiEsc(best.id)+" • Δ P/L WR "+raiNum(best.delta&&best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta&&best.delta.netPipDelta,1)+" pip":"No candidate")+
       '<br><b>Decision:</b> '+raiEsc(dec.action||"WAIT")+" • "+raiEsc(dec.reason||"");
   }catch(e){
     $("raiLiveBadge").className="tag r";$("raiLiveBadge").textContent="ERROR";$("raiLiveResult").textContent=String(e.message||e);
