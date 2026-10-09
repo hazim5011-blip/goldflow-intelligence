@@ -12,10 +12,12 @@ import v8 from "../api/v8.js";
 import study from "../api/study.js";
 import marketOnline from "../api/market-online.js";
 import liveNews from "../api/news-live.js";
+import recommendedAI from "../api/recommended-ai.js";
+import recommendedAIResearch from "../api/recommended-ai-research.js";
 const ROUTES={"/api/health":health,"/api/bridge-health":bridgeHealth,"/api/symbols":symbols,
  "/api/bars":bars,"/api/analyze":analyze,"/api/macro":macro,"/api/status":status,
  "/api/options":options,"/api/v8":v8,"/api/study":study,"/api/market-online":marketOnline,
- "/api/news-live":liveNews};
+ "/api/news-live":liveNews,"/api/recommended-ai":recommendedAI,"/api/recommended-ai-research":recommendedAIResearch};
 const ALIASES={"/api/history":"history","/api/performance":"performance","/api/evidence":"evidence",
  "/api/news-context":"news","/api/forward-ingest":"forward-ingest","/api/forward-outcome":"forward-outcome",
  "/api/forward-proof":"forward-proof"};
