@@ -5,3 +5,5 @@ Policy: OpenAI shadow critic + post-trade lesson review; deterministic gates aut
 Retry: dashboard footer anchor corrected; source bundle SHA unchanged.
 
 Retry 3: dashboard patch quoting fixed robustly; staged source bundle SHA unchanged.
+
+Retry 4: legacy regression build/version contracts migrated for R5.17.4 full-suite audit.
