@@ -76,6 +76,8 @@ jobs:
               s=s.replace('RESTART_GF_AAT_R5_17_5.bat','RESTART_GF_AAT_R5_17_6.bat')
               s=s.replace("'1.6.3-r5.17.5'","'1.6.3-r5.17.6'")
               s=s.replace('"1.6.3-r5.17.5"','"1.6.3-r5.17.6"')
+              s=s.replace("'R5.17.5'","'R5.17.6'")
+              s=s.replace('"R5.17.5"','"R5.17.6"')
               p.write_text(s,encoding='utf-8')
           print('R5.17.6 release contract refresh applied')
           PY
