@@ -54,6 +54,15 @@ jobs:
           python3 /tmp/r5174-stage/apply_news.py "$ROOT"
           python3 /tmp/r5174-stage/apply_service.py "$ROOT"
           python3 /tmp/r5174-stage/apply_web.py "$ROOT"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/r5174-stage/apply_dashboard.py')
+          s=p.read_text()
+          bad='old="""\`R5.17.3 Structural Entry Geometry + R5.17.2 Outcome-Calibrated Evidence<br>Real broker orders: 0\`"""'
+          good='old="""R5.17.3 Structural Entry Geometry + R5.17.2 Outcome-Calibrated Evidence<br>Real broker orders: 0"""'
+          assert bad in s
+          p.write_text(s.replace(bad,good,1))
+          PY
           python3 /tmp/r5174-stage/apply_dashboard.py "$ROOT"
           cp /tmp/r5174-stage/test_v163_r5174_openai_brain_news.py "$ROOT/tests/"
           cp /tmp/r5174-stage/R5_17_4_OPENAI_CRITIC_NEWS_QUALITY.md "$ROOT/"
