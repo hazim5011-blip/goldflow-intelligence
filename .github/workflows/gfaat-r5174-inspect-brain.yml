@@ -1,0 +1,32 @@
+name: GF-AAT R5.17.4 Inspect Brain
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_INSPECT_R5174_BRAIN.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect OpenAI brain and news integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-inspect2 && mkdir -p /tmp/gfaat-inspect2
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-inspect2
+          ROOT="$(find /tmp/gfaat-inspect2 -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo '=== CURRENT_BUILD ==='; cat "$ROOT/CURRENT_BUILD.json"
+          echo '=== RELEASE DOC ==='; cat "$ROOT/R5_17_4_OPENAI_CRITIC_NEWS_QUALITY.md"
+          echo '=== ENV EXAMPLE ==='; cat "$ROOT/.env.example"
+          echo '=== OPENAI CLIENT ==='; sed -n '1,260p' "$ROOT/aat/openai_client.py"
+          echo '=== OPENAI BRAIN ==='; sed -n '1,360p' "$ROOT/aat/openai_brain.py"
+          echo '=== RAW NEWS ==='; sed -n '1,360p' "$ROOT/aat/raw_news.py"
+          echo '=== SERVICE OPENAI/NEWS MATCHES ==='; grep -n -C 7 -E 'openai|raw_news|news_quality|critic|OPENAI|NEWS' "$ROOT/aat/service.py" | head -n 500 || true
+          echo '=== WEB OPENAI/NEWS MATCHES ==='; grep -n -C 7 -E 'openai|raw_news|news_quality|critic|OPENAI|NEWS' "$ROOT/aat/web.py" "$ROOT/aat/dashboard.html" | head -n 600 || true
+          echo '=== TEST ==='; sed -n '1,420p' "$ROOT/tests/test_v163_r5174_openai_brain_news.py"
+          echo '=== REQUIREMENTS ==='; cat "$ROOT/requirements.txt"
