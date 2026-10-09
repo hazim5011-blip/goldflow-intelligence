@@ -54,6 +54,14 @@ jobs:
           echo '611522416048c992cd5be1e6c1354cab5027fe4255fd005a07c8f000a15db9d7  /tmp/r5176_transform.py' | sha256sum -c -
           python3 -m py_compile /tmp/r5176_transform.py
           python3 /tmp/r5176_transform.py "$ROOT"
+          python3 - "$ROOT" <<'PY'
+          import pathlib,sys
+          p=pathlib.Path(sys.argv[1])/'aat/service.py'
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("plan['evidence']['openai_live_trader']=study.get('openai_live_trader') or {}\\n        plan['evidence']['openai_live_trader_version']=OPENAI_LIVE_VERSION\\n        plan['evidence']['qualification_generation']='R5.17.6_OPENAI_LIVE_TRADER'",
+                      "plan['evidence']['openai_live_trader']=study.get('openai_live_trader') or {}\n        plan['evidence']['openai_live_trader_version']=OPENAI_LIVE_VERSION\n        plan['evidence']['qualification_generation']='R5.17.6_OPENAI_LIVE_TRADER'")
+          p.write_text(s,encoding='utf-8')
+          PY
           cd "$ROOT"
           python3 -m py_compile aat/openai_client.py aat/openai_brain.py aat/service.py aat/web.py setup_openai_brain.py
           python3 - <<'PY'
