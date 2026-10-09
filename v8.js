@@ -45,7 +45,31 @@
       "&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(indicator)+(params||"");
   }
   function uri(params){return uriForIndicator(historyIndicator(),params)}
-  function transientStatus(s){return [502,503,504].includes(Number(s))}\n  function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})}\n  async function json(url){var last=null;for(var attempt=0;attempt<2;attempt++){try{var r=await fetch(url,{cache:"no-store",headers:{"Accept":"application/json"}}),txt=await r.text(),j=null;try{j=txt?JSON.parse(txt):null}catch(e){if(transientStatus(r.status)&&attempt===0){await wait(700);continue}var html=/^\\s*<!doctype|^\\s*<html/i.test(txt||"");throw Error((html?"CLOUDFLARE_API_NON_JSON":"INVALID_API_JSON")+" • "+url+" • HTTP "+r.status)}if(!r.ok||!j||j.ok===false){if(transientStatus(r.status)&&attempt===0){await wait(700);continue}throw Error(j?.error||("HTTP "+r.status))}return j}catch(e){last=e;if(attempt===0&&/HTTP (502|503|504)|timeout|aborted|network|fetch/i.test(String(e&&e.message||e))){await wait(700);continue}throw e}}throw last||Error("REQUEST_FAILED")}
+  function transientStatus(s){return [502,503,504].includes(Number(s))}
+  function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})}
+  async function json(url){
+    var last=null;
+    for(var attempt=0;attempt<2;attempt++){
+      try{
+        var r=await fetch(url,{cache:"no-store",headers:{"Accept":"application/json"}}),txt=await r.text(),j=null;
+        try{j=txt?JSON.parse(txt):null}catch(e){
+          if(transientStatus(r.status)&&attempt===0){await wait(700);continue}
+          var html=/^\s*<!doctype|^\s*<html/i.test(txt||"");
+          throw Error((html?"CLOUDFLARE_API_NON_JSON":"INVALID_API_JSON")+" • "+url+" • HTTP "+r.status)
+        }
+        if(!r.ok||!j||j.ok===false){
+          if(transientStatus(r.status)&&attempt===0){await wait(700);continue}
+          throw Error(j?.error||("HTTP "+r.status))
+        }
+        return j
+      }catch(e){
+        last=e;
+        if(attempt===0&&/HTTP (502|503|504)|timeout|aborted|network|fetch/i.test(String(e&&e.message||e))){await wait(700);continue}
+        throw e
+      }
+    }
+    throw last||Error("REQUEST_FAILED")
+  }
   function notice(id,msg,bad){if($(id)){$(id).className=bad?"notice bad":"notice info";$(id).textContent=msg}}
   function stat(label,value,detail){
     return '<div class="v8Metric"><small>'+safe(label)+'</small><strong>'+safe(value)+'</strong>'+(detail?'<span>'+safe(detail)+'</span>':"")+'</div>';
