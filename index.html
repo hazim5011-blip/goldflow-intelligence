@@ -377,6 +377,35 @@
       <div class="head"><div><small class="eyebrow">ON-DEMAND SHADOW STUDY</small><h3>Selected Indicator Study</h3></div><span id="raiLiveBadge" class="tag y">WAIT</span></div>
       <div id="raiLiveResult" class="reason">Choose a symbol, timeframe and indicator above, then press “Study Selected Now”. This live study does not alter production by itself; only the guarded 24H promotion cycle can activate a profile.</div>
     </div>
+    <div class="card sec" id="gptProfessionalReviewPanel">
+      <div class="head">
+        <div><small class="eyebrow">OPENAI GPT-6 • PRIVATE PROFESSIONAL TRADER REVIEW</small><h3>Audit Entry/SL/TP &amp; Review Loses</h3></div>
+        <span class="tag y">RECOMMEND ONLY • NO AUTO-EDIT</span>
+      </div>
+      <p class="v8Footnote">Berdasarkan rekod simulasi sejarah per-indikator dalam Recommended AI. Ini bukan broker fill P/L; tiada perubahan langsung kepada signal, stop, target atau code. Minimum data dan out-of-sample gate kekal wajib.</p>
+      <div class="gfGptReviewControls">
+        <label for="gfGptReviewIndicator">Indicator</label>
+        <select id="gfGptReviewIndicator">
+          <option value="105">MTF 1.05</option><option value="103">MTF 1.03</option>
+          <option value="PVT102">PVT 1.02</option><option value="PVTCHART101">PVT Chart 1.01</option>
+          <option value="PATTERN132">Pattern Tutor 1.32</option><option value="SND107">SND 1.07</option>
+          <option value="OWL101">OWL 1.01</option><option value="FUND104">Fund Structure 1.04</option>
+          <option value="GF-AI">GF-AI</option><option value="GF-NEWS">GF-News</option><option value="GF-STUDY">GF-Market Study</option>
+        </select>
+        <span>Vantage XAUUSD247 • M15 • Historical simulation archive</span>
+        <button class="primary" type="button" id="gfGptReviewRun" disabled>GPT Kaji Indicator &amp; SL</button>
+        <button class="primary" type="button" id="gfGptReviewHistory" disabled>Lihat Rekod AI</button>
+      </div>
+      <div id="gfGptReviewStatus" class="notice info" aria-live="polite">Professional Review belum diaktifkan. Ia memerlukan akaun pemilik, OpenAI API dan R2 berasingan.</div>
+      <div class="gfGptReviewResult" aria-live="polite">
+        <div class="v8Metric"><small>REVIEW STATUS</small><strong id="gfGptReviewDecision">—</strong><span id="gfGptReviewEvidenceSource">Tiada audit GPT tersimpan</span></div>
+        <div class="v8Metric"><small>PUNCA / HYPOTHESIS</small><div id="gfGptReviewDiagnosis">—</div></div>
+        <div class="v8Metric"><small>BUKTI TERSIMPAN</small><div id="gfGptReviewEvidence">—</div></div>
+        <div class="v8Metric"><small>CADANGAN PEMBAIKAN (BELUM DILAKSANAKAN)</small><div id="gfGptReviewSuggestion">—</div></div>
+        <div class="v8Metric"><small>BACKTEST / FORWARD VALIDATION</small><div id="gfGptReviewValidation">—</div></div>
+        <div class="v8Metric"><small>LIMITASI / PERATURAN KESELAMATAN</small><div id="gfGptReviewLimitations">—</div></div>
+      </div>
+    </div>
     <p class="v8Footnote"><b>Mandatory update gate:</b> before future indicator changes, read this Recommended AI page / archive first. A high signal-count win rate is never enough; promotion requires P/L-weighted Strict WR and NET PIP improvement on held-out validation data.</p>
   </div>
 </section>
@@ -431,5 +460,6 @@
 <script src="/v8.js" defer></script>
 <script src="/study-ui.js" defer></script>
 <script src="/gpt-ui.js" defer></script>
+<script src="/gpt-professional-review-ui.js" defer></script>
 </body>
 </html>
