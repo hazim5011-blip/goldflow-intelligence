@@ -1,0 +1,25 @@
+name: GF-AAT Pattern Gate Audit
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_PATTERN_GATE_AUDIT.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print pattern and route logic
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-pattern && mkdir -p /tmp/gfaat-pattern
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-pattern
+          ROOT="$(find /tmp/gfaat-pattern -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo '=== STRUCTURE 100-220 ==='; sed -n '100,220p' "$ROOT/aat/structure.py"
+          echo '=== ENTRY PLAYBOOK 1-320 ==='; sed -n '1,320p' "$ROOT/aat/entry_playbook.py"
+          echo '=== PRE 100-210 ==='; sed -n '100,210p' "$ROOT/aat/pre_entry_study.py"
