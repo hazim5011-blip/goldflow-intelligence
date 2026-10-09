@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.17.5",
-  "build_id": "gf-aat-1.6.3-r5.17.5-day-signal-rebalance",
+  "version": "1.6.3-r5.17.6",
+  "build_id": "gf-aat-1.6.3-r5.17.6-openai-live-trader",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "ce15744fc8eedf059d72b5ba0360e9f7d8dc82dd0404ade029b3c5a99c4970cc",
-  "restart_cmd": "RESTART_GF_AAT_R5_17_5.bat",
+  "sha256": "93f35350b6be2065f2004f72fe4654b6ac1f11d6d3516ab1f6751cf762ecfc21",
+  "restart_cmd": "RESTART_GF_AAT_R5_17_6.bat",
   "minimum_updater": 2
 }
