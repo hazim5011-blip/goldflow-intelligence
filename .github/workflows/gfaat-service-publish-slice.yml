@@ -1,0 +1,23 @@
+name: GF-AAT Service Publish Slice
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_SERVICE_SLICE.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print publication path
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-service && mkdir -p /tmp/gfaat-service
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-service
+          ROOT="$(find /tmp/gfaat-service -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          sed -n '500,690p' "$ROOT/aat/service.py"
