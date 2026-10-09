@@ -146,14 +146,16 @@ test("AI UI exposes Market Intelligence engines and states that 24h signals are 
  assert.ok(ui.includes("AI MARKET BRAIN:"));
  assert.ok(ui.includes("24H AI HISTORY: NOT ARCHIVED YET"));
 });
-test("History Performance clearly labels normalized targets instead of pretending they were native indicator targets",()=>{
+test("History Performance clearly labels Dynamic ATR + Structure management without pretending it is native indicator targeting",()=>{
  const v=readFileSync(new URL("../v8.js",import.meta.url),"utf8");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
- assert.ok(v.includes("NORMALIZED 1R/2R/3R"));
+ assert.ok(v.includes("DYNAMIC ATR + STRUCTURE"));
+ assert.ok(v.includes("History performance uses Dynamic ATR + Structure management"));
  assert.ok(v.includes("WIN PIP"));
  assert.ok(v.includes("SL PIP"));
  assert.ok(v.includes("PROFIT DAY"));
- assert.ok(html.includes("NORMALIZED STUDY PLAN"));
+ assert.ok(html.includes("GoldFlow Dynamic ATR + Structure management"));
+ assert.ok(html.includes("native indicator Entry/SL/TP values remain retained separately for audit"));
  assert.ok(html.includes("NET PIP"));
 });
 
@@ -240,7 +242,7 @@ test("TradingView Hybrid multi-timeframe fallback paces broker requests sequenti
 });
 
 test("Production bridge v3.0.1 serializes MetaTrader5 access across FastAPI requests",()=>{
- const py=readFileSync(new URL("../bridge/mt5_bridge.py",import.meta.url),"utf8");
+ const py=readFileSync(new URL("../bridge/mt5_bridge.py",import.meta.url),"utf8").replace(/\r\n/g,"\n");
  assert.ok(py.includes('BRIDGE_RUNTIME_VERSION="3.0.1"'));
  assert.ok(py.includes("MT5_LOCK=threading.RLock()"));
  assert.ok(py.includes("def mt5_serialized(fn):"));
