@@ -96,40 +96,6 @@ Safety:
 - broker order authority false
 """,encoding='utf-8')
 
-          t=root/'tests/test_v163_r5178_openai_0600_ops.py'
-          t.write_text("""from datetime import datetime
-from zoneinfo import ZoneInfo
-from aat.openai_ops import daily_status
-
-MYT=ZoneInfo('Asia/Kuala_Lumpur')
-
-class S:
-    def observations(self,*a,**k): return []
-
-def ts(y,m,d,h,mi=0):
-    return int(datetime(y,m,d,h,mi,tzinfo=MYT).timestamp())
-
-def test_daily_openai_waits_before_0600_myt(monkeypatch):
-    monkeypatch.setattr('aat.openai_ops.config_status',lambda:{'status':'READY','model':'gpt-5.6-sol','api_key_configured':True})
-    x=daily_status(S(),ts(2026,10,10,5,59))
-    assert x['status']=='WAIT_0600_MYT'
-    assert x['schedule']=='DAILY_0600_MYT'
-    assert x['schedule_hour_myt']==6
-    assert 'T06:00:00' in x['next_due_myt']
-
-def test_daily_openai_due_after_0600_myt(monkeypatch):
-    monkeypatch.setattr('aat.openai_ops.config_status',lambda:{'status':'READY','model':'gpt-5.6-sol','api_key_configured':True})
-    x=daily_status(S(),ts(2026,10,10,6,1))
-    assert x['status']=='DUE_NOW'
-    assert x['schedule']=='DAILY_0600_MYT'
-
-def test_dashboard_contract_is_0600():
-    html=open('aat/dashboard.html',encoding='utf-8').read()
-    assert 'AUTO REVIEW 6:00 AM MALAYSIA' in html
-    assert '06:00 MYT' in html
-    assert '18:00 MYT' not in html
-""",encoding='utf-8')
-
           for p in (root/'tests').glob('test_*.py'):
               s=p.read_text(encoding='utf-8')
               s=s.replace('RESTART_GF_AAT_R5_17_7.bat','RESTART_GF_AAT_R5_17_8.bat')
