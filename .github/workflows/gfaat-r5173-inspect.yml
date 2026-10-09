@@ -1,0 +1,34 @@
+name: GF-AAT R5.17.3 Inspect Stable
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_INSPECT_R5173.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect stable package
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-inspect
+          mkdir -p /tmp/gfaat-inspect
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-inspect
+          ROOT="$(find /tmp/gfaat-inspect -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo "ROOT=$ROOT"
+          echo "=== TOP FILES ==="
+          find "$ROOT" -maxdepth 2 -type f | sed "s#^$ROOT/##" | sort | head -n 300
+          echo "=== UI MATCHES ==="
+          grep -RIn --exclude='*.pyc' --exclude-dir='.venv' -E "Asset & Macro Context|Recorded World|Causal Macro|AI Analyst|Macro Evidence|DIRECTION_UNKNOWN_WITHOUT_VERIFIED_CHANGE_OR_SURPRISE|PROFILE_CAUSAL_CONTEXT_AVAILABLE" "$ROOT" | head -n 250 || true
+          echo "=== NEWS MATCHES ==="
+          grep -RIn --exclude='*.pyc' --exclude-dir='.venv' -E "news|NEWS|macro|MACRO|relevance|headline|guardian|bbc|fed_press" "$ROOT/aat" "$ROOT/web" "$ROOT/app.py" 2>/dev/null | head -n 350 || true
+          echo "=== API ROUTES ==="
+          grep -RIn --exclude='*.pyc' --exclude-dir='.venv' -E "@app\.(get|route)|/api/" "$ROOT" | head -n 300 || true
+          echo "=== REQUIREMENTS ==="
+          cat "$ROOT/requirements.txt" || true
