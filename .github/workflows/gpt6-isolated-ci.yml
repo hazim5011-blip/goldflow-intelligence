@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - 'cloudflare/gpt-research.js'
+      - 'cloudflare/gpt-professional-review.js'
+      - 'gpt-professional-review-ui.js'
+      - 'tests/gpt-professional-review.test.mjs'
+      - 'gf-aat-gpt-review/**'
       - 'cloudflare/gpt-access.js'
       - 'cloudflare/gpt-fundamentals.js'
       - 'cloudflare/gpt-news.js'
@@ -38,13 +42,15 @@ jobs:
       - name: Verify GPT module JavaScript syntax
         run: |
           node --check cloudflare/gpt-research.js
+          node --check cloudflare/gpt-professional-review.js
+          node --check gpt-professional-review-ui.js
           node --check cloudflare/gpt-access.js
           node --check cloudflare/gpt-fundamentals.js
           node --check cloudflare/gpt-news.js
           node --check gpt-ui.js
           node --check cloudflare/worker.js
       - name: Security and freshness unit tests (no live credentials)
-        run: node --test tests/gpt-research.test.mjs tests/gpt-access.test.mjs tests/gpt-dashboard.test.mjs
+        run: node --test tests/gpt-research.test.mjs tests/gpt-access.test.mjs tests/gpt-dashboard.test.mjs tests/gpt-news.test.mjs tests/gpt-professional-review.test.mjs
       - name: Install build-time dependencies
         run: npm install --no-audit --no-fund
       - name: Existing Cloudflare compatibility and bundle
@@ -54,5 +60,7 @@ jobs:
           node --check dist/_worker.js
           grep -q 'GPT_RESEARCH_DISABLED' dist/_worker.js
           test -f dist/gpt-ui.js
+          test -f dist/gpt-professional-review-ui.js
+          grep -q 'REVIEW_STORAGE_NOT_CONFIGURED' dist/_worker.js
       # GoldFlow V8 CI runs the complete legacy regression separately on this PR.
       # Its existing failures remain a hard merge/release blocker; do not weaken that gate.
