@@ -776,9 +776,10 @@ function renderRecommendedAIInternet(archive){
   if($("raiInternetStatus")){
     var reasoning=rs.status||"UNKNOWN";
     $("raiInternetStatus").className="notice "+(/ONLINE/.test(reasoning)?"good":"info");
+    var modelMeta=rs.model?(" • model "+rs.model+(rs.fallbackUsed?" (fallback)":"")+(rs.reasoningEffort?" • "+rs.reasoningEffort:"")+(rs.maxToolCalls?(" • max "+rs.maxToolCalls+" web/tool calls"):"")):"";
     $("raiInternetStatus").textContent=/ONLINE/.test(reasoning)?
-      "Internet Scout + reasoning brain online • web evidence becomes testable hypotheses only after source linking.":
-      "Free Internet Scout aktif • reasoning model status: "+reasoning+". Evidence masih disimpan walaupun model reasoning belum disambungkan.";
+      "Internet Scout + reasoning brain online"+modelMeta+" • web evidence becomes testable hypotheses only after source linking.":
+      "Free Internet Scout aktif • reasoning model status: "+reasoning+modelMeta+". Evidence masih disimpan walaupun model reasoning belum disambungkan.";
   }
   if($("raiInternetFindings")){
     var cards=hyp.slice(0,6).map(raiHypothesisCard);
