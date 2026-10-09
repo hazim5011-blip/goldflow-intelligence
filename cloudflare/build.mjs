@@ -8,7 +8,7 @@ for(const need of ["index.html","app.js","v8.js","study-lifecycle.js","tv-hybrid
 await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
 for(const f of ["index.html","app.js","v8.js","study-lifecycle.js","tv-hybrid.js","chart-tools.js","study-ui.js","gpt-ui.js","gpt-professional-review-ui.js","ohlc-fallback.js","style.css","release.json",
  "sw.js","manifest.webmanifest"])await cp(join(root,f),join(dist,basename(f)));
-for(const dir of ["blog","locales"])await cp(join(root,dir),join(dist,dir),{recursive:true});
+for(const dir of ["blog","locales","recommended-ai"])await cp(join(root,dir),join(dist,dir),{recursive:true});
 await writeFile(join(dist,"_routes.json"),JSON.stringify({version:1,include:["/api/*"],exclude:[]},null,2)+"\n");
 await build({entryPoints:[join(root,"cloudflare/worker.js")],outfile:join(dist,"_worker.js"),
  bundle:true,format:"esm",platform:"neutral",target:"es2022",external:["node:crypto"],logLevel:"info",plugins:[{
