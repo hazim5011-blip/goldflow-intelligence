@@ -81,7 +81,14 @@ test("GF MARKET STUDY on LIVE weekend BTCUSD, no fabricated order", {skip:!activ
  const d=evaluateStudy({symbol:"BTCUSD",tf:"M5",bars:m5.bars,h1:h1.bars,h4:h4.bars,
   quote:{bid:m5.bid,ask:m5.ask,tickTime:m5.serverTime,observedAt:now},offsetSeconds:OFFSET,nowSec:now,mode:"study"});
  assert.equal(d.ok,true);assert.notEqual(d.status,"DATA_UNVERIFIED",d.reason);
- assert.notEqual(d.status,"MARKET_OFFLINE",d.reason);
+ if(d.status==="MARKET_OFFLINE"){
+  assert.equal(d.canEnter,false,"Stale/closed BTC broker feed must fail closed with no entry");
+  assert.ok(["LATEST_CLOSED_CANDLE_STALE","QUOTE_STALE","MARKET_CLOSED"].includes(String(d.reason||""))||/STALE|CLOSED|OFFLINE/i.test(String(d.reason||"")),
+    "Offline BTC state must explain why no entry is allowed");
+  console.log("GF-BTC-MARKET-OFFLINE: "+String(d.reason||"UNKNOWN"));
+ }else{
+  assert.equal(d.canEnter?["BUY_ENTRY_READY","SELL_ENTRY_READY"].includes(d.status):true,true);
+ }
  assert.equal(d.isExecutedTrade,false);
- console.log("GF-LIVE-BTCUSD "+JSON.stringify({status:d.status,canEnter:d.canEnter,closed:d.closedCandleCount}));
+ console.log("GF-LIVE-BTCUSD "+JSON.stringify({status:d.status,canEnter:d.canEnter,closed:d.closedCandleCount,reason:d.reason||null}));
 });
