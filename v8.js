@@ -45,7 +45,7 @@
       "&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(indicator)+(params||"");
   }
   function uri(params){return uriForIndicator(historyIndicator(),params)}
-  async function json(url){var r=await fetch(url,{cache:"no-store"}),txt=await r.text(),j=null;try{j=txt?JSON.parse(txt):null}catch(e){var html=/^\\s*<!doctype|^\\s*<html/i.test(txt||"");throw Error((html?"CLOUDFLARE_API_NON_JSON":"INVALID_API_JSON")+" • "+url+" • HTTP "+r.status)}if(!r.ok||!j||j.ok===false)throw Error(j?.error||("HTTP "+r.status));return j}
+  function transientStatus(s){return [502,503,504].includes(Number(s))}\n  function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})}\n  async function json(url){var last=null;for(var attempt=0;attempt<2;attempt++){try{var r=await fetch(url,{cache:"no-store",headers:{"Accept":"application/json"}}),txt=await r.text(),j=null;try{j=txt?JSON.parse(txt):null}catch(e){if(transientStatus(r.status)&&attempt===0){await wait(700);continue}var html=/^\\s*<!doctype|^\\s*<html/i.test(txt||"");throw Error((html?"CLOUDFLARE_API_NON_JSON":"INVALID_API_JSON")+" • "+url+" • HTTP "+r.status)}if(!r.ok||!j||j.ok===false){if(transientStatus(r.status)&&attempt===0){await wait(700);continue}throw Error(j?.error||("HTTP "+r.status))}return j}catch(e){last=e;if(attempt===0&&/HTTP (502|503|504)|timeout|aborted|network|fetch/i.test(String(e&&e.message||e))){await wait(700);continue}throw e}}throw last||Error("REQUEST_FAILED")}
   function notice(id,msg,bad){if($(id)){$(id).className=bad?"notice bad":"notice info";$(id).textContent=msg}}
   function stat(label,value,detail){
     return '<div class="v8Metric"><small>'+safe(label)+'</small><strong>'+safe(value)+'</strong>'+(detail?'<span>'+safe(detail)+'</span>':"")+'</div>';
@@ -85,7 +85,7 @@
   function resultStats(st,symbol){
     if(!st)return "";
     var winP=metricPart(st,"pipsBySymbol",symbol,"winTotal"),lossP=metricPart(st,"pipsBySymbol",symbol,"lossTotal"),netP=metricTotal(st,"pipsBySymbol",symbol);
-    return stat("STRICT WR",finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A",strictDetail(st))+
+    return stat("P/L WINRATE",finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A",strictDetail(st))+
       stat("SIGNAL WR",finite(st.signalWinRate)?number(st.signalWinRate,1)+"%":"N/A","COUNT ONLY • "+number(st.positive,0)+" WIN / "+number(st.negative,0)+" LOSS")+
       stat(t("positive"),number(st.positive,0),t("tpTrailingBePositive"))+
       stat(t("negative"),number(st.negative,0),"SL")+
@@ -135,7 +135,7 @@
   function renderIndicatorComparison(results,symbol){
     if(!$("v8IndicatorComparison"))return;
     var rows=(results||[]).map(function(x){return analyticsRow(historyMeta(x.id),x.data?.summary,symbol,x.error,x.data)});
-    $("v8IndicatorComparison").innerHTML='<table class="v8Table v8WideTable"><thead><tr><th>INDICATOR</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR<br><small>P/L WEIGHTED</small></th><th>SIGNAL WR<br><small>COUNT ONLY</small></th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>'+
+    $("v8IndicatorComparison").innerHTML='<table class="v8Table v8WideTable"><thead><tr><th>INDICATOR</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>P/L WINRATE<br><small>P/L WEIGHTED</small></th><th>SIGNAL WR<br><small>COUNT ONLY</small></th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+rows.join("")+'</tbody></table>'+
       '<p class="v8Footnote">STRICT WR kini berdasarkan nilai P/L, bukan bilangan trade: WIN USD ÷ (WIN USD + |LOSS USD|) jika Gross USD lengkap; jika tidak, WIN PIP ÷ (WIN PIP + |SL PIP|). 50% = breakeven sebelum kos. SIGNAL WR hanyalah nisbah bilangan win/loss dan tidak boleh menutup NET LOSS. BE0 dan AMBIGUOUS tidak menambah nilai win/loss.</p>';
   }
   function renderDailySummary(data){
@@ -143,7 +143,7 @@
     var meta=historyMeta(historyIndicator()),symbol=data?.symbol||state.history?.symbolResolved||"";
     if($("v8DailyIndicatorLabel"))$("v8DailyIndicatorLabel").textContent=meta.label+" • "+symbol+" • "+(data?.tf||window.selectedTF||"");
     var arr=(data?.groups||[]).slice().reverse();
-    $("v8DailySummary").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>DATE (MYT)</th><th>DAY RESULT</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>STRICT WR<br><small>P/L</small></th><th>SIGNAL WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+
+    $("v8DailySummary").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>DATE (MYT)</th><th>DAY RESULT</th><th>SIGNAL</th><th>WIN</th><th>TP/TR</th><th>BE+</th><th>SL</th><th>BE0</th><th>AMBIG</th><th>P/L WINRATE<br><small>P/L</small></th><th>SIGNAL WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>ΣR</th><th>GROSS USD*</th></tr></thead><tbody>'+
       arr.map(function(st){var netP=metricTotal(st,"pipsBySymbol",symbol),day=dayStatus(st,symbol);return '<tr><td><b>'+safe(st.period)+'</b></td><td class="'+netClass(netP)+'"><b>'+day+'</b></td><td>'+number(st.totalSignals,0)+'</td><td class="g">'+number(st.positive,0)+'</td>'+
         '<td>'+number(tpTrailCount(st),0)+'</td><td>'+number(st.outcomes?.BE_POSITIVE||0,0)+'</td><td class="r">'+number(st.negative,0)+'</td><td>'+number(st.beZero,0)+'</td><td>'+number(st.ambiguous,0)+'</td>'+
         '<td class="'+wrClass(st)+'"><b>'+(finite(st.strictWinRate)?number(st.strictWinRate,1)+"%":"N/A")+'</b><br><small>'+safe(strictBasisLabel(st))+'</small></td>'+
@@ -288,7 +288,7 @@
   }
   function renderComparison(obj){
     var rows=[obj?.previous,obj?.previousMatched,obj?.current].filter(Boolean);
-    return '<table class="v8Table"><thead><tr><th>'+t("period")+'</th><th>'+t("completed")+'</th><th>TP/TR</th><th>BE+</th><th>BE0</th><th>SL</th><th>STRICT WR<br><small>P/L</small></th><th>SIGNAL WR</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
+    return '<table class="v8Table"><thead><tr><th>'+t("period")+'</th><th>'+t("completed")+'</th><th>TP/TR</th><th>BE+</th><th>BE0</th><th>SL</th><th>P/L WINRATE<br><small>P/L</small></th><th>SIGNAL WR</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
       rows.map(function(s){return '<tr><td><b>'+safe(s.period)+'</b><br><small>'+safe(s.label||"")+'</small></td>'+
         '<td>'+number(s.completed,0)+'</td><td>'+number((s.outcomes?.TP1||0)+(s.outcomes?.TP2||0)+(s.outcomes?.TP3||0)+(s.outcomes?.TRAILING||0),0)+'</td>'+
         '<td>'+number(s.outcomes?.BE_POSITIVE||0,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.negative,0)+'</td>'+
@@ -301,7 +301,7 @@
     $("v8PerformanceSummary").innerHTML=resultStats(data.summary,data.symbol);
     $("v8MonthComparison").innerHTML=renderComparison(data.comparison);
     var arr=data.groups||[];
-    $("v8PeriodTable").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>'+t("period")+'</th><th>'+t("totalSignals")+'</th><th>'+t("completed")+'</th><th>'+t("positive")+'</th><th>'+t("negative")+'</th><th>'+t("beZero")+'</th><th>'+t("ambiguous")+'</th><th>STRICT WR<br><small>P/L</small></th><th>SIGNAL WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
+    $("v8PeriodTable").innerHTML=arr.length?'<table class="v8Table v8WideTable"><thead><tr><th>'+t("period")+'</th><th>'+t("totalSignals")+'</th><th>'+t("completed")+'</th><th>'+t("positive")+'</th><th>'+t("negative")+'</th><th>'+t("beZero")+'</th><th>'+t("ambiguous")+'</th><th>P/L WINRATE<br><small>P/L</small></th><th>SIGNAL WR</th><th>WIN PIP</th><th>SL PIP</th><th>NET PIP</th><th>NET POINT</th><th>'+t("totalR")+'</th><th>'+t("grossPL")+'</th></tr></thead><tbody>'+
       arr.map(function(s){var net=metricTotal(s,"pipsBySymbol",data.symbol);return '<tr><td><b>'+safe(s.period)+'</b></td><td>'+number(s.totalSignals,0)+'</td><td>'+number(s.completed,0)+'</td><td class="g">'+number(s.positive,0)+'</td><td class="r">'+number(s.negative,0)+'</td><td>'+number(s.beZero,0)+'</td><td>'+number(s.ambiguous,0)+'</td><td class="'+wrClass(s)+'">'+(finite(s.strictWinRate)?number(s.strictWinRate,1)+"%":"N/A")+'<br><small>'+safe(strictBasisLabel(s))+'</small></td><td>'+(finite(s.signalWinRate)?number(s.signalWinRate,1)+"%":"N/A")+'</td><td class="g">'+signed(metricPart(s,"pipsBySymbol",data.symbol,"winTotal"),1)+'</td><td class="r">'+signed(metricPart(s,"pipsBySymbol",data.symbol,"lossTotal"),1)+'</td><td class="'+netClass(net)+'">'+signed(net,1)+'</td><td>'+signed(metricTotal(s,"pointsBySymbol",data.symbol),0)+'</td><td>'+signed(s.totalR,2)+'</td><td>'+money(s.grossPLUSD)+'</td></tr>'}).join("")+'</tbody></table>':'<p>'+t("noSignalsInWindow")+'</p>';
   }
   async function loadPerformance(){
