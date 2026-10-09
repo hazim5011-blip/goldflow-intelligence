@@ -1,0 +1,27 @@
+name: GF-AAT R5.17.4 Extract More Source
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5174_EXTRACT_MORE.txt'
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-more && mkdir -p /tmp/gfaat-more
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-more
+          ROOT=/tmp/gfaat-more/GF_AAT_R5_17_3_STABLE
+          mkdir -p gf-aat-update/inspect/r5173/aat gf-aat-update/inspect/r5173/tests
+          cp "$ROOT/aat/signal_outcomes.py" gf-aat-update/inspect/r5173/aat/
+          cp "$ROOT/aat/context.py" gf-aat-update/inspect/r5173/aat/
+          cp "$ROOT/tests/test_v163_r5173_structural_entry_geometry.py" gf-aat-update/inspect/r5173/tests/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gf-aat-update/inspect/r5173
+          git commit -m "Extract additional GF-AAT R5.17.3 source for R5.17.4 audit"
+          git push
