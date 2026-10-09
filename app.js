@@ -15,11 +15,29 @@ function bridgeErrorText(v){
   if(/BRIDGE_TUNNEL_ORIGIN_UNAVAILABLE|origin web server|cloudflare/i.test(s))return "BRIDGE TUNNEL OFFLINE • Cloudflare tidak dapat mencapai local MT5 bridge. Semak bridge PC + named tunnel; tiada signal baru dikeluarkan.";
   return s;
 }
+function transientHttp(s){return [502,503,504].includes(Number(s))}
+function sleep(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})}
 async function getJson(url){
-  var r=await fetch(url,{cache:"no-store"}),txt=await r.text(),j=null;
-  try{j=JSON.parse(txt)}catch(e){throw new Error(bridgeErrorText(txt||("HTTP "+r.status)))}
-  if(!r.ok)throw new Error(bridgeErrorText(j.error||("HTTP "+r.status)));
-  return j;
+  var last=null;
+  for(var attempt=0;attempt<2;attempt++){
+    try{
+      var r=await fetch(url,{cache:"no-store",headers:{"Accept":"application/json"}}),txt=await r.text(),j=null;
+      try{j=JSON.parse(txt)}catch(e){
+        if(transientHttp(r.status)&&attempt===0){await sleep(650);continue}
+        throw new Error(bridgeErrorText(txt||("HTTP "+r.status)));
+      }
+      if(!r.ok){
+        if(transientHttp(r.status)&&attempt===0){await sleep(650);continue}
+        throw new Error(bridgeErrorText(j&&j.error||("HTTP "+r.status)));
+      }
+      return j;
+    }catch(e){
+      last=e;
+      if(attempt===0&&/HTTP (502|503|504)|BRIDGE_TIMEOUT|aborted|network|fetch/i.test(String(e&&e.message||e))){await sleep(650);continue}
+      throw e;
+    }
+  }
+  throw last||new Error("REQUEST_FAILED");
 }
 function rootSymbol(s){return String(s||"").replace(/[.#].*$/,"")}
 function indicatorName(v){
@@ -46,7 +64,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
   if(b.dataset.page==="gfStudyPage"&&/^gf-/.test(selectedIndicator))setTimeout(function(){window.GFStudy?.load()},50);
-  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(false);loadRecommendedAIInternet(false)},50);
+  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(true);loadRecommendedAIInternet(true)},50);
 }});
 
 $("tfSelect").value=selectedTF;
@@ -513,6 +531,7 @@ async function init(){
   await checkBridge();await loadSymbols(false);
   setInterval(checkBridge,30000);
   setInterval(refreshLiveZoneEntry,5000);
+  setInterval(function(){if(!document.hidden&&$("recommendedAIPage")?.classList.contains("on")){loadRecommendedAI(true);loadRecommendedAIInternet(true)}},300000);
   document.addEventListener("visibilitychange",function(){if(!document.hidden)refreshLiveZoneEntry()});
   setInterval(function(){
     // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
@@ -701,26 +720,30 @@ function raiCard(x){
       patch=dec.patch?Object.entries(dec.patch).map(function(kv){return raiEsc(kv[0])+"="+raiEsc(kv[1])}).join(" • "):"—";
   return '<article class="raiCard">'+
     '<div class="raiCardTop"><div><small>'+raiEsc(x.indicator)+'</small><h4>'+raiEsc(x.indicatorName||x.indicator)+'</h4><span>'+raiEsc(x.symbol||"")+" • "+raiEsc(x.tf||"")+'</span></div><b class="'+raiStateClass(x.state)+'">'+raiEsc(x.state||"WAIT")+'</b></div>'+
-    '<div class="raiMetrics"><div><small>STRICT WR</small><strong>'+raiNum(a.strictWR,1)+'%</strong></div><div><small>SIGNAL WR</small><strong>'+raiNum(a.signalWR,1)+'%</strong></div><div><small>NET PIP</small><strong class="'+(Number(a.netPip)>=0?"g":"r")+'">'+raiNum(a.netPip,1)+'</strong></div><div><small>SAMPLE</small><strong>'+raiNum(a.strictDenominator,0)+'</strong></div></div>'+
+    '<div class="raiMetrics"><div><small>P/L WINRATE</small><strong>'+raiNum(a.strictWR,1)+'%</strong></div><div><small>SIGNAL WR</small><strong>'+raiNum(a.signalWR,1)+'%</strong></div><div><small>NET PIP</small><strong class="'+(Number(a.netPip)>=0?"g":"r")+'">'+raiNum(a.netPip,1)+'</strong></div><div><small>SAMPLE</small><strong>'+raiNum(a.strictDenominator,0)+'</strong></div></div>'+
     '<div class="raiDiag">Quick SL <b>'+raiNum(d.quickStopRate,0)+'%</b> • Target fallback <b>'+raiNum(d.targetFallbackRate,0)+'%</b> • Avg loss risk <b>'+raiNum(d.avgLossRiskATR,2)+' ATR</b></div>'+
     '<div class="raiWhy">'+(rec.length?rec.map(function(v){return "• "+raiEsc(v)}).join("<br>"):"No diagnosis yet.")+'</div>'+
-    '<div class="raiCandidate"><small>BEST SHADOW CANDIDATE</small><b>'+(best?raiEsc(best.id):"—")+'</b><span>'+(best&&best.delta?("Δ Strict "+raiNum(best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta.netPipDelta,1)+" pip"):"Waiting for sample / replay")+'</span></div>'+
+    '<div class="raiCandidate"><small>BEST SHADOW CANDIDATE</small><b>'+(best?raiEsc(best.id):"—")+'</b><span>'+(best&&best.delta?("Δ P/L WR "+raiNum(best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta.netPipDelta,1)+" pip"):"Waiting for sample / replay")+'</span></div>'+
     '<div class="raiDecision"><small>AI DECISION</small><b class="'+raiStateClass(dec.action)+'">'+raiEsc(dec.action||"WAIT")+'</b><span>'+raiEsc(dec.reason||"")+'</span><span>Patch: '+patch+'</span></div>'+
     '<div class="raiFoot">Updated '+raiWhen(x.generatedAtUTC)+' • '+raiEsc(x.recommendationId||"")+'</div>'+
   '</article>';
 }
+function raiArchiveAgeMinutes(v){var t=Date.parse(String(v||""));return Number.isFinite(t)?Math.max(0,(Date.now()-t)/60000):Infinity}
 function renderRecommendedAIArchive(data){
   raiLatest=data||{};
   var recs=Object.values(raiLatest.recommendations||{}).filter(function(x){return x&&typeof x==="object"}).sort(function(a,b){return String(a.indicatorName||a.indicator).localeCompare(String(b.indicatorName||b.indicator))});
-  if($("raiHeartbeat"))$("raiHeartbeat").textContent=raiLatest.heartbeat||"WAIT";
+  var age=raiArchiveAgeMinutes(raiLatest.updatedAtUTC),stale=age>90,heartbeat=raiLatest.heartbeat||"WAIT";
+  if($("raiHeartbeat"))$("raiHeartbeat").textContent=stale?"STALE "+Math.round(age)+"m":heartbeat;
   if($("raiUpdated"))$("raiUpdated").textContent=raiWhen(raiLatest.updatedAtUTC);
   if($("raiPrimary"))$("raiPrimary").textContent=(raiLatest.primarySymbol||"XAUUSD247")+" • "+(raiLatest.primaryTF||"M15");
   if($("raiBatch"))$("raiBatch").textContent=raiLatest.lastBatch&&Array.isArray(raiLatest.lastBatch.indicators)?raiLatest.lastBatch.indicators.join(", "):"WAIT";
   if($("raiCards"))$("raiCards").innerHTML=recs.length?recs.map(raiCard).join(""):'<div class="notice info">AI archive belum mempunyai cycle lengkap. Scheduler akan mengisi data secara berperingkat.</div>';
   if($("raiStatus")){
-    $("raiStatus").className="notice "+(raiLatest.heartbeat==="OK"?"good":"info");
-    $("raiStatus").textContent=raiLatest.heartbeat==="OK"?
-      "Recommended AI 24H aktif • archive terakhir "+raiWhen(raiLatest.updatedAtUTC)+" • setiap indicator disimpan berasingan.":
+    $("raiStatus").className="notice "+(stale?"bad":heartbeat==="OK"?"good":"info");
+    $("raiStatus").textContent=stale?
+      "Recommended AI archive STALE • "+Math.round(age)+" minit sejak cycle berjaya terakhir. Browser akan refresh setiap 5 minit; watchdog server akan cuba pulihkan cycle yang terlepas.":
+      heartbeat==="OK"?
+      "Recommended AI 24H aktif • archive terakhir "+raiWhen(raiLatest.updatedAtUTC)+" • browser auto-refresh 5 minit • setiap indicator disimpan berasingan.":
       "Recommended AI menunggu cycle hourly pertama. Manual study masih boleh dijalankan.";
   }
 }
@@ -749,10 +772,10 @@ async function runRecommendedAINow(){
     var a=x.baseline&&x.baseline.all||{},d=x.diagnostics||{},dec=x.decision||{},best=(x.candidates||[]).slice().sort(function(m,n){return Number(n.delta&&n.delta.strictWRDelta||-999)-Number(m.delta&&m.delta.strictWRDelta||-999)})[0];
     $("raiLiveBadge").className="tag "+raiStateClass(dec.action);$("raiLiveBadge").textContent=dec.action||"DONE";
     $("raiLiveResult").innerHTML='<b>'+raiEsc(x.indicatorName)+' • '+raiEsc(x.symbol)+' • '+raiEsc(x.tf)+'</b><br>'+
-      'Strict WR '+raiNum(a.strictWR,1)+'% • Signal WR '+raiNum(a.signalWR,1)+'% • NET '+raiNum(a.netPip,1)+' pip • sample '+raiNum(a.strictDenominator,0)+'<br>'+
+      'P/L Winrate '+raiNum(a.strictWR,1)+'% • Signal WR '+raiNum(a.signalWR,1)+'% • NET '+raiNum(a.netPip,1)+' pip • sample '+raiNum(a.strictDenominator,0)+'<br>'+
       'Quick SL '+raiNum(d.quickStopRate,0)+'% • target fallback '+raiNum(d.targetFallbackRate,0)+'% • avg loss risk '+raiNum(d.avgLossRiskATR,2)+' ATR<br>'+
       (x.recommendation&&x.recommendation.summary?x.recommendation.summary.map(function(v){return "• "+raiEsc(v)}).join("<br>"):"")+
-      '<br><b>Shadow:</b> '+(best?raiEsc(best.id)+" • Δ Strict "+raiNum(best.delta&&best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta&&best.delta.netPipDelta,1)+" pip":"No candidate")+
+      '<br><b>Shadow:</b> '+(best?raiEsc(best.id)+" • Δ P/L WR "+raiNum(best.delta&&best.delta.strictWRDelta,1)+"pp • Δ Net "+raiNum(best.delta&&best.delta.netPipDelta,1)+" pip":"No candidate")+
       '<br><b>Decision:</b> '+raiEsc(dec.action||"WAIT")+" • "+raiEsc(dec.reason||"");
   }catch(e){
     $("raiLiveBadge").className="tag r";$("raiLiveBadge").textContent="ERROR";$("raiLiveResult").textContent=String(e.message||e);

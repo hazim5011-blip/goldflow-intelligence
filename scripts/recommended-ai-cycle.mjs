@@ -8,11 +8,11 @@ const groups=[
   ["105","103","pvt102"],
   ["pvtchart101","pattern132","snd107"],
   ["owl101","fund104","gf-ai"],
-  ["gf-study","gf-news"]
+  ["gf-study"]
 ];
 const now=new Date();
 const batchIndex=now.getUTCHours()%groups.length;
-const batch=groups[batchIndex];
+const batch=[...groups[batchIndex],"gf-news"];
 const root=process.cwd();
 const archiveDir=path.join(root,"recommended-ai");
 const latestPath=path.join(archiveDir,"latest.json");
@@ -23,6 +23,32 @@ const readJson=async(file,fallback)=>{
   try{return JSON.parse(await readFile(file,"utf8"))}
   catch{return structuredClone(fallback)}
 };
+async function fetchSiteJson(pathname){
+  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
+  try{
+    const r=await fetch(base+pathname,{headers:{"user-agent":"GoldFlow-Recommended-AI/1.0","accept":"application/json"},signal:ctl.signal,cache:"no-store"});
+    const txt=await r.text();let j=null;try{j=txt?JSON.parse(txt):null}catch{}
+    if(!r.ok||!j?.ok)throw Error(j?.error||("HTTP_"+r.status));
+    return j;
+  }finally{clearTimeout(timer)}
+}
+async function captureNewsMacroSnapshot(){
+  const out={capturedAtUTC:new Date().toISOString(),macro:null,worldNews:null,status:"PARTIAL"};
+  const [macro,world]=await Promise.allSettled([fetchSiteJson("/api/news-context?ts="+Date.now()),fetchSiteJson("/api/news-live?ts="+Date.now())]);
+  if(macro.status==="fulfilled"){
+    const m=macro.value?.macro||{};
+    out.macro={regime:m.regime||null,gold:m.gold||null,quality:m.quality||null,fetchedAtUTC:m.fetchedAtUTC||null};
+  }else out.macroError=String(macro.reason?.message||macro.reason||"MACRO_UNAVAILABLE");
+  if(world.status==="fulfilled"){
+    const w=world.value||{};
+    out.worldNews={updatedAtUTC:w.updatedAtUTC||null,sourceStatus:w.sourceStatus||null,openingRisk:w.openingRisk||null,
+      items:Array.isArray(w.items)?w.items.slice(0,16).map(x=>({id:x.id||null,publisher:x.publisher||null,title:x.title||null,
+        publishedAtUTC:x.publishedAtUTC||x.publishedAt||null,category:x.category||null,impact:x.impact||null,
+        sourceUrl:x.sourceUrl||null,verification:x.verification||null})):[]};
+  }else out.worldNewsError=String(world.reason?.message||world.reason||"WORLD_NEWS_UNAVAILABLE");
+  out.status=out.macro&&out.worldNews?"COMPLETE":out.macro||out.worldNews?"PARTIAL":"UNAVAILABLE";
+  return out;
+}
 
 const latest=await readJson(latestPath,{version:"RECOMMENDED_AI_ARCHIVE_V1",recommendations:{}});
 const state=await readJson(statePath,{version:1,updatedAtUTC:null,policy:"AUTO_PROMOTION_ONLY_AFTER_OOS_GATE",profiles:{}});
@@ -45,6 +71,10 @@ for(const indicator of batch){
     payload=await res.json();
   }catch(e){
     payload={ok:false,error:String(e?.message||e),indicator,symbol,tf,generatedAtUTC:new Date().toISOString()};
+  }
+  if(indicator==="gf-news"){
+    try{payload.newsMacroSnapshot=await captureNewsMacroSnapshot()}
+    catch(e){payload.newsMacroSnapshot={capturedAtUTC:new Date().toISOString(),status:"UNAVAILABLE",error:String(e?.message||e)}}
   }
 
   const profileKey=String(payload.profileKey||indicator+"|"+symbol).toUpperCase();
@@ -88,7 +118,7 @@ latest.heartbeat="OK";
 latest.primarySymbol=symbol;
 latest.primaryTF=tf;
 latest.lastBatch={batchIndex,indicators:batch,completed:results.filter(x=>x.ok).length,failed:results.filter(x=>!x.ok).length};
-latest.schedule={cadence:"hourly",strategy:"rotating indicator batches; every indicator revisited within about 4 hours"};
+latest.schedule={cadence:"hourly",strategy:"technical indicator batches rotate; every technical indicator revisited within about 4 hours; GF-News captures news + macro/regime context every hourly cycle"};
 state.updatedAtUTC=latest.updatedAtUTC;
 
 await mkdir(archiveDir,{recursive:true});
@@ -116,7 +146,8 @@ daily.cycles.push({
     baseline:x.baseline?.all||null,
     diagnostics:x.diagnostics||null,
     decision:x.decision||null,
-    rollback:x.rollback||null
+    rollback:x.rollback||null,
+    newsMacroSnapshot:x.newsMacroSnapshot||null
   }))
 });
 if(daily.cycles.length>30)daily.cycles=daily.cycles.slice(-30);

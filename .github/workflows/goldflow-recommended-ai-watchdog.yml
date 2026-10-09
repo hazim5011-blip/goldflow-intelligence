@@ -1,0 +1,69 @@
+name: GoldFlow Recommended AI Watchdog
+
+on:
+  schedule:
+    - cron: "47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goldflow-recommended-ai-24h
+  cancel-in-progress: false
+
+jobs:
+  recover-stale-learning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check archive freshness
+        id: freshness
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require("fs");
+          let run=true,age=Infinity,last=null;
+          try{
+            const j=JSON.parse(fs.readFileSync("recommended-ai/latest.json","utf8"));
+            last=Date.parse(j.updatedAtUTC||"");
+            age=Number.isFinite(last)?(Date.now()-last)/60000:Infinity;
+            run=age>=75;
+          }catch{}
+          console.log("Recommended AI archive age minutes:",Number.isFinite(age)?age.toFixed(1):"UNKNOWN");
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,"run="+(run?"true":"false")+"\n");
+          NODE
+
+      - name: Recover stale learning cycle
+        if: steps.freshness.outputs.run == 'true'
+        env:
+          GOLDFLOW_BASE_URL: https://goldflow-intelligence-cf-test.pages.dev
+          GOLDFLOW_AI_SYMBOL: XAUUSD247
+          GOLDFLOW_AI_TF: M15
+        run: node scripts/recommended-ai-cycle.mjs
+
+      - name: Commit recovered learning memory
+        if: steps.freshness.outputs.run == 'true'
+        shell: bash
+        run: |
+          git config user.name "goldflow-recommended-ai-watchdog"
+          git config user.email "goldflow-recommended-ai-watchdog@users.noreply.github.com"
+          git add recommended-ai api/_recommendedAIProfiles.js
+          if git diff --cached --quiet; then
+            echo "No watchdog learning changes."
+            exit 0
+          fi
+          git commit -m "chore(recommended-ai): watchdog recovered learning memory"
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -274,8 +274,8 @@
     <div id="v8HistoryStatus" class="sub">Pilih simbol Vantage, timeframe dan Indicator Sejarah.</div>
     <div id="v8Summary" class="v8MetricGrid"></div>
 
-    <div class="head sec"><div><small class="eyebrow">SAME SYMBOL • SAME TF • SAME DATE FILTER</small><h3>Win Rate Setiap Indicator</h3></div><span class="tag y">STRICT WR • P/L WEIGHTED</span></div>
-    <div class="notice info">STRICT WR tidak lagi berdasarkan jumlah trade menang. Ia menggunakan magnitud P/L: Gross USD jika coverage lengkap, jika tidak jumlah PIP. Formula: WIN VALUE ÷ (WIN VALUE + |LOSS VALUE|). 50% = breakeven sebelum kos. SIGNAL WR dipaparkan berasingan sebagai nisbah bilangan win/loss. Semua signal directional tetap wajib mempunyai ENTRY + SL + TP1 + TP2 + TP3.</div>
+    <div class="head sec"><div><small class="eyebrow">SAME SYMBOL • SAME TF • SAME DATE FILTER</small><h3>Win Rate Setiap Indicator</h3></div><span class="tag y">P/L WINRATE • USD/PIP WEIGHTED</span></div>
+    <div class="notice info">P/L WINRATE tidak berdasarkan jumlah trade menang. Ia menggunakan magnitud untung/rugi: Gross USD jika coverage lengkap, jika tidak jumlah PIP. Formula: WIN VALUE ÷ (WIN VALUE + |LOSS VALUE|). Contoh untung 5 dan rugi 15 = 25%. 50% = breakeven sebelum kos. SIGNAL WR dipaparkan berasingan sebagai nisbah bilangan win/loss. Semua signal directional tetap wajib mempunyai ENTRY + SL + TP1 + TP2 + TP3.</div>
     <div id="v8IndicatorComparison" class="v8Scroll"><p class="sub">Tekan Muat Sejarah untuk bandingkan semua indicator yang mempunyai historical replay.</p></div>
 
     <div class="head sec"><div><small class="eyebrow">DAILY TOTAL • ASIA/KUALA_LUMPUR</small><h3>Win Rate & Jumlah Setiap Hari</h3></div><span class="sub" id="v8DailyIndicatorLabel">Selected indicator</span></div>
@@ -314,7 +314,7 @@
     <div id="v8PerformanceSummary" class="v8MetricGrid"></div>
     <div class="head sec"><h3>Last month vs this month</h3><span class="sub">This month is MTD; matched days-to-date shown separately.</span></div>
     <div id="v8MonthComparison" class="v8Scroll"></div>
-    <div class="head sec"><h3>Results by period</h3><span class="sub">Strict WR is P/L-weighted; 50% = breakeven. Signal WR is count-only.</span></div>
+    <div class="head sec"><h3>Results by period</h3><span class="sub">P/L Winrate is USD/PIP-weighted; 50% = breakeven. Signal WR is count-only.</span></div>
     <div id="v8PeriodTable" class="v8Scroll"></div>
     <p class="v8Footnote">If broker history does not cover a complete prior month/year, the result is marked N/A rather than invented. Dynamic ATR + Structure targets are a GoldFlow management layer; native indicator Entry/SL/TP values remain retained separately for audit. Pips/points are not mixed across symbols.</p>
   </div>
@@ -391,7 +391,7 @@
       <div class="head"><div><small class="eyebrow">ON-DEMAND SHADOW STUDY</small><h3>Selected Indicator Study</h3></div><span id="raiLiveBadge" class="tag y">WAIT</span></div>
       <div id="raiLiveResult" class="reason">Choose a symbol, timeframe and indicator above, then press “Study Selected Now”. This live study does not alter production by itself; only the guarded 24H promotion cycle can activate a profile.</div>
     </div>
-    <p class="v8Footnote"><b>Mandatory update gate:</b> before future indicator changes, read this Recommended AI page / archive first. A high signal-count win rate is never enough; promotion requires P/L-weighted Strict WR and NET PIP improvement on held-out validation data.</p>
+    <p class="v8Footnote"><b>Mandatory update gate:</b> before future indicator changes, read this Recommended AI page / archive first. A high signal-count win rate is never enough; promotion requires P/L-weighted Winrate and NET PIP improvement on held-out validation data.</p>
   </div>
 </section>
 
