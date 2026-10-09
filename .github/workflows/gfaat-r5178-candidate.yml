@@ -52,6 +52,13 @@ jobs:
           s=s.replace('hour=18, minute=0','hour=6, minute=0')
           p.write_text(s,encoding='utf-8')
 
+          p=root/'aat/web.py'
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('1.6.3-r5.17.7','1.6.3-r5.17.8')
+          s=s.replace('R5.17.7','R5.17.8')
+          s=s.replace('gf-aat-1.6.3-r5.17.7-openai-operations-center','gf-aat-1.6.3-r5.17.8-openai-0600-operations-center')
+          p.write_text(s,encoding='utf-8')
+
           p=root/'aat/dashboard.html'
           s=p.read_text(encoding='utf-8')
           s=s.replace('AUTO REVIEW 6:00 PM MALAYSIA','AUTO REVIEW 6:00 AM MALAYSIA')
