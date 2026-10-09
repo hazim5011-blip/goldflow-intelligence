@@ -1,1 +1,1 @@
-Run GF-AAT R5.17.6 candidate with exact verified small chunks.
+Run GF-AAT R5.17.6 candidate after service line-break repair.
