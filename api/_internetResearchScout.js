@@ -123,11 +123,43 @@ export function sanitizeInternetHypothesis(h){
     confidence:Math.max(0,Math.min(1,Number(h?.confidence)||0)),patch,sources,status:Object.keys(patch).length&&sources.length?"TESTABLE":"EVIDENCE_ONLY"
   };
 }
+export function openAIRequestConfig(model,prompt){
+  const effort=String(process.env.RECOMMENDED_AI_REASONING_EFFORT||"medium").toLowerCase();
+  const allowedEffort=new Set(["low","medium","high"]);
+  const maxOutput=Math.max(900,Math.min(2600,Number(process.env.RECOMMENDED_AI_MAX_OUTPUT_TOKENS)||1800));
+  const maxToolCalls=Math.max(1,Math.min(3,Number(process.env.RECOMMENDED_AI_MAX_TOOL_CALLS)||2));
+  return {
+    model,
+    input:prompt,
+    tools:[{type:"web_search"}],
+    tool_choice:"auto",
+    max_tool_calls:maxToolCalls,
+    max_output_tokens:maxOutput,
+    reasoning:{effort:allowedEffort.has(effort)?effort:"medium"},
+    store:false
+  };
+}
+async function callOpenAIReasoning({key,model,prompt}){
+  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),55000);
+  try{
+    const res=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",headers:{"authorization":"Bearer "+key,"content-type":"application/json"},
+      body:JSON.stringify(openAIRequestConfig(model,prompt)),signal:ctl.signal
+    });
+    const body=await res.json();
+    if(!res.ok){
+      const err=Error("OPENAI_"+res.status+"_"+String(body?.error?.message||"API_ERROR").slice(0,180));
+      err.status=res.status;throw err;
+    }
+    return body;
+  }finally{clearTimeout(timer)}
+}
 export async function reasonWithInternet({evidence,recommendedArchive}={}){
   const key=process.env.OPENAI_API_KEY;
   if(!key)return {enabled:false,status:"OFFLINE_NO_OPENAI_API_KEY",model:null,hypotheses:[],
     note:"Free internet evidence collection is active. Model reasoning + web search activates only after OPENAI_API_KEY is configured."};
-  const model=process.env.RECOMMENDED_AI_MODEL||"gpt-6-luna";
+  const primaryModel=process.env.RECOMMENDED_AI_MODEL||"gpt-6.1-sol";
+  const fallbackModel=process.env.RECOMMENDED_AI_FALLBACK_MODEL||"gpt-6-luna";
   const compact=(Object.values(recommendedArchive?.recommendations||{})).map(x=>({
     indicator:x?.indicator,symbol:x?.symbol,tf:x?.tf,state:x?.state,baseline:x?.baseline?.all,diagnostics:x?.diagnostics
   })).slice(0,20);
@@ -136,26 +168,37 @@ export async function reasonWithInternet({evidence,recommendedArchive}={}){
     "Goal: turn current external market/trading research into TESTABLE hypotheses for GoldFlow Dynamic ATR + Structure management.",
     "Never claim a hypothesis is proven. Never recommend changing protected/native signal logic. Never output trading orders.",
     "Only propose numeric patches using these keys: "+[...ALLOWED_PATCH].join(", ")+".",
-    "Each patch must be small/conservative and tied to at least one source URL. Use web search when useful and prefer primary/official sources.",
+    "Each patch must be small/conservative and tied to at least one source URL. Use web search only when it materially improves verification; prefer primary/official sources.",
     "Consider current per-indicator outcomes. A high count win rate with negative P/L is not success.",
+    "Reject weak correlations, unverifiable claims, and changes that merely fit the recent sample.",
     "Return JSON only: {summary:string,hypotheses:[{indicator:string,symbol:string,title:string,hypothesis:string,rationale:string,confidence:number,patch:object,sources:string[]}]}",
     "Current Recommended AI diagnostics: "+JSON.stringify(compact),
-    "Fresh free evidence: "+JSON.stringify({items:(evidence?.items||[]).slice(0,24),macro:evidence?.macro||[]})
+    "Fresh free evidence: "+JSON.stringify({items:(evidence?.items||[]).slice(0,18),macro:evidence?.macro||[]})
   ].join("\n");
-  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
+  let model=primaryModel,fallbackUsed=false;
   try{
-    const res=await fetch("https://api.openai.com/v1/responses",{
-      method:"POST",headers:{"authorization":"Bearer "+key,"content-type":"application/json"},
-      body:JSON.stringify({model,input:prompt,tools:[{type:"web_search"}],tool_choice:"auto",max_output_tokens:2600}),signal:ctl.signal
-    });
-    const body=await res.json();
-    if(!res.ok)throw Error("OPENAI_"+res.status+"_"+String(body?.error?.message||"API_ERROR").slice(0,180));
+    let body;
+    try{
+      body=await callOpenAIReasoning({key,model:primaryModel,prompt});
+    }catch(e){
+      const accessOrModelError=[400,403,404].includes(Number(e?.status));
+      if(!accessOrModelError||!fallbackModel||fallbackModel===primaryModel)throw e;
+      model=fallbackModel;fallbackUsed=true;
+      body=await callOpenAIReasoning({key,model:fallbackModel,prompt});
+    }
     const parsed=jsonFromText(outputText(body));
+    if(!parsed)throw Error("OPENAI_NON_JSON_REASONING_OUTPUT");
     const hypotheses=(Array.isArray(parsed?.hypotheses)?parsed.hypotheses:[]).map(sanitizeInternetHypothesis).filter(x=>x.hypothesis).slice(0,8);
-    return {enabled:true,status:"ONLINE_OPENAI_WEB_REASONING",model,summary:String(parsed?.summary||"").slice(0,1200),hypotheses,responseId:body?.id||null};
+    return {
+      enabled:true,status:"ONLINE_OPENAI_WEB_REASONING",model,primaryModel,fallbackModel,
+      fallbackUsed,reasoningEffort:String(process.env.RECOMMENDED_AI_REASONING_EFFORT||"medium").toLowerCase(),
+      maxToolCalls:Math.max(1,Math.min(3,Number(process.env.RECOMMENDED_AI_MAX_TOOL_CALLS)||2)),
+      maxOutputTokens:Math.max(900,Math.min(2600,Number(process.env.RECOMMENDED_AI_MAX_OUTPUT_TOKENS)||1800)),
+      summary:String(parsed?.summary||"").slice(0,1200),hypotheses,responseId:body?.id||null,usage:body?.usage||null
+    };
   }catch(e){
-    return {enabled:true,status:"OPENAI_REASONING_ERROR",model,hypotheses:[],error:String(e?.message||e).slice(0,240)};
-  }finally{clearTimeout(timer)}
+    return {enabled:true,status:"OPENAI_REASONING_ERROR",model,primaryModel,fallbackModel,fallbackUsed,hypotheses:[],error:String(e?.message||e).slice(0,240)};
+  }
 }
 
 async function loadRecommendedArchive(){

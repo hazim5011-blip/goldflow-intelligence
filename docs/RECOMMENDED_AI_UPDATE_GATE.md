@@ -51,3 +51,26 @@ Rules:
 The free evidence scout works without an AI API key. A reasoning model with built-in web search is optional and activates only when `OPENAI_API_KEY` is configured. `RECOMMENDED_AI_MODEL` can override the configured model. Without a key, the UI must report `OFFLINE_NO_OPENAI_API_KEY` rather than pretending model reasoning is active.
 
 The Internet Brain runs every four hours while the existing outcome-learning brain continues hourly.
+
+
+## Reasoning Brain production defaults
+
+When `OPENAI_API_KEY` is present, the Internet Brain uses the OpenAI Responses API with web search.
+
+Production defaults:
+- primary model: `gpt-6.1-sol`;
+- fallback model: `gpt-6-luna` only for model/access errors;
+- reasoning effort: `medium`;
+- maximum web/tool calls per research response: 2;
+- maximum model output: 1800 tokens;
+- response storage: disabled (`store:false`);
+- scheduled internet research cadence: every four hours.
+
+Environment overrides:
+- `RECOMMENDED_AI_MODEL`
+- `RECOMMENDED_AI_FALLBACK_MODEL`
+- `RECOMMENDED_AI_REASONING_EFFORT`
+- `RECOMMENDED_AI_MAX_TOOL_CALLS`
+- `RECOMMENDED_AI_MAX_OUTPUT_TOKENS`
+
+These limits are cost/overfitting controls. Increasing them must not bypass the existing Vantage/OOS promotion gates.
