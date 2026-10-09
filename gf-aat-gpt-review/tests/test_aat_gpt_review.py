@@ -1,6 +1,8 @@
 import importlib.util
 import datetime as dt
 import json
+import hashlib
+import hmac
 import pathlib
 import sqlite3
 import sys
@@ -25,7 +27,15 @@ def snapshot(mode="POST_OUTCOME",complete=18,validation=6):
     }
     if mode=="POST_OUTCOME":
         out["outcome"]={"status":"SL","closedAtUTC":dt.datetime.now(dt.timezone.utc).isoformat()}
+    raw=json.dumps(out,ensure_ascii=False,sort_keys=True,separators=(",",":"))
+    out["signatureHmac"]=hmac.new(b"e"*48,raw.encode("utf-8"),hashlib.sha256).hexdigest()
     return out
+
+def resign(payload):
+    unsigned={k:v for k,v in payload.items() if k!="signatureHmac"}
+    raw=json.dumps(unsigned,ensure_ascii=False,sort_keys=True,separators=(",",":"))
+    payload["signatureHmac"]=hmac.new(b"e"*48,raw.encode("utf-8"),hashlib.sha256).hexdigest()
+    return payload
 
 def model_reply(decision="RECOMMEND_TEST"):
     review={"decision":decision,**{x:"Analisis profesional dengan bukti T0; ujian perlu." for x in reviewer.OUTPUT_FIELDS}}
@@ -36,7 +46,7 @@ class IndependentReviewTests(unittest.TestCase):
         self.tmp=tempfile.TemporaryDirectory()
         self.db=reviewer.open_private_db(pathlib.Path(self.tmp.name)/"aat_gpt_review.sqlite3")
         self.env={"AAT_GPT_ENABLED":"1","AAT_OPENAI_API_KEY":"sk-test-dummy-not-a-secret",
-                  "AAT_GPT_MODEL":"gpt-6-sol"}
+                  "AAT_GPT_MODEL":"gpt-6-sol","AAT_GPT_EVIDENCE_KEY":"e"*48}
         self.calls=[]
     def tearDown(self):
         self.db.close()
@@ -70,6 +80,11 @@ class IndependentReviewTests(unittest.TestCase):
         snap=snapshot(mode="T0_DECISION");snap["outcome"]={"status":"SL"}
         with self.assertRaisesRegex(ValueError,"OUTCOME_CANNOT_REWRITE_T0"):
             reviewer.check_snapshot(snap)
+    def test_unsigned_snapshot_cannot_reach_model(self):
+        snap=snapshot();snap["signatureHmac"]="0"*64
+        r=reviewer.run_review(snap,self.db,self.env,self.client)
+        self.assertEqual(r["status"],"EVIDENCE_SIGNATURE_UNVERIFIED")
+        self.assertEqual(len(self.calls),0)
     def test_no_real_gpt_call_when_disabled_or_missing_key(self):
         s=snapshot()
         x=reviewer.run_review(s,self.db,{**self.env,"AAT_GPT_ENABLED":"0"},self.client)
