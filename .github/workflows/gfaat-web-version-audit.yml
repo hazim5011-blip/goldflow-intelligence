@@ -1,0 +1,23 @@
+name: GF-AAT Web Version Audit
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_WEB_VERSION_AUDIT.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect web version constants
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-web && mkdir -p /tmp/gfaat-web
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-web
+          ROOT="$(find /tmp/gfaat-web -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          grep -n -C 4 -E "1\.6\.3-r5\.17\.4|R5\.17\.4|BUILD_ID|RUNTIME_REVISION|CURRENT_BUILD|VERSION=" "$ROOT/aat/web.py" | head -n 220
