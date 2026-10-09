@@ -28,6 +28,18 @@ async function brokerBars(tf){
   console.log(tf+" fetched "+b.length+" Vantage OHLC; last timestamp "+b.at(-1).t+"; bid/ask "+p.bid+"/"+p.ask);
   return p;
 }
+test("Cloudflare History endpoint never falls through to HTML",{timeout:70000},async()=>{
+  const u=BASE+"/api/history?symbol="+SYM+"&tf=M15&indicator=105&limit=5&t="+Date.now();
+  const res=await fetch(u,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(65000),cache:"no-store"});
+  const ct=String(res.headers.get("content-type")||"").toLowerCase();
+  const txt=await res.text();
+  assert.match(ct,/application\/json/,"History endpoint must always return JSON content-type");
+  assert.ok(!/^\s*<!doctype|^\s*<html/i.test(txt),"History endpoint must never return app-shell/Cloudflare HTML");
+  const body=JSON.parse(txt);
+  assert.equal(typeof body.ok,"boolean");
+  if(body.ok===false)assert.ok(body.error,"Fail-closed History response must explain the broker/API error");
+});
+
 test("Fund104 staging processes live Vantage XAUUSD247 M5/H1/H4 without fabricated outcomes",{skip:!expectLive,timeout:170000},async()=>{
   const healthResponse=await fetch(BASE+"/api/bridge-health?t="+Date.now(),{signal:AbortSignal.timeout(22000),cache:"no-store"});
   const health=await healthResponse.json();
