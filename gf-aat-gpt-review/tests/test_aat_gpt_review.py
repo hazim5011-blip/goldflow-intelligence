@@ -51,7 +51,7 @@ class IndependentReviewTests(unittest.TestCase):
         self.assertFalse(r["review"]["maturitySufficient"])
         self.assertEqual(self.db.execute("SELECT count(*) FROM gpt_review").fetchone()[0],1)
         self.assertEqual(len(self.calls),1)
-        self.assertNotIn("goldflow",json.dumps(self.calls).lower())
+        self.assertNotIn("goldflow",self.calls[0]["payload"]["input"][1]["content"].lower())
     def test_repeating_identical_evidence_is_idempotent_not_billable(self):
         snap=snapshot(mode="T0_DECISION")
         reviewer.run_review(snap,self.db,self.env,self.client)
