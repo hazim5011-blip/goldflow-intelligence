@@ -58,16 +58,26 @@ const scanned=await mapLimit(indicators,2,async([indicator,indicatorName])=>{
   return {indicator,indicatorName,symbol:data.symbol||symbol,tf,date:reviewDateMYT,metrics,trigger:reasons.length>0,triggerReasons:reasons};
 });
 const flagged=scanned.filter(x=>x&&x.trigger&&x.metrics);
+const context={capturedAtUTC:new Date().toISOString(),macro:null,worldNews:null};
+try{
+  const m=await fetchJson(base+"/api/news-context?t="+Date.now());
+  context.macro={regime:m?.macro?.regime||m?.regime||null,gold:m?.macro?.gold||m?.gold||null,quality:m?.macro?.quality||m?.quality||null};
+}catch(e){context.macroError=String(e?.message||e)}
+try{
+  const n=await fetchJson(base+"/api/news-live?t="+Date.now());
+  context.worldNews={updatedAtUTC:n?.updatedAtUTC||null,openingRisk:n?.openingRisk||null,
+    items:(Array.isArray(n?.items)?n.items:[]).slice(0,12).map(x=>({title:x.title||null,publisher:x.publisher||null,publishedAtUTC:x.publishedAtUTC||x.publishedAt||null,impact:x.impact||null,category:x.category||null,sourceUrl:x.sourceUrl||null}))};
+}catch(e){context.worldNewsError=String(e?.message||e)}
 let reasoning={enabled:true,status:"NO_UNDERPERFORMERS",model:null,summary:"No indicator met today's P/L underperformance trigger.",reviews:[]};
 let endpointError=null;
 if(flagged.length){
   try{
-    const resp=await fetchJson(base+"/api/recommended-ai-daily-review",{method:"POST",body:JSON.stringify({reviewDateMYT,items:flagged})});
+    const resp=await fetchJson(base+"/api/recommended-ai-daily-review",{method:"POST",body:JSON.stringify({reviewDateMYT,items:flagged,context})});
     reasoning=resp.reasoning||reasoning;
   }catch(e){endpointError=String(e?.message||e);reasoning={enabled:true,status:"DAILY_REVIEW_ENDPOINT_ERROR",model:null,summary:"Daily metrics were collected but the OpenAI review endpoint failed safely.",reviews:[],error:endpointError}}
 }
 const archive={version:"RECOMMENDED_AI_DAILY_ARCHIVE_V1",updatedAtUTC:new Date().toISOString(),reviewDateMYT,symbol,tf,scannedCount:scanned.length,
-  flagged,scanned,reasoning,note:"Daily trigger = P/L Winrate < 50% OR NET PIP < 0. Performance numbers come from GoldFlow /api/performance and are not model-generated.",
+  flagged,scanned,context,reasoning,note:"Daily trigger = P/L Winrate < 50% OR NET PIP < 0. Performance numbers come from GoldFlow /api/performance and are not model-generated.",
   safety:{protectedEngineAutoEdit:false,managementChangesRequireShadowOOS:true,modelCannotRewritePerformanceMetrics:true}};
 
 const root=process.cwd(),dir=path.join(root,"recommended-ai","daily");
