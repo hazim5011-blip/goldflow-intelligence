@@ -77,24 +77,7 @@ jobs:
           new.write_text(old.read_text(encoding='utf-8',errors='ignore').replace('R5_17_7','R5_17_8').replace('R5.17.7','R5.17.8'),encoding='utf-8')
 
           doc=root/'R5_17_8_OPENAI_0600_OPERATIONS_CENTER.md'
-          doc.write_text("""# GF-AAT R5.17.8 — OpenAI Operations Center 06:00 MYT
-
-Corrects the daily OpenAI teacher/reviewer schedule to the user's requested 06:00 Asia/Kuala_Lumpur.
-
-Pages/operations:
-- Live Signal • 4 Robots
-- Analisis OpenAI
-- Recommended OpenAI
-- Daily OpenAI data/signal-quality review at 06:00 MYT
-- Signal-improvement recommendations stored as immutable research memory
-
-Safety:
-- no automatic code mutation
-- no automatic production-rule mutation
-- forward validation required before promotion
-- Research/Paper Only
-- broker order authority false
-""",encoding='utf-8')
+          doc.write_text('# GF-AAT R5.17.8 — OpenAI Operations Center 06:00 MYT\\n\\nDaily OpenAI teacher/reviewer schedule corrected to 06:00 Asia/Kuala_Lumpur.\\n\\nPages: Live Signal • 4 Robots; Analisis OpenAI; Recommended OpenAI; Daily OpenAI review; Signal Improvement recommendations.\\n\\nSafety: no automatic code mutation; no automatic production-rule mutation; forward validation required; Research/Paper Only; broker order authority false.\\n',encoding='utf-8')
 
           for p in (root/'tests').glob('test_*.py'):
               s=p.read_text(encoding='utf-8')
