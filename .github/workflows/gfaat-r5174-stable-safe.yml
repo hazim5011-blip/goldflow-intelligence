@@ -67,6 +67,15 @@ jobs:
           p.write_text(s,encoding='utf-8')
           PY
           python3 /tmp/r5174-stage/apply_dashboard.py "$ROOT"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/r5174-root/GF_AAT_R5_17_3_STABLE/aat/dashboard.html')
+          s=p.read_text(encoding='utf-8')
+          short='R5.17.4 OpenAI Critic + News Quality + R5.17.3 Structural Entry Geometry<br>Real broker orders: 0'
+          full='R5.17.4 OpenAI Critic + News Quality + R5.17.3 Structural Entry Geometry + R5.17.2 Outcome-Calibrated Evidence<br>Real broker orders: 0'
+          assert short in s
+          p.write_text(s.replace(short,full,1),encoding='utf-8')
+          PY
           cp /tmp/r5174-stage/test_v163_r5174_openai_brain_news.py "$ROOT/tests/"
           cp /tmp/r5174-stage/R5_17_4_OPENAI_CRITIC_NEWS_QUALITY.md "$ROOT/"
           python3 - <<'PY'
