@@ -97,7 +97,7 @@ def check_snapshot(snapshot, now=None):
 
 def open_private_db(db_path):
     p = pathlib.Path(db_path).expanduser().resolve()
-    if p.suffix != ".sqlite3" or p.name in {"aat.sqlite3", "goldflow.sqlite3"}:
+    if p.suffix != ".sqlite3" or not p.name.startswith("aat_gpt_"):
         raise ValueError("DEDICATED_GPT_SQLITE_PATH_REQUIRED")
     p.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(p))
