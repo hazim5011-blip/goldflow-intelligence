@@ -1,0 +1,216 @@
+name: GF-AAT R5.17.5 Signal Rebalance Candidate
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5175_CANDIDATE.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build candidate from R5.17.4 stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-r5175
+          mkdir -p /tmp/gfaat-r5175
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5175
+          ROOT=/tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
+          test -d "$ROOT"
+          export ROOT
+          python3 - <<'PY'
+          import json, os, pathlib
+          root=pathlib.Path(os.environ['ROOT'])
+
+          def rep(rel,old,new):
+              p=root/rel
+              s=p.read_text(encoding='utf-8')
+              if old not in s:
+                  raise SystemExit(f'anchor missing in {rel}: {old[:120]!r}')
+              p.write_text(s.replace(old,new),encoding='utf-8')
+
+          # Unified evidence: neutral DAY/SCALPING context is informative, not an automatic veto.
+          rep('aat/decision_engine.py',"VERSION='GF-AAT-UNIFIED-EVIDENCE-1.4.0'","VERSION='GF-AAT-UNIFIED-EVIDENCE-1.5.0'")
+          rep('aat/decision_engine.py',
+              "    if alignment:evidence.append('MULTI_TF_DIRECTIONAL_ALIGNMENT');score+=2\n    else:blockers.append('MULTI_TF_UNRESOLVED')\n    if snapshot.get('primary',{}).get('structure') in ('BULLISH','BEARISH'):\n        evidence.append('PRIMARY_STRUCTURE_CONFIRMED');score+=2\n    else:blockers.append('PRIMARY_STRUCTURE_NEUTRAL')",
+              "    if alignment:evidence.append('MULTI_TF_DIRECTIONAL_ALIGNMENT');score+=2\n    elif profile in ('SCALPING','DAY'):warnings.append('MULTI_TF_UNRESOLVED')\n    else:blockers.append('MULTI_TF_UNRESOLVED')\n    if snapshot.get('primary',{}).get('structure') in ('BULLISH','BEARISH'):\n        evidence.append('PRIMARY_STRUCTURE_CONFIRMED');score+=2\n    elif profile in ('SCALPING','DAY'):warnings.append('PRIMARY_STRUCTURE_NEUTRAL')\n    else:blockers.append('PRIMARY_STRUCTURE_NEUTRAL')")
+
+          # Structure research: broaden fresh trigger vocabulary and permit neutral-HTF DAY reaction setups
+          # when no mandatory context is fully opposing.
+          rep('aat/structure.py',"ALGORITHM='aat-causal-structure-0.3.0'","ALGORITHM='aat-causal-structure-0.4.0'")
+          rep('aat/structure.py',
+              "    high20=max(x.h for x in bars[-21:-1]);low20=min(x.l for x in bars[-21:-1])\n    breakout_up=b.c>high20 and a.c<=high20\n    breakout_down=b.c<low20 and a.c>=low20\n    return {'BUY':{'engulf':bullish_engulf,'rejection':bullish_reject,'breakout':breakout_up},\n            'SELL':{'engulf':bearish_engulf,'rejection':bearish_reject,'breakout':breakout_down}}",
+              "    high20=max(x.h for x in bars[-21:-1]);low20=min(x.l for x in bars[-21:-1])\n    breakout_up=b.c>high20 and a.c<=high20\n    breakout_down=b.c<low20 and a.c>=low20\n    bullish_sweep=b.l<low20 and b.c>low20\n    bearish_sweep=b.h>high20 and b.c<high20\n    return {'BUY':{'engulf':bullish_engulf,'rejection':bullish_reject,'breakout':breakout_up,'sweep':bullish_sweep},\n            'SELL':{'engulf':bearish_engulf,'rejection':bearish_reject,'breakout':breakout_down,'sweep':bearish_sweep}}")
+          rep('aat/structure.py',
+              "    votes=[results[tf]['trend'] for tf in context_tfs]\n    core_direction=results[ctx1]['trend']\n    direction=core_direction if core_direction!=0 and all(x in (0,core_direction) for x in votes) else 0\n    meta={'required_timeframes':list(required),'context_used':context_tfs,\n          'optional_context':optional_notes,\n          'context_quality':('CORE_VERIFIED_WEEKLY_NOT_READY' if optional and any(\n              x['status']!='VERIFIED_CONTEXT_USED' for x in optional_notes.values()) else\n              'ALL_AVAILABLE_CONTEXT_VALIDATED')}\n    if not direction:return {'status':'WAIT_HTF_CONFLICT','profile':profile,'research':results,\n                              'reason':'Mandatory higher timeframe neutral or a verified independent context opposes it',**meta}\n    own=results[primary]\n    side='BUY' if direction>0 else 'SELL';opposite='SELL' if direction>0 else 'BUY'\n    p=own['pattern'][side]\n    flags=[k for k,v in p.items() if v]\n    if not flags:return {'status':'WAIT_PATTERN','profile':profile,'side_bias':side,'research':results,\n                          'reason':'No new independent closed-candle pattern on profile timeframe',**meta}",
+              "    votes=[results[tf]['trend'] for tf in context_tfs]\n    own=results[primary]\n    core_direction=results[ctx1]['trend']\n    direction=core_direction if core_direction!=0 and all(x in (0,core_direction) for x in votes) else 0\n    direction_basis='MANDATORY_HTF' if direction else 'UNRESOLVED'\n\n    def context_allows(candidate):\n        for ctf in context_tfs:\n            rr=results[ctf]\n            if rr.get('trend')==-candidate and rr.get('structure')==-candidate:\n                return False\n        return True\n\n    if not direction and profile in ('SCALPING','DAY'):\n        if own.get('trend') in (1,-1) and context_allows(int(own['trend'])):\n            direction=int(own['trend']);direction_basis='PRIMARY_TREND_NON_OPPOSING_CONTEXT'\n        else:\n            buy_trigger=any((own.get('pattern') or {}).get('BUY',{}).values()) or bool(own.get('bos_up'))\n            sell_trigger=any((own.get('pattern') or {}).get('SELL',{}).values()) or bool(own.get('bos_down'))\n            if buy_trigger != sell_trigger:\n                candidate=1 if buy_trigger else -1\n                if context_allows(candidate):\n                    direction=candidate;direction_basis='FRESH_REACTION_TRIGGER_NEUTRAL_CONTEXT'\n\n    meta={'required_timeframes':list(required),'context_used':context_tfs,\n          'optional_context':optional_notes,'direction_basis':direction_basis,\n          'context_quality':('CORE_VERIFIED_WEEKLY_NOT_READY' if optional and any(\n              x['status']!='VERIFIED_CONTEXT_USED' for x in optional_notes.values()) else\n              'ALL_AVAILABLE_CONTEXT_VALIDATED')}\n    if not direction:return {'status':'WAIT_HTF_CONFLICT','profile':profile,'research':results,\n                              'reason':'No defensible side: mandatory context is unresolved or materially opposing',**meta}\n    side='BUY' if direction>0 else 'SELL';opposite='SELL' if direction>0 else 'BUY'\n    p=own['pattern'][side]\n    flags=[k for k,v in p.items() if v]\n    if (own.get('bos_up') if direction>0 else own.get('bos_down')) and 'bos' not in flags:\n        flags.append('bos')\n    lc=own.get('last_candle') or {}\n    directional_body=(float(lc.get('close') or 0)>float(lc.get('open') or 0)) if direction>0 else (float(lc.get('close') or 0)<float(lc.get('open') or 0))\n    if float(own.get('body_atr') or 0)>=0.55 and directional_body and (own.get('trend')==direction or 'bos' in flags) and 'displacement' not in flags:\n        flags.append('displacement')\n    if not flags:return {'status':'WAIT_PATTERN','profile':profile,'side_bias':side,'research':results,\n                          'reason':'No fresh closed-candle trigger (rejection/engulf/breakout/sweep/BOS/displacement) on profile timeframe',**meta}")
+
+          # Professional pre-entry: let the richer structural study, not the old generic score, carry authority.
+          rep('aat/pre_entry_study.py',"VERSION = 'GF-AAT-PRE-ENTRY-MARKET-STUDY-1.4.0'","VERSION = 'GF-AAT-PRE-ENTRY-MARKET-STUDY-1.5.0'")
+          rep('aat/pre_entry_study.py',"MIN_POINTS = {'SCALPING': 78, 'DAY': 80, 'SWING': 82, 'POSITION': 84}","MIN_POINTS = {'SCALPING': 76, 'DAY': 74, 'SWING': 82, 'POSITION': 84}")
+          rep('aat/pre_entry_study.py',
+              "    if 'rejection' in flags: trigger_points += 9\n    if 'engulf' in flags: trigger_points += 8\n    if 'breakout' in flags: trigger_points += 6\n    if bos: trigger_points += 4",
+              "    if 'rejection' in flags: trigger_points += 9\n    if 'engulf' in flags: trigger_points += 8\n    if 'sweep' in flags: trigger_points += 8\n    if 'breakout' in flags: trigger_points += 6\n    if 'displacement' in flags: trigger_points += 6\n    if bos: trigger_points += 4")
+
+          # Publication gate: eliminate contradictory double-gating.
+          rep('aat/pro_signal.py',"VERSION='GF-AAT-PROFESSIONAL-SIGNAL-GATE-1.7.0'","VERSION='GF-AAT-PROFESSIONAL-SIGNAL-GATE-1.8.0'")
+          rep('aat/pro_signal.py',
+              "    if status=='SETUP_CLOSED_CANDLE' and score<threshold:\n        hard.append('PROFILE_SCORE_BELOW_THRESHOLD')",
+              "    legacy_score_ok=score>=threshold\n    if status=='SETUP_CLOSED_CANDLE' and not legacy_score_ok:\n        if pre_entry_study.get('approved'):\n            advisory.append('LEGACY_SCORE_BELOW_THRESHOLD_SUPERSEDED_BY_PRO_ENTRY_STUDY')\n        else:\n            hard.append('PROFILE_SCORE_BELOW_THRESHOLD')")
+          rep('aat/pro_signal.py',
+              "    for x in (unified_detail.get('blockers') or []):\n        if x not in hard: hard.append(x)\n    ms=(unified_detail.get('market_state') or {}).get('state') or unified_detail.get('pullback_reversal_state')\n    if ms in _BLOCKING_MARKET_STATES:\n        hard.append('MARKET_STATE_'+ms)\n    elif ms and ms not in _ALLOWED_MARKET_STATES:\n        advisory.append('MARKET_STATE_'+str(ms))",
+              "    soft_context={'MULTI_TF_UNRESOLVED','PRIMARY_STRUCTURE_NEUTRAL'}\n    for x in (unified_detail.get('blockers') or []):\n        if profile in ('SCALPING','DAY') and x in soft_context:\n            advisory.append('SOFT_CONTEXT_'+x)\n        elif x not in hard:\n            hard.append(x)\n    ms=(unified_detail.get('market_state') or {}).get('state') or unified_detail.get('pullback_reversal_state')\n    playbook=str(pre_entry_study.get('selected_playbook') or '')\n    if ms=='REVERSAL_WARNING' and pre_entry_study.get('approved') and playbook=='LIQUIDITY_SWEEP_REVERSAL':\n        advisory.append('REVERSAL_WARNING_ACCEPTED_BY_CONFIRMED_SWEEP_PLAYBOOK')\n    elif ms=='UNRESOLVED' and pre_entry_study.get('approved') and playbook in ('ZONE_REACTION','RANGE_EDGE_REVERSION'):\n        advisory.append('UNRESOLVED_REGIME_ACCEPTED_BY_REACTION_PLAYBOOK')\n    elif ms in _BLOCKING_MARKET_STATES:\n        hard.append('MARKET_STATE_'+ms)\n    elif ms and ms not in _ALLOWED_MARKET_STATES:\n        advisory.append('MARKET_STATE_'+str(ms))")
+          rep('aat/pro_signal.py',
+              "    eligible=not hard and status=='SETUP_CLOSED_CANDLE' and score>=threshold and (bool(pre_entry_study.get('approved')) if pre_entry_study else True)",
+              "    professional_score_ok=(bool(pre_entry_study.get('approved')) if pre_entry_study else legacy_score_ok)\n    eligible=not hard and status=='SETUP_CLOSED_CANDLE' and professional_score_ok")
+
+          # Runtime service: remove the second legacy-score veto after professional pre-entry has approved.
+          rep('aat/service.py',
+              "        if study['score']<PROFILE_THRESHOLDS[profile]:\n            score_gate={'status':'SCORE_BELOW_PROFILE_THRESHOLD','eligible':False,\n                        'hard_blockers':['PROFILE_SCORE_BELOW_THRESHOLD'],'score':study['score'],\n                        'minimum_score':PROFILE_THRESHOLDS[profile],'score_is_win_probability':False}\n            rejection_case=record_rejection_shadow(score_gate,'FORWARD_REJECTED_SCORE_SHADOW_CASE')\n            commit_review()\n            return {'status':'WAIT_SCORE','profile':profile,'score':study['score'],\n                    'minimum_score':PROFILE_THRESHOLDS[profile],\n                    'publication_rejection_shadow_id':(rejection_case or {}).get('id'),\n                    'monitored':monitored,'learning_case_id':learning_case_id,'learning_updates':learning_updates,\n                    'closed_loop_updates':len(closed_loop_updates),'missed_opportunity_updates':len(missed_opportunity_updates),'correction_effectiveness_updates':len(correction_effectiveness_updates),'technical_evidence_outcome_updates':len(technical_evidence_outcome_updates)}",
+              "        if study['score']<PROFILE_THRESHOLDS[profile] and not (study.get('pre_entry_market_study') or {}).get('approved'):\n            score_gate={'status':'SCORE_BELOW_PROFILE_THRESHOLD','eligible':False,\n                        'hard_blockers':['PROFILE_SCORE_BELOW_THRESHOLD'],'score':study['score'],\n                        'minimum_score':PROFILE_THRESHOLDS[profile],'score_is_win_probability':False}\n            rejection_case=record_rejection_shadow(score_gate,'FORWARD_REJECTED_SCORE_SHADOW_CASE')\n            commit_review()\n            return {'status':'WAIT_SCORE','profile':profile,'score':study['score'],\n                    'minimum_score':PROFILE_THRESHOLDS[profile],\n                    'publication_rejection_shadow_id':(rejection_case or {}).get('id'),\n                    'monitored':monitored,'learning_case_id':learning_case_id,'learning_updates':learning_updates,\n                    'closed_loop_updates':len(closed_loop_updates),'missed_opportunity_updates':len(missed_opportunity_updates),'correction_effectiveness_updates':len(correction_effectiveness_updates),'technical_evidence_outcome_updates':len(technical_evidence_outcome_updates)}\n        elif study['score']<PROFILE_THRESHOLDS[profile]:\n            study.setdefault('publication_advisories',[]).append('LEGACY_SCORE_SUPERSEDED_BY_APPROVED_PRO_ENTRY_STUDY')")
+          p=root/'aat/service.py'
+          s=p.read_text(encoding='utf-8').replace('R5.17.4_OPENAI_CRITIC_SHADOW','R5.17.5_SIGNAL_REBALANCE_OPENAI_SHADOW')
+          p.write_text(s,encoding='utf-8')
+
+          # Build identity.
+          b=json.loads((root/'CURRENT_BUILD.json').read_text(encoding='utf-8'))
+          b.update({'version':'1.6.3-r5.17.5','runtime_revision':'R5.17.5',
+                    'build_id':'gf-aat-1.6.3-r5.17.5-day-signal-rebalance',
+                    'restart_cmd':'RESTART_GF_AAT_R5_17_5.bat','research_only':True,'orders_sent':0})
+          (root/'CURRENT_BUILD.json').write_text(json.dumps(b,indent=2)+'\n',encoding='utf-8')
+
+          old=root/'RESTART_GF_AAT_R5_17_4.bat'
+          new=root/'RESTART_GF_AAT_R5_17_5.bat'
+          txt=old.read_text(encoding='utf-8',errors='ignore').replace('R5_17_4','R5_17_5').replace('R5.17.4','R5.17.5')
+          new.write_text(txt,encoding='utf-8')
+
+          doc=root/'R5_17_5_DAY_SIGNAL_REBALANCE.md'
+          doc.write_text("""# GF-AAT R5.17.5 — DAY Signal Rebalance
+
+Purpose: correct architectural over-filtering without forcing fake trades.
+
+## Removed from hard authority for DAY/SCALPING
+- neutral MTF alignment by itself
+- neutral primary structure by itself
+- legacy score veto after Professional Pre-Entry Study has independently approved
+
+## Newly recognised fresh triggers
+- liquidity sweep/reclaim
+- fresh BOS
+- directional displacement
+- existing rejection / engulf / breakout
+
+## Playbook reachability fixes
+- REVERSAL_WARNING may proceed only through an approved LIQUIDITY_SWEEP_REVERSAL playbook
+- UNRESOLVED regime may proceed only through approved ZONE_REACTION or RANGE_EDGE_REVERSION
+- true data/readiness failure, fully opposing mandatory trend+structure, bad structural geometry,
+  insufficient room, chase risk, and thesis invalidation remain hard blockers.
+
+## Frequency policy
+The robot is expected to search every new M15 closed candle for a professional DAY opportunity.
+It is not allowed to fabricate a trade merely to satisfy a calendar quota.  A market day with valid
+structural geometry should no longer be suppressed merely because H4 or M15 structure is neutral.
+
+Research/Paper Only. No broker order authority. order_send() remains absent.
+""",encoding='utf-8')
+
+          # New regression tests.
+          t=root/'tests/test_v163_r5175_signal_rebalance.py'
+          t.write_text("""from aat.decision_engine import synthesize
+from aat.pro_signal import evaluate
+from aat.pre_entry_study import MIN_POINTS
+
+def test_day_neutral_context_is_not_automatic_hard_veto():
+    d=synthesize(
+        'DAY',
+        {'status':'SETUP_CLOSED_CANDLE','side':'BUY'},
+        {'required_tfs':['M15','H1','H4'],
+         'trend_map':{'M15':'NEUTRAL','H1':'BULLISH','H4':'NEUTRAL'},
+         'structure_map':{'M15':'NEUTRAL','H1':'NEUTRAL','H4':'NEUTRAL'},
+         'primary':{'structure':'NEUTRAL'},'primary_tf':'M15','regime':'RANGE_OR_UNCONFIRMED'},
+        None,{'status':'CONTEXT_UNAVAILABLE'}, {}, {'research_usable':True,'status':'RESEARCH_READY'}
+    )
+    assert 'MULTI_TF_UNRESOLVED' not in d['blockers']
+    assert 'PRIMARY_STRUCTURE_NEUTRAL' not in d['blockers']
+
+def _approved(playbook):
+    return {'approved':True,'selected_playbook':playbook,'hard_blockers':[],'advisories':[]}
+
+def test_reversal_warning_reachable_for_approved_sweep_playbook():
+    g=evaluate('DAY',
+        {'status':'SETUP_CLOSED_CANDLE','score':56},
+        {'posture':'CONDITIONAL_SETUP_RESEARCH','blockers':[],
+         'market_state':{'state':'REVERSAL_WARNING'}},
+        _approved('LIQUIDITY_SWEEP_REVERSAL'))
+    assert g['eligible'] is True
+    assert 'MARKET_STATE_REVERSAL_WARNING' not in g['hard_blocks']
+
+def test_unresolved_range_reaction_can_publish_when_professionally_approved():
+    g=evaluate('DAY',
+        {'status':'SETUP_CLOSED_CANDLE','score':56},
+        {'posture':'CONDITIONAL_SETUP_RESEARCH','blockers':[],
+         'market_state':{'state':'UNRESOLVED'}},
+        _approved('RANGE_EDGE_REVERSION'))
+    assert g['eligible'] is True
+
+def test_real_readiness_blocker_remains_hard():
+    g=evaluate('DAY',
+        {'status':'SETUP_CLOSED_CANDLE','score':99},
+        {'posture':'CONDITIONAL_SETUP_RESEARCH','blockers':['READINESS_STALE'],
+         'market_state':{'state':'PULLBACK_NORMAL'}},
+        _approved('PULLBACK_CONTINUATION'))
+    assert g['eligible'] is False
+    assert 'READINESS_STALE' in g['hard_blocks']
+
+def test_day_professional_threshold_rebalanced_not_removed():
+    assert MIN_POINTS['DAY']==74
+    assert MIN_POINTS['SWING']==82
+
+def test_research_only_identity():
+    import json, pathlib
+    b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text())
+    assert b['research_only'] is True
+    assert b['orders_sent']==0
+    assert b['build_id']=='gf-aat-1.6.3-r5.17.5-day-signal-rebalance'
+""",encoding='utf-8')
+          print('R5.17.5 candidate transforms applied')
+          PY
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check -r /tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE/requirements.txt
+
+      - name: Run full tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
+          python3 -m pytest -q
+
+      - name: Safety audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
+          python3 - <<'PY'
+          import ast,pathlib,json
+          bad=[]
+          for p in pathlib.Path('aat').rglob('*.py'):
+              tree=ast.parse(p.read_text(encoding='utf-8',errors='ignore'))
+              for n in ast.walk(tree):
+                  if isinstance(n,ast.Call):
+                      f=n.func
+                      if isinstance(f,ast.Name) and f.id=='order_send': bad.append((str(p),n.lineno))
+                      if isinstance(f,ast.Attribute) and f.attr=='order_send': bad.append((str(p),n.lineno))
+          assert not bad,bad
+          b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text())
+          assert b['research_only'] and b['orders_sent']==0
+          print('SAFETY PASS')
+          PY
