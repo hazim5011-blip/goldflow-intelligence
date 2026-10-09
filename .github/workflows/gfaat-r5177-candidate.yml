@@ -62,6 +62,14 @@ jobs:
           ROOT=/tmp/gfaat-r5177/GF_AAT_R5_17_6_STABLE
           test -d "$ROOT"
           python3 /tmp/r5177_payload/r5177_transform.py "$ROOT" /tmp/r5177_payload
+          python3 - "$ROOT" <<'PY'
+          import pathlib,sys
+          p=pathlib.Path(sys.argv[1])/'aat/dashboard.html'
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('R5.17.7 OpenAI Ops Center + R5.17.6 Live Trader + R5.17.5 Signal Rebalance + R5.17.3 Structural Entry Geometry',
+                      'R5.17.7 OpenAI Ops Center + R5.17.6 Live Trader + R5.17.5 Signal Rebalance + R5.17.3 Structural Entry Geometry + R5.17.2 Outcome-Calibrated Evidence')
+          p.write_text(s,encoding='utf-8')
+          PY
           cd "$ROOT"
           python3 -m py_compile aat/openai_ops.py aat/service.py aat/web.py
           python3 - <<'PY'
