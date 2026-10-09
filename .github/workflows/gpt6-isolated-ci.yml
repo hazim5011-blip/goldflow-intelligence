@@ -1,6 +1,8 @@
 name: GoldFlow GPT-6 Isolated Gateway CI
 
 on:
+  push:
+    branches: ['feature/gpt6-safe-research-gateway']
   pull_request:
     branches: [main]
     paths:
@@ -63,6 +65,7 @@ jobs:
           grep -q 'GPT_RESEARCH_DISABLED' dist/_worker.js
           test -f dist/gpt-ui.js
           test -f dist/gpt-professional-review-ui.js
+          test -f dist/recommended-ai/latest.json
           grep -q 'REVIEW_STORAGE_NOT_CONFIGURED' dist/_worker.js
       # GoldFlow V8 CI runs the complete legacy regression separately on this PR.
       # Its existing failures remain a hard merge/release blocker; do not weaken that gate.
