@@ -23,8 +23,8 @@ jobs:
           unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5175
           ROOT=/tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
           test -d "$ROOT"
-          cat gf-aat-update/staging/r5175_transform.b64.* | base64 -d > /tmp/r5175_transform.py.gz
-          echo '9d2e2cf7927463b40987d436dc43951d7883a58e4ef0f34acc963384e4570e34  /tmp/r5175_transform.py.gz' | sha256sum -c -
+          cat gf-aat-update/staging/r5175_transform.b64.00 gf-aat-update/staging/r5175_transform.b64.01 gf-aat-update/staging/r5175_transform.b64.02 | base64 -d > /tmp/r5175_transform.py.gz
+          echo 'e4e0db57c8d73bad44aa5afdddc63e7cb5da32bfe1369a4ae76500099e8c7fe6  /tmp/r5175_transform.py.gz' | sha256sum -c -
           gzip -dc /tmp/r5175_transform.py.gz > /tmp/r5175_transform.py
           python3 -m py_compile /tmp/r5175_transform.py
           python3 /tmp/r5175_transform.py "$ROOT"
