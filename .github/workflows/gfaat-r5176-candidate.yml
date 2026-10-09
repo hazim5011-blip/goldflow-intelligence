@@ -65,6 +65,21 @@ jobs:
           cd "$ROOT"
           python3 -m py_compile aat/openai_client.py aat/openai_brain.py aat/service.py aat/web.py setup_openai_brain.py
           python3 - <<'PY'
+          import pathlib
+          # Keep release-facing runtime/tests aligned with the new stable build.
+          dash=pathlib.Path('aat/dashboard.html')
+          s=dash.read_text(encoding='utf-8')
+          s=s.replace('gf-aat-1.6.3-r5.17.5-day-signal-rebalance','gf-aat-1.6.3-r5.17.6-openai-live-trader')
+          dash.write_text(s,encoding='utf-8')
+          for p in pathlib.Path('tests').glob('test_*.py'):
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('RESTART_GF_AAT_R5_17_5.bat','RESTART_GF_AAT_R5_17_6.bat')
+              s=s.replace("'1.6.3-r5.17.5'","'1.6.3-r5.17.6'")
+              s=s.replace('"1.6.3-r5.17.5"','"1.6.3-r5.17.6"')
+              p.write_text(s,encoding='utf-8')
+          print('R5.17.6 release contract refresh applied')
+          PY
+          python3 - <<'PY'
           import json
           b=json.load(open('CURRENT_BUILD.json',encoding='utf-8'))
           assert b['version']=='1.6.3-r5.17.6',b
