@@ -1,1 +1,1 @@
-Run GF-AAT R5.17.6 candidate retry with verified normalized staging.
+Run GF-AAT R5.17.6 candidate with exact verified small chunks.
