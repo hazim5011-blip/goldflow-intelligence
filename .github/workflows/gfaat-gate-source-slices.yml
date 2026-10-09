@@ -1,0 +1,27 @@
+name: GF-AAT Gate Source Slices
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_GATE_SLICES.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print decisive gate slices
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-slices && mkdir -p /tmp/gfaat-slices
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-slices
+          ROOT="$(find /tmp/gfaat-slices -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo '=== PRE 200-330 ==='; sed -n '200,330p' "$ROOT/aat/pre_entry_study.py"
+          echo '=== PRO SIGNAL ==='; cat "$ROOT/aat/pro_signal.py"
+          echo '=== STRUCTURE 1-220 ==='; sed -n '1,220p' "$ROOT/aat/structure.py"
+          echo '=== ENTRY PLAYBOOK ==='; cat "$ROOT/aat/entry_playbook.py"
+          echo '=== SERVICE 430-610 ==='; sed -n '430,610p' "$ROOT/aat/service.py"
