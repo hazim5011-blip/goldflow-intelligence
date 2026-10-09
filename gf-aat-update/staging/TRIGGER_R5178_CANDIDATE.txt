@@ -1,1 +1,1 @@
-Run GF-AAT R5.17.8 candidate after workflow documentation fix.
+Run GF-AAT R5.17.8 candidate after web runtime alignment.
