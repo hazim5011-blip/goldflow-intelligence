@@ -51,6 +51,7 @@
 
 <nav class="tabs">
   <button class="tab on" data-page="dashboard">Dashboard</button>
+  <button class="tab" data-page="activeSignalsPage">Signal Aktif <span id="activeSignalsTabCount" class="tabCount">0</span></button>
   <button class="tab" data-page="chartPage">Broker Chart</button>
   <button class="tab" data-page="gfStudyPage">AI Study / News Time</button>
   <button class="tab" data-page="tvPage">TradingView</button>
@@ -106,6 +107,24 @@
   <div class="card sec">
     <div class="head"><h3>OUTCOME STATS</h3><span id="statsNote" class="sub">LEGACY INDICATOR WR: TP + TRAIL + BE (incl. BE0); V8 Strict WR is in Performance</span></div>
     <div class="stats"><div><small>TOTAL</small><b id="stTotal">0</b></div><div><small>WIN</small><b id="stWin" class="g">0</b></div><div><small>LOSE</small><b id="stLose" class="r">0</b></div><div><small>PENDING</small><b id="stPending">0</b></div><div><small>WIN RATE</small><b id="stWR">—</b></div></div>
+  </div>
+</section>
+
+<section id="activeSignalsPage" class="page">
+  <div class="card">
+    <div class="head">
+      <div><small class="eyebrow">ALL INDICATORS • LIVE BROKER SCAN • READ ONLY</small><h3>Signal Aktif</h3></div>
+      <div class="raiActions"><span id="activeSignalsBadge" class="tag y">WAIT</span><button type="button" class="primary mini" id="activeSignalsRefresh">Refresh Semua</button></div>
+    </div>
+    <div id="activeSignalsStatus" class="notice info">Buka tab ini untuk scan semua indicator bagi symbol dan timeframe semasa.</div>
+    <div class="v8MetricGrid">
+      <div class="v8Metric"><small>SYMBOL / TF</small><strong id="activeSignalsContext">—</strong><span>Independent of selected indicator</span></div>
+      <div class="v8Metric"><small>ACTIVE</small><strong id="activeSignalsActive">0</strong><span>Entry ready / price in active zone</span></div>
+      <div class="v8Metric"><small>WATCH</small><strong id="activeSignalsWatch">0</strong><span>Directional setup still alive</span></div>
+      <div class="v8Metric"><small>LAST SCAN</small><strong id="activeSignalsUpdated">—</strong><span>Auto refresh 60 seconds while open</span></div>
+    </div>
+    <div class="notice">Scanner membaca semua indicator tanpa mengubah indicator yang sedang dibuka. Signal terminal seperti TP / SL / BE / TRAILING / EXPIRED / CANCELLED / INVALIDATED tidak dikira aktif dan kekal di History Pro.</div>
+    <div id="activeSignalsGrid" class="activeSignalGrid" aria-live="polite"></div>
   </div>
 </section>
 
@@ -372,6 +391,22 @@
     </div>
     <div class="notice">Recommended AI learns each indicator separately. It may auto-promote only <b>symbol-scoped Dynamic ATR + Structure management</b> after minimum sample + out-of-sample gates pass. Protected/native signal-engine code is never auto-edited.</div>
     <div id="raiCards" class="raiGrid" aria-live="polite"></div>
+    <div class="card sec" id="raiDailyReviewCard">
+      <div class="head">
+        <div><small class="eyebrow">DAILY OPENAI UNDERPERFORMANCE REVIEW • P/L FIRST</small><h3>OpenAI Daily Review</h3></div>
+        <div class="raiActions"><span id="raiDailyBadge" class="tag y">WAIT</span><button type="button" class="primary mini" id="raiDailyRefresh">Refresh Daily Review</button></div>
+      </div>
+      <div id="raiDailyStatus" class="notice info">Daily review memeriksa indicator dengan P/L Winrate &lt; 50% atau NET PIP negatif.</div>
+      <div class="v8MetricGrid">
+        <div class="v8Metric"><small>REVIEW DATE</small><strong id="raiDailyDate">—</strong><span>Asia/Kuala_Lumpur</span></div>
+        <div class="v8Metric"><small>FLAGGED</small><strong id="raiDailyFlagged">—</strong><span>P/L WR &lt;50% OR NET PIP &lt;0</span></div>
+        <div class="v8Metric"><small>MODEL</small><strong id="raiDailyModel">—</strong><span>OpenAI reasoning</span></div>
+        <div class="v8Metric"><small>LAST REVIEW</small><strong id="raiDailyUpdated">—</strong><span>Persistent daily archive</span></div>
+      </div>
+      <div id="raiDailySummary" class="reason">Belum ada review harian.</div>
+      <div id="raiDailyReviews" class="raiGrid"></div>
+      <p class="v8Footnote">OpenAI hanya memberi diagnosis dan cadangan bounded. Protected/native signal-engine code tidak diubah secara automatik; perubahan management mesti masuk shadow/OOS validation dahulu.</p>
+    </div>
     <div class="card sec raiInternetCard" id="raiInternetCard">
       <div class="head">
         <div><small class="eyebrow">INTERNET RESEARCH BRAIN • SOURCE EVIDENCE • WEB REASONING</small><h3>Internet Knowledge Scout</h3></div>

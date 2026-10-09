@@ -1,0 +1,50 @@
+name: GoldFlow Recommended AI Daily Underperformance Review
+
+on:
+  schedule:
+    - cron: "50 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goldflow-recommended-ai-daily-review
+  cancel-in-progress: false
+
+jobs:
+  daily-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run daily P/L-first OpenAI review
+        env:
+          GOLDFLOW_BASE_URL: https://goldflow-intelligence-cf-test.pages.dev
+          GOLDFLOW_AI_SYMBOL: XAUUSD247
+          GOLDFLOW_AI_TF: M15
+        run: node scripts/recommended-ai-daily-review-cycle.mjs
+
+      - name: Commit daily review archive
+        shell: bash
+        run: |
+          git config user.name "goldflow-recommended-ai-daily"
+          git config user.email "goldflow-recommended-ai-daily@users.noreply.github.com"
+          git add recommended-ai/daily
+          if git diff --cached --quiet; then
+            echo "No daily review changes."
+            exit 0
+          fi
+          git commit -m "chore(recommended-ai): daily P/L underperformance review"
+          git pull --rebase origin main
+          git push origin HEAD:main

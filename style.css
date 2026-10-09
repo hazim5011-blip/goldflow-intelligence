@@ -190,3 +190,20 @@
 .raiInternetItem p{font-size:10px;line-height:1.55;color:#bcd0da;margin:0}.raiInternetItem span{font-size:9px;color:#e0c87a}
 .raiInternetItem a{font-size:9px;color:#91d1ff;text-decoration:underline;text-underline-offset:2px}.raiInternetItem.hypothesis{border-left:4px solid #8c73db}
 @media(max-width:850px){.raiInternetGrid{grid-template-columns:1fr}}
+
+.tabCount{display:inline-flex;min-width:18px;height:18px;align-items:center;justify-content:center;margin-left:4px;padding:0 5px;border-radius:9px;background:#163545;color:#8fe7ff;font-size:10px;font-weight:800}
+.activeSignalGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px;margin-top:14px}
+.activeSignalCard{border:1px solid #24404e;border-radius:12px;background:#081923;padding:14px;display:flex;flex-direction:column;gap:10px}
+.activeSignalCard.active{border-color:#1d8f70;box-shadow:0 0 0 1px rgba(49,214,164,.08)}
+.activeSignalCard.watch{border-color:#7f6b2b}
+.activeSignalTop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.activeSignalTop h4{margin:3px 0 0;font-size:15px}.activeSignalTop small{color:#7897a8}
+.activeSignalPlan{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.activeSignalPlan div{background:#0b202b;border:1px solid #183646;border-radius:8px;padding:8px;min-width:0}
+.activeSignalPlan small{display:block;color:#7694a4;font-size:9px}.activeSignalPlan b{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis}
+.activeSignalReason{color:#abc1cc;font-size:12px;line-height:1.45;min-height:34px}
+.activeSignalOpen{align-self:flex-start}
+.raiDailyReview{border-left:3px solid #d8b541}
+.raiDailyReview.bad{border-left-color:#ff6079}
+.raiDailyReview .dailySuggestions{margin-top:8px;color:#bad0da;font-size:12px;line-height:1.5}
+@media(max-width:800px){.activeSignalPlan{grid-template-columns:repeat(2,minmax(0,1fr))}.activeSignalGrid{grid-template-columns:1fr}}

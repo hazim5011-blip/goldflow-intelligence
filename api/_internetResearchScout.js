@@ -223,3 +223,68 @@ export async function runInternetResearch({useReasoning=true}={}){
       rule:"Internet hypotheses must be converted to bounded profile candidates and pass Vantage shadow/OOS validation before any promotion."}
   };
 }
+
+
+function dailyReviewPatch(v){
+  const out={};
+  for(const [k,n] of Object.entries(v||{}))if(ALLOWED_PATCH.has(k)&&Number.isFinite(Number(n)))out[k]=Number(n);
+  return out;
+}
+function dailyReviewSources(v){
+  return (Array.isArray(v)?v:[]).filter(x=>/^https?:\/\//i.test(String(x))).slice(0,6).map(String);
+}
+export async function reasonDailyUnderperformance({items=[],reviewDateMYT=null,context=null}={}){
+  const rows=(Array.isArray(items)?items:[]).slice(0,16).map(x=>({
+    indicator:String(x.indicator||"").toLowerCase(),indicatorName:String(x.indicatorName||x.indicator||""),
+    symbol:String(x.symbol||"").toUpperCase(),tf:String(x.tf||"").toUpperCase(),metrics:x.metrics||{},triggerReasons:Array.isArray(x.triggerReasons)?x.triggerReasons:[]
+  })).filter(x=>x.indicator&&x.symbol&&x.tf);
+  if(!rows.length)return {enabled:true,status:"NO_UNDERPERFORMERS",model:null,summary:"No indicator met the daily P/L underperformance trigger.",reviews:[]};
+  const key=process.env.OPENAI_API_KEY;
+  if(!key)return {enabled:false,status:"OFFLINE_NO_OPENAI_API_KEY",model:null,summary:"Daily underperformance metrics were collected, but OpenAI reasoning is unavailable.",reviews:[]};
+
+  const primaryModel=process.env.RECOMMENDED_AI_MODEL||"gpt-6.1-sol";
+  const fallbackModel=process.env.RECOMMENDED_AI_FALLBACK_MODEL||"gpt-6-luna";
+  const prompt=[
+    "You are GoldFlow Daily Indicator Underperformance Reviewer.",
+    "Review ONLY the supplied indicators. They were selected because today's P/L-weighted Winrate is below 50% OR today's NET PIP is negative.",
+    "The supplied performance numbers are authoritative. Never invent, alter, or replace them.",
+    "Diagnose why loss magnitude may be overwhelming wins: entry quality, structure location, stop geometry, ATR buffer, target efficiency, over-chasing, confirmation timing, volatility/regime mismatch, or insufficient sample.",
+    "Use web search only if current macro/news/regime context materially helps explain what should be CHECKED NEXT. Do not claim current news caused a historical loss unless contemporaneous evidence exists.",
+    "Never recommend editing protected/native signal-engine logic automatically. Any numeric change must be a small bounded Dynamic ATR + Structure management hypothesis only.",
+    "Allowed numeric management patch keys: "+[...ALLOWED_PATCH].join(", ")+".",
+    "Do not output broker orders, martingale, full-margin, or recovery risk increases.",
+    "Return JSON only: {summary:string,reviews:[{indicator:string,severity:'HIGH'|'MEDIUM'|'LOW',diagnosis:string,whyLossDominated:string,suggestions:string[],managementPatch:object,nextChecks:string[],confidence:number,sources:string[]}]}",
+    "Review date Asia/Kuala_Lumpur: "+String(reviewDateMYT||"unknown"),
+    "Authoritative daily metrics: "+JSON.stringify(rows),
+    "Current GoldFlow macro/news context (CHECK-NEXT context only; not proof of past causation): "+JSON.stringify(context||{})
+  ].join("\n");
+
+  let model=primaryModel,fallbackUsed=false;
+  try{
+    let body;
+    try{body=await callOpenAIReasoning({key,model:primaryModel,prompt})}
+    catch(e){
+      if(![400,403,404].includes(Number(e?.status))||!fallbackModel||fallbackModel===primaryModel)throw e;
+      model=fallbackModel;fallbackUsed=true;body=await callOpenAIReasoning({key,model:fallbackModel,prompt});
+    }
+    const parsed=jsonFromText(outputText(body));
+    if(!parsed)throw Error("OPENAI_NON_JSON_DAILY_REVIEW_OUTPUT");
+    const byId=new Map(rows.map(x=>[x.indicator,x])),seen=new Set(),reviews=[];
+    for(const raw of Array.isArray(parsed?.reviews)?parsed.reviews:[]){
+      const id=String(raw?.indicator||"").toLowerCase(),src=byId.get(id);
+      if(!src||seen.has(id))continue;seen.add(id);
+      const severity=["HIGH","MEDIUM","LOW"].includes(String(raw?.severity||"").toUpperCase())?String(raw.severity).toUpperCase():"MEDIUM";
+      reviews.push({indicator:id,indicatorName:src.indicatorName,symbol:src.symbol,tf:src.tf,metrics:src.metrics,triggerReasons:src.triggerReasons,
+        severity,diagnosis:String(raw?.diagnosis||"").slice(0,1200),whyLossDominated:String(raw?.whyLossDominated||"").slice(0,1200),
+        suggestions:(Array.isArray(raw?.suggestions)?raw.suggestions:[]).slice(0,6).map(x=>String(x).slice(0,500)),
+        managementPatch:dailyReviewPatch(raw?.managementPatch),
+        nextChecks:(Array.isArray(raw?.nextChecks)?raw.nextChecks:[]).slice(0,6).map(x=>String(x).slice(0,500)),
+        confidence:Math.max(0,Math.min(1,Number(raw?.confidence)||0)),sources:dailyReviewSources(raw?.sources)});
+    }
+    return {enabled:true,status:"ONLINE_OPENAI_DAILY_REVIEW",model,primaryModel,fallbackModel,fallbackUsed,
+      summary:String(parsed?.summary||"").slice(0,1600),reviews,responseId:body?.id||null,usage:body?.usage||null};
+  }catch(e){
+    return {enabled:true,status:"OPENAI_DAILY_REVIEW_ERROR",model,primaryModel,fallbackModel,fallbackUsed,
+      summary:"Daily metrics were collected but OpenAI review failed safely.",reviews:[],error:String(e?.message||e).slice(0,300)};
+  }
+}
