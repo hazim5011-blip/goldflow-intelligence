@@ -10,6 +10,7 @@ import {buildPattern132FiboSndConfluence} from "./_pattern132FiboSndConfluence.j
 import {runSND107} from "./_indicatorSND107.js";
 import {runFund104} from "./_indicatorFund104.js";
 import {applyDynamicPlanToSignal,UNIVERSAL_MANAGEMENT} from "./_dynamicTradeManagement.js";
+import {runtimeManagementOverride} from "./_recommendedAIRuntimeState.js";
 
 const PROFILE={
   M1:["M1","M5","M15"],
@@ -114,7 +115,8 @@ export default async function handler(req,res){
 
     if(indicator?.latestSignal){
       const nativeLatestSignal=indicator.latestSignal;
-      const managed=applyDynamicPlanToSignal(nativeLatestSignal,bars(tTF),tTF,indicatorMode,meta.point||0,meta.symbol||symbol);
+      const runtimeProfile=await runtimeManagementOverride(indicatorMode,meta.symbol||symbol);
+      const managed=applyDynamicPlanToSignal(nativeLatestSignal,bars(tTF),tTF,indicatorMode,meta.point||0,meta.symbol||symbol,runtimeProfile);
       indicator={...indicator,nativeLatestSignal,dynamicTradePlan:managed.plan||null,
         tradeManagement:{mode:"DYNAMIC_ATR_STRUCTURE",...UNIVERSAL_MANAGEMENT},
         latestSignal:managed.signal||nativeLatestSignal};
