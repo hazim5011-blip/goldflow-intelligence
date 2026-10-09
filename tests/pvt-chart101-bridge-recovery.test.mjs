@@ -35,21 +35,28 @@ test("PVT Chart Confluence v1.01 is an independent selected-TF MQ5 source port",
   assert.deepEqual(b.history,a.history,"forming candle must not rewrite closed-candle history");
 });
 
-test("History Pro preserves native PVT Chart v1.01 TP3 and management instead of replacing it with normalized rules",()=>{
+test("History Pro uses Dynamic ATR + Structure for PVT Chart while retaining native MQ5 plan in audit",()=>{
   const spec=metadataFromCatalog({name:"XAUUSD247",category:"METALS",digits:2,point:.01,currencyProfit:"USD",contractSize:100,volumeMin:.01,volumeStep:.01},"XAUUSD247","XAUUSD247");
-  const raw={time:1700000000,direction:1,code:"B",score:85,entry:100,invalidation:90,tp1:110,tp2:118,tp3:130,
-    nativeOutcome:"TP3",status:"TP3",exitPrice:130,exitTime:1700000900,reasons:["TEST"]};
-  const rows=buildHistory([raw],[bar(1700000000,99,101,98,100),bar(1700000300,100,110,99,108)],{
+  const t0=1700000000;
+  const bars=Array.from({length:24},(_,i)=>bar(t0+i*300,100,101,99,100));
+  const raw={time:t0+20*300,closeTime:t0+21*300,direction:1,code:"B",score:85,entry:100,invalidation:90,tp1:110,tp2:118,tp3:130,
+    nativeOutcome:"TP3",status:"TP3",exitPrice:130,exitTime:t0+23*300,reasons:["TEST"]};
+  // Future closed candle reaches the managed TP1. Native TP1/TP2/TP3 remain
+  // visible in nativePlan for audit but do not force a native-outcome shortcut.
+  bars[21]=bar(t0+21*300,100,111,99,108);
+  const rows=buildHistory([raw],bars,{
     requested:"XAUUSD247",resolved:"XAUUSD247",tf:"M5",indicator:"pvtchart101",spec,brokerServerUTCOffsetSeconds:0
   });
-  assert.equal(rows[0].outcome,"TP3");
-  assert.equal(rows[0].priceMove,30);
-  assert.equal(rows[0].rMultiple,3);
-  assert.equal(rows[0].planOrigin,"PVT_CHART_CONFLUENCE_V1_01_NATIVE");
-  assert.equal(rows[0].managementPlan.trailTriggerR,1);
-  assert.equal(rows[0].managementPlan.trailDistanceR,.5);
-  assert.equal(rows[0].managementPlan.trailStepR,.1);
-  assert.ok(rows[0].dataQuality.includes("PVT101_MQ5_SOURCE_OUTCOME_MODEL"));
+  const row=rows[0];
+  assert.equal(row.outcome,"TP1");
+  assert.equal(row.priceMove,10);
+  assert.equal(row.rMultiple,1);
+  assert.equal(row.planOrigin,"GOLDFLOW_DYNAMIC_ATR_STRUCTURE_PVT_CHART_101");
+  assert.equal(row.managementPlan.trailTriggerR,.75);
+  assert.equal(row.managementPlan.trailDistanceR,.35);
+  assert.deepEqual(row.nativePlan,{entry:100,sl:90,tp1:110,tp2:118,tp3:130});
+  assert.ok(row.dataQuality.includes("PVT101_NATIVE_PLAN_RETAINED_IN_AUDIT_ONLY"));
+  assert.ok(row.dataQuality.includes("GOLDFLOW_DYNAMIC_ATR_STRUCTURE_MANAGED_PLAN"));
 });
 
 test("UI exposes both uploaded indicator sources without duplicating protected Pattern engine",()=>{
