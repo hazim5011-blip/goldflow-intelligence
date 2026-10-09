@@ -5,7 +5,7 @@ import vm from "node:vm";
 import {impactForType,classifyReleaseEvent} from "../api/_v8Impact.js";
 import {runFund104,fund104InvalidatedByClosedBars,fund104InvalidationAtByClosedBars,fund104WilderRSI} from "../api/_indicatorFund104.js";
 import {runPVTChart101} from "../api/_indicatorPVTChart101.js";
-import {replayOutcome} from "../api/_v8Core.js";
+import {replayOutcome,normalizedTradePlan} from "../api/_v8Core.js";
 
 const source = p=>readFileSync(new URL(p,import.meta.url),"utf8");
 const bar=(t,o,h,l,c,v=100)=>({t,o,h,l,c,v});
@@ -45,14 +45,26 @@ test("Fund104 is ready for clean broker window and excludes last forming candle"
  assert.deepEqual(z.history,x.history);
  assert.deepEqual(z.latestSignal,x.latestSignal);
 });
-test("Fund104 native engine remains targetless while History layer can add an explicitly normalized plan",()=>{
+test("Fund104 native engine remains targetless while History adds Dynamic ATR + Structure management",()=>{
  const h=source("../api/_v8Core.js");
- assert.ok(h.includes("GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R"));
- const rec={time:1700000000,closeTime:1700000300,direction:1,entry:4100,invalidation:4090,tp1:null};
- const bars=[bar(1700000000,4100,4103,4099,4102),bar(1700000300,4102,4110,4080,4090),bar(1700000600,4090,4092,4088,4091)];
- const outcome=replayOutcome(rec,bars,"M5","fund104");
- assert.equal(outcome.planOrigin,"GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R");
- assert.equal(outcome.outcome,"AMBIGUOUS","same candle touches normalized 1R TP and original SL, so sequence must not be invented");
+ assert.ok(h.includes("GOLDFLOW_DYNAMIC_ATR_STRUCTURE"));
+ const t0=1700000000;
+ const bars=Array.from({length:24},(_,i)=>bar(t0+i*300,100,101,99,100));
+ const signalIndex=20,signalTime=t0+signalIndex*300;
+ const rec={time:signalTime,closeTime:signalTime+300,direction:1,entry:100,invalidation:98,tp1:null,tp2:null,tp3:null};
+ // Native Fund104 remains targetless. History management creates targets from
+ // pre-signal structure / dynamic-R fallback without modifying the native record.
+ const plan=normalizedTradePlan(rec,"fund104",bars,"M5",0,"XAUUSD247");
+ assert.equal(plan.valid,true);
+ assert.match(plan.origin,/^GOLDFLOW_DYNAMIC_ATR_STRUCTURE_FUND_104$/);
+ assert.equal(plan.nativePlan.tp1,null);
+ assert.ok(plan.tp1>rec.entry);
+ // The first closed future candle touches both the managed TP1 and native/managed
+ // SL. Replay must remain conservative and never invent intrabar ordering.
+ bars[21]=bar(t0+21*300,100,Math.max(plan.tp1+1,103),Math.min(plan.sl-1,97),100);
+ const outcome=replayOutcome(rec,bars,"M5","fund104",0,plan,"XAUUSD247");
+ assert.equal(outcome.planOrigin,plan.origin);
+ assert.equal(outcome.outcome,"AMBIGUOUS","same candle touches managed TP1 and SL, so sequence must not be invented");
 });
 test("Blog has valid articles with non-fabricated release provenance",()=>{
  const j=JSON.parse(source("../blog/posts.json"));
@@ -163,9 +175,11 @@ test("Browser zone-state math uses BUY ASK, SELL BID and expires old quotes",()=
  const quote={bid:100.5,ask:101.2,seenAtMs:Date.now()};
  const z={low:100,high:101,sourceEvent:"VALID RBS Retest"};
  assert.equal(context.zoneEntryState(z,1,quote).label,"PENDING","BUY requires ASK to be inside");
- assert.equal(context.zoneEntryState(z,-1,quote).label,"LIVE ENTRY","SELL uses BID when zone is eligible");
+ assert.equal(context.zoneEntryState(z,-1,quote).label,"IN ZONE • WATCH","Pattern132 generic zone is not live until Fibo+SND is confirmed");
+ const fiboConfirmed={...z,fiboSnd:{confirmed:true}};
+ assert.equal(context.zoneEntryState(fiboConfirmed,-1,quote).label,"LIVE ENTRY","SELL uses BID once Pattern Fibo+SND entry is confirmed");
  const freshBuy={...quote,ask:100.9};
- assert.equal(context.zoneEntryState(z,1,freshBuy).label,"LIVE ENTRY");
+ assert.equal(context.zoneEntryState(fiboConfirmed,1,freshBuy).label,"LIVE ENTRY");
  assert.equal(context.zoneEntryState({...z,sourceEvent:"WATCH Double Top"},-1,quote).label,"IN ZONE • WATCH");
  assert.equal(context.zoneEntryState({...z,sourceEvent:"WATCH Double Top"},-1,quote).live,false);
  context.selectedIndicator="fund104";
