@@ -1,0 +1,217 @@
+name: GF-AAT R5.17.8.1 Windows TZ Hotfix
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R51781_RELEASE.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify R5.17.8 stable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          m=json.loads(pathlib.Path('gf-aat-update/stable.json').read_text(encoding='utf-8'))
+          assert m['version']=='1.6.3-r5.17.8',m
+          assert m['build_id']=='gf-aat-1.6.3-r5.17.8-openai-0600-operations-center',m
+          p=pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          got=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert got==m['sha256'],(got,m['sha256'])
+          print('R5.17.8 baseline PASS',got)
+          PY
+
+      - name: Build Windows timezone hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-r51781
+          mkdir -p /tmp/gfaat-r51781
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r51781
+          ROOT=/tmp/gfaat-r51781/GF_AAT_R5_17_8_STABLE
+          test -d "$ROOT"
+          python3 - "$ROOT" <<'PY'
+          import json,pathlib,sys
+          root=pathlib.Path(sys.argv[1])
+
+          p=root/'aat/openai_ops.py'
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('from datetime import datetime, timedelta','from datetime import datetime, timedelta, timezone')
+          s=s.replace('from zoneinfo import ZoneInfo\n','')
+          s=s.replace('MYT = ZoneInfo("Asia/Kuala_Lumpur")','MYT = timezone(timedelta(hours=8), name="Asia/Kuala_Lumpur")')
+          p.write_text(s,encoding='utf-8')
+
+          old_build='gf-aat-1.6.3-r5.17.8-openai-0600-operations-center'
+          new_build='gf-aat-1.6.3-r5.17.8.1-openai-0600-windows-tz-hotfix'
+          for rel in ['aat/web.py','aat/dashboard.html']:
+              p=root/rel
+              s=p.read_text(encoding='utf-8')
+              s=s.replace(old_build,new_build)
+              s=s.replace('1.6.3-r5.17.8','1.6.3-r5.17.8.1')
+              s=s.replace('R5.17.8','R5.17.8.1')
+              p.write_text(s,encoding='utf-8')
+
+          b=json.loads((root/'CURRENT_BUILD.json').read_text(encoding='utf-8'))
+          b.update({
+            'version':'1.6.3-r5.17.8.1',
+            'runtime_revision':'R5.17.8.1',
+            'build_id':new_build,
+            'restart_cmd':'RESTART_GF_AAT_R5_17_8_1.bat',
+            'research_only':True,
+            'orders_sent':0,
+          })
+          (root/'CURRENT_BUILD.json').write_text(json.dumps(b,indent=2)+'\n',encoding='utf-8')
+
+          old=root/'RESTART_GF_AAT_R5_17_8.bat'
+          new=root/'RESTART_GF_AAT_R5_17_8_1.bat'
+          new.write_text(old.read_text(encoding='utf-8',errors='ignore').replace('R5_17_8','R5_17_8_1').replace('R5.17.8','R5.17.8.1'),encoding='utf-8')
+
+          (root/'R5_17_8_1_WINDOWS_TZ_HOTFIX.md').write_text(
+            '# GF-AAT R5.17.8.1 Windows Timezone Hotfix\n\n'
+            'Removes runtime dependency on tzdata/ZoneInfo for Malaysia scheduling. '
+            'Uses fixed UTC+08:00 timezone for Asia/Kuala_Lumpur because Malaysia has no daylight-saving transition.\n'
+            'OpenAI daily review remains 06:00 MYT. Research/Paper Only; orders sent 0.\n',
+            encoding='utf-8')
+
+          for p in (root/'tests').glob('test_*.py'):
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('RESTART_GF_AAT_R5_17_8.bat','RESTART_GF_AAT_R5_17_8_1.bat')
+              s=s.replace(old_build,new_build)
+              s=s.replace("'1.6.3-r5.17.8'","'1.6.3-r5.17.8.1'")
+              s=s.replace('"1.6.3-r5.17.8"','"1.6.3-r5.17.8.1"')
+              s=s.replace("'R5.17.8'","'R5.17.8.1'")
+              s=s.replace('"R5.17.8"','"R5.17.8.1"')
+              p.write_text(s,encoding='utf-8')
+
+          print('R5.17.8.1 transform PASS')
+          PY
+          cd "$ROOT"
+          python3 -m py_compile aat/openai_ops.py aat/web.py aat/service.py
+          python3 - <<'PY'
+          import pathlib,json
+          src=pathlib.Path('aat/openai_ops.py').read_text(encoding='utf-8')
+          assert 'ZoneInfo' not in src
+          assert 'from zoneinfo import' not in src
+          assert 'timezone(timedelta(hours=8)' in src
+          b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text())
+          assert b['version']=='1.6.3-r5.17.8.1'
+          assert b['runtime_revision']=='R5.17.8.1'
+          assert b['build_id']=='gf-aat-1.6.3-r5.17.8.1-openai-0600-windows-tz-hotfix'
+          assert b['restart_cmd']=='RESTART_GF_AAT_R5_17_8_1.bat'
+          print('WINDOWS TZDATA INDEPENDENCE PASS')
+          PY
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check -r /tmp/gfaat-r51781/GF_AAT_R5_17_8_STABLE/requirements.txt
+
+      - name: Run complete tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r51781/GF_AAT_R5_17_8_STABLE
+          python3 -m pytest -q | tee /tmp/gfaat-r51781-pytest.txt
+          grep -Eq '231 passed' /tmp/gfaat-r51781-pytest.txt
+
+      - name: Safety and schedule audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r51781/GF_AAT_R5_17_8_STABLE
+          python3 - <<'PY'
+          import ast,pathlib,json
+          bad=[]
+          for p in pathlib.Path('aat').rglob('*.py'):
+              tree=ast.parse(p.read_text(encoding='utf-8',errors='ignore'),filename=str(p))
+              for n in ast.walk(tree):
+                  if not isinstance(n,ast.Call): continue
+                  f=n.func
+                  if isinstance(f,ast.Name) and f.id=='order_send': bad.append((str(p),n.lineno))
+                  elif isinstance(f,ast.Attribute) and f.attr=='order_send': bad.append((str(p),n.lineno))
+          assert not bad,bad
+          src=pathlib.Path('aat/openai_ops.py').read_text(encoding='utf-8')
+          assert 'DAILY_0600_MYT' in src and 'WAIT_0600_MYT' in src and 'hour = 6' in src
+          assert 'ZoneInfo' not in src and 'zoneinfo' not in src
+          b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text())
+          assert b['research_only'] is True and int(b['orders_sent'])==0
+          print('SAFETY PASS')
+          print('06:00 MYT PASS')
+          print('NO TZDATA DEPENDENCY PASS')
+          PY
+
+      - name: Package hotfix preserving local state
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/gfaat-r51781/GF_AAT_R5_17_8_STABLE
+          rm -rf "$ROOT/.venv" "$ROOT/data" "$ROOT/logs" "$ROOT/backups" "$ROOT/_updates" "$ROOT/.pytest_cache"
+          find "$ROOT" -type d -name __pycache__ -prune -exec rm -rf {} +
+          rm -f "$ROOT/.env"
+          cd /tmp/gfaat-r51781
+          mv GF_AAT_R5_17_8_STABLE GF_AAT_R5_17_8_1_STABLE
+          zip -qr /tmp/GF_AAT_STABLE.zip GF_AAT_R5_17_8_1_STABLE
+          unzip -t /tmp/GF_AAT_STABLE.zip >/dev/null
+          python3 - <<'PY'
+          import pathlib,zipfile
+          forbidden_names={'.env'}
+          forbidden_dirs={'data','logs','backups','_updates','.venv','.pytest_cache','__pycache__'}
+          required={
+            'GF_AAT_R5_17_8_1_STABLE/GF_AAT_UPDATE.cmd',
+            'GF_AAT_R5_17_8_1_STABLE/RESTART_GF_AAT_R5_17_8_1.bat',
+            'GF_AAT_R5_17_8_1_STABLE/CURRENT_BUILD.json',
+            'GF_AAT_R5_17_8_1_STABLE/aat/openai_ops.py',
+            'GF_AAT_R5_17_8_1_STABLE/R5_17_8_1_WINDOWS_TZ_HOTFIX.md',
+          }
+          bad=[]
+          with zipfile.ZipFile('/tmp/GF_AAT_STABLE.zip') as z:
+              names=set(z.namelist())
+              for name in names:
+                  parts=pathlib.PurePosixPath(name).parts
+                  if any(p in forbidden_dirs for p in parts): bad.append(name)
+                  elif parts and parts[-1] in forbidden_names: bad.append(name)
+              missing=sorted(required-names)
+          assert not bad,bad[:20]
+          assert not missing,missing
+          print('Persistent-state exclusion PASS')
+          print('Required hotfix files PASS')
+          PY
+
+      - name: Publish R5.17.8.1 stable channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/GF_AAT_STABLE.zip gf-aat-update/GF_AAT_STABLE.zip
+          HASH="$(sha256sum gf-aat-update/GF_AAT_STABLE.zip | awk '{print $1}')"
+          cat > gf-aat-update/stable.json <<EOF
+          {
+            "channel": "stable",
+            "version": "1.6.3-r5.17.8.1",
+            "build_id": "gf-aat-1.6.3-r5.17.8.1-openai-0600-windows-tz-hotfix",
+            "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
+            "sha256": "$HASH",
+            "restart_cmd": "RESTART_GF_AAT_R5_17_8_1.bat",
+            "minimum_updater": 2
+          }
+          EOF
+          python3 -m json.tool gf-aat-update/stable.json >/dev/null
+          echo "Published hotfix SHA256: $HASH"
+
+      - name: Commit stable hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gf-aat-update/GF_AAT_STABLE.zip gf-aat-update/stable.json
+          git diff --cached --quiet && { echo 'No stable changes to publish'; exit 1; }
+          git commit -m "Publish GF-AAT R5.17.8.1 Windows timezone hotfix"
+          git push
