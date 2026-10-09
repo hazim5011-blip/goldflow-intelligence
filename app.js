@@ -1,6 +1,6 @@
 var allSymbols=[], filteredSymbols=[], selectedSymbol=localStorage.getItem("gf_symbol")||"", selectedTF=localStorage.getItem("gf_tf")||"M5", selectedIndicator=localStorage.getItem("gf_indicator")||"105";
 var chartLabelMode=localStorage.getItem("gf_chart_labels")||"nearest";
-var focusedZone=null, lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null, raiLatest=null, raiLoading=false;
+var focusedZone=null, lastAnalysis=null, lastLiveTick=null, chart=null, candleSeries=null, loading=false, liveTickLoading=false, macroLoaded=false, macroLoading=false, lastMacro=null, raiLatest=null, raiLoading=false, activeSignalLoading=false, activeSignalRows=[];
 function $(id){return document.getElementById(id)}
 function finite(v){return v!==null&&v!==undefined&&Number.isFinite(Number(v))}
 function fmt(v,d){if(!finite(v))return "—";return Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}
@@ -64,7 +64,8 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
   if(b.dataset.page==="gfStudyPage"&&/^gf-/.test(selectedIndicator))setTimeout(function(){window.GFStudy?.load()},50);
-  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(true);loadRecommendedAIInternet(true)},50);
+  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(true);loadRecommendedAIInternet(true);loadRecommendedAIDaily(true)},50);
+  if(b.dataset.page==="activeSignalsPage")setTimeout(function(){loadActiveSignals(true)},50);
 }});
 
 $("tfSelect").value=selectedTF;
@@ -80,6 +81,8 @@ if($("raiRefresh"))$("raiRefresh").onclick=function(){loadRecommendedAI(true)};
 if($("raiRunNow"))$("raiRunNow").onclick=function(){runRecommendedAINow()};
 if($("raiInternetRefresh"))$("raiInternetRefresh").onclick=function(){loadRecommendedAIInternet(true)};
 if($("raiInternetNow"))$("raiInternetNow").onclick=function(){runRecommendedAIInternetNow()};
+if($("raiDailyRefresh"))$("raiDailyRefresh").onclick=function(){loadRecommendedAIDaily(true)};
+if($("activeSignalsRefresh"))$("activeSignalsRefresh").onclick=function(){loadActiveSignals(true)};
 if($("chartLabelMode")){
   if(!["nearest","all","hide"].includes(chartLabelMode))chartLabelMode="nearest";
   $("chartLabelMode").value=chartLabelMode;
@@ -531,11 +534,12 @@ async function init(){
   await checkBridge();await loadSymbols(false);
   setInterval(checkBridge,30000);
   setInterval(refreshLiveZoneEntry,5000);
-  setInterval(function(){if(!document.hidden&&$("recommendedAIPage")?.classList.contains("on")){loadRecommendedAI(true);loadRecommendedAIInternet(true)}},300000);
+  setInterval(function(){if(!document.hidden&&$("recommendedAIPage")?.classList.contains("on")){loadRecommendedAI(true);loadRecommendedAIInternet(true);loadRecommendedAIDaily(true)}},300000);
+  setInterval(function(){if(!document.hidden&&$("activeSignalsPage")?.classList.contains("on"))loadActiveSignals(true)},60000);
   document.addEventListener("visibilitychange",function(){if(!document.hidden)refreshLiveZoneEntry()});
   setInterval(function(){
     // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
-    var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on,#gfStudyPage.on,#recommendedAIPage.on");
+    var v8Active=document.querySelector("#v8History.on,#v8Performance.on,#v8Evidence.on,#v8News.on,#gfStudyPage.on,#recommendedAIPage.on,#activeSignalsPage.on");
     if(selectedSymbol&&!v8Active)loadAnalysis();
   },30000);
 }
@@ -599,6 +603,108 @@ async function renderTradingView(tfOverride){
    if(token===tvReqSeq){$("tvBrokerNote").textContent="Broker chart unavailable: "+String(e.message||e)+
      ". TradingView can still open in a separate tab.";if(chartNode)chartNode.textContent="Unable to load authenticated Vantage OHLC."}
   }
+}
+
+const ACTIVE_SIGNAL_MODES=["105","103","pvt","pvtchart101","pattern132","snd107","owl101","fund104","gf-ai","gf-news","gf-study"];
+const ACTIVE_GF_MODE={"gf-ai":"ai","gf-news":"news","gf-study":"study"};
+const ACTIVE_TF_SECONDS={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400};
+function activeTerminal(v){return /(^|_|\b)(TP1|TP2|TP3|SL|TRAILING|BE_POSITIVE|BE_ZERO|EXPIRED|CANCELLED|CANCELED|INVALIDATED|CLOSED)(_|\b|$)/i.test(String(v||""))}
+function activePlanText(v,d){return finite(v)?Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"—"}
+function activeSameDirectionZone(ind,dir){
+  var z=[].concat(ind?.activeZones?.buy||[],ind?.activeZones?.sell||[]);
+  return z.filter(function(x){return (Number(x.currentDirection)||Number(x.direction)||0)===dir&&finite(x.low)&&finite(x.high)});
+}
+function activeTechnicalRow(mode,r){
+  if(!r?.ok||!r?.ready)return {unavailable:true,indicator:mode,error:bridgeErrorText(r?.error||"ENGINE_NOT_READY")};
+  var ind=r.indicator||{},sig=ind.latestSignal||{},pattern=mode==="pattern132"?ind.fiboSndConfluence?.bestPlan:null;
+  var dir=pattern?(Number(pattern.direction)||0):(Number(sig.direction)||0);
+  if(!dir)return null;
+  var rawStatus=String(sig.status||ind.fiboSndConfluence?.state||"WAIT").toUpperCase();
+  if(activeTerminal(rawStatus))return null;
+  var zones=activeSameDirectionZone(ind,dir),price=finite(r.price)?Number(r.price):null;
+  var liveZone=price!==null&&zones.some(function(z){return price>=Math.min(Number(z.low),Number(z.high))&&price<=Math.max(Number(z.low),Number(z.high))});
+  var tfSec=ACTIVE_TF_SECONDS[r.selectedTF]||300,lastT=Number(r.lastBarTime),sigT=Number(sig.closeTime||sig.time),recent=Number.isFinite(lastT)&&Number.isFinite(sigT)&&lastT>=sigT&&lastT-sigT<=tfSec*12;
+  var entryLow=null,entryHigh=null,sl=null,tp1=null,tp2=null,tp3=null,reasons=[];
+  if(pattern){
+    entryLow=pattern.entryArea?.low;entryHigh=pattern.entryArea?.high;
+    if(pattern.primaryEntry&&finite(pattern.primaryEntry.price)&&!finite(entryLow))entryLow=entryHigh=pattern.primaryEntry.price;
+    sl=pattern.protectiveStop?.price;tp1=pattern.tp1?.price;tp2=pattern.tp2?.price;tp3=pattern.tp3?.price;
+    reasons.push("SND + Auto Fibo confluence");
+  }else{
+    entryLow=entryHigh=sig.entry;sl=sig.invalidation;tp1=sig.tp1;tp2=sig.tp2;tp3=sig.tp3;
+    reasons=(sig.reasons||[]).slice(0,3);
+  }
+  var hasPlan=finite(entryLow)&&finite(sl)&&(finite(tp1)||mode==="fund104");
+  var explicitActive=/LIVE|ENTRY_READY|ENTRY READY|ACTIVE/.test(rawStatus);
+  var state=(explicitActive||liveZone)?"ACTIVE":((pattern||zones.length||(recent&&hasPlan))?"WATCH":null);
+  if(!state)return null;
+  return {indicator:mode,name:indicatorName(mode),state,direction:dir,status:rawStatus,symbol:r.symbol||r.requested,tf:r.selectedTF,
+    digits:Number(r.digits)||digits(),price,entryLow,entryHigh,sl,tp1,tp2,tp3,reasons:reasons.join(" • ")||"Directional setup remains active",marketState:r.marketState||null};
+}
+function activeGFRow(mode,d,symbol,tf){
+  if(!d?.ok)return {unavailable:true,indicator:mode,error:bridgeErrorText(d?.error||d?.reason||"GF_ENGINE_NOT_READY")};
+  var dir=gfDir(d),p=d.tradePlan?.valid?d.tradePlan:(d.confirmation||d.candidatePlan||null),status=String(d.status||"WAIT").toUpperCase();
+  if(!dir||!p||activeTerminal(status))return null;
+  var state=d.canEnter||/ENTRY_READY|ENTRY READY|LIVE/.test(status)?"ACTIVE":(/WATCH|CONFIRMED|RETEST|THESIS|CANDIDATE/.test(status)||d.confirmation||d.candidatePlan?"WATCH":null);
+  if(!state)return null;
+  var lo=finite(p.entryLow)?p.entryLow:finite(p.entry)?p.entry:null,hi=finite(p.entryHigh)?p.entryHigh:lo;
+  return {indicator:mode,name:indicatorName(mode),state,direction:dir,status,symbol:d.symbol||symbol,tf,digits:digits(),
+    price:finite(d.bid)?Number(d.bid):finite(d.ask)?Number(d.ask):null,entryLow:lo,entryHigh:hi,
+    sl:p.sl??p.invalidation,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3,
+    reasons:d.mode==="news"?(d.newsDecision?.headline||d.reason):(d.reason||d.reasoning?.decisionSummary?.whyPrimary||"GF directional setup remains active"),
+    marketState:d.canEnter?"ENTRY READY":"WATCH"};
+}
+async function activeMapLimit(items,limit,worker){
+  var out=new Array(items.length),next=0;
+  async function run(){while(true){var i=next++;if(i>=items.length)return;try{out[i]=await worker(items[i],i)}catch(e){out[i]={unavailable:true,indicator:items[i],error:String(e.message||e)}}}}
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},run));return out;
+}
+function activeSignalCard(x){
+  var d=Number(x.direction)>0?"BUY":"SELL",dd=Number.isFinite(Number(x.digits))?Number(x.digits):digits(),entry=finite(x.entryLow)?(finite(x.entryHigh)&&Number(x.entryHigh)!==Number(x.entryLow)?activePlanText(x.entryLow,dd)+" — "+activePlanText(x.entryHigh,dd):activePlanText(x.entryLow,dd)):"—";
+  return '<article class="activeSignalCard '+x.state.toLowerCase()+'">'+
+    '<div class="activeSignalTop"><div><small>'+raiEsc(x.indicator)+' • '+raiEsc(x.symbol)+' • '+raiEsc(x.tf)+'</small><h4>'+raiEsc(x.name)+'</h4></div><span class="tag '+(x.state==="ACTIVE"?(x.direction>0?"g":"r"):"y")+'">'+raiEsc(x.state)+' • '+d+'</span></div>'+
+    '<div class="activeSignalPlan"><div><small>ENTRY</small><b>'+entry+'</b></div><div><small>SL</small><b>'+activePlanText(x.sl,dd)+'</b></div><div><small>TP1</small><b>'+activePlanText(x.tp1,dd)+'</b></div><div><small>TP2</small><b>'+activePlanText(x.tp2,dd)+'</b></div><div><small>TP3</small><b>'+activePlanText(x.tp3,dd)+'</b></div></div>'+
+    '<div class="activeSignalReason">'+raiEsc(String(x.status||"").replaceAll("_"," "))+(x.reasons?" • "+raiEsc(x.reasons):"")+'</div>'+
+    '<button type="button" class="primary mini activeSignalOpen" data-active-indicator="'+raiEsc(x.indicator)+'" data-active-tf="'+raiEsc(x.tf)+'">Buka Indicator & Confirm</button></article>';
+}
+function renderActiveSignals(rows,unavailable,symbol,tf){
+  activeSignalRows=rows||[];
+  var active=activeSignalRows.filter(function(x){return x.state==="ACTIVE"}).length,watch=activeSignalRows.filter(function(x){return x.state==="WATCH"}).length;
+  if($("activeSignalsTabCount"))$("activeSignalsTabCount").textContent=String(active+watch);
+  if($("activeSignalsBadge")){$("activeSignalsBadge").textContent=active?"ACTIVE "+active:watch?"WATCH "+watch:"CLEAR";$("activeSignalsBadge").className="tag "+(active?"g":watch?"y":"")}
+  if($("activeSignalsContext"))$("activeSignalsContext").textContent=symbol+" • "+tf;
+  if($("activeSignalsActive"))$("activeSignalsActive").textContent=String(active);
+  if($("activeSignalsWatch"))$("activeSignalsWatch").textContent=String(watch);
+  if($("activeSignalsUpdated"))$("activeSignalsUpdated").textContent=new Date().toLocaleTimeString("en-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit"});
+  if($("activeSignalsStatus")){$("activeSignalsStatus").className="notice "+(unavailable.length?"info":"good");$("activeSignalsStatus").textContent=(active+watch?("Jumpa "+(active+watch)+" setup aktif/watch daripada semua indicator."):"Tiada signal aktif/watch yang sah sekarang.")+(unavailable.length?" • "+unavailable.length+" engine unavailable sementara; scanner kekal fail-closed.":"")}
+  if($("activeSignalsGrid"))$("activeSignalsGrid").innerHTML=activeSignalRows.length?activeSignalRows.map(activeSignalCard).join(""):'<div class="notice info">Tiada signal aktif untuk '+raiEsc(symbol)+' • '+raiEsc(tf)+'. Closed outcome kekal di History Pro.</div>';
+  document.querySelectorAll(".activeSignalOpen").forEach(function(btn){btn.onclick=function(){
+    var mode=this.dataset.activeIndicator,nextTf=this.dataset.activeTf||selectedTF;
+    selectedIndicator=mode;selectedTF=nextTf;localStorage.setItem("gf_indicator",mode);localStorage.setItem("gf_tf",nextTf);
+    $("indicatorSelect").value=mode;$("tfSelect").value=nextTf;focusedZone=null;lastLiveTick=null;window.GFStudy?.invalidate?.();
+    document.querySelector('[data-page="dashboard"]')?.click();loadAnalysis();
+  }});
+}
+async function loadActiveSignals(force){
+  if(activeSignalLoading||!selectedSymbol)return;activeSignalLoading=true;
+  var symbol=selectedSymbol,tf=selectedTF;
+  if($("activeSignalsStatus")){$("activeSignalsStatus").className="notice info";$("activeSignalsStatus").textContent="Scanning semua 11 indicator • "+symbol+" • "+tf+"…"}
+  try{
+    var results=await activeMapLimit(ACTIVE_SIGNAL_MODES,2,async function(mode){
+      if(ACTIVE_GF_MODE[mode]){
+        var d=await getJson("/api/study?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&mode="+ACTIVE_GF_MODE[mode]+"&scan=1&t="+Date.now());
+        return activeGFRow(mode,d,symbol,tf);
+      }
+      var r=await getJson("/api/analyze?symbol="+encodeURIComponent(symbol)+"&tf="+encodeURIComponent(tf)+"&indicator="+encodeURIComponent(mode)+"&scan=1&t="+Date.now());
+      return activeTechnicalRow(mode,r);
+    });
+    if(symbol!==selectedSymbol||tf!==selectedTF)return;
+    var unavailable=results.filter(function(x){return x&&x.unavailable}),rows=results.filter(function(x){return x&&!x.unavailable});
+    rows.sort(function(a,b){return (a.state==="ACTIVE"?0:1)-(b.state==="ACTIVE"?0:1)||String(a.name).localeCompare(String(b.name))});
+    renderActiveSignals(rows,unavailable,symbol,tf);
+  }catch(e){
+    if($("activeSignalsStatus")){$("activeSignalsStatus").className="notice bad";$("activeSignalsStatus").textContent="Signal scanner unavailable • "+String(e.message||e)}
+  }finally{activeSignalLoading=false}
 }
 
 function macroImpactClass(v){
@@ -823,6 +929,32 @@ async function loadRecommendedAIInternet(force){
     if($("raiInternetStatus")){$("raiInternetStatus").className="notice bad";$("raiInternetStatus").textContent="Internet research archive unavailable • "+String(e.message||e)}
   }
 }
+function raiDailyReviewCard(x){
+  var m=x.metrics||{},s=Array.isArray(x.suggestions)?x.suggestions:[],checks=Array.isArray(x.nextChecks)?x.nextChecks:[],patch=x.managementPatch&&Object.keys(x.managementPatch).length?Object.entries(x.managementPatch).map(function(kv){return raiEsc(kv[0])+"="+raiEsc(kv[1])}).join(" • "):"NO AUTO PATCH";
+  return '<article class="raiCard raiDailyReview '+((finite(m.netPip)&&Number(m.netPip)<0)?"bad":"")+'">'+
+    '<div class="raiCardTop"><div><small>'+raiEsc(x.indicator)+' • '+raiEsc(x.symbol||"")+' • '+raiEsc(x.tf||"")+'</small><h4>'+raiEsc(x.indicatorName||indicatorName(x.indicator))+'</h4></div><b class="y">'+raiEsc(x.severity||"REVIEW")+'</b></div>'+
+    '<div class="raiMetrics"><div><small>P/L WINRATE</small><strong>'+raiNum(m.strictWinRate,1)+'%</strong></div><div><small>NET PIP</small><strong class="'+(Number(m.netPip)>=0?"g":"r")+'">'+raiNum(m.netPip,1)+'</strong></div><div><small>WIN PIP</small><strong>'+raiNum(m.winPip,1)+'</strong></div><div><small>SL PIP</small><strong>'+raiNum(m.lossPip,1)+'</strong></div></div>'+
+    '<div class="raiWhy"><b>OpenAI diagnosis:</b> '+raiEsc(x.diagnosis||"—")+'<br><b>Why loss dominated:</b> '+raiEsc(x.whyLossDominated||"—")+'</div>'+
+    '<div class="dailySuggestions">'+(s.length?'<b>Cadangan:</b><br>'+s.map(function(v){return "• "+raiEsc(v)}).join("<br>"):"")+
+    (checks.length?'<br><b>Semak seterusnya:</b><br>'+checks.map(function(v){return "• "+raiEsc(v)}).join("<br>"):"")+
+    '<br><b>Shadow patch:</b> '+patch+'</div></article>';
+}
+function renderRecommendedAIDaily(data){
+  var reasoning=data?.reasoning||{},reviews=Array.isArray(reasoning.reviews)?reasoning.reviews:Array.isArray(data?.reviews)?data.reviews:[],flagged=Array.isArray(data?.flagged)?data.flagged:[];
+  if($("raiDailyBadge")){$("raiDailyBadge").textContent=reasoning.status==="ONLINE_OPENAI_DAILY_REVIEW"?"OPENAI REVIEWED":flagged.length?"WAIT AI":"NO FLAGS";$("raiDailyBadge").className="tag "+(reasoning.status==="ONLINE_OPENAI_DAILY_REVIEW"?"g":flagged.length?"y":"")}
+  if($("raiDailyDate"))$("raiDailyDate").textContent=data?.reviewDateMYT||"—";
+  if($("raiDailyFlagged"))$("raiDailyFlagged").textContent=String(flagged.length);
+  if($("raiDailyModel"))$("raiDailyModel").textContent=reasoning.model||"—";
+  if($("raiDailyUpdated"))$("raiDailyUpdated").textContent=raiWhen(data?.updatedAtUTC||data?.generatedAtUTC);
+  if($("raiDailyStatus")){$("raiDailyStatus").className="notice "+(reasoning.status==="ONLINE_OPENAI_DAILY_REVIEW"?"good":reasoning.status&&reasoning.status.includes("ERROR")?"bad":"info");$("raiDailyStatus").textContent=flagged.length?(reasoning.status==="ONLINE_OPENAI_DAILY_REVIEW"?"OpenAI sudah mengkaji "+flagged.length+" indicator underperform untuk hari ini.":"Indicator underperform dikesan tetapi OpenAI review belum lengkap • "+(reasoning.status||"WAIT")):"Tiada indicator memenuhi trigger P/L Winrate <50% atau NET PIP <0 untuk review date ini."}
+  if($("raiDailySummary"))$("raiDailySummary").textContent=reasoning.summary||data?.note||"Daily P/L-first review.";
+  if($("raiDailyReviews"))$("raiDailyReviews").innerHTML=reviews.length?reviews.map(raiDailyReviewCard).join(""):'<div class="notice info">Belum ada komen OpenAI harian untuk indicator underperform.</div>';
+}
+async function loadRecommendedAIDaily(force){
+  try{renderRecommendedAIDaily(await latestRecommendedAIJson("recommended-ai/daily/latest.json",force))}
+  catch(e){if($("raiDailyStatus")){$("raiDailyStatus").className="notice bad";$("raiDailyStatus").textContent="Daily AI review unavailable • "+String(e.message||e)}}
+}
+
 async function runRecommendedAIInternetNow(){
   if($("raiInternetBadge")){$("raiInternetBadge").className="tag y";$("raiInternetBadge").textContent="RESEARCHING"}
   if($("raiInternetStatus")){$("raiInternetStatus").className="notice info";$("raiInternetStatus").textContent="Internet Scout sedang mencari evidence rasmi/news research dan menjalankan reasoning jika model key tersedia…"}
