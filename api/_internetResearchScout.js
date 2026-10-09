@@ -123,7 +123,7 @@ export function sanitizeInternetHypothesis(h){
     confidence:Math.max(0,Math.min(1,Number(h?.confidence)||0)),patch,sources,status:Object.keys(patch).length&&sources.length?"TESTABLE":"EVIDENCE_ONLY"
   };
 }
-function openAIRequestConfig(model,prompt){
+export function openAIRequestConfig(model,prompt){
   const effort=String(process.env.RECOMMENDED_AI_REASONING_EFFORT||"medium").toLowerCase();
   const allowedEffort=new Set(["low","medium","high"]);
   const maxOutput=Math.max(900,Math.min(2600,Number(process.env.RECOMMENDED_AI_MAX_OUTPUT_TOKENS)||1800));
