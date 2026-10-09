@@ -30,7 +30,15 @@ const ROUTES={"/api/health":health,"/api/bridge-health":bridgeHealth,"/api/symbo
 export default {
  async fetch(request,env){
   const u=new URL(request.url),p=u.pathname.replace(/\/$/,"")||"/";
-  if(!p.startsWith("/api/"))return env.ASSETS.fetch(request);
+  if(!p.startsWith("/api/")){
+    const out=await env.ASSETS.fetch(request);
+    const critical=p==="/"||p==="/index.html"||p.endsWith(".js")||p==="/style.css"||p==="/release.json"||p.startsWith("/recommended-ai/");
+    if(!critical)return out;
+    const h=new Headers(out.headers);
+    h.set("Cache-Control",p.startsWith("/recommended-ai/")?"no-store, max-age=0":"no-cache, max-age=0, must-revalidate");
+    h.set("Pragma","no-cache");
+    return new Response(out.body,{status:out.status,statusText:out.statusText,headers:h});
+  }
   const fn=ROUTES[p];
   if(!fn)return new Response(JSON.stringify({ok:false,error:"UNKNOWN_API_ROUTE"}),
    {status:404,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
