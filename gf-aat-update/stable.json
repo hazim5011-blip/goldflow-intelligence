@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.17.4",
-  "build_id": "gf-aat-1.6.3-r5.17.4-openai-critic-news-quality",
+  "version": "1.6.3-r5.17.5",
+  "build_id": "gf-aat-1.6.3-r5.17.5-day-signal-rebalance",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "b329851f205f7447fd1da60b2572b3593aabbaa3f478049f61193828005c4aad",
-  "restart_cmd": "RESTART_GF_AAT_R5_17_4.bat",
+  "sha256": "ce15744fc8eedf059d72b5ba0360e9f7d8dc82dd0404ade029b3c5a99c4970cc",
+  "restart_cmd": "RESTART_GF_AAT_R5_17_5.bat",
   "minimum_updater": 2
 }
