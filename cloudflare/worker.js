@@ -21,12 +21,13 @@ import marketOnline from "../api/market-online.js";
 import liveNews from "../api/news-live.js";
 import recommendedAI from "../api/recommended-ai.js";
 import recommendedAIResearch from "../api/recommended-ai-research.js";
+import recommendedAIDailyReview from "../api/recommended-ai-daily-review.js";
 const ROUTES={"/api/health":health,"/api/bridge-health":bridgeHealth,"/api/symbols":symbols,
  "/api/bars":bars,"/api/analyze":analyze,"/api/macro":macro,"/api/status":status,
  "/api/options":options,"/api/v8":v8,"/api/history":history,"/api/performance":performance,"/api/evidence":evidence,
  "/api/news-context":newsContext,"/api/forward-ingest":forwardIngest,"/api/forward-outcome":forwardOutcome,"/api/forward-proof":forwardProof,
  "/api/study":study,"/api/market-online":marketOnline,"/api/news-live":liveNews,
- "/api/recommended-ai":recommendedAI,"/api/recommended-ai-research":recommendedAIResearch};
+ "/api/recommended-ai":recommendedAI,"/api/recommended-ai-research":recommendedAIResearch,"/api/recommended-ai-daily-review":recommendedAIDailyReview};
 export default {
  async fetch(request,env){
   const u=new URL(request.url),p=u.pathname.replace(/\/$/,"")||"/";
