@@ -1,0 +1,134 @@
+name: GF-AAT R5.17.7 OpenAI Operations Center Candidate
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5177_CANDIDATE.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify R5.17.6 stable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          m=json.loads(pathlib.Path('gf-aat-update/stable.json').read_text(encoding='utf-8'))
+          assert m['version']=='1.6.3-r5.17.6',m
+          assert m['build_id']=='gf-aat-1.6.3-r5.17.6-openai-live-trader',m
+          p=pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual==m['sha256'],(actual,m['sha256'])
+          print('R5.17.6 baseline PASS',actual)
+          PY
+
+      - name: Reconstruct verified R5.17.7 payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib,hashlib
+          parts=[]
+          for i in range(8):
+              s=pathlib.Path(f'gf-aat-update/staging/r5177_payload.hex.{i:02d}').read_text(encoding='ascii').strip()
+              parts.append(bytes.fromhex(s))
+          data=b''.join(parts)
+          p=pathlib.Path('/tmp/r5177_payload.tar.gz')
+          p.write_bytes(data)
+          got=hashlib.sha256(data).hexdigest()
+          want='153afde56e4177ba93157284f2a177f912cf9e12908c65868cae8cf2a6481da7'
+          assert got==want,(got,want)
+          print('Payload SHA256 PASS',got,len(data))
+          PY
+          rm -rf /tmp/r5177_payload /tmp/gfaat-r5177
+          mkdir -p /tmp/r5177_payload /tmp/gfaat-r5177
+          tar -xzf /tmp/r5177_payload.tar.gz -C /tmp/r5177_payload
+          echo '3fab49a7ceaa6470a871871ae654dc5d70f7a55d86eaffed89c3058cc6f1dc68  /tmp/r5177_payload/r5177_transform.py' | sha256sum -c -
+          echo 'd54f16efe68e50b7982fd6c87f86a20991a14b730bf1d055377794f27e14154c  /tmp/r5177_payload/openai_ops.py' | sha256sum -c -
+          python3 -m py_compile /tmp/r5177_payload/r5177_transform.py /tmp/r5177_payload/openai_ops.py
+
+      - name: Build R5.17.7 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5177
+          ROOT=/tmp/gfaat-r5177/GF_AAT_R5_17_6_STABLE
+          test -d "$ROOT"
+          python3 /tmp/r5177_payload/r5177_transform.py "$ROOT" /tmp/r5177_payload
+          cd "$ROOT"
+          python3 -m py_compile aat/openai_ops.py aat/service.py aat/web.py
+          python3 - <<'PY'
+          import pathlib
+          for p in pathlib.Path('tests').glob('test_*.py'):
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('RESTART_GF_AAT_R5_17_6.bat','RESTART_GF_AAT_R5_17_7.bat')
+              s=s.replace('gf-aat-1.6.3-r5.17.6-openai-live-trader','gf-aat-1.6.3-r5.17.7-openai-operations-center')
+              s=s.replace("'1.6.3-r5.17.6'","'1.6.3-r5.17.7'")
+              s=s.replace('"1.6.3-r5.17.6"','"1.6.3-r5.17.7"')
+              s=s.replace("'R5.17.6'","'R5.17.7'")
+              s=s.replace('"R5.17.6"','"R5.17.7"')
+              p.write_text(s,encoding='utf-8')
+          PY
+          python3 - <<'PY'
+          import json
+          b=json.load(open('CURRENT_BUILD.json',encoding='utf-8'))
+          assert b['version']=='1.6.3-r5.17.7',b
+          assert b['runtime_revision']=='R5.17.7',b
+          assert b['build_id']=='gf-aat-1.6.3-r5.17.7-openai-operations-center',b
+          assert b['restart_cmd']=='RESTART_GF_AAT_R5_17_7.bat',b
+          assert b['research_only'] is True and int(b['orders_sent'])==0,b
+          print('R5.17.7 build identity PASS')
+          PY
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check -r /tmp/gfaat-r5177/GF_AAT_R5_17_6_STABLE/requirements.txt
+
+      - name: Run full tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5177/GF_AAT_R5_17_6_STABLE
+          python3 -m pytest -q | tee /tmp/gfaat-r5177-pytest.txt
+
+      - name: Safety and product audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5177/GF_AAT_R5_17_6_STABLE
+          python3 - <<'PY'
+          import ast,pathlib,json
+          bad=[]
+          for p in pathlib.Path('aat').rglob('*.py'):
+              tree=ast.parse(p.read_text(encoding='utf-8',errors='ignore'),filename=str(p))
+              for n in ast.walk(tree):
+                  if not isinstance(n,ast.Call): continue
+                  f=n.func
+                  if isinstance(f,ast.Name) and f.id=='order_send': bad.append((str(p),n.lineno))
+                  elif isinstance(f,ast.Attribute) and f.attr=='order_send': bad.append((str(p),n.lineno))
+          assert not bad,bad
+          from aat.openai_ops import VERSION,SOURCE_NAME
+          assert VERSION=='GF-AAT-OPENAI-OPS-CENTER-1.0.0'
+          assert SOURCE_NAME=='GF_AAT_OPENAI_DAILY_RECOMMENDATION'
+          html=pathlib.Path('aat/dashboard.html').read_text(encoding='utf-8')
+          for x in ['Live Signal • 4 Robots','Analisis OpenAI','Recommended OpenAI','AUTO REVIEW 6:00 PM MALAYSIA']:
+              assert x in html,x
+          src=pathlib.Path('aat/openai_ops.py').read_text(encoding='utf-8')
+          assert '"auto_code_mutation": False' in src
+          assert '"auto_rule_change": False' in src
+          for p in pathlib.Path('.').rglob('*'):
+              if p.is_file() and p.name!='.env' and p.stat().st_size<2_000_000:
+                  t=p.read_text(encoding='utf-8',errors='ignore')
+                  assert 'sk-proj-' not in t and 'sk-live-' not in t
+          print('SAFETY PASS: no broker order authority')
+          print('SECRET PASS: no API key committed')
+          print('OPENAI OPS CENTER CONTRACT PASS')
+          PY
