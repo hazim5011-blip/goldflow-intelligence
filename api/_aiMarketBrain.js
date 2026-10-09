@@ -319,7 +319,7 @@ export function buildMarketPlan(c,brain,d,price){
   activationLevel=/RBS|SBR|NECKLINE/.test(zoneType)&&brain.breakEvent?.direction===d?brain.breakEvent.level:
    /SWEEP/.test(entry.environment?.type||"")&&brain.liquidity?.sweep?.direction===d?brain.liquidity.sweep.level:entry.mid;
  return {...plan,entryMethod:entry.type,entryEnvironment:entry.environment.type,entryZoneMethod:entry.type,entrySource:entry.source,fibConfluence:fib,
-  entryEnvironment:entry.environment.type,motionProfile:brain.motion,zoneConfluence:entry.zoneConfluence,
+  motionProfile:brain.motion,zoneConfluence:entry.zoneConfluence,
   stopSource:stopInfo.source,stopDistanceAtr:stopInfo.distanceAtr,activationLevel:rnd(activationLevel),
   requiresClosedRetest:true,noBlindTouch:true,chaseBufferAtr:.18,
   targetMethod:"NEXT_LIQUIDITY_MIN_0.90R_THEN_STRUCTURAL_R",inside:entry.inside};
