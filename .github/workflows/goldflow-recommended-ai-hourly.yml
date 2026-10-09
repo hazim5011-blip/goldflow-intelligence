@@ -30,7 +30,7 @@ jobs:
 
       - name: Run Recommended AI learning cycle
         env:
-          GOLDFLOW_BASE_URL: https://goldflow-intelligence.vercel.app
+          GOLDFLOW_BASE_URL: https://goldflow-intelligence-cf-test.pages.dev
           GOLDFLOW_AI_SYMBOL: XAUUSD247
           GOLDFLOW_AI_TF: M15
         run: node scripts/recommended-ai-cycle.mjs
