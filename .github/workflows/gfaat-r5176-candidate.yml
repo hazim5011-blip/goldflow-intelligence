@@ -39,9 +39,9 @@ jobs:
           ROOT=/tmp/gfaat-r5176/GF_AAT_R5_17_5_STABLE
           test -d "$ROOT"
           cat gf-aat-update/staging/r5176_transform.b64.00 gf-aat-update/staging/r5176_transform.b64.01 gf-aat-update/staging/r5176_transform.b64.02 gf-aat-update/staging/r5176_transform.b64.03 | base64 -d > /tmp/r5176_transform.py.gz
-          echo '6e3aadad9853682e369e0c4fd93b7fd6b769c2e89a21502c7588929e7aeb3c57  /tmp/r5176_transform.py.gz' | sha256sum -c -
+          echo '114618d8d8947be586a00989b3055b66400c1f825f5379c3328193e3ce1adc3f  /tmp/r5176_transform.py.gz' | sha256sum -c -
           gzip -dc /tmp/r5176_transform.py.gz > /tmp/r5176_transform.py
-          echo '122503d8962752ccad57853e08c1f276bfc5a4bda767fa93d433e2eb77695567  /tmp/r5176_transform.py' | sha256sum -c -
+          echo '611522416048c992cd5be1e6c1354cab5027fe4255fd005a07c8f000a15db9d7  /tmp/r5176_transform.py' | sha256sum -c -
           python3 -m py_compile /tmp/r5176_transform.py
           python3 /tmp/r5176_transform.py "$ROOT"
           cd "$ROOT"
