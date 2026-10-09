@@ -3,6 +3,7 @@ import {getEffectiveDynamicProfile,DEFAULT_DYNAMIC_PROFILES} from "./_dynamicTra
 import {activeAIProfileRecord,aiProfileKey} from "./_recommendedAIProfiles.js";
 import {TF_SECONDS} from "./_v8Core.js";
 import {researchHypothesesFor} from "./_recommendedAIResearchMemory.js";
+import {runtimeAIProfileRecord,runtimeResearchHypotheses} from "./_recommendedAIRuntimeState.js";
 
 const POS=new Set(["TP1","TP2","TP3","TRAILING","BE_POSITIVE","TIME_WIN"]);
 const NEG=new Set(["SL","TIME_LOSS","GAP_LOSS"]);
@@ -174,19 +175,25 @@ export async function runRecommendedAI({symbol="XAUUSD247",tf="M15",indicator="1
   const mode=canonMode(indicator),now=new Date().toISOString();
   const baselineCtx=await fetchV8Context({symbol,tf,indicator:mode});
   const resolved=baselineCtx.symbolResolved||symbol,key=aiProfileKey(mode,resolved),
-    active=activeAIProfileRecord(mode,resolved),effective=getEffectiveDynamicProfile(mode,resolved);
+    runtimeActive=await runtimeAIProfileRecord(mode,resolved),
+    active=runtimeActive||activeAIProfileRecord(mode,resolved),
+    activeOverride=runtimeActive?{__replace:true,params:runtimeActive.params}:null,
+    effective=getEffectiveDynamicProfile(mode,resolved,activeOverride);
   const rows=baselineCtx.rows||[],split=splitCut(rows),baseAll=compactMetric(rows,resolved),
     baseTrain=compactMetric(split.training,resolved),baseVal=compactMetric(split.validation,resolved),
     diag=diagnostics(rows,tf),trainDiag=diagnostics(split.training,tf),
     sampleReady=(baseAll.strictDenominator||0)>=40&&(baseVal.strictDenominator||0)>=10,
-    internetHypotheses=researchHypothesesFor(mode,resolved),
+    runtimeHypotheses=await runtimeResearchHypotheses(mode,resolved),
+    internetHypotheses=runtimeHypotheses.length?runtimeHypotheses:researchHypothesesFor(mode,resolved),
     candidateDefs=mode==="gf-news"?[]:candidatesFor(effective,trainDiag,baseTrain,internetHypotheses),candidateResults=[];
 
   if(shadow&&candidateDefs.length&&rows.length){
     for(const def of candidateDefs){
       try{
-        const profileParams=profileParamsOnly(getEffectiveDynamicProfile(mode,resolved,{params:def.patch}));
-        const ctx=rebuildV8ContextWithProfile(baselineCtx,{params:def.patch});
+        const candidateParams={...profileParamsOnly(effective),...def.patch};
+        const candidateOverride={__replace:true,params:candidateParams};
+        const profileParams=profileParamsOnly(getEffectiveDynamicProfile(mode,resolved,candidateOverride));
+        const ctx=rebuildV8ContextWithProfile(baselineCtx,candidateOverride);
         const candRows=ctx.rows||[],candAll=compactMetric(candRows,ctx.symbolResolved),
           candVal=compactMetric(afterCut(candRows,split.cutoff),ctx.symbolResolved),
           gate=recommendedAIPromotionGate(baseVal,candVal,baseAll,candAll);
