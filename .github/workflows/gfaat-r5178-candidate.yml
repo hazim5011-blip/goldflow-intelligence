@@ -54,9 +54,10 @@ jobs:
 
           p=root/'aat/web.py'
           s=p.read_text(encoding='utf-8')
+          s=s.replace('gf-aat-1.6.3-r5.17.7-openai-operations-center','gf-aat-1.6.3-r5.17.8-openai-0600-operations-center')
+          s=s.replace('gf-aat-1.6.3-r5.17.8-openai-operations-center','gf-aat-1.6.3-r5.17.8-openai-0600-operations-center')
           s=s.replace('1.6.3-r5.17.7','1.6.3-r5.17.8')
           s=s.replace('R5.17.7','R5.17.8')
-          s=s.replace('gf-aat-1.6.3-r5.17.7-openai-operations-center','gf-aat-1.6.3-r5.17.8-openai-0600-operations-center')
           p.write_text(s,encoding='utf-8')
 
           p=root/'aat/dashboard.html'
