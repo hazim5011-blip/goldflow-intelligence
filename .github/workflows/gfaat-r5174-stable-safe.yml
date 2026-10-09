@@ -58,10 +58,13 @@ jobs:
           from pathlib import Path
           p=Path('/tmp/r5174-stage/apply_dashboard.py')
           s=p.read_text()
-          bad='old="""\`R5.17.3 Structural Entry Geometry + R5.17.2 Outcome-Calibrated Evidence<br>Real broker orders: 0\`"""'
-          good='old="""R5.17.3 Structural Entry Geometry + R5.17.2 Outcome-Calibrated Evidence<br>Real broker orders: 0"""'
-          assert bad in s
-          p.write_text(s.replace(bad,good,1))
+          old_line='R5.17.3 Structural Entry Geometry + R5.17.2 Outcome-Calibrated Evidence<br>Real broker orders: 0'
+          new_line='R5.17.4 OpenAI Critic + News Quality + R5.17.3 Structural Entry Geometry<br>Real broker orders: 0'
+          s=s.replace('old="""'+chr(96)+old_line+chr(96)+'"""','old="""'+old_line+'"""',1)
+          s=s.replace('new="""'+chr(96)+new_line+chr(96)+'"""','new="""'+new_line+'"""',1)
+          assert 'old="""'+old_line+'"""' in s
+          assert 'new="""'+new_line+'"""' in s
+          p.write_text(s,encoding='utf-8')
           PY
           python3 /tmp/r5174-stage/apply_dashboard.py "$ROOT"
           cp /tmp/r5174-stage/test_v163_r5174_openai_brain_news.py "$ROOT/tests/"
