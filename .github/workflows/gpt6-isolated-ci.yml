@@ -51,6 +51,8 @@ jobs:
           node --check cloudflare/worker.js
       - name: Security and freshness unit tests (no live credentials)
         run: node --test tests/gpt-research.test.mjs tests/gpt-access.test.mjs tests/gpt-dashboard.test.mjs tests/gpt-news.test.mjs tests/gpt-professional-review.test.mjs
+      - name: Python isolated GF-AAT mentor tests (no live account)
+        run: python -m unittest discover -s gf-aat-gpt-review/tests -p 'test_*.py' -v
       - name: Install build-time dependencies
         run: npm install --no-audit --no-fund
       - name: Existing Cloudflare compatibility and bundle
