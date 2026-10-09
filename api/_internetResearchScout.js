@@ -233,7 +233,7 @@ function dailyReviewPatch(v){
 function dailyReviewSources(v){
   return (Array.isArray(v)?v:[]).filter(x=>/^https?:\/\//i.test(String(x))).slice(0,6).map(String);
 }
-export async function reasonDailyUnderperformance({items=[],reviewDateMYT=null}={}){
+export async function reasonDailyUnderperformance({items=[],reviewDateMYT=null,context=null}={}){
   const rows=(Array.isArray(items)?items:[]).slice(0,16).map(x=>({
     indicator:String(x.indicator||"").toLowerCase(),indicatorName:String(x.indicatorName||x.indicator||""),
     symbol:String(x.symbol||"").toUpperCase(),tf:String(x.tf||"").toUpperCase(),metrics:x.metrics||{},triggerReasons:Array.isArray(x.triggerReasons)?x.triggerReasons:[]
@@ -255,7 +255,8 @@ export async function reasonDailyUnderperformance({items=[],reviewDateMYT=null}=
     "Do not output broker orders, martingale, full-margin, or recovery risk increases.",
     "Return JSON only: {summary:string,reviews:[{indicator:string,severity:'HIGH'|'MEDIUM'|'LOW',diagnosis:string,whyLossDominated:string,suggestions:string[],managementPatch:object,nextChecks:string[],confidence:number,sources:string[]}]}",
     "Review date Asia/Kuala_Lumpur: "+String(reviewDateMYT||"unknown"),
-    "Authoritative daily metrics: "+JSON.stringify(rows)
+    "Authoritative daily metrics: "+JSON.stringify(rows),
+    "Current GoldFlow macro/news context (CHECK-NEXT context only; not proof of past causation): "+JSON.stringify(context||{})
   ].join("\n");
 
   let model=primaryModel,fallbackUsed=false;
