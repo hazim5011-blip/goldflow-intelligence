@@ -194,3 +194,6 @@
 .gfGptSummary .v8Metric:first-child{grid-column:1/-1}
 .gfGptSummary #gfGptSource{font-size:11px}
 @media(max-width:700px){.gfGptActions{grid-template-columns:1fr}.gfGptSummary{grid-template-columns:1fr}.gfGptSummary .v8Metric:first-child{grid-column:auto}}
+
+/* Per-indicator professional GPT research audit: suggestions only */
+.gfGptReviewControls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0}.gfGptReviewControls select{min-height:38px;background:#08131a;color:var(--text);border:1px solid #294250;border-radius:8px;padding:7px}.gfGptReviewControls span{color:var(--muted);font-size:11px}.gfGptReviewControls button{cursor:pointer}.gfGptReviewControls button:disabled{opacity:.45;cursor:not-allowed}.gfGptReviewResult{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.gfGptReviewResult .v8Metric{line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap}.gfGptReviewResult .v8Metric:first-child{grid-column:1/-1}@media(max-width:700px){.gfGptReviewResult{grid-template-columns:1fr}.gfGptReviewResult .v8Metric:first-child{grid-column:auto}}
