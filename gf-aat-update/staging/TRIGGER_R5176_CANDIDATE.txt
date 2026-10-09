@@ -1,1 +1,1 @@
-Run GF-AAT R5.17.6 OpenAI Live Trader candidate tests.
+Run GF-AAT R5.17.6 candidate retry after transform fix.
