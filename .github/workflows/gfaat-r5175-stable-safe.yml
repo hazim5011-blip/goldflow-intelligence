@@ -1,0 +1,183 @@
+name: GF-AAT R5.17.5 Stable Safe Release
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5175_RELEASE.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify R5.17.4 stable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          m=json.loads(pathlib.Path('gf-aat-update/stable.json').read_text(encoding='utf-8'))
+          assert m['channel']=='stable',m
+          assert m['version']=='1.6.3-r5.17.4',m
+          assert m['build_id']=='gf-aat-1.6.3-r5.17.4-openai-critic-news-quality',m
+          assert m['restart_cmd']=='RESTART_GF_AAT_R5_17_4.bat',m
+          p=pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual==m['sha256'],(actual,m['sha256'])
+          print('R5.17.4 stable baseline verified:',actual)
+          PY
+
+      - name: Build R5.17.5 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-r5175 /tmp/r5175_transform.py.gz /tmp/r5175_transform.py /tmp/GF_AAT_STABLE.zip
+          mkdir -p /tmp/gfaat-r5175
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5175
+          ROOT=/tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
+          test -d "$ROOT"
+          cat gf-aat-update/staging/r5175_transform.b64.00 gf-aat-update/staging/r5175_transform.b64.01 gf-aat-update/staging/r5175_transform.b64.02 | base64 -d > /tmp/r5175_transform.py.gz
+          echo 'be89e1af7447b399043a6982d61e5714c80f54a6cfb9d1dc245d91a5d53367e3  /tmp/r5175_transform.py.gz' | sha256sum -c -
+          gzip -dc /tmp/r5175_transform.py.gz > /tmp/r5175_transform.py
+          python3 -m py_compile /tmp/r5175_transform.py
+          python3 /tmp/r5175_transform.py "$ROOT"
+          python3 - "$ROOT" <<'PY'
+          import pathlib,sys
+          root=pathlib.Path(sys.argv[1])
+          p=root/'aat/web.py'
+          p.write_text(p.read_text(encoding='utf-8').replace('1.6.3-r5.17.4','1.6.3-r5.17.5'),encoding='utf-8')
+          for p in (root/'tests').glob('test_*.py'):
+              s=p.read_text(encoding='utf-8').replace('GF-AAT-PRE-ENTRY-MARKET-STUDY-1.4.0','GF-AAT-PRE-ENTRY-MARKET-STUDY-1.5.0')
+              p.write_text(s,encoding='utf-8')
+          PY
+          python3 - "$ROOT" <<'PY'
+          import json,pathlib,sys
+          root=pathlib.Path(sys.argv[1])
+          b=json.loads((root/'CURRENT_BUILD.json').read_text(encoding='utf-8'))
+          assert b['version']=='1.6.3-r5.17.5',b
+          assert b['runtime_revision']=='R5.17.5',b
+          assert b['build_id']=='gf-aat-1.6.3-r5.17.5-day-signal-rebalance',b
+          assert b['restart_cmd']=='RESTART_GF_AAT_R5_17_5.bat',b
+          assert b['research_only'] is True and int(b['orders_sent'])==0,b
+          print('R5.17.5 build contract PASS')
+          PY
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check -r /tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE/requirements.txt
+
+      - name: Run complete test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
+          python3 -m pytest -q | tee /tmp/gfaat-r5175-pytest.txt
+          grep -Eq '219 passed' /tmp/gfaat-r5175-pytest.txt
+
+      - name: Safety and architecture audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
+          python3 - <<'PY'
+          import ast,json,pathlib
+          bad=[]
+          for p in pathlib.Path('aat').rglob('*.py'):
+              tree=ast.parse(p.read_text(encoding='utf-8',errors='ignore'),filename=str(p))
+              for n in ast.walk(tree):
+                  if not isinstance(n,ast.Call): continue
+                  f=n.func
+                  if isinstance(f,ast.Name) and f.id=='order_send': bad.append((str(p),n.lineno))
+                  elif isinstance(f,ast.Attribute) and f.attr=='order_send': bad.append((str(p),n.lineno))
+          assert not bad,f'order_send runtime calls detected: {bad}'
+          b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text())
+          assert b['research_only'] is True and int(b['orders_sent'])==0
+          from aat.decision_engine import VERSION as D
+          from aat.pre_entry_study import VERSION as P, MIN_POINTS
+          from aat.pro_signal import VERSION as S
+          from aat.structure import ALGORITHM as A
+          assert D=='GF-AAT-UNIFIED-EVIDENCE-1.5.0'
+          assert P=='GF-AAT-PRE-ENTRY-MARKET-STUDY-1.5.0'
+          assert S=='GF-AAT-PROFESSIONAL-SIGNAL-GATE-1.8.0'
+          assert A=='aat-causal-structure-0.4.0'
+          assert MIN_POINTS['DAY']==74
+          print('SAFETY PASS: Research/Paper Only; no order_send() calls')
+          print('DAY signal rebalance component contracts PASS')
+          PY
+
+      - name: Package stable preserving local state
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
+          rm -rf "$ROOT/.venv" "$ROOT/data" "$ROOT/logs" "$ROOT/backups" "$ROOT/_updates" "$ROOT/.pytest_cache"
+          find "$ROOT" -type d -name __pycache__ -prune -exec rm -rf {} +
+          rm -f "$ROOT/.env"
+          cd /tmp/gfaat-r5175
+          mv GF_AAT_R5_17_4_STABLE GF_AAT_R5_17_5_STABLE
+          zip -qr /tmp/GF_AAT_STABLE.zip GF_AAT_R5_17_5_STABLE
+          unzip -t /tmp/GF_AAT_STABLE.zip >/dev/null
+          python3 - <<'PY'
+          import pathlib,zipfile
+          forbidden_names={'.env'}
+          forbidden_dirs={'data','logs','backups','_updates','.venv','.pytest_cache','__pycache__'}
+          required={
+            'GF_AAT_R5_17_5_STABLE/GF_AAT_UPDATE.cmd',
+            'GF_AAT_R5_17_5_STABLE/RESTART_GF_AAT_R5_17_5.bat',
+            'GF_AAT_R5_17_5_STABLE/CURRENT_BUILD.json',
+            'GF_AAT_R5_17_5_STABLE/aat/decision_engine.py',
+            'GF_AAT_R5_17_5_STABLE/aat/pre_entry_study.py',
+            'GF_AAT_R5_17_5_STABLE/aat/pro_signal.py',
+            'GF_AAT_R5_17_5_STABLE/aat/structure.py',
+            'GF_AAT_R5_17_5_STABLE/aat/openai_brain.py',
+            'GF_AAT_R5_17_5_STABLE/R5_17_5_DAY_SIGNAL_REBALANCE.md',
+          }
+          bad=[]
+          with zipfile.ZipFile('/tmp/GF_AAT_STABLE.zip') as z:
+              names=set(z.namelist())
+              for name in names:
+                  parts=pathlib.PurePosixPath(name).parts
+                  if any(p in forbidden_dirs for p in parts): bad.append(name)
+                  elif parts and parts[-1] in forbidden_names: bad.append(name)
+              missing=sorted(required-names)
+          assert not bad,bad[:20]
+          assert not missing,missing
+          print('Persistent-state exclusion PASS')
+          print('Required R5.17.5 files PASS')
+          PY
+
+      - name: Publish R5.17.5 stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/GF_AAT_STABLE.zip gf-aat-update/GF_AAT_STABLE.zip
+          HASH="$(sha256sum gf-aat-update/GF_AAT_STABLE.zip | awk '{print $1}')"
+          cat > gf-aat-update/stable.json <<EOF
+          {
+            "channel": "stable",
+            "version": "1.6.3-r5.17.5",
+            "build_id": "gf-aat-1.6.3-r5.17.5-day-signal-rebalance",
+            "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
+            "sha256": "$HASH",
+            "restart_cmd": "RESTART_GF_AAT_R5_17_5.bat",
+            "minimum_updater": 2
+          }
+          EOF
+          python3 -m json.tool gf-aat-update/stable.json >/dev/null
+          echo "Published candidate SHA256: $HASH"
+
+      - name: Commit stable channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gf-aat-update/GF_AAT_STABLE.zip gf-aat-update/stable.json
+          git diff --cached --quiet && { echo 'No stable changes to publish'; exit 1; }
+          git commit -m "Publish GF-AAT R5.17.5 DAY signal rebalance stable update"
+          git push
