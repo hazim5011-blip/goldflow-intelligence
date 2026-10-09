@@ -1,9 +1,9 @@
 {
   "channel": "stable",
-  "version": "1.6.3-r5.17.7",
-  "build_id": "gf-aat-1.6.3-r5.17.7-openai-operations-center",
+  "version": "1.6.3-r5.17.8",
+  "build_id": "gf-aat-1.6.3-r5.17.8-openai-0600-operations-center",
   "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
-  "sha256": "dd3a65ff9f3552cb1e4761996571cb3320321069503fac1ec1a4070b02bec36a",
-  "restart_cmd": "RESTART_GF_AAT_R5_17_7.bat",
+  "sha256": "1fbda8fc19dabab893125a0763bc0d902cb4b2ac58d8fb1806099c1164c03b65",
+  "restart_cmd": "RESTART_GF_AAT_R5_17_8.bat",
   "minimum_updater": 2
 }
