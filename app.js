@@ -608,7 +608,7 @@ async function renderTradingView(tfOverride){
 const ACTIVE_SIGNAL_MODES=["105","103","pvt","pvtchart101","pattern132","snd107","owl101","fund104","gf-ai","gf-news","gf-study"];
 const ACTIVE_GF_MODE={"gf-ai":"ai","gf-news":"news","gf-study":"study"};
 const ACTIVE_TF_SECONDS={M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400};
-function activeTerminal(v){return /(^|_|\b)(TP1|TP2|TP3|SL|TRAILING|BE_POSITIVE|BE_ZERO|EXPIRED|CANCELLED|CANCELED|INVALIDATED|CLOSED)(_|\b|$)/i.test(String(v||""))}
+function activeTerminal(v){return /(^|_|\b)(TP|TP1|TP2|TP3|SL|TR|TRAILING|BE|BE_POSITIVE|BE_ZERO|EXPIRED|CANCELLED|CANCELED|INVALIDATED|CLOSED)(_|\b|$)/i.test(String(v||""))}
 function activePlanText(v,d){return finite(v)?Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"—"}
 function activeSameDirectionZone(ind,dir){
   var z=[].concat(ind?.activeZones?.buy||[],ind?.activeZones?.sell||[]);
