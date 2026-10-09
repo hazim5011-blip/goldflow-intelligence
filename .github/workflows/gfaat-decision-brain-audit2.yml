@@ -1,0 +1,26 @@
+name: GF-AAT Decision Brain Audit 2
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_DECISION_BRAIN_AUDIT2.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exact gating source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-audit2 && mkdir -p /tmp/gfaat-audit2
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-audit2
+          ROOT="$(find /tmp/gfaat-audit2 -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          for file in decision_engine.py pre_entry_study.py pro_signal.py structure.py entry_playbook.py professional.py analyst_brain.py pro_reasoning.py trade_coach.py service.py; do
+            echo "===== $file ====="
+            sed -n '1,760p' "$ROOT/aat/$file"
+          done
