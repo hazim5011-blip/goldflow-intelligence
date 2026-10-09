@@ -49,7 +49,7 @@ jobs:
           PY
           rm -rf /tmp/r5177_payload /tmp/gfaat-r5177
           mkdir -p /tmp/r5177_payload /tmp/gfaat-r5177
-          tar -xzf /tmp/r5177_payload.tar.gz -C /tmp/r5177_payload
+          tar -xzf /tmp/r5177_payload.tar.gz -C /tmp/r5177_payload --strip-components=1
           echo '3fab49a7ceaa6470a871871ae654dc5d70f7a55d86eaffed89c3058cc6f1dc68  /tmp/r5177_payload/r5177_transform.py' | sha256sum -c -
           echo 'd54f16efe68e50b7982fd6c87f86a20991a14b730bf1d055377794f27e14154c  /tmp/r5177_payload/openai_ops.py' | sha256sum -c -
           python3 -m py_compile /tmp/r5177_payload/r5177_transform.py /tmp/r5177_payload/openai_ops.py
