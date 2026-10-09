@@ -1,0 +1,187 @@
+{
+  "date": "2026-10-09",
+  "cycles": [
+    {
+      "atUTC": "2026-10-09T02:13:33.387Z",
+      "batchIndex": 2,
+      "indicators": [
+        "owl101",
+        "fund104",
+        "gf-ai"
+      ],
+      "results": [
+        {
+          "ok": true,
+          "indicator": "owl101",
+          "indicatorName": "OWL Style Research v1.01",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_DATA",
+          "recommendationId": "owl101-XAUUSD247-M15-202610090213",
+          "baseline": {
+            "totalSignals": 18,
+            "completed": 17,
+            "strictDenominator": 17,
+            "strictWR": 75.82,
+            "signalWR": 88.24,
+            "winPip": 637.04,
+            "lossPip": -203.2,
+            "netPip": 433.84,
+            "totalR": 6.218,
+            "positive": 15,
+            "negative": 2,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "diagnostics": {
+            "lossCount": 2,
+            "winCount": 15,
+            "quickStopRate": 100,
+            "targetFallbackRate": 70.6,
+            "wideRiskRate": 5.9,
+            "avgLossRiskATR": 1.264,
+            "avgWinRiskATR": 1.878,
+            "avgLossScore": 88.4,
+            "avgWinScore": 82.7
+          },
+          "decision": {
+            "action": "COLLECT_DATA",
+            "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null
+        },
+        {
+          "ok": true,
+          "indicator": "fund104",
+          "indicatorName": "Fund Structure A v1.04",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_DATA",
+          "recommendationId": "fund104-XAUUSD247-M15-202610090213",
+          "baseline": {
+            "totalSignals": 2,
+            "completed": 2,
+            "strictDenominator": 2,
+            "strictWR": 100,
+            "signalWR": 100,
+            "winPip": 267.7,
+            "lossPip": 0,
+            "netPip": 267.7,
+            "totalR": 1.824,
+            "positive": 2,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "diagnostics": {
+            "lossCount": 0,
+            "winCount": 2,
+            "quickStopRate": null,
+            "targetFallbackRate": 100,
+            "wideRiskRate": 0,
+            "avgLossRiskATR": null,
+            "avgWinRiskATR": 2.521,
+            "avgLossScore": null,
+            "avgWinScore": 71
+          },
+          "decision": {
+            "action": "COLLECT_DATA",
+            "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null
+        },
+        {
+          "ok": true,
+          "indicator": "gf-ai",
+          "indicatorName": "GF-AI Live Analyst v1.60",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_DATA",
+          "recommendationId": "gf-ai-XAUUSD247-M15-202610090213",
+          "baseline": {
+            "totalSignals": 0,
+            "completed": 0,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": null,
+            "lossPip": null,
+            "netPip": null,
+            "totalR": null,
+            "positive": 0,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": null
+          },
+          "diagnostics": {
+            "lossCount": 0,
+            "winCount": 0,
+            "quickStopRate": null,
+            "targetFallbackRate": null,
+            "wideRiskRate": null,
+            "avgLossRiskATR": null,
+            "avgWinRiskATR": null,
+            "avgLossScore": null,
+            "avgWinScore": null
+          },
+          "decision": {
+            "action": "COLLECT_DATA",
+            "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null
+        }
+      ]
+    }
+  ]
+}

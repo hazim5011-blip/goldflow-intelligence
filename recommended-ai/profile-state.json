@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAtUTC": null,
+  "updatedAtUTC": "2026-10-09T02:13:33.387Z",
   "policy": "AUTO_PROMOTION_ONLY_AFTER_OOS_GATE",
   "profiles": {}
 }
