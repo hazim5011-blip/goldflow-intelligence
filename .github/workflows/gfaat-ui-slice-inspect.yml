@@ -1,0 +1,26 @@
+name: GF-AAT UI Slice Inspect
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_UI_SLICE_INSPECT.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print UI and service slices
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-ui && mkdir -p /tmp/gfaat-ui
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-ui
+          ROOT="$(find /tmp/gfaat-ui -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo '=== SERVICE 480-620 ==='; sed -n '480,620p' "$ROOT/aat/service.py"
+          echo '=== WEB 450-490 ==='; sed -n '450,490p' "$ROOT/aat/web.py"
+          echo '=== HTML 35-130 ==='; sed -n '35,130p' "$ROOT/aat/dashboard.html"
+          echo '=== HTML 180-220 ==='; sed -n '180,220p' "$ROOT/aat/dashboard.html"
