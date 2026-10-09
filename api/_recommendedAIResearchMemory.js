@@ -2,7 +2,7 @@ const clean=x=>String(x||"").toLowerCase();
 
 export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
   "version": 1,
-  "updatedAtUTC": "2026-10-08T22:25:33.543Z",
+  "updatedAtUTC": "2026-10-09T06:38:28.444Z",
   "mode": "FREE_INTERNET_EVIDENCE_SCOUT",
   "reasoning": {
     "enabled": false,
@@ -24,19 +24,9 @@ export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
       "sourceId": "NEWS_GOLD_MACRO",
       "sourceKind": "discovery",
       "category": "GOLD_MACRO",
-      "title": "U.S. Treasury yields surged above 5% amid heightened expectations of Federal Reserve rate hikes, pushing gold below $4,300 as markets await the Fed's interest rate decision. - Moomoo",
-      "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNRldLR0dDakY5eG1rOExkUk1YTDFQSEtITFZvZDRrdXltUjgzeXhHMEVjbWl6TzRwSGFwQktfdUM0WlFaUm1EeWtjRGtUd0J4TmdzaEloMjJERVpxaVFSa3RsTm9nQkJ5am15QjhCbWV2NXR1TnpkT0ZEZmx5Q2E5VXNNcGhLR0d6bjNBY2otUGdVbFQ4cWh2SndpMGpuV1M5NTF3bEd3bzBYdW8?oc=5",
-      "published": "Wed, 16 Sep 2026 07:00:00 GMT",
-      "summary": "U.S. Treasury yields surged above 5% amid heightened expectations of Federal Reserve rate hikes, pushing gold below $4,300 as markets await the Fed's interest rate decision. &nbsp;&nbsp; Moomoo",
-      "relevance": 18
-    },
-    {
-      "sourceId": "NEWS_GOLD_MACRO",
-      "sourceKind": "discovery",
-      "category": "GOLD_MACRO",
       "title": "Gold struggles as rising US Treasury yields outweigh dovish Fed repricing - www.tmgm.com",
-      "url": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxPejh0R0dHMUJiYmpoaEdoVGZNaTNSYkQ5Vzgxems4cVJYS3ZnTHNwck40U0lpS01Remp0QkxuaEhrdUM1RUwyNE9HdEs3SmNQYjZ6S0JxMFgzZG11MGZBWFlIODlfUHFDYmhneTRxdVZEWk5DWmR0UlBmX1lSWmVYZy02c0tSREVHTHVoQWg5QlV6c0otcS1qUThqME5TU2F2dnpFMmVPZGVmakF3dzRNeUJSeWdaOE5BQnpxNDVLMHNKUnRzSWJJem9HRklid3ZPbGNPb2h2ZGRQdw?oc=5",
-      "published": "Thu, 01 Oct 2026 12:30:59 GMT",
+      "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOUS1MNGJTNjRGbnFFanlXWXlrODdORnI4LXpocnZ4OXRhVTMzVk1FbHQwWU5RcG9BQVBFWkdRSkRMZFV1VDhOTkpJUWR6Y1RkRUhWTnNpQjVQVzFTVjhyLU5yekN0N3BwaWRmem9xMlZNcFZaS0Rzc3JpUkk1S08zbURTLW9XWEh4N2FRVVdINE5mRTdqWGlFOVdfeUNEVk9JN2h3bm5oWkZhNHJvdHpkTzJOLWYwMW5XT0J2RURzbnU2d19TTFRRVjB4NFdGbDBIZktseE53?oc=5",
+      "published": "Thu, 01 Oct 2026 12:25:54 GMT",
       "summary": "Gold struggles as rising US Treasury yields outweigh dovish Fed repricing &nbsp;&nbsp; www.tmgm.com",
       "relevance": 18
     },
@@ -48,16 +38,6 @@ export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
       "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNT3dpdEpPNkRVUFI1NXg2Qm1TWmRfX2ZRRlA0R1dUOUFtRDFMWE5sc1RLMkg5bTlWemx1Umk5djZFeW95MjhoMkNjZ1F1SXJEUUQ1WFdNcmtBWEsyZzNvZ0ZVM2J0aTduQlNZcXBoc3k3Z0V6amJ4Mk9RVFZTeUV1YXRKaS04NmJQREZiOU82b09JZXdMYU5QR1JaV2ZHam9CUVBYd2szWQ?oc=5",
       "published": "Thu, 08 Oct 2026 14:35:22 GMT",
       "summary": "Gold gains modestly as US Treasury yields ease, Fed hike risks linger &nbsp;&nbsp; FXStreet",
-      "relevance": 18
-    },
-    {
-      "sourceId": "NEWS_USD_YIELDS",
-      "sourceKind": "discovery",
-      "category": "USD_YIELDS",
-      "title": "Gold recovers above $4,100 as Treasury yields slip after hawkish Fed minutes - VT Markets",
-      "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNSnRRSTcxZWpQeVprNklFSEJxOVBEcHFoQ203aElObE9zOEtkUzVWbUZuX1REeGJMN1ZmSURybi05WmNqcDhMNGZ3RXJnM21XZEJoWTdnZVI1WHdPQjFYUHZPd2h6cVhJUEpUTS04YkNhV1FrdWtlMXZhZXFwZDBvN25IdDNYd0lHVUxWV3VYTmR2dVNmN2RiektpWDNqQ1haVnR5aVN2TmEwR3pLQlk3MUZNNGVlRzVMZ1BmWQ?oc=5",
-      "published": "Thu, 08 Oct 2026 04:47:04 GMT",
-      "summary": "Gold recovers above $4,100 as Treasury yields slip after hawkish Fed minutes &nbsp;&nbsp; VT Markets",
       "relevance": 18
     },
     {
@@ -134,6 +114,16 @@ export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
       "sourceId": "NEWS_GOLD_MACRO",
       "sourceKind": "discovery",
       "category": "GOLD_MACRO",
+      "title": "US Treasury Yields Hit Nearly 20-Year High, Dragging Gold Below $4,300: Will Gold Keep Falling? - TradingKey",
+      "url": "https://news.google.com/rss/articles/CBMi6wFBVV95cUxQZ293MHh5TXhreVJUZ1lCVjFiQmtEQXlGcjU5U1d6TVVVQl9pc0JFWlBXaHNUZ0NyaUh5VDYxa29YZUhBRFVRX2FPQlJLV0JSQmhBcWpWYmFnc0Z6bTdvVkprRzZvR0dHYVN3R3h3Qkd3VVA4ZjhsWll4Wnd6VERaQl9sSzgxNW91Ri1XQldEUEdkOUI1SXl6TFFzVWkxaDNOTmh1ZEVOLVVHQi03VkQxUENqR2NReXpvTWJaNno1RE1JWXUwMjVnTmtyLTUxeEhaYzFuODlsUnhNOGV3cDdheV92TlJhaV9MeFVn?oc=5",
+      "published": "Tue, 15 Sep 2026 07:00:00 GMT",
+      "summary": "US Treasury Yields Hit Nearly 20-Year High, Dragging Gold Below $4,300: Will Gold Keep Falling? &nbsp;&nbsp; TradingKey",
+      "relevance": 13
+    },
+    {
+      "sourceId": "NEWS_GOLD_MACRO",
+      "sourceKind": "discovery",
+      "category": "GOLD_MACRO",
       "title": "Gold defies US Dollar surge as US yield slide revives Bullion demand - www.tmgm.com",
       "url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxPRFlibU5vZGpiRmZOSS1OVkFpNm90enZpYkl2cXpPcU9EbmUwLWl1LUN4WC15aUVDajhmbUFfNFROcXRqVDd6UnVjdXotWjNiYnd5NzZPeS01SXVPVTVCQjU0YllBOVV1QlRJTC0tcy1XU05yemdaQWVYOWl6bnBZSjJxS25kMHBubS1BVXlxMGhuTHA0Y0lvdGExYW5UR3QzdFNWUjRhQWVQSkNuallCbU0zUUVFeHNIVkZGckVCZmxzRjFnRkpJaThMalljR0k?oc=5",
       "published": "Thu, 01 Oct 2026 21:20:46 GMT",
@@ -144,20 +134,10 @@ export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
       "sourceId": "NEWS_USD_YIELDS",
       "sourceKind": "discovery",
       "category": "USD_YIELDS",
-      "title": "US Dollar Price Forecast: Fed Minutes Back DXY, Can GBP/USD and EUR/USD Recover? - FXEmpire",
-      "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxNQzlfbGRHSzY3dFV1MmJUalA3YnY2ZFNweG5EaS15VlVFSTljZ1cxSlM5aVc5Sk9laWczWmxKMjN5R244dlRBLWxBd29ZdjYwV1RyejhybzlnalZ3ZVozYTM1QWtHVlZxMVFaYlJtRHJXbVdNOUN0Zm8yemNHWEVXNTlnRWhRaGIyZkZkcFd1MFUwbjhGQVI1RGk3Z3BCampxMmp5bHZBWndBdlI5X0JZaWVORGd1S1ZGYXVIUUo4cWk3WXZ0NDdN?oc=5",
-      "published": "Thu, 08 Oct 2026 08:25:12 GMT",
-      "summary": "US Dollar Price Forecast: Fed Minutes Back DXY, Can GBP/USD and EUR/USD Recover? &nbsp;&nbsp; FXEmpire",
-      "relevance": 12
-    },
-    {
-      "sourceId": "NEWS_USD_YIELDS",
-      "sourceKind": "discovery",
-      "category": "USD_YIELDS",
-      "title": "US Dollar: Hawkish Fed outlook lifts DXY towards 102.85 - ING - FXStreet",
-      "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxPUlUyN3F5ZEZJT3JkZHU1Q2RJS0NiTVRyanNDRy1CdDlzNDR3ZGF4NjFTTFJtY3ZzeEdlNmxJbUk1Mkktanh1aTZNd3o5NFljbWtyajdLTVBqdTZkXzl0NHlTWDFYc0ItZmRBbkJTUURPVmJETWtuSHBZREg5ckdybVVBbW1XWnlOTDQ3UXA1TmczRHRlY1dSSXM2djgxR3VhVGc?oc=5",
-      "published": "Thu, 08 Oct 2026 07:37:29 GMT",
-      "summary": "US Dollar: Hawkish Fed outlook lifts DXY towards 102.85 - ING &nbsp;&nbsp; FXStreet",
+      "title": "Gold slides to two-month low as robust dollar, yields add pressure - Kitco",
+      "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQY2hpM3gyaGRGNUFvU3JJbVdmcUZOVEhiN0V5TUo0dWNpNmlybDNQbUVIeFNhXzFVM0pubWtrQ19DRkN4VWI4RWxReDg0WXhpLU9DeWZpd1phOHZyUFRoZFhILTVTRnV4c3otdlZQb0lsNFpIZnk4dW0xdTVrWm9VOU13eWtSTUpUZG9OUTBrWnlvWHF4TUhES3J3ZE85ZTFhTVVsVXF0VTgyUjNPcjlv?oc=5",
+      "published": "Wed, 07 Oct 2026 16:59:20 GMT",
+      "summary": "Gold slides to two-month low as robust dollar, yields add pressure &nbsp;&nbsp; Kitco",
       "relevance": 12
     },
     {
@@ -249,6 +229,26 @@ export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
       "published": "Tue, 06 Oct 2026 08:34:26 GMT",
       "summary": "US Dollar Price Forecast: High Yields Lift DXY, Can GBP/USD and EUR/USD Recover? &nbsp;&nbsp; Yahoo Finance",
       "relevance": 11
+    },
+    {
+      "sourceId": "NEWS_USD_YIELDS",
+      "sourceKind": "discovery",
+      "category": "USD_YIELDS",
+      "title": "US Dollar Price Forecast: Rising Yields Lift DXY as EUR/USD and GBP/USD Diverge - Yahoo Finance",
+      "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxPanpCRmRWTWNfT0lfWVJFWWM3c1E4TVJRRWNuczhNQ1ljSGQxR2J2SDBiaUhZemF3U3lMelFrRUI1OWtYTVdxcU1OcU1LVDVPNHlfbmVUR2JwSU4zbzVOM1RCemVKNTFGMmlWUjI5dzZQODUzZnBzX3Zqa19TNUZDalNsUHRWQzZOS0ZOQmFCME1wdHJBMlhGVHp6cnhXdi1UYkE?oc=5",
+      "published": "Tue, 29 Sep 2026 07:00:00 GMT",
+      "summary": "US Dollar Price Forecast: Rising Yields Lift DXY as EUR/USD and GBP/USD Diverge &nbsp;&nbsp; Yahoo Finance",
+      "relevance": 11
+    },
+    {
+      "sourceId": "NEWS_GOLD_MACRO",
+      "sourceKind": "discovery",
+      "category": "GOLD_MACRO",
+      "title": "XAUUSD: Gold Steady Near $4,370, Prices Seek to Break 3-Day Losing Streak - TradingView",
+      "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNcm8xNWMwSi1zWi1oTkhuSEtZLVVSQTRpWjNrbURMbnBvcjl6cWhqUnVFdDlwNTdaM2RiYkRtV01xa2JhRkRqN1pnX2ZaYlpEa3ZRUnp4elBnWEdrX2hpYmg1T2lfQXJ5cTdLUTFVWjgyWWJVcmhFdllnYjhiejhsWm50QjhGbFNvT1NXRDBkWFdwMEtpUGlkTDVnU1RpVFppMnR5OE12eHF3YXNpS21BR0llbUVqOUxrOXdLMUZTc0NNTVV1RkJ4ZWxCUko?oc=5",
+      "published": "Tue, 08 Sep 2026 07:00:00 GMT",
+      "summary": "XAUUSD: Gold Steady Near $4,370, Prices Seek to Break 3-Day Losing Streak &nbsp;&nbsp; TradingView",
+      "relevance": 10
     }
   ],
   "macro": [
