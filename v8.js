@@ -45,7 +45,7 @@
       "&tf="+encodeURIComponent(window.selectedTF||"M5")+"&indicator="+encodeURIComponent(indicator)+(params||"");
   }
   function uri(params){return uriForIndicator(historyIndicator(),params)}
-  async function json(url){var r=await fetch(url,{cache:"no-store"}),j=await r.json();if(!r.ok||j.ok===false)throw Error(j.error||("HTTP "+r.status));return j}
+  async function json(url){var r=await fetch(url,{cache:"no-store"}),txt=await r.text(),j=null;try{j=txt?JSON.parse(txt):null}catch(e){var html=/^\\s*<!doctype|^\\s*<html/i.test(txt||"");throw Error((html?"CLOUDFLARE_API_NON_JSON":"INVALID_API_JSON")+" • "+url+" • HTTP "+r.status)}if(!r.ok||!j||j.ok===false)throw Error(j?.error||("HTTP "+r.status));return j}
   function notice(id,msg,bad){if($(id)){$(id).className=bad?"notice bad":"notice info";$(id).textContent=msg}}
   function stat(label,value,detail){
     return '<div class="v8Metric"><small>'+safe(label)+'</small><strong>'+safe(value)+'</strong>'+(detail?'<span>'+safe(detail)+'</span>':"")+'</div>';
