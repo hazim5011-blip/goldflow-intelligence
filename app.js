@@ -15,11 +15,29 @@ function bridgeErrorText(v){
   if(/BRIDGE_TUNNEL_ORIGIN_UNAVAILABLE|origin web server|cloudflare/i.test(s))return "BRIDGE TUNNEL OFFLINE • Cloudflare tidak dapat mencapai local MT5 bridge. Semak bridge PC + named tunnel; tiada signal baru dikeluarkan.";
   return s;
 }
+function transientHttp(s){return [502,503,504].includes(Number(s))}
+function sleep(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})}
 async function getJson(url){
-  var r=await fetch(url,{cache:"no-store"}),txt=await r.text(),j=null;
-  try{j=JSON.parse(txt)}catch(e){throw new Error(bridgeErrorText(txt||("HTTP "+r.status)))}
-  if(!r.ok)throw new Error(bridgeErrorText(j.error||("HTTP "+r.status)));
-  return j;
+  var last=null;
+  for(var attempt=0;attempt<2;attempt++){
+    try{
+      var r=await fetch(url,{cache:"no-store",headers:{"Accept":"application/json"}}),txt=await r.text(),j=null;
+      try{j=JSON.parse(txt)}catch(e){
+        if(transientHttp(r.status)&&attempt===0){await sleep(650);continue}
+        throw new Error(bridgeErrorText(txt||("HTTP "+r.status)));
+      }
+      if(!r.ok){
+        if(transientHttp(r.status)&&attempt===0){await sleep(650);continue}
+        throw new Error(bridgeErrorText(j&&j.error||("HTTP "+r.status)));
+      }
+      return j;
+    }catch(e){
+      last=e;
+      if(attempt===0&&/HTTP (502|503|504)|BRIDGE_TIMEOUT|aborted|network|fetch/i.test(String(e&&e.message||e))){await sleep(650);continue}
+      throw e;
+    }
+  }
+  throw last||new Error("REQUEST_FAILED");
 }
 function rootSymbol(s){return String(s||"").replace(/[.#].*$/,"")}
 function indicatorName(v){
@@ -46,7 +64,7 @@ document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){
   if(b.dataset.page==="tvPage")setTimeout(renderTradingView,50);
   if(b.dataset.page==="macroPage")setTimeout(function(){loadMacro(false)},50);
   if(b.dataset.page==="gfStudyPage"&&/^gf-/.test(selectedIndicator))setTimeout(function(){window.GFStudy?.load()},50);
-  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(false);loadRecommendedAIInternet(false)},50);
+  if(b.dataset.page==="recommendedAIPage")setTimeout(function(){loadRecommendedAI(true);loadRecommendedAIInternet(true)},50);
 }});
 
 $("tfSelect").value=selectedTF;
@@ -513,6 +531,7 @@ async function init(){
   await checkBridge();await loadSymbols(false);
   setInterval(checkBridge,30000);
   setInterval(refreshLiveZoneEntry,5000);
+  setInterval(function(){if(!document.hidden&&$("recommendedAIPage")?.classList.contains("on")){loadRecommendedAI(true);loadRecommendedAIInternet(true)}},300000);
   document.addEventListener("visibilitychange",function(){if(!document.hidden)refreshLiveZoneEntry()});
   setInterval(function(){
     // V8 has lazy broker requests with CDN caching; do not poll an extra V7 dashboard while V8 analytics/news is in view.
@@ -709,18 +728,22 @@ function raiCard(x){
     '<div class="raiFoot">Updated '+raiWhen(x.generatedAtUTC)+' • '+raiEsc(x.recommendationId||"")+'</div>'+
   '</article>';
 }
+function raiArchiveAgeMinutes(v){var t=Date.parse(String(v||""));return Number.isFinite(t)?Math.max(0,(Date.now()-t)/60000):Infinity}
 function renderRecommendedAIArchive(data){
   raiLatest=data||{};
   var recs=Object.values(raiLatest.recommendations||{}).filter(function(x){return x&&typeof x==="object"}).sort(function(a,b){return String(a.indicatorName||a.indicator).localeCompare(String(b.indicatorName||b.indicator))});
-  if($("raiHeartbeat"))$("raiHeartbeat").textContent=raiLatest.heartbeat||"WAIT";
+  var age=raiArchiveAgeMinutes(raiLatest.updatedAtUTC),stale=age>90,heartbeat=raiLatest.heartbeat||"WAIT";
+  if($("raiHeartbeat"))$("raiHeartbeat").textContent=stale?"STALE "+Math.round(age)+"m":heartbeat;
   if($("raiUpdated"))$("raiUpdated").textContent=raiWhen(raiLatest.updatedAtUTC);
   if($("raiPrimary"))$("raiPrimary").textContent=(raiLatest.primarySymbol||"XAUUSD247")+" • "+(raiLatest.primaryTF||"M15");
   if($("raiBatch"))$("raiBatch").textContent=raiLatest.lastBatch&&Array.isArray(raiLatest.lastBatch.indicators)?raiLatest.lastBatch.indicators.join(", "):"WAIT";
   if($("raiCards"))$("raiCards").innerHTML=recs.length?recs.map(raiCard).join(""):'<div class="notice info">AI archive belum mempunyai cycle lengkap. Scheduler akan mengisi data secara berperingkat.</div>';
   if($("raiStatus")){
-    $("raiStatus").className="notice "+(raiLatest.heartbeat==="OK"?"good":"info");
-    $("raiStatus").textContent=raiLatest.heartbeat==="OK"?
-      "Recommended AI 24H aktif • archive terakhir "+raiWhen(raiLatest.updatedAtUTC)+" • setiap indicator disimpan berasingan.":
+    $("raiStatus").className="notice "+(stale?"bad":heartbeat==="OK"?"good":"info");
+    $("raiStatus").textContent=stale?
+      "Recommended AI archive STALE • "+Math.round(age)+" minit sejak cycle berjaya terakhir. Browser akan refresh setiap 5 minit; watchdog server akan cuba pulihkan cycle yang terlepas.":
+      heartbeat==="OK"?
+      "Recommended AI 24H aktif • archive terakhir "+raiWhen(raiLatest.updatedAtUTC)+" • browser auto-refresh 5 minit • setiap indicator disimpan berasingan.":
       "Recommended AI menunggu cycle hourly pertama. Manual study masih boleh dijalankan.";
   }
 }
