@@ -1,1 +1,1 @@
-Run GF-AAT R5.17.6 candidate retry after transform fix.
+Run GF-AAT R5.17.6 candidate retry with verified normalized staging.
