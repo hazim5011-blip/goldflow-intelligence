@@ -1,0 +1,178 @@
+name: GF-AAT R5.17.4 Stable Safe Release
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5174_RELEASE.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify R5.17.3 stable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          m=json.loads(pathlib.Path('gf-aat-update/stable.json').read_text())
+          assert m['channel']=='stable'
+          assert m['version']=='1.6.3-r5.17.3',m
+          assert m['build_id']=='gf-aat-1.6.3-r5.17.3-structural-entry-geometry',m
+          p=pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          h=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert h==m['sha256'],(h,m['sha256'])
+          print('R5.17.3 baseline PASS',h)
+          PY
+
+      - name: Verify staged R5.17.4 source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/r5174-stage /tmp/r5174-root /tmp/GF_AAT_STABLE.zip
+          mkdir -p /tmp/r5174-stage /tmp/r5174-root
+          cat gf-aat-update/staging/r5174/stage.b64.* | base64 -d > /tmp/r5174-stage.tar.gz
+          echo '845f111c7cbc0b6441c595c132f2ec646c4092d3213016e82583fe66d34106e7  /tmp/r5174-stage.tar.gz' | sha256sum -c -
+          tar -xzf /tmp/r5174-stage.tar.gz -C /tmp/r5174-stage
+          python3 -m py_compile /tmp/r5174-stage/*.py
+          echo 'R5.17.4 source bundle PASS'
+
+      - name: Build R5.17.4 from official R5.17.3 stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/r5174-root
+          ROOT=/tmp/r5174-root/GF_AAT_R5_17_3_STABLE
+          test -d "$ROOT"
+          cp /tmp/r5174-stage/openai_client.py "$ROOT/aat/openai_client.py"
+          cp /tmp/r5174-stage/openai_brain.py "$ROOT/aat/openai_brain.py"
+          python3 /tmp/r5174-stage/apply_news.py "$ROOT"
+          python3 /tmp/r5174-stage/apply_service.py "$ROOT"
+          python3 /tmp/r5174-stage/apply_web.py "$ROOT"
+          python3 /tmp/r5174-stage/apply_dashboard.py "$ROOT"
+          cp /tmp/r5174-stage/test_v163_r5174_openai_brain_news.py "$ROOT/tests/"
+          cp /tmp/r5174-stage/R5_17_4_OPENAI_CRITIC_NEWS_QUALITY.md "$ROOT/"
+          python3 -m compileall -q "$ROOT/aat"
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('/tmp/r5174-root/GF_AAT_R5_17_3_STABLE')
+          b=json.loads((root/'CURRENT_BUILD.json').read_text())
+          assert b['version']=='1.6.3-r5.17.4',b
+          assert b['runtime_revision']=='R5.17.4',b
+          assert b['build_id']=='gf-aat-1.6.3-r5.17.4-openai-critic-news-quality',b
+          assert b['restart_cmd']=='RESTART_GF_AAT_R5_17_4.bat',b
+          assert b['research_only'] is True and int(b['orders_sent'])==0
+          print('Exact build PASS')
+          PY
+
+      - name: Install dependencies
+        run: python3 -m pip install --disable-pip-version-check -r /tmp/r5174-root/GF_AAT_R5_17_3_STABLE/requirements.txt
+
+      - name: Run R5.17.4 focused tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/r5174-root/GF_AAT_R5_17_3_STABLE
+          python3 -m pytest -q tests/test_v163_r5174_openai_brain_news.py | tee /tmp/r5174-focused.txt
+
+      - name: Run full test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/r5174-root/GF_AAT_R5_17_3_STABLE
+          python3 -m pytest -q | tee /tmp/r5174-full.txt
+
+      - name: Safety and secret audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/r5174-root/GF_AAT_R5_17_3_STABLE
+          cd "$ROOT"
+          PYTHONPATH=. python3 - <<'PY'
+          import ast,json,pathlib,os
+          from aat.openai_client import config_status
+          from aat.openai_brain import VERSION
+          b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text())
+          assert b['research_only'] is True and int(b['orders_sent'])==0
+          bad=[]
+          for p in pathlib.Path('aat').rglob('*.py'):
+              tree=ast.parse(p.read_text(encoding='utf-8',errors='ignore'),filename=str(p))
+              for n in ast.walk(tree):
+                  if isinstance(n,ast.Call):
+                      f=n.func
+                      if isinstance(f,ast.Name) and f.id=='order_send': bad.append((str(p),n.lineno))
+                      elif isinstance(f,ast.Attribute) and f.attr=='order_send': bad.append((str(p),n.lineno))
+          assert not bad,bad
+          cfg=config_status()
+          assert 'api_key' not in cfg and cfg['broker_order_authority'] is False
+          html=pathlib.Path('aat/dashboard.html').read_text(encoding='utf-8')
+          assert 'AAT_OPENAI_API_KEY' not in html
+          assert 'GF-AAT-OPENAI-CRITIC-BRAIN-1.0.0'==VERSION
+          print('Safety PASS: no order_send; no browser key exposure; OpenAI read-only')
+          PY
+
+      - name: Package persistent-state-safe stable ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=/tmp/r5174-root/GF_AAT_R5_17_3_STABLE
+          cd "$ROOT"
+          rm -rf .venv data logs backups _updates .pytest_cache
+          find . -type d -name __pycache__ -prune -exec rm -rf {} +
+          rm -f .env
+          cd ..
+          mv GF_AAT_R5_17_3_STABLE GF_AAT_R5_17_4_STABLE
+          zip -qr /tmp/GF_AAT_STABLE.zip GF_AAT_R5_17_4_STABLE
+          unzip -t /tmp/GF_AAT_STABLE.zip >/dev/null
+          python3 - <<'PY'
+          import pathlib,zipfile
+          z=zipfile.ZipFile('/tmp/GF_AAT_STABLE.zip'); names=set(z.namelist())
+          forbidden={'.env','data','logs','backups','_updates','.venv','.pytest_cache','__pycache__'}
+          bad=[n for n in names if any(p in forbidden for p in pathlib.PurePosixPath(n).parts)]
+          req={
+           'GF_AAT_R5_17_4_STABLE/GF_AAT_UPDATE.cmd',
+           'GF_AAT_R5_17_4_STABLE/RESTART_GF_AAT_R5_17_4.bat',
+           'GF_AAT_R5_17_4_STABLE/VERIFY_GF_AAT_R5_17_4.bat',
+           'GF_AAT_R5_17_4_STABLE/aat/openai_client.py',
+           'GF_AAT_R5_17_4_STABLE/aat/openai_brain.py',
+           'GF_AAT_R5_17_4_STABLE/R5_17_4_OPENAI_CRITIC_NEWS_QUALITY.md'}
+          assert not bad,bad[:10]
+          assert not (req-names),sorted(req-names)
+          print('Persistent state exclusion PASS')
+          PY
+
+      - name: Publish R5.17.4 stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/GF_AAT_STABLE.zip gf-aat-update/GF_AAT_STABLE.zip
+          HASH="$(sha256sum gf-aat-update/GF_AAT_STABLE.zip | awk '{print $1}')"
+          cat > gf-aat-update/stable.json <<EOF
+          {
+            "channel": "stable",
+            "version": "1.6.3-r5.17.4",
+            "build_id": "gf-aat-1.6.3-r5.17.4-openai-critic-news-quality",
+            "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
+            "sha256": "$HASH",
+            "restart_cmd": "RESTART_GF_AAT_R5_17_4.bat",
+            "minimum_updater": 2
+          }
+          EOF
+          python3 -m json.tool gf-aat-update/stable.json >/dev/null
+          echo "Published candidate SHA256: $HASH"
+
+      - name: Commit stable channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gf-aat-update/GF_AAT_STABLE.zip gf-aat-update/stable.json
+          git diff --cached --quiet && { echo 'No stable changes'; exit 1; }
+          git commit -m "Publish GF-AAT R5.17.4 OpenAI critic and news quality stable update"
+          git push
