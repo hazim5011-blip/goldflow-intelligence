@@ -3,3 +3,5 @@ Build: gf-aat-1.6.3-r5.17.4-openai-critic-news-quality
 Policy: OpenAI shadow critic + post-trade lesson review; deterministic gates authoritative; news quality health/false-positive repair; orders 0.
 
 Retry: dashboard footer anchor corrected; source bundle SHA unchanged.
+
+Retry 3: dashboard patch quoting fixed robustly; staged source bundle SHA unchanged.
