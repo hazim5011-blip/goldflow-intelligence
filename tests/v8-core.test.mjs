@@ -12,7 +12,16 @@ import {normalizePublishedPayload,forwardPath,normalizeOutcomePayload,outcomePat
 
 const mk=(t,o,h,l,c)=>({t,o,h,l,c,v:100});
 const base={time:1000,closeTime:1300,direction:1,entry:100,invalidation:90,tp1:110,score:90,reasons:["MOMENTUM"]};
-const replay=(changes,mid,mode="103")=>replayOutcome({...base,...changes},[mk(1000,99,101,97,100),...mid,mk(2200,99,101,97,100)],"M5",mode);
+const fixedReplayPlan=signal=>{
+  const d=Number(signal.direction)>0?1:-1,entry=Number(signal.entry),sl=Number(signal.invalidation),risk=Math.abs(entry-sl);
+  return {valid:true,direction:d,entry,sl,risk,tp1:Number(signal.tp1),tp2:entry+d*risk*1.8,tp3:entry+d*risk*3,
+    origin:"TEST_PRECOMPUTED_PLAN",management:{beTriggerR:.50,beLockR:.05,trailTriggerR:.75,trailDistanceR:.35}};
+};
+const replay=(changes,mid,mode="103")=>{
+  const signal={...base,...changes},plan=fixedReplayPlan(signal);
+  return replayOutcome(signal,[mk(1000,99,101,97,100),...mid,mk(2200,99,101,97,100)],"M5",mode,0,plan);
+};
+const warmup=(t0,n=21)=>Array.from({length:n},(_,i)=>mk(t0+i*300,100,101,99,100));
 test("BUY TP1 and risk-to-SL exits are exact",()=>{
   const tp=replay({},[mk(1300,101,112,100,111)]);
   assert.equal(tp.outcome,"TP1");assert.equal(tp.exitPrice,110);assert.equal(tp.priceMove,10);
@@ -35,14 +44,19 @@ test("MTF 1.05 positive BE and TRAILING use actual managed stop prices",()=>{
   const trail=replay({},[mk(1300,101,108,101,107),mk(1600,107,108,103,103)],"105");
   assert.equal(trail.outcome,"TRAILING");assert.equal(trail.exitPrice,104.5);
 });
-test("Every evaluable signal receives a transparent normalized trade plan when native TP is absent",()=>{
-  assert.equal(replay({},[mk(1300,100,103,99,102)]).outcome,"PENDING");
-  const plan=normalizedTradePlan({...base,tp1:null,tp2:null,tp3:null},"pattern132");
-  assert.equal(plan.valid,true);assert.equal(plan.tp1,110);assert.equal(plan.tp2,120);assert.equal(plan.tp3,130);
-  assert.equal(plan.origin,"GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R");
-  const managed=replay({tp1:null,tp2:null,tp3:null},[mk(1300,100,106,99,105),mk(1600,105,106,100,100)],"pattern132");
-  assert.equal(managed.outcome,"BE_POSITIVE");assert.equal(managed.planOrigin,"GOLDFLOW_NORMALIZED_STUDY_PLAN_1R_2R_3R");
-  assert.equal(replay({tp1:null},[mk(1300,100,103,99,102)],"snd107").outcome,"PENDING");
+test("Every evaluable signal receives a transparent Dynamic ATR + Structure plan when native TP is absent",()=>{
+  const t0=1700000000,signalTime=t0+20*300;
+  const signal={time:signalTime,closeTime:signalTime+300,direction:1,entry:100,invalidation:90,tp1:null,tp2:null,tp3:null,score:90,reasons:["MOMENTUM"]};
+  const bars=[...warmup(t0),mk(signalTime+300,100,103,99,102),mk(signalTime+600,102,103,101,102)];
+  const plan=normalizedTradePlan(signal,"pattern132",bars,"M5",.01,"XAUUSD247");
+  assert.equal(plan.valid,true);
+  assert.equal(plan.tp1,110);assert.equal(plan.tp2,118);assert.equal(plan.tp3,130);
+  assert.equal(plan.origin,"GOLDFLOW_DYNAMIC_ATR_STRUCTURE_PATTERN_132");
+  const managedBars=[...warmup(t0),mk(signalTime+300,100,106,99,105),mk(signalTime+600,105,106,100,100),mk(signalTime+900,100,101,99,100)];
+  const managed=replayOutcome(signal,managedBars,"M5","pattern132",.01,null,"XAUUSD247");
+  assert.equal(managed.outcome,"BE_POSITIVE");assert.equal(managed.planOrigin,"GOLDFLOW_DYNAMIC_ATR_STRUCTURE_PATTERN_132");
+  const snd=replayOutcome({...signal,tp1:null},bars,"M5","snd107",.01,null,"XAUUSD247");
+  assert.equal(snd.outcome,"PENDING");
 });
 test("Pip conventions are explicit per asset",()=>{
   assert.equal(pipConvention("EURUSD.p",.00001).pipSize,.0001);
@@ -53,8 +67,10 @@ test("Pip conventions are explicit per asset",()=>{
 test("0.01 lot is gross USD estimate only when broker metadata supports it",()=>{
   const spec=metadataFromCatalog({name:"XAUUSD.p",category:"METALS",digits:2,point:.01,
     currencyProfit:"USD",contractSize:100,volumeMin:.01,volumeStep:.01},"XAUUSD","XAUUSD.p");
-  const rows=buildHistory([base],[mk(1000,99,101,97,100),mk(1300,101,111,100,110),mk(1600,109,110,108,109)],
-    {requested:"XAUUSD",resolved:"XAUUSD.p",tf:"M5",indicator:"103",spec});
+  const t0=1700000000,signalTime=t0+20*300;
+  const signal={...base,time:signalTime,closeTime:signalTime+300};
+  const bars=[...warmup(t0),mk(signalTime+300,101,111,100,110),mk(signalTime+600,109,110,108,109)];
+  const rows=buildHistory([signal],bars,{requested:"XAUUSD",resolved:"XAUUSD.p",tf:"M5",indicator:"103",spec});
   assert.equal(rows[0].priceMove,10);assert.equal(rows[0].signedPoints,1000);
   assert.equal(rows[0].signedPips,100);assert.equal(rows[0].grossPLUSD,10);
   assert.equal(rows[0].netPLUSD,null);assert.equal(rows[0].recordMode,"HISTORICAL_SIM");
@@ -180,9 +196,10 @@ test("English locale covers new speech replay and news-classification labels",()
 
 test("Vantage broker UTC+3 is normalized ONLY in published historical timestamps",()=>{
   const t=Date.parse("2026-10-01T23:30:00.000Z")/1000; // raw MT5 broker clock
-  const signal={time:t,direction:1,entry:100,invalidation:90,tp1:110,code:"B",score:67,reasons:["TEST"]};
-  const bars=[mk(t,99,101,97,100),mk(t+300,101,112,100,111),mk(t+600,109,111,108,110)];
-  const spec=metadataFromCatalog({name:"XAUUSD247",point:.01,digits:2},"XAUUSD247","XAUUSD247");
+  const start=t-20*300;
+  const signal={time:t,closeTime:t+300,direction:1,entry:100,invalidation:90,tp1:110,code:"B",score:67,reasons:["TEST"]};
+  const bars=[...warmup(start),mk(t+300,101,112,100,111),mk(t+600,109,111,108,110)];
+  const spec=metadataFromCatalog({name:"XAUUSD247",category:"METALS",point:.01,digits:2,currencyProfit:"USD",contractSize:100,volumeMin:.01,volumeStep:.01},"XAUUSD247","XAUUSD247");
   const ctx={requested:"XAUUSD247",resolved:"XAUUSD247",tf:"M5",indicator:"103",spec,brokerServerUTCOffsetSeconds:10800};
   const row=buildHistory([signal],bars,ctx)[0];
   assert.equal(row.sourceBrokerBarEpoch,t,"raw replay timestamps must remain auditable");
