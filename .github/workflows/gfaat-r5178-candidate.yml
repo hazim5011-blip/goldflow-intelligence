@@ -1,0 +1,190 @@
+name: GF-AAT R5.17.8 OpenAI 0600 Ops Candidate
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5178_CANDIDATE.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify R5.17.7 stable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          m=json.loads(pathlib.Path('gf-aat-update/stable.json').read_text(encoding='utf-8'))
+          assert m['version']=='1.6.3-r5.17.7',m
+          assert m['build_id']=='gf-aat-1.6.3-r5.17.7-openai-operations-center',m
+          p=pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual==m['sha256'],(actual,m['sha256'])
+          print('R5.17.7 baseline PASS',actual)
+          PY
+
+      - name: Build R5.17.8 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-r5178
+          mkdir -p /tmp/gfaat-r5178
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5178
+          ROOT=/tmp/gfaat-r5178/GF_AAT_R5_17_7_STABLE
+          test -d "$ROOT"
+          python3 - "$ROOT" <<'PY'
+          import json,pathlib,sys
+          root=pathlib.Path(sys.argv[1])
+
+          p=root/'aat/openai_ops.py'
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('Daily OpenAI review at 18:00 Malaysia time.','Daily OpenAI review at 06:00 Malaysia time.')
+          s=s.replace('hour = 18','hour = 6')
+          s=s.replace('WAIT_1800_MYT','WAIT_0600_MYT')
+          s=s.replace('DAILY_1800_MYT','DAILY_0600_MYT')
+          s=s.replace('local.hour < 18','local.hour < 6')
+          s=s.replace('hour=18, minute=0','hour=6, minute=0')
+          p.write_text(s,encoding='utf-8')
+
+          p=root/'aat/dashboard.html'
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('AUTO REVIEW 6:00 PM MALAYSIA','AUTO REVIEW 6:00 AM MALAYSIA')
+          s=s.replace('18:00 MYT','06:00 MYT')
+          s=s.replace('Setiap hari 18:00 MYT','Setiap hari 06:00 MYT')
+          s=s.replace('selepas 18:00 waktu Malaysia','selepas 06:00 waktu Malaysia')
+          s=s.replace('gf-aat-1.6.3-r5.17.7-openai-operations-center','gf-aat-1.6.3-r5.17.8-openai-0600-operations-center')
+          p.write_text(s,encoding='utf-8')
+
+          b=json.loads((root/'CURRENT_BUILD.json').read_text(encoding='utf-8'))
+          b.update({
+            'version':'1.6.3-r5.17.8',
+            'runtime_revision':'R5.17.8',
+            'build_id':'gf-aat-1.6.3-r5.17.8-openai-0600-operations-center',
+            'restart_cmd':'RESTART_GF_AAT_R5_17_8.bat',
+            'research_only':True,
+            'orders_sent':0,
+          })
+          (root/'CURRENT_BUILD.json').write_text(json.dumps(b,indent=2)+'\n',encoding='utf-8')
+
+          old=root/'RESTART_GF_AAT_R5_17_7.bat'
+          new=root/'RESTART_GF_AAT_R5_17_8.bat'
+          new.write_text(old.read_text(encoding='utf-8',errors='ignore').replace('R5_17_7','R5_17_8').replace('R5.17.7','R5.17.8'),encoding='utf-8')
+
+          doc=root/'R5_17_8_OPENAI_0600_OPERATIONS_CENTER.md'
+          doc.write_text("""# GF-AAT R5.17.8 — OpenAI Operations Center 06:00 MYT
+
+Corrects the daily OpenAI teacher/reviewer schedule to the user's requested 06:00 Asia/Kuala_Lumpur.
+
+Pages/operations:
+- Live Signal • 4 Robots
+- Analisis OpenAI
+- Recommended OpenAI
+- Daily OpenAI data/signal-quality review at 06:00 MYT
+- Signal-improvement recommendations stored as immutable research memory
+
+Safety:
+- no automatic code mutation
+- no automatic production-rule mutation
+- forward validation required before promotion
+- Research/Paper Only
+- broker order authority false
+""",encoding='utf-8')
+
+          t=root/'tests/test_v163_r5178_openai_0600_ops.py'
+          t.write_text("""from datetime import datetime
+from zoneinfo import ZoneInfo
+from aat.openai_ops import daily_status
+
+MYT=ZoneInfo('Asia/Kuala_Lumpur')
+
+class S:
+    def observations(self,*a,**k): return []
+
+def ts(y,m,d,h,mi=0):
+    return int(datetime(y,m,d,h,mi,tzinfo=MYT).timestamp())
+
+def test_daily_openai_waits_before_0600_myt(monkeypatch):
+    monkeypatch.setattr('aat.openai_ops.config_status',lambda:{'status':'READY','model':'gpt-5.6-sol','api_key_configured':True})
+    x=daily_status(S(),ts(2026,10,10,5,59))
+    assert x['status']=='WAIT_0600_MYT'
+    assert x['schedule']=='DAILY_0600_MYT'
+    assert x['schedule_hour_myt']==6
+    assert 'T06:00:00' in x['next_due_myt']
+
+def test_daily_openai_due_after_0600_myt(monkeypatch):
+    monkeypatch.setattr('aat.openai_ops.config_status',lambda:{'status':'READY','model':'gpt-5.6-sol','api_key_configured':True})
+    x=daily_status(S(),ts(2026,10,10,6,1))
+    assert x['status']=='DUE_NOW'
+    assert x['schedule']=='DAILY_0600_MYT'
+
+def test_dashboard_contract_is_0600():
+    html=open('aat/dashboard.html',encoding='utf-8').read()
+    assert 'AUTO REVIEW 6:00 AM MALAYSIA' in html
+    assert '06:00 MYT' in html
+    assert '18:00 MYT' not in html
+""",encoding='utf-8')
+
+          for p in (root/'tests').glob('test_*.py'):
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('RESTART_GF_AAT_R5_17_7.bat','RESTART_GF_AAT_R5_17_8.bat')
+              s=s.replace('gf-aat-1.6.3-r5.17.7-openai-operations-center','gf-aat-1.6.3-r5.17.8-openai-0600-operations-center')
+              s=s.replace("'1.6.3-r5.17.7'","'1.6.3-r5.17.8'")
+              s=s.replace('"1.6.3-r5.17.7"','"1.6.3-r5.17.8"')
+              s=s.replace("'R5.17.7'","'R5.17.8'")
+              s=s.replace('"R5.17.7"','"R5.17.8"')
+              s=s.replace('AUTO REVIEW 6:00 PM MALAYSIA','AUTO REVIEW 6:00 AM MALAYSIA')
+              p.write_text(s,encoding='utf-8')
+          print('R5.17.8 transform PASS')
+          PY
+          cd "$ROOT"
+          python3 -m py_compile aat/openai_ops.py aat/service.py aat/web.py
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check -r /tmp/gfaat-r5178/GF_AAT_R5_17_7_STABLE/requirements.txt
+
+      - name: Run full tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5178/GF_AAT_R5_17_7_STABLE
+          python3 -m pytest -q | tee /tmp/gfaat-r5178-pytest.txt
+
+      - name: Safety and schedule audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5178/GF_AAT_R5_17_7_STABLE
+          python3 - <<'PY'
+          import ast,pathlib,json
+          bad=[]
+          for p in pathlib.Path('aat').rglob('*.py'):
+              tree=ast.parse(p.read_text(encoding='utf-8',errors='ignore'),filename=str(p))
+              for n in ast.walk(tree):
+                  if isinstance(n,ast.Call):
+                      f=n.func
+                      if isinstance(f,ast.Name) and f.id=='order_send': bad.append((str(p),n.lineno))
+                      if isinstance(f,ast.Attribute) and f.attr=='order_send': bad.append((str(p),n.lineno))
+          assert not bad,bad
+          src=pathlib.Path('aat/openai_ops.py').read_text(encoding='utf-8')
+          html=pathlib.Path('aat/dashboard.html').read_text(encoding='utf-8')
+          assert 'DAILY_0600_MYT' in src
+          assert 'WAIT_0600_MYT' in src
+          assert 'hour = 6' in src
+          assert 'AUTO REVIEW 6:00 AM MALAYSIA' in html
+          assert 'Setiap hari 06:00 MYT' in html
+          assert '18:00 MYT' not in html
+          assert '"auto_code_mutation": False' in src
+          assert '"auto_rule_change": False' in src
+          b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text())
+          assert b['research_only'] is True and int(b['orders_sent'])==0
+          print('SAFETY PASS')
+          print('06:00 MYT SCHEDULE PASS')
+          PY
