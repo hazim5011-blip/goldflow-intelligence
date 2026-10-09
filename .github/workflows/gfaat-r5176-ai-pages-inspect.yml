@@ -1,0 +1,28 @@
+name: GF-AAT R5.17.6 AI Pages Inspect
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5176_AI_PAGES_INSPECT.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect current AI/live/dashboard integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-ai-pages && mkdir -p /tmp/gfaat-ai-pages
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-ai-pages
+          ROOT="$(find /tmp/gfaat-ai-pages -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo '=== BUILD ==='; cat "$ROOT/CURRENT_BUILD.json"
+          echo '=== SERVICE LIVE ==='; grep -n -C 12 -E "openai_live|daily|recommend|analysis|run_once|study\(" "$ROOT/aat/service.py" | head -n 1500 || true
+          echo '=== WEB ROUTES ==='; grep -n -C 8 -E "/api/|openai|recommend|analysis|signal" "$ROOT/aat/web.py" | head -n 1500 || true
+          echo '=== DASH NAV ==='; grep -n -C 8 -E "view-|nav|AI Analyst|Live Signal|Recommended|openai|signal" "$ROOT/aat/dashboard.html" | head -n 1800 || true
+          echo '=== STORAGE ==='; grep -n -C 8 -E "openai|recommend|daily|analysis" "$ROOT/aat/storage.py" | head -n 1000 || true
+          echo '=== TEST FILES ==='; find "$ROOT/tests" -maxdepth 1 -type f | sort | tail -n 80
