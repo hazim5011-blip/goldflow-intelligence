@@ -1,0 +1,30 @@
+name: GF-AAT R5.17.6 Add Pages Source Inspect
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5176_ADD_PAGES_SOURCE.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print exact source anchors
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-addpages && mkdir -p /tmp/gfaat-addpages
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-addpages
+          ROOT="$(find /tmp/gfaat-addpages -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo '=== OPENAI CLIENT ==='; sed -n '1,320p' "$ROOT/aat/openai_client.py"
+          echo '=== OPENAI BRAIN TAIL ==='; sed -n '1,520p' "$ROOT/aat/openai_brain.py"
+          echo '=== WEB 1-80 ==='; sed -n '1,80p' "$ROOT/aat/web.py"
+          echo '=== WEB 450-560 ==='; sed -n '450,560p' "$ROOT/aat/web.py"
+          echo '=== HTML 1-150 ==='; sed -n '1,150p' "$ROOT/aat/dashboard.html"
+          echo '=== HTML 210-390 ==='; sed -n '210,390p' "$ROOT/aat/dashboard.html"
+          echo '=== STORAGE INIT 1-180 ==='; sed -n '1,180p' "$ROOT/aat/storage.py"
+          echo '=== STORAGE OPENAI METHODS ==='; grep -n -C 12 -E "openai_critic|openai_live|save_openai|recent_openai" "$ROOT/aat/storage.py" | head -n 600 || true
