@@ -69,6 +69,22 @@ jobs:
           python3 /tmp/r5174-stage/apply_dashboard.py "$ROOT"
           cp /tmp/r5174-stage/test_v163_r5174_openai_brain_news.py "$ROOT/tests/"
           cp /tmp/r5174-stage/R5_17_4_OPENAI_CRITIC_NEWS_QUALITY.md "$ROOT/"
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('/tmp/r5174-root/GF_AAT_R5_17_3_STABLE/tests')
+          old_build='gf-aat-1.6.3-r5.17.3-structural-entry-geometry'
+          new_build='gf-aat-1.6.3-r5.17.4-openai-critic-news-quality'
+          for p in root.glob('test_*.py'):
+              s=p.read_text(encoding='utf-8')
+              s=s.replace(old_build,new_build)
+              s=s.replace("'1.6.3-r5.17.3'","'1.6.3-r5.17.4'")
+              s=s.replace('"1.6.3-r5.17.3"','"1.6.3-r5.17.4"')
+              if p.name=='test_v140_causal_performance.py':
+                  s=s.replace("endswith('1.4.0')","endswith('1.5.0')")
+                  s=s.replace('endswith("1.4.0")','endswith("1.5.0")')
+              p.write_text(s,encoding='utf-8')
+          print('R5.17.4 regression build contracts migrated')
+          PY
           python3 -m compileall -q "$ROOT/aat"
           python3 - <<'PY'
           import json,pathlib
