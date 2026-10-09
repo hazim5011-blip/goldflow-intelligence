@@ -5,6 +5,7 @@ Writes only a dedicated review SQLite database. No MT5 API or GoldFlow import.
 import argparse
 import datetime as dt
 import hashlib
+import hmac
 import json
 import os
 import pathlib
@@ -90,10 +91,10 @@ def check_snapshot(snapshot, now=None):
         raise ValueError("MATURITY_COUNTS_INVALID")
     # No raw account identifiers, broker secrets, emails or credentials are accepted.
     allowed = {"project", "source", "profile", "symbol", "snapshotKind", "canonicalEventId",
-               "publishedAtUTC", "brokerServer", "sourceIntegrity", "t0Evidence", "outcome", "maturity"}
+               "publishedAtUTC", "brokerServer", "sourceIntegrity", "t0Evidence", "outcome", "maturity", "signatureHmac"}
     if set(snapshot) - allowed:
         raise ValueError("UNKNOWN_OR_POTENTIALLY_PRIVATE_FIELDS")
-    return {k: snapshot.get(k) for k in sorted(allowed) if k in snapshot}
+    return {k: snapshot.get(k) for k in sorted(allowed) if k in snapshot and k != "signatureHmac"}
 
 def open_private_db(db_path):
     p = pathlib.Path(db_path).expanduser().resolve()
@@ -147,8 +148,15 @@ def run_review(snapshot, connection, env=None, request_model=None, now=None):
     model = env.get("AAT_GPT_MODEL", "gpt-6-sol")
     if model not in MODEL_CHOICES:
         return {"ok": False, "status": "AAT_MODEL_NOT_ALLOWED", "changesApplied": False}
+    evidence_key = env.get("AAT_GPT_EVIDENCE_KEY", "")
+    if not isinstance(evidence_key, str) or len(evidence_key) < 32:
+        return {"ok": False, "status": "EVIDENCE_SIGNING_KEY_MISSING", "changesApplied": False}
     snap = check_snapshot(snapshot, now=now)
     raw = json.dumps(snap, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    expected = hmac.new(evidence_key.encode("utf-8"), raw.encode("utf-8"), hashlib.sha256).hexdigest()
+    signature = snapshot.get("signatureHmac")
+    if not isinstance(signature, str) or not hmac.compare_digest(signature, expected):
+        return {"ok": False, "status": "EVIDENCE_SIGNATURE_UNVERIFIED", "changesApplied": False}
     fingerprint = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     row = connection.execute("SELECT review_json FROM gpt_review WHERE source_sha256=?", (fingerprint,)).fetchone()
     if row is not None:
@@ -216,7 +224,7 @@ def main():
                  "changesApplied": False, "apiCalled": False}))
             return 0
         with open_private_db(args.db) as conn:
-            result = run_review(checked, conn)
+            result = run_review(snapshot, conn)
         print(json.dumps(result, ensure_ascii=False))
         return 0 if result.get("ok") else 2
     except Exception as exc:
