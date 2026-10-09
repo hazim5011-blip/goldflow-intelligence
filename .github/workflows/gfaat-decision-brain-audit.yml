@@ -1,0 +1,38 @@
+name: GF-AAT Decision Brain Audit
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_DECISION_BRAIN_AUDIT.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect current stable decision brain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-audit && mkdir -p /tmp/gfaat-audit
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-audit
+          ROOT="$(find /tmp/gfaat-audit -maxdepth 1 -mindepth 1 -type d | head -n1)"
+          echo "ROOT=$ROOT"
+          echo '=== BUILD ==='; cat "$ROOT/CURRENT_BUILD.json"
+          echo '=== BRAIN FILES ==='
+          find "$ROOT/aat" -maxdepth 1 -type f | sort | sed "s#^$ROOT/##"
+          echo '=== BLOCKER DEFINITIONS ==='
+          grep -RIn --exclude='*.pyc' -E "MULTI_TF_UNRESOLVED|PRIMARY_STRUCTURE_NEUTRAL|WAIT_PATTERN|NO_MATURE_DIRECTIONAL_SETUP|WAIT_RESOLVE_BLOCKERS|WAIT_CONFLICT|WAIT_MASTER_CAMPAIGN|hard blocker|hard_blocker" "$ROOT/aat" | head -n 700 || true
+          echo '=== SIGNAL PUBLICATION / ENTRY READY ==='
+          grep -RIn --exclude='*.pyc' -E "ENTRY_READY|publish|STANDBY|ACTIVATED|signal|trade_map|entry_zone|build_trade|pre_entry" "$ROOT/aat" | head -n 900 || true
+          echo '=== PROFESSIONAL ANALYST FILES ==='
+          for f in "$ROOT"/aat/*professional* "$ROOT"/aat/*teacher* "$ROOT"/aat/*evidence* "$ROOT"/aat/*campaign* "$ROOT"/aat/*entry* "$ROOT"/aat/*lifecycle*; do
+            [ -f "$f" ] || continue
+            echo "===== FILE: $f ====="
+            sed -n '1,520p' "$f"
+          done
+          echo '=== TESTS MATCHING BLOCKERS ==='
+          grep -RIn -E "MULTI_TF_UNRESOLVED|PRIMARY_STRUCTURE_NEUTRAL|WAIT_PATTERN|NO_MATURE_DIRECTIONAL_SETUP|confirmed activation|ENTRY_READY" "$ROOT/tests" | head -n 800 || true
