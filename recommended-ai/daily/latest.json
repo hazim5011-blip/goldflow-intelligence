@@ -1,0 +1,18 @@
+{
+  "version": "RECOMMENDED_AI_DAILY_ARCHIVE_V1",
+  "updatedAtUTC": null,
+  "reviewDateMYT": null,
+  "symbol": "XAUUSD247",
+  "tf": "M15",
+  "scannedCount": 0,
+  "flagged": [],
+  "scanned": [],
+  "reasoning": {
+    "enabled": false,
+    "status": "WAIT_FIRST_DAILY_REVIEW",
+    "model": null,
+    "summary": "Daily review has not run yet.",
+    "reviews": []
+  },
+  "note": "Daily trigger = P/L Winrate < 50% OR NET PIP < 0."
+}
