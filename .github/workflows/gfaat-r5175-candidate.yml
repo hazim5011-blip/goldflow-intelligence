@@ -24,7 +24,7 @@ jobs:
           ROOT=/tmp/gfaat-r5175/GF_AAT_R5_17_4_STABLE
           test -d "$ROOT"
           cat gf-aat-update/staging/r5175_transform.b64.00 gf-aat-update/staging/r5175_transform.b64.01 gf-aat-update/staging/r5175_transform.b64.02 | base64 -d > /tmp/r5175_transform.py.gz
-          echo 'e4e0db57c8d73bad44aa5afdddc63e7cb5da32bfe1369a4ae76500099e8c7fe6  /tmp/r5175_transform.py.gz' | sha256sum -c -
+          echo 'be89e1af7447b399043a6982d61e5714c80f54a6cfb9d1dc245d91a5d53367e3  /tmp/r5175_transform.py.gz' | sha256sum -c -
           gzip -dc /tmp/r5175_transform.py.gz > /tmp/r5175_transform.py
           python3 -m py_compile /tmp/r5175_transform.py
           python3 /tmp/r5175_transform.py "$ROOT"
