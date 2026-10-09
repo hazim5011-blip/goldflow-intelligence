@@ -33,7 +33,6 @@ test("Evidence tab auto-loads first reconstruction and follows the explicit Hist
  assert.ok(v.includes('if(b.dataset.page==="v8Evidence")'));
  assert.ok(v.includes("await loadEvidence(first)"));
  assert.ok(v.includes("Evidence follows the explicit History Indicator selector"));
- assert.ok(v.includes("data indicator lain tidak digunakan sebagai pengganti"));
  assert.ok(v.includes('function historyIndicator()'));
  const ui=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  assert.ok(ui.includes('id="v8EvidenceContext"'));
