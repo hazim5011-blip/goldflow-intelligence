@@ -242,7 +242,7 @@ test("TradingView Hybrid multi-timeframe fallback paces broker requests sequenti
 });
 
 test("Production bridge v3.0.1 serializes MetaTrader5 access across FastAPI requests",()=>{
- const py=readFileSync(new URL("../bridge/mt5_bridge.py",import.meta.url),"utf8");
+ const py=readFileSync(new URL("../bridge/mt5_bridge.py",import.meta.url),"utf8").replace(/\r\n/g,"\n");
  assert.ok(py.includes('BRIDGE_RUNTIME_VERSION="3.0.1"'));
  assert.ok(py.includes("MT5_LOCK=threading.RLock()"));
  assert.ok(py.includes("def mt5_serialized(fn):"));
