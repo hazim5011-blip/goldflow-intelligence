@@ -7,3 +7,5 @@ Retry: dashboard footer anchor corrected; source bundle SHA unchanged.
 Retry 3: dashboard patch quoting fixed robustly; staged source bundle SHA unchanged.
 
 Retry 4: legacy regression build/version contracts migrated for R5.17.4 full-suite audit.
+
+Retry 5: runtime/restart contracts migrated; causal version test updated without changing performance version.
