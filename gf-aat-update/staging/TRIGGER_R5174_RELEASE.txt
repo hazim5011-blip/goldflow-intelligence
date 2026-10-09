@@ -9,3 +9,5 @@ Retry 3: dashboard patch quoting fixed robustly; staged source bundle SHA unchan
 Retry 4: legacy regression build/version contracts migrated for R5.17.4 full-suite audit.
 
 Retry 5: runtime/restart contracts migrated; causal version test updated without changing performance version.
+
+Retry 6: API contract regression expectations migrated from v15 to v16.
