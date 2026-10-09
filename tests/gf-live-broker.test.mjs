@@ -1,9 +1,10 @@
-// Read-only cross-check of staging GF engine against REAL public Vantage broker proxy.
+// Read-only cross-check of GF engine against the REAL public Cloudflare/Vantage broker proxy.
 // Runs from GitHub Actions; never writes Production, never touches orders or bridge secrets.
 import test from "node:test";
 import assert from "node:assert/strict";
 import {evaluateStudy,normalizedClosedBars} from "../api/_studyEngine.js";
-const BASE="https://goldflow-intelligence.vercel.app",OFFSET=10800;
+import {LIVE_BASE as BASE} from "./_liveBase.mjs";
+const OFFSET=10800;
 async function read(path,timeout=90000){
  const response=await fetch(BASE+path+(path.includes("?")?"&":"?")+"t="+Date.now(),
   {headers:{Accept:"application/json"},signal:AbortSignal.timeout(timeout),cache:"no-store"});
