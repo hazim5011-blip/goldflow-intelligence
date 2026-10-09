@@ -1,6 +1,6 @@
 {
   "version": "RECOMMENDED_AI_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-09T21:01:43.612Z",
+  "updatedAtUTC": "2026-10-09T22:56:14.661Z",
   "heartbeat": "OK",
   "primarySymbol": "XAUUSD247",
   "primaryTF": "M15",
@@ -9,15 +9,15 @@
     "strategy": "technical indicator batches rotate; every technical indicator revisited within about 4 hours; GF-News captures news + macro/regime context every hourly cycle"
   },
   "lastBatch": {
-    "batchIndex": 1,
+    "batchIndex": 2,
     "indicators": [
-      "pvtchart101",
-      "pattern132",
-      "snd107",
+      "owl101",
+      "fund104",
+      "gf-ai",
       "gf-news"
     ],
-    "completed": 3,
-    "failed": 1
+    "completed": 4,
+    "failed": 0
   },
   "recommendations": {
     "105|XAUUSD247|M15": {
@@ -1740,8 +1740,8 @@
     "OWL101|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "owl101-XAUUSD247-M15-202610091832",
-      "generatedAtUTC": "2026-10-09T18:32:23.246Z",
+      "recommendationId": "owl101-XAUUSD247-M15-202610092255",
+      "generatedAtUTC": "2026-10-09T22:55:42.095Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "owl101",
@@ -1749,8 +1749,8 @@
       "profileKey": "owl101|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-18T16:45:00.000Z",
-        "endUTC": "2026-10-09T18:15:00.000Z",
+        "startUTC": "2026-08-18T21:00:00.000Z",
+        "endUTC": "2026-10-09T22:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -1841,7 +1841,7 @@
         "avgLossRiskATR": 1.707,
         "avgWinRiskATR": 1.886,
         "avgLossScore": 86.4,
-        "avgWinScore": 78.7
+        "avgWinScore": 78.1
       },
       "recommendation": {
         "summary": [
@@ -2077,8 +2077,8 @@
     "FUND104|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "fund104-XAUUSD247-M15-202610091832",
-      "generatedAtUTC": "2026-10-09T18:32:26.746Z",
+      "recommendationId": "fund104-XAUUSD247-M15-202610092255",
+      "generatedAtUTC": "2026-10-09T22:55:57.236Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "fund104",
@@ -2086,8 +2086,8 @@
       "profileKey": "fund104|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-18T16:45:00.000Z",
-        "endUTC": "2026-10-09T18:15:00.000Z",
+        "startUTC": "2026-08-18T21:00:00.000Z",
+        "endUTC": "2026-10-09T22:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -2415,8 +2415,8 @@
     "GF-AI|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-ai-XAUUSD247-M15-202610091832",
-      "generatedAtUTC": "2026-10-09T18:32:29.925Z",
+      "recommendationId": "gf-ai-XAUUSD247-M15-202610092256",
+      "generatedAtUTC": "2026-10-09T22:56:00.500Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-ai",
@@ -2424,8 +2424,8 @@
       "profileKey": "gf-ai|XAUUSD247",
       "historyMode": "GF_CLOSED_CANDLE_NEXT_OPEN_REPLAY",
       "dataWindow": {
-        "startUTC": "2026-10-07T11:45:00.000Z",
-        "endUTC": "2026-10-09T18:15:00.000Z",
+        "startUTC": "2026-10-07T16:00:00.000Z",
+        "endUTC": "2026-10-09T22:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 219,
@@ -2551,8 +2551,8 @@
     "GF-NEWS|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-news-XAUUSD247-M15-202610092101",
-      "generatedAtUTC": "2026-10-09T21:01:32.114Z",
+      "recommendationId": "gf-news-XAUUSD247-M15-202610092256",
+      "generatedAtUTC": "2026-10-09T22:56:03.241Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-news",
@@ -2560,8 +2560,8 @@
       "profileKey": "gf-news|XAUUSD247",
       "historyMode": "GF_NEWS_FORWARD_ARCHIVE",
       "dataWindow": {
-        "startUTC": "2026-10-07T11:45:00.000Z",
-        "endUTC": "2026-10-09T20:45:00.000Z",
+        "startUTC": "2026-10-07T13:30:00.000Z",
+        "endUTC": "2026-10-09T22:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 229,
@@ -2684,7 +2684,7 @@
       },
       "rollback": null,
       "newsMacroSnapshot": {
-        "capturedAtUTC": "2026-10-09T21:01:32.443Z",
+        "capturedAtUTC": "2026-10-09T22:56:03.581Z",
         "macro": {
           "regime": {
             "name": "REFLATION",
@@ -2722,20 +2722,20 @@
             ],
             "notes": [
               "CPI direct BLS and release fallback unavailable.",
+              "CUUR0000SA0: HTTP 520",
               "LNS14000000: HTTP 520",
               "CES0000000001: HTTP 520",
-              "CUUR0000SA0: HTTP 520",
               "Windows-source diagnostics: BLS_BATCH, BLS_CES0000000001, BLS_LNS14000000, BLS_CUUR0000SA0, FRED_CES0000000001, FRED_LNS14000000, FRED_CUUR0000SA0"
             ],
             "secondaryMirror": [],
             "primarySourceHealth": "DEGRADED",
             "strictPrimaryReady": false
           },
-          "fetchedAtUTC": "2026-10-09T21:01:42.097Z"
+          "fetchedAtUTC": "2026-10-09T22:56:13.127Z"
         },
         "worldNews": {
-          "updatedAtUTC": "2026-10-09T21:01:32.556Z",
-          "sourceStatus": "AVAILABLE",
+          "updatedAtUTC": "2026-10-09T22:56:03.726Z",
+          "sourceStatus": "PARTIAL",
           "openingRisk": {
             "status": "SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED",
             "labelMS": "POTENSI GAP NAIK SAFE-HAVEN • BELUM CONFIRM",
@@ -2756,6 +2756,26 @@
             "limitation": "Source-attributed pre-open risk scenario only. A geopolitical headline is not a confirmed gap or price direction; USD, yields, energy and first CLOSED broker candles can contradict it."
           },
           "items": [
+            {
+              "id": "feed-8ae412f",
+              "publisher": "The Guardian",
+              "title": "Zelenskyy denounces Trump’s decision to lift diesel sanctions on Russia as ‘weak’ – US politics live",
+              "publishedAtUTC": "2026-10-09T22:45:44.000Z",
+              "category": "GEOPOLITICS",
+              "impact": "MEDIUM",
+              "sourceUrl": "https://www.theguardian.com/us-news/live/2026/oct/09/pentagon-fort-hood-livestream-firing-squad-execution-reaction-backlash-pete-hegseth-donald-trump-mussolini-latest-news-updates",
+              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+            },
+            {
+              "id": "feed-1cadca2",
+              "publisher": "Al Jazeera English",
+              "title": "UN envoy warns Yemen has returned to ‘full-scale war’, urges dialogue",
+              "publishedAtUTC": "2026-10-09T20:56:01.000Z",
+              "category": "GEOPOLITICS",
+              "impact": "HIGH",
+              "sourceUrl": "https://www.aljazeera.com/news/2026/10/9/un-envoy-warns-yemen-has-returned-to-full-scale-war-urges-dialogue?traffic_source=rss",
+              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+            },
             {
               "id": "feed-e1c5c19e",
               "publisher": "Al Jazeera English",
@@ -2807,26 +2827,6 @@
               "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
             },
             {
-              "id": "feed-cadec361",
-              "publisher": "Al Jazeera English",
-              "title": "Trump launches probe into Federal Reserve Governor Lisa Cook",
-              "publishedAtUTC": "2026-10-09T16:01:37.000Z",
-              "category": "MONETARY_POLICY",
-              "impact": "MEDIUM",
-              "sourceUrl": "https://www.aljazeera.com/economy/2026/10/9/trump-launches-probe-into-federal-reserve-governor-lisa-cook?traffic_source=rss",
-              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
-            },
-            {
-              "id": "feed-343cfeb6",
-              "publisher": "Al Jazeera English",
-              "title": "‘Rogue court’: US sanctions ICC hours after ex-judge wins Nobel Prize",
-              "publishedAtUTC": "2026-10-09T15:59:04.000Z",
-              "category": "GEOPOLITICS",
-              "impact": "MEDIUM",
-              "sourceUrl": "https://www.aljazeera.com/video/newsfeed/2026/10/9/rogue-court-us-sanctions-icc-hours-after-ex-judge-wins-nobel-prize?traffic_source=rss",
-              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
-            },
-            {
               "id": "feed-4d92b39e",
               "publisher": "The Guardian",
               "title": "US imposes sanctions on ICC, hours after former judge Pillay wins Nobel peace prize – as it happened",
@@ -2867,26 +2867,6 @@
               "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
             },
             {
-              "id": "feed-26da792e",
-              "publisher": "Al Jazeera",
-              "title": "The Hormuz bonus: Sailor salaries soar for transits amid Iran war - Al Jazeera",
-              "publishedAtUTC": "2026-10-08T13:52:56.000Z",
-              "category": "GEOPOLITICS",
-              "impact": "HIGH",
-              "sourceUrl": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxPX05aSmp4UEJIZzQtaEliRVh5ZXZ5aWlVcVhGUHIyYWVJTkdYR3BBTzVMRGotdkFxbUZrMlJCOXJHMjM3S0JhUk5FVWdLWDEyLWJ3azY1aWRsUDRFTWxZaW5adHp4T0N0bk9wS2k5bWtyMEpqY0J0cHM1U3VLbnFqd3JRUWw5aEZ5d3ZSNEhQSTY0R1VBT2lnM1NJT3k3QmRVRzdOSnhtQ0fSAa4BQVVfeXFMTjNnZW94cExjY0pHTDd1QkQ0U3FyQW5IQkVrMkFlamxZb0c1bGE2WHY4Wms4LURUYXl6XzlPbFludjBaT0E1TTlTT0prVERwdVBaemllNUNHVFRfWFBJUUJ4SGRWV2Q0bTBUZjdSZHNVYWI1UzNic3JPTmVGcmIyU0Z5NlBtMVU2eDFjVW5GcF9WSlZkUUFGWGhFb0drWV9oRzNKWERKNVNqR3E3MjJ3?oc=5",
-              "verification": "PUBLISHER_HEADLINE_VIA_GOOGLE_NEWS"
-            },
-            {
-              "id": "feed-3ac86154",
-              "publisher": "The Economic Times",
-              "title": "Saudi, UAE join Japan-led push to bolster Asian oil buffers - The Economic Times",
-              "publishedAtUTC": "2026-10-08T13:33:00.000Z",
-              "category": "ENERGY_SUPPLY",
-              "impact": "LOW",
-              "sourceUrl": "https://news.google.com/rss/articles/CBMi3wFBVV95cUxQbDVDQUViT2puMHB2ZXlKS1FQMG14WmozNWZNS3JqOERoVWQxVnpqaXg1SjhRODJVTDhkRmEwZmxqMlZQSXhUVVkzTlBOQ3UxZFlfNnRHY3FHVkJGT0ZqcmhOaFloNmRYZk5iY0t2c3dXUjZXSFJadk1WWU9XbXJDMEtjcFNsUnI2T0l3b3RMRVhFT1hBcHBDYWo4a3lidl9KcWozZ3U5ZjRMMjZUTGR5cUhzRHBZMi1KRHNOMEk1OXRPMG1STXpidDBhcWVPX2E3Z0xrZ3JibkpzVTBpOXkw0gHfAUFVX3lxTFBsNUNBRWJPam4wcHZleUpLUVAwbXhaajM1Zk1Lcmo4RGhVZDFWemppeDVKOFE4MlVMOGRGYTBmbGoyVlBJeFRVWTNOUE5DdTFkWV82dEdjcUdWQkZPRmpyaE5oWWg2ZFhmTmJjS3Zzd1dSNldIUlp2TVZZT1dtckMwS2NwU2xScjZPSXdvdExFWEVPWEFwcENhajhreWJ2X0pxajNndTlmNEwyNlRMZHlxSHNEcFkyLUpEc04wSTU5dE8wbVJNemJ0MGFxZU9fYTdnTGtncmJuSnNVMGk5eTA?oc=5",
-              "verification": "PUBLISHER_HEADLINE_VIA_GOOGLE_NEWS"
-            },
-            {
               "id": "feed-8a65ce5a",
               "publisher": "The Guardian",
               "title": "Oil prices jump 5% on Middle East tensions and US hurricane threat",
@@ -2895,16 +2875,6 @@
               "impact": "LOW",
               "sourceUrl": "https://www.theguardian.com/business/2026/oct/08/oil-prices-rise-middle-east-tensions-us-hurricane-threat",
               "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
-            },
-            {
-              "id": "feed-2270c0c8",
-              "publisher": "Reuters",
-              "title": "Hormuz transits at lowest in over two months after attacks, data shows - Reuters",
-              "publishedAtUTC": "2026-10-08T03:39:00.000Z",
-              "category": "GEOPOLITICS",
-              "impact": "HIGH",
-              "sourceUrl": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOdnAtMmE4Vi10TWlqTFQ0MkFXdzJCNlQzYlFSbXBkOVg5YW9Qd0YwcG5vZnVQS21ETGdLVnllV2RxRFZmZUZyaV8xZWtzVXNLMUxVV1BhQXc3Qm4wVjFaOTB4US1mR0MwWmxoTzdvSV9tUmxvbkx6cWppUkZPMnpHaXNPWjBTMmhBN1p5NDhmSkI1VWtiNEJQcjJLbEJPa2Jhc1VqLWNhR19JcEFkZk5kTmRjaEFnUQ?oc=5",
-              "verification": "PUBLISHER_HEADLINE_VIA_GOOGLE_NEWS"
             },
             {
               "id": "feed-7a644e73",
