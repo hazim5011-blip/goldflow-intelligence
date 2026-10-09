@@ -1,0 +1,35 @@
+name: GF-AAT R5.17.4 Source Inspection
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5174_INSPECT.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify stable and inspect source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          m=json.loads(pathlib.Path('gf-aat-update/stable.json').read_text())
+          p=pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual==m['sha256'],(actual,m['sha256'])
+          print('STABLE',m)
+          PY
+          rm -rf /tmp/gfaat-inspect && mkdir -p /tmp/gfaat-inspect
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-inspect
+          ROOT="$(find /tmp/gfaat-inspect -mindepth 1 -maxdepth 1 -type d | head -1)"
+          echo "ROOT=$ROOT"
+          echo "=== SOURCE TREE ==="
+          find "$ROOT" -maxdepth 3 -type f | sed "s#^$ROOT/##" | sort
+          echo "=== OPENAI/AI/NEWS/MACRO REFERENCES ==="
+          grep -RInE "OPENAI|OpenAI|news|macro|Recorded World|Causal Macro|AI Analyst|Mentor|Responses API|requests\.get|httpx|urllib|feed|rss" "$ROOT/aat" "$ROOT"/*.py "$ROOT"/*.md 2>/dev/null | head -1200 || true
