@@ -1,0 +1,172 @@
+name: GF-AAT R5.17.3 Stable Safe Release
+
+on:
+  push:
+    paths:
+      - 'gf-aat-update/staging/TRIGGER_R5173_RELEASE.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify current R5.17.2 stable baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          m=json.loads(pathlib.Path('gf-aat-update/stable.json').read_text(encoding='utf-8'))
+          assert m['channel']=='stable',m
+          assert m['version']=='1.6.3-r5.17.2',m
+          assert m['build_id']=='gf-aat-1.6.3-r5.17.2-outcome-calibrated-technical-evidence',m
+          assert m['restart_cmd']=='RESTART_GF_AAT_R5_17_2.bat',m
+          p=pathlib.Path('gf-aat-update/GF_AAT_STABLE.zip')
+          actual=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert actual==m['sha256'],(actual,m['sha256'])
+          print('R5.17.2 stable baseline verified:',actual)
+          PY
+
+      - name: Reconstruct and verify audited R5.17.3 patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gfaat-r5173 /tmp/r5173.patch.gz /tmp/r5173.patch /tmp/GF_AAT_STABLE.zip
+          mkdir -p /tmp/gfaat-r5173
+          cat gf-aat-update/staging/r5173.b64.* | base64 -d > /tmp/r5173.patch.gz
+          echo '7e9fe1cef2b32524cede0c855cf349cdea1df8f19fe7a233feb2c5e15b137f74  /tmp/r5173.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/r5173.patch.gz > /tmp/r5173.patch
+          echo 'c3ad0405c9833a529bd17e94e814f8e067dcdeeff4499c6e1457362688289500  /tmp/r5173.patch' | sha256sum -c -
+
+      - name: Build R5.17.3 from official R5.17.2 stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5173
+          test -d /tmp/gfaat-r5173/GF_AAT_R5_17_2_STABLE
+          cd /tmp/gfaat-r5173/GF_AAT_R5_17_2_STABLE
+          patch --batch -p2 < /tmp/r5173.patch
+          python3 - <<'PY'
+          import json,pathlib
+          expected='gf-aat-1.6.3-r5.17.3-structural-entry-geometry'
+          b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text(encoding='utf-8'))
+          assert b.get('version')=='1.6.3-r5.17.3',b
+          assert b.get('runtime_revision')=='R5.17.3',b
+          assert b.get('build_id')==expected,b
+          assert b.get('restart_cmd')=='RESTART_GF_AAT_R5_17_3.bat',b
+          assert b.get('research_only') is True,b
+          assert int(b.get('orders_sent',-1))==0,b
+          print('R5.17.3 exact-build contract verified:',expected)
+          PY
+
+      - name: Install test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check -r /tmp/gfaat-r5173/GF_AAT_R5_17_2_STABLE/requirements.txt
+
+      - name: Run full R5.17.3 test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5173/GF_AAT_R5_17_2_STABLE
+          python3 -m pytest -q | tee /tmp/gfaat-r5173-pytest.txt
+          grep -Eq '207 passed' /tmp/gfaat-r5173-pytest.txt
+
+      - name: Verify research-only safety and package stable ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/gfaat-r5173/GF_AAT_R5_17_2_STABLE
+          PYTHONPATH=. python3 - <<'PY'
+          import ast,json,pathlib
+          b=json.loads(pathlib.Path('CURRENT_BUILD.json').read_text(encoding='utf-8'))
+          assert b['build_id']=='gf-aat-1.6.3-r5.17.3-structural-entry-geometry'
+          assert b['research_only'] is True and int(b['orders_sent'])==0
+          bad=[]
+          for p in pathlib.Path('aat').rglob('*.py'):
+              tree=ast.parse(p.read_text(encoding='utf-8',errors='ignore'),filename=str(p))
+              for n in ast.walk(tree):
+                  if not isinstance(n,ast.Call): continue
+                  f=n.func
+                  if isinstance(f,ast.Name) and f.id=='order_send': bad.append((str(p),n.lineno))
+                  elif isinstance(f,ast.Attribute) and f.attr=='order_send': bad.append((str(p),n.lineno))
+          assert not bad,f'Real broker order_send calls detected: {bad}'
+          from aat.entry_geometry import VERSION as G
+          from aat.pre_entry_study import VERSION as P
+          from aat.scalping_campaign import VERSION as S
+          assert G=='GF-AAT-STRUCTURAL-ENTRY-GEOMETRY-1.0.0'
+          assert P=='GF-AAT-PRE-ENTRY-MARKET-STUDY-1.4.0'
+          assert S=='GF-AAT-SCALPING-CAMPAIGN-1.2.0'
+          print('Safety contract PASS: Research/Paper Only; no order_send() calls')
+          print('Structural geometry component contracts PASS')
+          PY
+          rm -rf .venv data logs backups _updates .pytest_cache
+          find . -type d -name __pycache__ -prune -exec rm -rf {} +
+          rm -f .env
+          cd /tmp/gfaat-r5173
+          mv GF_AAT_R5_17_2_STABLE GF_AAT_R5_17_3_STABLE
+          zip -qr /tmp/GF_AAT_STABLE.zip GF_AAT_R5_17_3_STABLE
+          unzip -t /tmp/GF_AAT_STABLE.zip >/dev/null
+          python3 - <<'PY'
+          import pathlib,zipfile
+          forbidden_names={'.env'}
+          forbidden_dirs={'data','logs','backups','_updates','.venv','.pytest_cache','__pycache__'}
+          required={
+            'GF_AAT_R5_17_3_STABLE/GF_AAT_UPDATE.cmd',
+            'GF_AAT_R5_17_3_STABLE/RESTART_GF_AAT_R5_17_3.bat',
+            'GF_AAT_R5_17_3_STABLE/VERIFY_GF_AAT_R5_17_3.bat',
+            'GF_AAT_R5_17_3_STABLE/CURRENT_BUILD.json',
+            'GF_AAT_R5_17_3_STABLE/aat/entry_geometry.py',
+            'GF_AAT_R5_17_3_STABLE/aat/technical_evidence.py',
+            'GF_AAT_R5_17_3_STABLE/aat/technical_evidence_learning.py',
+            'GF_AAT_R5_17_3_STABLE/R5_17_3_STRUCTURAL_ENTRY_GEOMETRY.md',
+          }
+          bad=[]
+          with zipfile.ZipFile('/tmp/GF_AAT_STABLE.zip') as z:
+              names=set(z.namelist())
+              for name in names:
+                  parts=pathlib.PurePosixPath(name).parts
+                  if any(p in forbidden_dirs for p in parts): bad.append(name)
+                  elif parts and parts[-1] in forbidden_names: bad.append(name)
+              missing=sorted(required-names)
+          assert not bad,bad[:20]
+          assert not missing,missing
+          print('Persistent-state exclusion PASS')
+          print('Required R5.17.3 files PASS')
+          PY
+
+      - name: Publish R5.17.3 stable manifest and package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/GF_AAT_STABLE.zip gf-aat-update/GF_AAT_STABLE.zip
+          HASH="$(sha256sum gf-aat-update/GF_AAT_STABLE.zip | awk '{print $1}')"
+          cat > gf-aat-update/stable.json <<EOF
+          {
+            "channel": "stable",
+            "version": "1.6.3-r5.17.3",
+            "build_id": "gf-aat-1.6.3-r5.17.3-structural-entry-geometry",
+            "package_url": "https://raw.githubusercontent.com/hazim5011-blip/goldflow-intelligence/main/gf-aat-update/GF_AAT_STABLE.zip",
+            "sha256": "$HASH",
+            "restart_cmd": "RESTART_GF_AAT_R5_17_3.bat",
+            "minimum_updater": 2
+          }
+          EOF
+          python3 -m json.tool gf-aat-update/stable.json >/dev/null
+          echo "Published candidate SHA256: $HASH"
+
+      - name: Commit stable channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gf-aat-update/GF_AAT_STABLE.zip gf-aat-update/stable.json
+          git diff --cached --quiet && { echo 'No stable changes to publish'; exit 1; }
+          git commit -m "Publish GF-AAT R5.17.3 structural entry geometry stable update"
+          git push
