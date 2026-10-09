@@ -1,1 +1,1 @@
-Run GF-AAT R5.17.6 candidate after release contract alignment.
+Run GF-AAT R5.17.6 candidate after runtime revision alignment.
