@@ -38,32 +38,16 @@ jobs:
           unzip -q gf-aat-update/GF_AAT_STABLE.zip -d /tmp/gfaat-r5176
           ROOT=/tmp/gfaat-r5176/GF_AAT_R5_17_5_STABLE
           test -d "$ROOT"
-          python3 - <<'PY'
-          import hashlib,pathlib
-          expected={
-            '00':'41623f924d773768cfe93d1b57e251b18166178d5101e9edd8fd59827e0702c3',
-            '01':'4f98bfcd3c7a72717518f01c8349f497db00671d36da4c2fa3d5b383272cc72c',
-            '02':'bbf09fdb49aa4342b9c47bf2ceb42c07a5f8eb548bb7d9288a2f6fe89a7701d0',
-            '03':'93ae4f92cda92293c37716ee0fbe87135467feb18386f9db4f29fcc2d4b759bf'}
-          out=[]
-          for suffix,want in expected.items():
-              p=pathlib.Path('gf-aat-update/staging/r5176_transform.b64.'+suffix)
-              s=p.read_text(encoding='ascii').strip()
-              def h(x): return hashlib.sha256(x.encode('ascii')).hexdigest()
-              if h(s)!=want:
-                  fixed=None
-                  for i in range(len(s)):
-                      t=s[:i]+s[i+1:]
-                      if h(t)==want:
-                          fixed=t
-                          print('normalized staging chunk',suffix,'removed index',i)
-                          break
-                  if fixed is None:
-                      raise SystemExit('chunk '+suffix+' checksum cannot be normalized')
-                  s=fixed
-              out.append(s)
-          pathlib.Path('/tmp/r5176_transform.b64').write_text(''.join(out),encoding='ascii')
-          PY
+          echo '41623f924d773768cfe93d1b57e251b18166178d5101e9edd8fd59827e0702c3  gf-aat-update/staging/r5176_transform.b64.00' | sha256sum -c -
+          echo '4f98bfcd3c7a72717518f01c8349f497db00671d36da4c2fa3d5b383272cc72c  gf-aat-update/staging/r5176_transform.b64.01' | sha256sum -c -
+          echo 'cbb6a29d0bfd22278cb1a1382b6e67f724cc79ff84ab6a865ccf726e9a2b0dfd  gf-aat-update/staging/r5176x02.0' | sha256sum -c -
+          echo 'c51ed49df1ac172b3663954efa840e7eee9b013793d78e63e072d797e637cef4  gf-aat-update/staging/r5176x02.1' | sha256sum -c -
+          echo 'cd5b9f839ce12ed2801627c336e698e4575c799d906ab610989a797a261d6cc8  gf-aat-update/staging/r5176x02.2' | sha256sum -c -
+          echo '4a9fdc68f7502234adb4cc382fe3f0d1a97212702ceffab12bd2d14e3a092771  gf-aat-update/staging/r5176x02.3' | sha256sum -c -
+          echo '45fd9209514da1e0ab3dec323491f964ff1f07c052b9326e4ddf6ca2b91a1c9d  gf-aat-update/staging/r5176x03.0' | sha256sum -c -
+          echo '8b0b84e547f8285e01df7f972323f9e958f6909e5b35a31cfcbc4fe15eef1ba6  gf-aat-update/staging/r5176x03.1' | sha256sum -c -
+          echo 'e9874935366619dcafbfb2b9565f721960fd7eb2949c87f98f4e6b3f1fda2333  gf-aat-update/staging/r5176x03.2' | sha256sum -c -
+          cat gf-aat-update/staging/r5176_transform.b64.00 gf-aat-update/staging/r5176_transform.b64.01 gf-aat-update/staging/r5176x02.0 gf-aat-update/staging/r5176x02.1 gf-aat-update/staging/r5176x02.2 gf-aat-update/staging/r5176x02.3 gf-aat-update/staging/r5176x03.0 gf-aat-update/staging/r5176x03.1 gf-aat-update/staging/r5176x03.2 > /tmp/r5176_transform.b64
           base64 -d /tmp/r5176_transform.b64 > /tmp/r5176_transform.py.gz
           echo '114618d8d8947be586a00989b3055b66400c1f825f5379c3328193e3ce1adc3f  /tmp/r5176_transform.py.gz' | sha256sum -c -
           gzip -dc /tmp/r5176_transform.py.gz > /tmp/r5176_transform.py
