@@ -28,6 +28,18 @@ jobs:
           gzip -dc /tmp/r5175_transform.py.gz > /tmp/r5175_transform.py
           python3 -m py_compile /tmp/r5175_transform.py
           python3 /tmp/r5175_transform.py "$ROOT"
+          python3 - "$ROOT" <<'PY'
+          import pathlib,sys
+          root=pathlib.Path(sys.argv[1])
+          p=root/'aat/web.py'
+          s=p.read_text(encoding='utf-8').replace('1.6.3-r5.17.4','1.6.3-r5.17.5')
+          p.write_text(s,encoding='utf-8')
+          for p in (root/'tests').glob('test_*.py'):
+              s=p.read_text(encoding='utf-8')
+              s=s.replace('GF-AAT-PRE-ENTRY-MARKET-STUDY-1.4.0','GF-AAT-PRE-ENTRY-MARKET-STUDY-1.5.0')
+              p.write_text(s,encoding='utf-8')
+          print('Runtime/component contract refresh applied')
+          PY
 
       - name: Install dependencies
         shell: bash
