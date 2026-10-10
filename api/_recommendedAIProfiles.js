@@ -13,7 +13,7 @@ const canonSymbol=s=>String(s||"*").trim().toUpperCase()||"*";
 
 export const RECOMMENDED_AI_PROFILE_STATE=Object.freeze({
   "version": 1,
-  "updatedAtUTC": "2026-10-10T00:55:55.499Z",
+  "updatedAtUTC": "2026-10-10T02:48:41.289Z",
   "policy": "AUTO_PROMOTION_ONLY_AFTER_OOS_GATE",
   "profiles": {}
 });

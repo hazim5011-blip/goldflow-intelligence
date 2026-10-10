@@ -1,6 +1,6 @@
 {
   "version": "RECOMMENDED_AI_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-10T00:55:55.499Z",
+  "updatedAtUTC": "2026-10-10T02:48:41.289Z",
   "heartbeat": "OK",
   "primarySymbol": "XAUUSD247",
   "primaryTF": "M15",
@@ -9,11 +9,11 @@
     "strategy": "technical indicator batches rotate; every technical indicator revisited within about 4 hours; GF-News captures news + macro/regime context every hourly cycle"
   },
   "lastBatch": {
-    "batchIndex": 0,
+    "batchIndex": 2,
     "indicators": [
-      "105",
-      "103",
-      "pvt102",
+      "owl101",
+      "fund104",
+      "gf-ai",
       "gf-news"
     ],
     "completed": 4,
@@ -1740,8 +1740,8 @@
     "OWL101|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "owl101-XAUUSD247-M15-202610092255",
-      "generatedAtUTC": "2026-10-09T22:55:42.095Z",
+      "recommendationId": "owl101-XAUUSD247-M15-202610100248",
+      "generatedAtUTC": "2026-10-10T02:48:11.105Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "owl101",
@@ -1749,8 +1749,8 @@
       "profileKey": "owl101|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-18T21:00:00.000Z",
-        "endUTC": "2026-10-09T22:30:00.000Z",
+        "startUTC": "2026-08-19T01:00:00.000Z",
+        "endUTC": "2026-10-10T02:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -1841,7 +1841,7 @@
         "avgLossRiskATR": 1.707,
         "avgWinRiskATR": 1.886,
         "avgLossScore": 86.4,
-        "avgWinScore": 78.1
+        "avgWinScore": 77.5
       },
       "recommendation": {
         "summary": [
@@ -2077,8 +2077,8 @@
     "FUND104|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "fund104-XAUUSD247-M15-202610092255",
-      "generatedAtUTC": "2026-10-09T22:55:57.236Z",
+      "recommendationId": "fund104-XAUUSD247-M15-202610100248",
+      "generatedAtUTC": "2026-10-10T02:48:27.383Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "fund104",
@@ -2086,8 +2086,8 @@
       "profileKey": "fund104|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-18T21:00:00.000Z",
-        "endUTC": "2026-10-09T22:30:00.000Z",
+        "startUTC": "2026-08-19T01:00:00.000Z",
+        "endUTC": "2026-10-10T02:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -2118,7 +2118,7 @@
       },
       "baseline": {
         "all": {
-          "totalSignals": 1,
+          "totalSignals": 2,
           "completed": 1,
           "strictDenominator": 1,
           "strictWR": 100,
@@ -2131,7 +2131,7 @@
           "negative": 0,
           "beZero": 0,
           "ambiguous": 0,
-          "pending": 0,
+          "pending": 1,
           "strictBasis": "PIP"
         },
         "training": {
@@ -2152,20 +2152,20 @@
           "strictBasis": "PIP"
         },
         "validation": {
-          "totalSignals": 0,
+          "totalSignals": 1,
           "completed": 0,
           "strictDenominator": 0,
           "strictWR": null,
           "signalWR": null,
-          "winPip": null,
-          "lossPip": null,
+          "winPip": 0,
+          "lossPip": 0,
           "netPip": null,
           "totalR": null,
           "positive": 0,
           "negative": 0,
           "beZero": 0,
           "ambiguous": 0,
-          "pending": 0,
+          "pending": 1,
           "strictBasis": null
         }
       },
@@ -2213,7 +2213,7 @@
             "t3FallbackR": 3
           },
           "all": {
-            "totalSignals": 1,
+            "totalSignals": 2,
             "completed": 1,
             "strictDenominator": 1,
             "strictWR": 100,
@@ -2226,29 +2226,29 @@
             "negative": 0,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 1,
-            "completed": 1,
-            "strictDenominator": 1,
-            "strictWR": 100,
-            "signalWR": 100,
-            "winPip": 130.7,
+            "completed": 0,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": 0,
             "lossPip": 0,
-            "netPip": 130.7,
-            "totalR": 0.922,
-            "positive": 1,
+            "netPip": null,
+            "totalR": null,
+            "positive": 0,
             "negative": 0,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
-            "strictBasis": "PIP"
+            "pending": 1,
+            "strictBasis": null
           },
           "delta": {
-            "strictWRDelta": 100,
-            "netPipDelta": 130.7
+            "strictWRDelta": 0,
+            "netPipDelta": 0
           },
           "gate": {
             "pass": false,
@@ -2279,7 +2279,7 @@
             "t3FallbackR": 3
           },
           "all": {
-            "totalSignals": 1,
+            "totalSignals": 2,
             "completed": 1,
             "strictDenominator": 1,
             "strictWR": 100,
@@ -2292,29 +2292,29 @@
             "negative": 0,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 1,
-            "completed": 1,
-            "strictDenominator": 1,
-            "strictWR": 100,
-            "signalWR": 100,
-            "winPip": 130.7,
+            "completed": 0,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": 0,
             "lossPip": 0,
-            "netPip": 130.7,
-            "totalR": 0.922,
-            "positive": 1,
+            "netPip": null,
+            "totalR": null,
+            "positive": 0,
             "negative": 0,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
-            "strictBasis": "PIP"
+            "pending": 1,
+            "strictBasis": null
           },
           "delta": {
-            "strictWRDelta": 100,
-            "netPipDelta": 130.7
+            "strictWRDelta": 0,
+            "netPipDelta": 0
           },
           "gate": {
             "pass": false,
@@ -2346,7 +2346,7 @@
             "t3FallbackR": 2.85
           },
           "all": {
-            "totalSignals": 1,
+            "totalSignals": 2,
             "completed": 1,
             "strictDenominator": 1,
             "strictWR": 100,
@@ -2359,29 +2359,29 @@
             "negative": 0,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 1,
-            "completed": 1,
-            "strictDenominator": 1,
-            "strictWR": 100,
-            "signalWR": 100,
-            "winPip": 130.7,
+            "completed": 0,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": 0,
             "lossPip": 0,
-            "netPip": 130.7,
-            "totalR": 0.922,
-            "positive": 1,
+            "netPip": null,
+            "totalR": null,
+            "positive": 0,
             "negative": 0,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
-            "strictBasis": "PIP"
+            "pending": 1,
+            "strictBasis": null
           },
           "delta": {
-            "strictWRDelta": 100,
-            "netPipDelta": 130.7
+            "strictWRDelta": 0,
+            "netPipDelta": 0
           },
           "gate": {
             "pass": false,
@@ -2415,8 +2415,8 @@
     "GF-AI|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-ai-XAUUSD247-M15-202610092256",
-      "generatedAtUTC": "2026-10-09T22:56:00.500Z",
+      "recommendationId": "gf-ai-XAUUSD247-M15-202610100248",
+      "generatedAtUTC": "2026-10-10T02:48:30.522Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-ai",
@@ -2424,8 +2424,8 @@
       "profileKey": "gf-ai|XAUUSD247",
       "historyMode": "GF_CLOSED_CANDLE_NEXT_OPEN_REPLAY",
       "dataWindow": {
-        "startUTC": "2026-10-07T16:00:00.000Z",
-        "endUTC": "2026-10-09T22:30:00.000Z",
+        "startUTC": "2026-10-07T20:00:00.000Z",
+        "endUTC": "2026-10-10T02:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 219,
@@ -2551,8 +2551,8 @@
     "GF-NEWS|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-news-XAUUSD247-M15-202610100055",
-      "generatedAtUTC": "2026-10-10T00:55:47.636Z",
+      "recommendationId": "gf-news-XAUUSD247-M15-202610100248",
+      "generatedAtUTC": "2026-10-10T02:48:33.874Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-news",
@@ -2560,8 +2560,8 @@
       "profileKey": "gf-news|XAUUSD247",
       "historyMode": "GF_NEWS_FORWARD_ARCHIVE",
       "dataWindow": {
-        "startUTC": "2026-10-07T15:30:00.000Z",
-        "endUTC": "2026-10-10T00:30:00.000Z",
+        "startUTC": "2026-10-07T17:30:00.000Z",
+        "endUTC": "2026-10-10T02:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 229,
@@ -2684,7 +2684,7 @@
       },
       "rollback": null,
       "newsMacroSnapshot": {
-        "capturedAtUTC": "2026-10-10T00:55:48.404Z",
+        "capturedAtUTC": "2026-10-10T02:48:34.182Z",
         "macro": {
           "regime": {
             "name": "REFLATION",
@@ -2717,10 +2717,10 @@
             "primarySourceHealth": "RECOVERED_OFFICIAL_VIA_LOCAL_BRIDGE",
             "strictPrimaryReady": true
           },
-          "fetchedAtUTC": "2026-10-10T00:55:49.723Z"
+          "fetchedAtUTC": "2026-10-10T02:48:35.137Z"
         },
         "worldNews": {
-          "updatedAtUTC": "2026-10-10T00:55:48.488Z",
+          "updatedAtUTC": "2026-10-10T02:48:34.275Z",
           "sourceStatus": "PARTIAL",
           "openingRisk": {
             "status": "SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED",
@@ -2743,10 +2743,10 @@
           },
           "items": [
             {
-              "id": "feed-5b5d0ce6",
+              "id": "feed-459ce935",
               "publisher": "The Guardian",
-              "title": "‘I want to thank President Putin’, Trump says after agreeing to lift sanctions on Russian diesel – US politics live",
-              "publishedAtUTC": "2026-10-10T00:47:09.000Z",
+              "title": "‘I want to thank President Putin’, Trump says after agreeing to lift sanctions on Russian diesel – as it happened",
+              "publishedAtUTC": "2026-10-10T02:02:45.000Z",
               "category": "GEOPOLITICS",
               "impact": "MEDIUM",
               "sourceUrl": "https://www.theguardian.com/us-news/live/2026/oct/09/pentagon-fort-hood-livestream-firing-squad-execution-reaction-backlash-pete-hegseth-donald-trump-mussolini-latest-news-updates",
@@ -2800,16 +2800,6 @@
               "category": "GEOPOLITICS",
               "impact": "MEDIUM",
               "sourceUrl": "https://www.bbc.co.uk/news/articles/cj20vkkx3rdvo?at_medium=RSS&at_campaign=rss",
-              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
-            },
-            {
-              "id": "feed-85bae29f",
-              "publisher": "Al Jazeera English",
-              "title": "‘An attack against sovereign states’: ICC President slams US sanctions",
-              "publishedAtUTC": "2026-10-09T18:06:48.000Z",
-              "category": "GEOPOLITICS",
-              "impact": "HIGH",
-              "sourceUrl": "https://www.aljazeera.com/video/newsfeed/2026/10/9/an-attack-against-sovereign-states-icc-president-slams-us-sanctions?traffic_source=rss",
               "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
             },
             {
