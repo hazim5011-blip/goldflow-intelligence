@@ -1,15 +1,15 @@
 {
   "version": "RECOMMENDED_AI_INTERNET_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-10T14:41:49.239Z",
+  "updatedAtUTC": "2026-10-10T20:18:45.772Z",
   "heartbeat": "OK",
   "mode": "INTERNET_SCOUT_PLUS_REASONING",
   "research": {
     "ok": true,
     "version": "RECOMMENDED_AI_INTERNET_RESEARCH_V1",
-    "generatedAtUTC": "2026-10-10T14:41:49.239Z",
+    "generatedAtUTC": "2026-10-10T20:18:45.772Z",
     "mode": "INTERNET_SCOUT_PLUS_REASONING",
     "evidence": {
-      "collectedAtUTC": "2026-10-10T14:41:33.953Z",
+      "collectedAtUTC": "2026-10-10T20:18:21.743Z",
       "feedStatus": [
         {
           "id": "FED_ALL",
@@ -44,7 +44,7 @@
           "category": "GOLD_MACRO",
           "ok": false,
           "count": 0,
-          "error": "HTTP_503",
+          "error": "The operation was aborted",
           "url": "https://news.google.com/rss/search?q=gold+XAUUSD+Federal+Reserve+Treasury+yields+inflation&hl=en-US&gl=US&ceid=US:en"
         },
         {
@@ -53,7 +53,7 @@
           "category": "USD_YIELDS",
           "ok": false,
           "count": 0,
-          "error": "HTTP_503",
+          "error": "The operation was aborted",
           "url": "https://news.google.com/rss/search?q=US+dollar+DXY+Treasury+yields+Fed&hl=en-US&gl=US&ceid=US:en"
         },
         {
@@ -210,20 +210,20 @@
       "reasoningEffort": "medium",
       "maxToolCalls": 2,
       "maxOutputTokens": 1800,
-      "summary": "As of October 10, 2026, no sufficiently supported numeric patch is proposed. Verified September FOMC minutes provide macro context, not evidence for particular XAUUSD247 M15 management settings. ([federalreserve.gov](https://www.federalreserve.gov/monetarypolicy/fomcminutes20260916.htm)) The September 30 stress-test announcement concerns bank capital requirements; interpreting its reduced volatility as reduced gold-price volatility would be invalid. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm)) FRED's accessible DFII10 page reports 2.87% for October 8, but this observation does not establish a management-parameter relationship. ([fred.stlouisfed.org](https://fred.stlouisfed.org/series/DFII10)) Current parameter values and patch semantics are missing, so an absolute numeric replacement cannot be verified as small or conservative. Based on supplied diagnostics: prioritize investigating pvt102's loss severity and wide-risk exposure, without assuming a lower maxRiskATR improves outcomes; its 66.67% signal win rate accompanies -1430.35 net pips and -1.919 total R. pattern132 also has negative pip and R outcomes without evidence identi",
+      "summary": "As of October 10, 2026, no numeric patches qualify for recommendation. Verified World Gold Council research published October 7 describes September yield, dollar and futures-positioning pressures, but monthly associations do not establish an M15 ATR/structure management edge or calibrate any allowed parameter. ([gold.org](https://www.gold.org/goldhub/research/gold-market-commentary-september-2026?utm_source=openai)) The supplied Federal Reserve stress-test release concerns bank capital-requirement volatility, not gold-price volatility; it is not evidence for widening stops. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm)) The supplied FRED errors leave contemporaneous macro observations unavailable. Current parameter values, parameter semantics, trade timestamps, execution costs and trade-level adverse/favorable excursions are missing, so an absolute numeric patch cannot be verified as small or conservative. Prioritize pvt102 for loss-tail investigation: its 66.67% signal win rate accompanies -1430.35 net pips and -1.919R; larger average losing risk is descriptive, not proof that lowering maxRiskATR would help. snd107 requires inves",
       "hypotheses": [],
-      "responseId": "resp_0ef8718a70782449016aca4e9ee22c87d1a33dc19d0f290ca2",
+      "responseId": "resp_0d8afba3b737009e016aca9d8eb2d087d1beedab8c2025e7ee",
       "usage": {
-        "input_tokens": 16739,
+        "input_tokens": 16377,
         "input_tokens_details": {
           "cache_write_tokens": 7902,
           "cached_tokens": 0
         },
-        "output_tokens": 646,
+        "output_tokens": 1040,
         "output_tokens_details": {
-          "reasoning_tokens": 222
+          "reasoning_tokens": 593
         },
-        "total_tokens": 17385
+        "total_tokens": 17417
       }
     },
     "safety": {

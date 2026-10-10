@@ -2,7 +2,7 @@ const clean=x=>String(x||"").toLowerCase();
 
 export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
   "version": 1,
-  "updatedAtUTC": "2026-10-10T14:41:49.239Z",
+  "updatedAtUTC": "2026-10-10T20:18:45.772Z",
   "mode": "INTERNET_SCOUT_PLUS_REASONING",
   "reasoning": {
     "enabled": true,
