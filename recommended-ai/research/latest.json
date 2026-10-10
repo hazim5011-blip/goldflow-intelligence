@@ -1,15 +1,15 @@
 {
   "version": "RECOMMENDED_AI_INTERNET_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-10T20:18:45.772Z",
+  "updatedAtUTC": "2026-10-10T23:48:00.882Z",
   "heartbeat": "OK",
-  "mode": "INTERNET_SCOUT_PLUS_REASONING",
+  "mode": "FREE_INTERNET_EVIDENCE_SCOUT",
   "research": {
     "ok": true,
     "version": "RECOMMENDED_AI_INTERNET_RESEARCH_V1",
-    "generatedAtUTC": "2026-10-10T20:18:45.772Z",
-    "mode": "INTERNET_SCOUT_PLUS_REASONING",
+    "generatedAtUTC": "2026-10-10T23:48:00.882Z",
+    "mode": "FREE_INTERNET_EVIDENCE_SCOUT",
     "evidence": {
-      "collectedAtUTC": "2026-10-10T20:18:21.743Z",
+      "collectedAtUTC": "2026-10-10T23:47:58.793Z",
       "feedStatus": [
         {
           "id": "FED_ALL",
@@ -42,31 +42,71 @@
           "id": "NEWS_GOLD_MACRO",
           "kind": "discovery",
           "category": "GOLD_MACRO",
-          "ok": false,
-          "count": 0,
-          "error": "The operation was aborted",
+          "ok": true,
+          "count": 10,
+          "error": null,
           "url": "https://news.google.com/rss/search?q=gold+XAUUSD+Federal+Reserve+Treasury+yields+inflation&hl=en-US&gl=US&ceid=US:en"
         },
         {
           "id": "NEWS_USD_YIELDS",
           "kind": "discovery",
           "category": "USD_YIELDS",
-          "ok": false,
-          "count": 0,
-          "error": "The operation was aborted",
+          "ok": true,
+          "count": 10,
+          "error": null,
           "url": "https://news.google.com/rss/search?q=US+dollar+DXY+Treasury+yields+Fed&hl=en-US&gl=US&ceid=US:en"
         },
         {
           "id": "NEWS_MARKET_STRUCTURE",
           "kind": "discovery",
           "category": "TRADING_RESEARCH",
-          "ok": false,
-          "count": 0,
-          "error": "The operation was aborted",
+          "ok": true,
+          "count": 10,
+          "error": null,
           "url": "https://news.google.com/rss/search?q=market+structure+liquidity+volatility+trading+research&hl=en-US&gl=US&ceid=US:en"
         }
       ],
       "items": [
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "Gold struggles as rising US Treasury yields outweigh dovish Fed repricing - www.tmgm.com",
+          "url": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxPejh0R0dHMUJiYmpoaEdoVGZNaTNSYkQ5Vzgxems4cVJYS3ZnTHNwck40U0lpS01Remp0QkxuaEhrdUM1RUwyNE9HdEs3SmNQYjZ6S0JxMFgzZG11MGZBWFlIODlfUHFDYmhneTRxdVZEWk5DWmR0UlBmX1lSWmVYZy02c0tSREVHTHVoQWg5QlV6c0otcS1qUThqME5TU2F2dnpFMmVPZGVmakF3dzRNeUJSeWdaOE5BQnpxNDVLMHNKUnRzSWJJem9HRklid3ZPbGNPb2h2ZGRQdw?oc=5",
+          "published": "Thu, 01 Oct 2026 12:30:59 GMT",
+          "summary": "Gold struggles as rising US Treasury yields outweigh dovish Fed repricing &nbsp;&nbsp; www.tmgm.com",
+          "relevance": 18
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "Gold Outlook Weakens as Treasury Yields and Inflation Risks Persist - Investing.com",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQU0JqaGdSazg5N21ZOWFINFJOTjVrMjBZQXlLY0thSjlFRFdYY01sQ0VvbGllUTFzNkYtWVNjdE5PcXlMN0gzRUtWY1RNZm82bFVqSVpxMjJadUxXVUFvOXpUbjlSbFBUTXVocGdoald3ZEQyWDZZWGlCQ3RrVE5qcnZIcFJ5WldrdV9lQU52emtITVM2Rm5Hc0VONXdSS01qc3J4Z1VKYWIxZ0p4T3E2Um93?oc=5",
+          "published": "Thu, 30 Jul 2026 07:00:00 GMT",
+          "summary": "Gold Outlook Weakens as Treasury Yields and Inflation Risks Persist &nbsp;&nbsp; Investing.com",
+          "relevance": 17
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "Gold tests $4,100 as US Dollar and yields rise ahead of FOMC Minutes - FXStreet",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPN2NaLTd5SDJmeVdSQUJ1VU1aQjBQeG9jVDNPVjNFdXUwWm1UeWt3bjQyRDc3WF85NGRnTWZEZnBsd0l0X2ZROTRqQWpORy03LXV4R01ZMVNwaWlxa09oQlJkTWVVbzl6SVVYaEFzaW1oMFJ0dmNCTjJEcUxSRHRhZ05JTkZKRmVmVXZLX0RCbzRVaWZXZGNQWlplVUNuWnpmN1Y1a0Y3SXdRVE1hR1NMVA?oc=5",
+          "published": "Wed, 07 Oct 2026 16:10:56 GMT",
+          "summary": "Gold tests $4,100 as US Dollar and yields rise ahead of FOMC Minutes &nbsp;&nbsp; FXStreet",
+          "relevance": 17
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "Gold Price Forecast: Fed’s rate decision to drive XAU/USD’s next move - FXStreet",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxObEkxemhab3hfbFU2RzlyY2VTUEc0T0IwTWMtX1V2Uk81Um1VU2NvOWoxS25OVkQzeXQwY2pvcEhacXF3MFFyZ1ZaQnEzSHJXcUZnSEhtczdLQ1Q1dW4tcktkaWJ0NWRNREg1TU8tYWZTRXliQmp3Qi1mRHV1SGo0a3FabVVJb2V2cktFZTdROFA3UndnbGViQzB0Z0xMa0xIa0hIcko1eVQyMzR0eVBHczV6MA?oc=5",
+          "published": "Mon, 14 Sep 2026 07:00:00 GMT",
+          "summary": "Gold Price Forecast: Fed’s rate decision to drive XAU/USD’s next move &nbsp;&nbsp; FXStreet",
+          "relevance": 15
+        },
         {
           "sourceId": "FED_ALL",
           "sourceKind": "official",
@@ -76,6 +116,76 @@
           "published": "Wed, 30 Sep 2026 13:00:00 GMT",
           "summary": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requirements",
           "relevance": 14
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "Gold Price Forecast Next Week: Can XAU/USD Hold $4,200 Before US CPI? - Markets.com",
+          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE41RnRSSnVmejNNVFNYUHhON21YZEI4YmFwTUZLLTRBMTd2MEpBMXNWUHJZeVRudXZub3lUWDJ5T1h1VnhGWC1fTWEzUzM5Z3pXeDh0S3BoMGZfUWVtSXBuZzdIR1IyVXQ0UnlYYkJ0UmdVLXFzMklGaA?oc=5",
+          "published": "Fri, 09 Oct 2026 16:02:00 GMT",
+          "summary": "Gold Price Forecast Next Week: Can XAU/USD Hold $4,200 Before US CPI? &nbsp;&nbsp; Markets.com",
+          "relevance": 14
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "Dollar pauses after Fed rally as yields, oil retreat - Reuters",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOTVZNWlJSb0NGaG9WNmRjR0U4YUM2anpuRFREdGRvRmRaRUhwbzVIb2JndlpsZ2g4a1hvbkdZWEl2YUV6WWRjYThBSGt2VGlzak44MmVyWkFPeTJfdlBreG1ERkhYbjVEaTVlLXpwOW9SeDRvbzZIYVJLTUdWcWc1Y2RFTFVPelhoaWNqWVpNd1YxWTR2ZWxaX2U5dzQwUUxNWWFyQXB5U2d4UFJTMXM4?oc=5",
+          "published": "Thu, 17 Sep 2026 07:00:00 GMT",
+          "summary": "Dollar pauses after Fed rally as yields, oil retreat &nbsp;&nbsp; Reuters",
+          "relevance": 14
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "Gold can’t catch a PCE break as long US yields keep climbing - tmgm.com",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOUDRsclh5NU5WOG9wOEc2YTJfR1BxWWs0el8wcXNRNmZxYXBZc2k0YXdCYVc2aVNjeGlEdmR2R0VscWJ1RVE4cXh6dTlpOVZra3AzUkJ6MWJxNDh4eXJHQlFsVHlRMWlQdWRUQllocHBXSVBJblVkSkl4RWNoV2JlY25fTXJ0UHpDYXU2YVZxM282VjFENE5fRDV0NE1jVmtOczN0Q3NKUDlFXzdnYnM4czFKaUZ3MnMzRlRVWjdxa2ltdmM?oc=5",
+          "published": "Wed, 30 Sep 2026 18:17:08 GMT",
+          "summary": "Gold can’t catch a PCE break as long US yields keep climbing &nbsp;&nbsp; tmgm.com",
+          "relevance": 13
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "US Treasury Yields Hit Nearly 20-Year High, Dragging Gold Below $4,300: Will Gold Keep Falling? - TradingKey",
+          "url": "https://news.google.com/rss/articles/CBMi6wFBVV95cUxQZ293MHh5TXhreVJUZ1lCVjFiQmtEQXlGcjU5U1d6TVVVQl9pc0JFWlBXaHNUZ0NyaUh5VDYxa29YZUhBRFVRX2FPQlJLV0JSQmhBcWpWYmFnc0Z6bTdvVkprRzZvR0dHYVN3R3h3Qkd3VVA4ZjhsWll4Wnd6VERaQl9sSzgxNW91Ri1XQldEUEdkOUI1SXl6TFFzVWkxaDNOTmh1ZEVOLVVHQi03VkQxUENqR2NReXpvTWJaNno1RE1JWXUwMjVnTmtyLTUxeEhaYzFuODlsUnhNOGV3cDdheV92TlJhaV9MeFVn?oc=5",
+          "published": "Tue, 15 Sep 2026 07:00:00 GMT",
+          "summary": "US Treasury Yields Hit Nearly 20-Year High, Dragging Gold Below $4,300: Will Gold Keep Falling? &nbsp;&nbsp; TradingKey",
+          "relevance": 13
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "US Dollar Price Forecast: Fed Minutes Back DXY, Can GBP/USD and EUR/USD Recover? - Yahoo Finance",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNY1lTMDNOdHNjbzQ2cUh6dGxLbkRUZjBGN1NIckRPRWVlRlk2Q2pxZnpsQmhOa2Z0RzYyMzhYNzZCMEgxWWJJem1LMnNWbXYzU0dwMnJZaTVuS19OTWtpeGRVS2RsTkJyZTE4ZmUtZ2RmS29ZU1dZTVU5LURWY09iLWNOSTZVcllON0lWVlFHT1R6SGtPbWpMYlVqUmxGZw?oc=5",
+          "published": "Thu, 08 Oct 2026 08:25:12 GMT",
+          "summary": "US Dollar Price Forecast: Fed Minutes Back DXY, Can GBP/USD and EUR/USD Recover? &nbsp;&nbsp; Yahoo Finance",
+          "relevance": 12
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "Gold slides to two-month low as robust dollar, yields add pressure - Kitco",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQY2hpM3gyaGRGNUFvU3JJbVdmcUZOVEhiN0V5TUo0dWNpNmlybDNQbUVIeFNhXzFVM0pubWtrQ19DRkN4VWI4RWxReDg0WXhpLU9DeWZpd1phOHZyUFRoZFhILTVTRnV4c3otdlZQb0lsNFpIZnk4dW0xdTVrWm9VOU13eWtSTUpUZG9OUTBrWnlvWHF4TUhES3J3ZE85ZTFhTVVsVXF0VTgyUjNPcjlv?oc=5",
+          "published": "Wed, 07 Oct 2026 16:59:20 GMT",
+          "summary": "Gold slides to two-month low as robust dollar, yields add pressure &nbsp;&nbsp; Kitco",
+          "relevance": 12
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "Gold edges higher but remains capped in tight range as Dollar and yields rebound - FXStreet",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPWVZ0V29BSzhjMlRGaEctTDRzYkdYaGkzZTlMTXg0c3pVeWpUdDZrc293R1dod3BtUk5wcEp6NEM1dDJiWGgzUzdzQmgtdEpFdmNvT2d5UWxqLUd0dFE5RzNTdXBCd1BzZ1lEMjRlV0tKUEktX08wakhJLUdnNUxEUEtsVklhS2V4cVZBZDdQMzh3a3o5NWpSMG50bmlVMjByLVNuSjU4SFhraFpEVWZOVl9tVQ?oc=5",
+          "published": "Fri, 09 Oct 2026 15:51:30 GMT",
+          "summary": "Gold edges higher but remains capped in tight range as Dollar and yields rebound &nbsp;&nbsp; FXStreet",
+          "relevance": 12
         },
         {
           "sourceId": "FED_ALL",
@@ -158,6 +268,86 @@
           "relevance": 11
         },
         {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "Stocktwits Weekly Spread: What Shaped Treasury Yields And The Dollar This Week - TradingView",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxOWjRuQjduUGtINjFfMWQ3TmYyQkZyZ2VmYm9wRFYwenhySDRmNVNwd1hjQmYwQVgyd0ZEblN3cDBMakxqa3RNdkk4d3Q0RXVpVl9rNnJkanBUdmVHODdvc285XzhPQzFxLVk5clVtTmlkV0xEbmpER3VmUzlEZDdxUG1ibmVHMlg5Y1Qtcm5WN1lJZmtlamJwc1VwdVhsV1hOajBNWUFyYWZtRF8xcGFobG5EaExzY19QMENGRl9xc0toRDMyN2dwWExIUTZtNHVmTTJNOA?oc=5",
+          "published": "Sat, 10 Oct 2026 00:18:00 GMT",
+          "summary": "Stocktwits Weekly Spread: What Shaped Treasury Yields And The Dollar This Week &nbsp;&nbsp; TradingView",
+          "relevance": 11
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "US Dollar Price Forecast: High Yields Lift DXY, Can GBP/USD and EUR/USD Recover? - Yahoo Finance",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQR015Y24tbmwya2RWdE5HVDF2dTNoWW1pMnktamdiLWozc3RaVEVUUEhrVHAwMThLNHJsQjlrM01sZ0hwcFBHRTl2dExwaGRZX3oxZFM1RFdVcEtsRjFSUldiR1BadGxmZEFmVURvbGdMNjFYZ3RUbXZpSFZwNjV0MG9fWTdKekxlQW1Za2FpX0VEMEJYUUJVTnp1T3lHSTA?oc=5",
+          "published": "Tue, 06 Oct 2026 08:34:26 GMT",
+          "summary": "US Dollar Price Forecast: High Yields Lift DXY, Can GBP/USD and EUR/USD Recover? &nbsp;&nbsp; Yahoo Finance",
+          "relevance": 11
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "Gold Price Forecast September 2026: Fed Hikes Rates, Gold Rebounds Above US$4,300 - Mitrade",
+          "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxNZDVYWkFVTXRzanlIS1lfUERjRmowVEtoZjdxLVZVUU9ZemQwTlhzUm5oWU94TXFseUxfMllXUDJRYW5EWnpyTDFrTnlWV2hhMHpEa0FiYW50VTFHZEF2VGVjb2tLWXdENjM4bmVXR2tBaEJPdTAtYWJUVWNNbGVONTJPNFBHckR4emNnSw?oc=5",
+          "published": "Thu, 17 Sep 2026 07:00:00 GMT",
+          "summary": "Gold Price Forecast September 2026: Fed Hikes Rates, Gold Rebounds Above US$4,300 &nbsp;&nbsp; Mitrade",
+          "relevance": 10
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "XAUUSD: Gold Steady Near $4,370, Prices Seek to Break 3-Day Losing Streak - TradingView",
+          "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNcm8xNWMwSi1zWi1oTkhuSEtZLVVSQTRpWjNrbURMbnBvcjl6cWhqUnVFdDlwNTdaM2RiYkRtV01xa2JhRkRqN1pnX2ZaYlpEa3ZRUnp4elBnWEdrX2hpYmg1T2lfQXJ5cTdLUTFVWjgyWWJVcmhFdllnYjhiejhsWm50QjhGbFNvT1NXRDBkWFdwMEtpUGlkTDVnU1RpVFppMnR5OE12eHF3YXNpS21BR0llbUVqOUxrOXdLMUZTc0NNTVV1RkJ4ZWxCUko?oc=5",
+          "published": "Tue, 08 Sep 2026 07:00:00 GMT",
+          "summary": "XAUUSD: Gold Steady Near $4,370, Prices Seek to Break 3-Day Losing Streak &nbsp;&nbsp; TradingView",
+          "relevance": 10
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "Gold rebounds from 7-wk low as investors await inflation, jobs data - TradingView",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPUnMtdmJ6NFJ4YWdRYzBBWmtjdVZvOHlidm5KLW5ud0loQXd2aUdnclVycnBFNUVSSGpnRXVFcE51V2hGWGs3d0tHcDN6MkZvVXNYbFlmeU96VldmclEzdms1WkJSZ0ZDamh2ZmxCM3hQUDFvRUJSaWxRWmZiN09nbEs2WU1MS1dqWlJYYTU0NmxGSWtuRlRqZ0RjVnRfUGJQblNKYUkyYkp1NTdvbGVXLU1pMmFCdXJaTFZyLTV5OE04OGJVMDlReA?oc=5",
+          "published": "Tue, 29 Sep 2026 20:22:31 GMT",
+          "summary": "Gold rebounds from 7-wk low as investors await inflation, jobs data &nbsp;&nbsp; TradingView",
+          "relevance": 9
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "U.S. Dollar Strengthens As Fed Rate Hike Fears Grow - Seeking Alpha",
+          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOLV94akNmb2dNZlI0dHctcUZRcU16TXF2RG1PQzVRMTVmR2V6OWtiWVZlWUNSdzNKTzJncXItUjUtdUhwdG15X1U5bXVoTnR6QXZESjdrMGtsWmhiSlhQbFRGQWxNaThEeFRDUGtBeUM4MXNuN1B2VkVOS0YwMVl0aDA5czJwamNMaHlodUtwMFo?oc=5",
+          "published": "Fri, 09 Oct 2026 17:50:00 GMT",
+          "summary": "U.S. Dollar Strengthens As Fed Rate Hike Fears Grow &nbsp;&nbsp; Seeking Alpha",
+          "relevance": 8
+        },
+        {
+          "sourceId": "NEWS_GOLD_MACRO",
+          "sourceKind": "discovery",
+          "category": "GOLD_MACRO",
+          "title": "Gold Price Forecast: Gold Rebounds Above $4,200, Can Falling Oil Prices Drive Another Rally? - TradingKey",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPSTZHZ3U1ZXREMVVNOU01dmJuVGl2T1JfLXo4MXZCQUJORUdVMkVZa1doZldWV3RuTEVuX19FVi03RllrRDZJYWZVSjlrVm1pT0FHdTh2V1hKZk55cC1GSmxmZjg5eDZuSXBiZG1PdmlGR0tRSHJmYk1oaXRzR1k1M1RMTzNRT3lNVmg1VkxaN3hjZldLZG1hVVZlRFJLUFVvTUdBQzRQWTN3M3d3WGZQMnV4NW1SaDcyOXIzazhjWUl0TlkyNWRNdA?oc=5",
+          "published": "Fri, 09 Oct 2026 07:22:51 GMT",
+          "summary": "Gold Price Forecast: Gold Rebounds Above $4,200, Can Falling Oil Prices Drive Another Rally? &nbsp;&nbsp; TradingKey",
+          "relevance": 7
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "United States Dollar Index weakens further amid correction in US bond yields - tmgm.com",
+          "url": "https://news.google.com/rss/articles/CBMi3gFBVV95cUxQTjI4NmhTd0ZHdVZRM2xfWEF6SDUwa3VfWVpReVprRlprUUhOR2Q0TDhIZ3VLRkM3MFpYcVAyOTN0NkdxREhWdEEtRzktSE5ZTS1qYzFBdnlTdUxVeExzZEJJcnQ4ZEdoTFJqcUM1U21YVVNwUUJULTJrcHh0TnpCd01rYWRvRkhfaElMeUpYTGlHcDQ4MVBESUh6VzdRNnJUWm1ET2lyNkxNVEV2VW41S096Y1VnNGVkMUxLWGxJb081UU9taDItVGdFcnVJVHFOeGZoQ0FpNlNjYS1ibVE?oc=5",
+          "published": "Fri, 09 Oct 2026 17:25:58 GMT",
+          "summary": "United States Dollar Index weakens further amid correction in US bond yields &nbsp;&nbsp; tmgm.com",
+          "relevance": 7
+        },
+        {
           "sourceId": "FED_ALL",
           "sourceKind": "official",
           "category": "FED",
@@ -166,6 +356,116 @@
           "published": "Tue, 29 Sep 2026 20:00:00 GMT",
           "summary": "Agencies publish resolution plan feedback letters for 15 banking organizations",
           "relevance": 6
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "Nasdaq Futures Weekly Recap: Key Levels, Liquidity And Volatility Breakdown - Benzinga",
+          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxNTkJvejFlTTkybWxIMHk1MWkyQTZQX282S2dRaTRIV3h4dHFfOUtSVjQxdUNreGZzZV8tc2RZaFU1cTVjVDJyczBKa2VqbUgwRngtNy1QYVFPdkNWelgzNXUzQ19jSFhBMTNXNm5uOUZhTmhKNHBET1FnTTZPalowV0pPckhrZUlXVFpUR2VPMkVuM1RIeFFVZ3dYVGxoYVBXak5MTHFLaERnYkk4dWYyYlBEbnZjTm43ai1NZjlB?oc=5",
+          "published": "Mon, 23 Mar 2026 07:00:00 GMT",
+          "summary": "Nasdaq Futures Weekly Recap: Key Levels, Liquidity And Volatility Breakdown &nbsp;&nbsp; Benzinga",
+          "relevance": 6
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "Gold the safe haven versus silver the wildcard - World Gold Council",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxOcHN6NllUb1RnV05FN1hIM004d0c0bENqbFRXNEllU1NkRlJpaE84WDVUa0ItcFhKSXJQajJwV0FjTzkzM3BkTmZjczgyUkxvUEsxZHhfSkRWZEVQSERiOHBITHI0MlI5YzNOVnFyZmE5U2Z2cFdjLXhjUHNNZU1uQlBB?oc=5",
+          "published": "Wed, 18 Mar 2026 07:00:00 GMT",
+          "summary": "Gold the safe haven versus silver the wildcard &nbsp;&nbsp; World Gold Council",
+          "relevance": 5
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "GameStop Short Squeeze: A Market Structure Case Study - EBC Financial Group",
+          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxQUGZQNm1oeDJXV01KMGJmQ0FKdlFtLVlBcU03YlhqUy10Y001MTR2X3JFUUFlU25weGhSblowSVBXVHJ6N1ZWb243aXY5QlZ3dlE1SXExaXZ5QlpzMnh2cUFiVlprajgzWjdBdlVJVTRQeTRsa3F2SGhFU0ZNdDVCMFlkSE0?oc=5",
+          "published": "Fri, 03 Apr 2026 07:00:00 GMT",
+          "summary": "GameStop Short Squeeze: A Market Structure Case Study &nbsp;&nbsp; EBC Financial Group",
+          "relevance": 4
+        },
+        {
+          "sourceId": "NEWS_USD_YIELDS",
+          "sourceKind": "discovery",
+          "category": "USD_YIELDS",
+          "title": "Today's USD exchange rate (October 11): The US dollar records its fourth consecutive week of gains. - Vietnam.vn",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPb1JxclZTbHFlZGRwZldMTXA3eGhHZDVXeG9Va19iVE50SUhNeG5USDVkZHdwNWJubmhXQjR5UEpaY1RiZmZ6NkI2MWdMM3RFdmI3WDZaMGwxMENpWXdWc2pOMEJvMTNiQ29wUFVCaGRWVkdJLXlUbWpTQ3J4bzlSdDQ5RjFWcFJuQjJIaVBSZUF0a3FoRFc3dm1qOWZhODFi?oc=5",
+          "published": "Sat, 10 Oct 2026 23:33:40 GMT",
+          "summary": "Today's USD exchange rate (October 11): The US dollar records its fourth consecutive week of gains. &nbsp;&nbsp; Vietnam.vn",
+          "relevance": 3
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "HTX Research Examines Stock-Linked Memecoins: A New Connection Between Equity Assets and Crypto Liquidity - TradingView",
+          "url": "https://news.google.com/rss/articles/CBMi9AFBVV95cUxQQzhYTmlZaUVROUxpRTROelRJUXJJa2ZvSU1YTG51cEUwYUNtS1NUYmNnXzE4eF9GMWc3WWQwbFNGNVdxZkNMUkVNY2JvOWlpR2ktS29XUFY3NmdCbUVsbF93bENBMFo0UTZ0aUFWaEpOUEtwNTBCZ2ttNF9heDlWSGYzVG9NMVJEaXlsTW5GUWhpcnAwZkJHcXl4VVlxUWJiU29TNTNKSzR6QmV4SUt1Q0ZGMXV6S1hETjk2cjAyTW1FSGZ0eTdWVjA4QWxNT1p2QjJDajB6WHAtTEx3MEpHOUdmR0xFQlFuenJGOWxBQVJjOGFT?oc=5",
+          "published": "Thu, 17 Sep 2026 07:00:00 GMT",
+          "summary": "HTX Research Examines Stock-Linked Memecoins: A New Connection Between Equity Assets and Crypto Liquidity &nbsp;&nbsp; TradingView",
+          "relevance": 3
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "Bitcoin Volatility Trends: A Deep Dive into Market Dynamics and Risk - S&P Global",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxOcDBGbzdYLUlkMzJGdHk0blJkbjRxbGp0dEk3a2tmQXlEMlNQLTFDOUVsQTJxd0dkdmVrSUZqVThzVzBrMmJad0ZaWHpzLTdrcFEtRE1sZW42cjBSeUVyLXpqenFpMzlKT1UxVDFkWmNFV0FEajRtekRNNHI2MEpwUjNrOThsUE10cm9JaTFKLXlvYUY4WUZuWllxX3Nfdw?oc=5",
+          "published": "Thu, 05 Mar 2026 08:00:00 GMT",
+          "summary": "Bitcoin Volatility Trends: A Deep Dive into Market Dynamics and Risk &nbsp;&nbsp; S&P Global",
+          "relevance": 3
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "Whale's Methodology: Investing Through The Lens Of Volatility (II) - Seeking Alpha",
+          "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxNWkRWY0gzSk1JOTdYWmRPVUFvWXBMQy0xU3dUcExpRk81c19YYWxxSElpc3pKeHV6RVdXdk5JRnRDY25sd0hBakhpYkx6dngtcmhGdDhoUFE5RF92US00TkNzVVJKUnJwRF8xbVYxeHNmZHl3NzJ0bUl4TG9SUktIUnFoN01JV2s?oc=5",
+          "published": "Wed, 18 Feb 2026 08:00:00 GMT",
+          "summary": "Whale's Methodology: Investing Through The Lens Of Volatility (II) &nbsp;&nbsp; Seeking Alpha",
+          "relevance": 3
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "The AMF analyses the rise in closing auction trading activity on the French equity market - Autorité des marchés financiers (AMF)",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQVDNmRUtPOG41QXdqS014UUNiQTMxUE9kRDJCRnpZdl9tcnplZ204Z29pcC1fd0V1Z3U0X3Z5akpHUjNBSVlvTEJCMkZrRC03dDNncUpENDhOMHFsTW1KSjJEaDJqMTU5UC1zT2o0Zm05ZlVqS3BMTjREUDB5ZXFiZjJraEV6RDVWcXJDdkdxcV94bW1XVTlhRUJXUlQ0T1owOVhFTTIyZzRlLUpLNTdfQS1kamJwY0Jkdl96dWo1OElHZw?oc=5",
+          "published": "Wed, 29 Jul 2026 07:00:00 GMT",
+          "summary": "The AMF analyses the rise in closing auction trading activity on the French equity market &nbsp;&nbsp; Autorité des marchés financiers (AMF)",
+          "relevance": 0
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "The Most Dangerous Trading Illusion: Why More Data Means Less Clarity - Global Banking & Finance Review",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQLWRITVQ2ZnNlWTNKeGJLMFhmVS12anZ1YU1tSV9DLW9lLTdnNW1Mc1ppSGVqUzJKRGRyVklYemZ0cGFTcWl0NkZxdy03UV81emk4bmJtUDRJRnhtOEZDeC1Wb1NfN3o3QXVIUVJqa29tWUxjMzg0d2dsakpmNE9WYmdDc3B1Yk5JU2ZTQlhDV0dUcmt2MmxJVXViX0g0VzRGR3BOMF9PdGVwaGJRSFE?oc=5",
+          "published": "Mon, 18 May 2026 07:00:00 GMT",
+          "summary": "The Most Dangerous Trading Illusion: Why More Data Means Less Clarity &nbsp;&nbsp; Global Banking & Finance Review",
+          "relevance": 0
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "The Evolution of the Crypto CEX Landscape: A Case Study on Binance - CoinDesk",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPci05SndpYUszRTl2bGltMk85dXl3azhhRTRHLWhxOHUwLUliSVFBVVdIamp0RG82QjFLVk1fSjdncHJ2emVaVHdXSGtlLU1Kc1NMT21YX1N4bFhJWnlFU0lVa1QwVUZEM1lwMGEzYkZ2T3d5ZGZONGZsUXhJWWluMmxyUkZqZ2hmMERETVZyYk8xblJQV196NzM1bENmcENC?oc=5",
+          "published": "Mon, 29 Jun 2026 07:00:00 GMT",
+          "summary": "The Evolution of the Crypto CEX Landscape: A Case Study on Binance &nbsp;&nbsp; CoinDesk",
+          "relevance": 0
+        },
+        {
+          "sourceId": "NEWS_MARKET_STRUCTURE",
+          "sourceKind": "discovery",
+          "category": "TRADING_RESEARCH",
+          "title": "CoinHub.pro Announces New Initiative to Simplify Trading and Investment Education - The Source Magazine",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQOWc1azN6RlpYRWV4TEJhU3Q5ajFmaUhIbGJ5QWF6UzM0VkoxTXAxdkI0RnVmYW9KN1VoNmI5aXM5bzhVLTNoU2pYOTRFSnZaSHFzYVV2bTJxSW82Rnp2RzJpV1RsaV9pS01kN0JnX0NEcVpUaGJKa3Jfek9td3FaeG9JN3JtVUx4bU1vMWdZU2VCUEtnY3NXMGJoUFFCMk56aVEyNlBhWGo5SzNvSnBQZGRJVVNtZw?oc=5",
+          "published": "Sat, 12 Sep 2026 07:00:00 GMT",
+          "summary": "CoinHub.pro Announces New Initiative to Simplify Trading and Investment Education &nbsp;&nbsp; The Source Magazine",
+          "relevance": 0
         }
       ],
       "macro": [
@@ -202,29 +502,13 @@
     },
     "reasoning": {
       "enabled": true,
-      "status": "ONLINE_OPENAI_WEB_REASONING",
+      "status": "OPENAI_REASONING_ERROR",
       "model": "gpt-6.1-sol",
       "primaryModel": "gpt-6.1-sol",
       "fallbackModel": "gpt-6-luna",
       "fallbackUsed": false,
-      "reasoningEffort": "medium",
-      "maxToolCalls": 2,
-      "maxOutputTokens": 1800,
-      "summary": "As of October 10, 2026, no numeric patches qualify for recommendation. Verified World Gold Council research published October 7 describes September yield, dollar and futures-positioning pressures, but monthly associations do not establish an M15 ATR/structure management edge or calibrate any allowed parameter. ([gold.org](https://www.gold.org/goldhub/research/gold-market-commentary-september-2026?utm_source=openai)) The supplied Federal Reserve stress-test release concerns bank capital-requirement volatility, not gold-price volatility; it is not evidence for widening stops. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm)) The supplied FRED errors leave contemporaneous macro observations unavailable. Current parameter values, parameter semantics, trade timestamps, execution costs and trade-level adverse/favorable excursions are missing, so an absolute numeric patch cannot be verified as small or conservative. Prioritize pvt102 for loss-tail investigation: its 66.67% signal win rate accompanies -1430.35 net pips and -1.919R; larger average losing risk is descriptive, not proof that lowering maxRiskATR would help. snd107 requires inves",
       "hypotheses": [],
-      "responseId": "resp_0d8afba3b737009e016aca9d8eb2d087d1beedab8c2025e7ee",
-      "usage": {
-        "input_tokens": 16377,
-        "input_tokens_details": {
-          "cache_write_tokens": 7902,
-          "cached_tokens": 0
-        },
-        "output_tokens": 1040,
-        "output_tokens_details": {
-          "reasoning_tokens": 593
-        },
-        "total_tokens": 17417
-      }
+      "error": "OPENAI_429_You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
     },
     "safety": {
       "internetCanDirectlyEditProtectedEngine": false,
