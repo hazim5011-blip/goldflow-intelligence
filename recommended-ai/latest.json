@@ -1,6 +1,6 @@
 {
   "version": "RECOMMENDED_AI_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-10T20:20:54.341Z",
+  "updatedAtUTC": "2026-10-10T22:36:48.524Z",
   "heartbeat": "OK",
   "primarySymbol": "XAUUSD247",
   "primaryTF": "M15",
@@ -9,11 +9,11 @@
     "strategy": "technical indicator batches rotate; every technical indicator revisited within about 4 hours; GF-News captures news + macro/regime context every hourly cycle"
   },
   "lastBatch": {
-    "batchIndex": 0,
+    "batchIndex": 2,
     "indicators": [
-      "105",
-      "103",
-      "pvt102",
+      "owl101",
+      "fund104",
+      "gf-ai",
       "gf-news"
     ],
     "completed": 4,
@@ -2076,8 +2076,8 @@
     "OWL101|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "owl101-XAUUSD247-M15-202610101839",
-      "generatedAtUTC": "2026-10-10T18:39:32.478Z",
+      "recommendationId": "owl101-XAUUSD247-M15-202610102236",
+      "generatedAtUTC": "2026-10-10T22:36:20.396Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "owl101",
@@ -2085,8 +2085,8 @@
       "profileKey": "owl101|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-19T16:45:00.000Z",
-        "endUTC": "2026-10-10T18:15:00.000Z",
+        "startUTC": "2026-08-19T20:45:00.000Z",
+        "endUTC": "2026-10-10T22:15:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -2413,8 +2413,8 @@
     "FUND104|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "fund104-XAUUSD247-M15-202610101839",
-      "generatedAtUTC": "2026-10-10T18:39:43.831Z",
+      "recommendationId": "fund104-XAUUSD247-M15-202610102236",
+      "generatedAtUTC": "2026-10-10T22:36:31.805Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "fund104",
@@ -2422,8 +2422,8 @@
       "profileKey": "fund104|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-19T16:45:00.000Z",
-        "endUTC": "2026-10-10T18:15:00.000Z",
+        "startUTC": "2026-08-19T20:45:00.000Z",
+        "endUTC": "2026-10-10T22:15:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -2754,8 +2754,8 @@
     "GF-AI|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-ai-XAUUSD247-M15-202610101839",
-      "generatedAtUTC": "2026-10-10T18:39:47.037Z",
+      "recommendationId": "gf-ai-XAUUSD247-M15-202610102236",
+      "generatedAtUTC": "2026-10-10T22:36:34.615Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-ai",
@@ -2763,8 +2763,8 @@
       "profileKey": "gf-ai|XAUUSD247",
       "historyMode": "GF_CLOSED_CANDLE_NEXT_OPEN_REPLAY",
       "dataWindow": {
-        "startUTC": "2026-10-08T11:45:00.000Z",
-        "endUTC": "2026-10-10T18:15:00.000Z",
+        "startUTC": "2026-10-08T15:45:00.000Z",
+        "endUTC": "2026-10-10T22:15:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 219,
@@ -2890,8 +2890,8 @@
     "GF-NEWS|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-news-XAUUSD247-M15-202610102020",
-      "generatedAtUTC": "2026-10-10T20:20:41.962Z",
+      "recommendationId": "gf-news-XAUUSD247-M15-202610102236",
+      "generatedAtUTC": "2026-10-10T22:36:37.505Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-news",
@@ -2899,8 +2899,8 @@
       "profileKey": "gf-news|XAUUSD247",
       "historyMode": "GF_NEWS_FORWARD_ARCHIVE",
       "dataWindow": {
-        "startUTC": "2026-10-08T11:00:00.000Z",
-        "endUTC": "2026-10-10T20:00:00.000Z",
+        "startUTC": "2026-10-08T13:15:00.000Z",
+        "endUTC": "2026-10-10T22:15:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 229,
@@ -3023,7 +3023,7 @@
       },
       "rollback": null,
       "newsMacroSnapshot": {
-        "capturedAtUTC": "2026-10-10T20:20:42.647Z",
+        "capturedAtUTC": "2026-10-10T22:36:37.828Z",
         "macro": {
           "regime": {
             "name": "REFLATION",
@@ -3062,27 +3062,27 @@
             "notes": [
               "CPI direct BLS and release fallback unavailable.",
               "CES0000000001: HTTP 520",
-              "LNS14000000: HTTP 520",
               "CUUR0000SA0: HTTP 520",
+              "LNS14000000: HTTP 520",
               "Windows-source diagnostics: BLS_BATCH, BLS_CES0000000001, BLS_LNS14000000, BLS_CUUR0000SA0, FRED_CES0000000001, FRED_LNS14000000, FRED_CUUR0000SA0"
             ],
             "secondaryMirror": [],
             "primarySourceHealth": "DEGRADED",
             "strictPrimaryReady": false
           },
-          "fetchedAtUTC": "2026-10-10T20:20:52.826Z"
+          "fetchedAtUTC": "2026-10-10T22:36:47.008Z"
         },
         "worldNews": {
-          "updatedAtUTC": "2026-10-10T20:20:42.756Z",
+          "updatedAtUTC": "2026-10-10T22:36:37.932Z",
           "sourceStatus": "PARTIAL",
           "openingRisk": {
             "status": "SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED",
             "labelMS": "POTENSI GAP NAIK SAFE-HAVEN • BELUM CONFIRM",
             "labelEN": "SAFE-HAVEN UPSIDE GAP RISK • NOT CONFIRMED",
             "driver": {
-              "title": "Photos: Thousands march across Europe to demand end to Israel’s war on Gaza",
+              "title": "Yemen’s Houthis release video of drone attacks on gov’t forces",
               "publisher": "Al Jazeera English",
-              "sourceUrl": "https://www.aljazeera.com/gallery/2026/10/10/photos-thousands-march-across-europe-to-demand-end-to-israels-war-on-gaza?traffic_source=rss"
+              "sourceUrl": "https://www.aljazeera.com/video/2026/10/10/yemens-houthis-release-video-of-drone-attacks-on-govt-forces?traffic_source=rss"
             },
             "counterforce": null,
             "newsAgeWindowHours": 72,
@@ -3096,6 +3096,26 @@
           },
           "items": [
             {
+              "id": "feed-ad49943f",
+              "publisher": "Al Jazeera English",
+              "title": "Hundreds of doctors demand World Medical Association suspend Israel",
+              "publishedAtUTC": "2026-10-10T21:12:04.000Z",
+              "category": "GEOPOLITICS",
+              "impact": "MEDIUM",
+              "sourceUrl": "https://www.aljazeera.com/news/2026/10/10/hundreds-of-doctors-demand-world-medical-association-suspend-israel?traffic_source=rss",
+              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+            },
+            {
+              "id": "feed-b39b826",
+              "publisher": "Al Jazeera English",
+              "title": "Yemen’s Houthis release video of drone attacks on gov’t forces",
+              "publishedAtUTC": "2026-10-10T21:02:49.000Z",
+              "category": "GEOPOLITICS",
+              "impact": "HIGH",
+              "sourceUrl": "https://www.aljazeera.com/video/2026/10/10/yemens-houthis-release-video-of-drone-attacks-on-govt-forces?traffic_source=rss",
+              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+            },
+            {
               "id": "feed-b5241131",
               "publisher": "Al Jazeera English",
               "title": "Photos: Thousands march across Europe to demand end to Israel’s war on Gaza",
@@ -3106,9 +3126,9 @@
               "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
             },
             {
-              "id": "feed-b5d46110",
+              "id": "feed-5a3ca271",
               "publisher": "The Guardian",
-              "title": "Dozens reported injured in Yemeni Houthi attack at Riyadh airport",
+              "title": "Twelve killed and hundreds injured in Houthi attack at Riyadh airport",
               "publishedAtUTC": "2026-10-10T15:54:12.000Z",
               "category": "GEOPOLITICS",
               "impact": "HIGH",
