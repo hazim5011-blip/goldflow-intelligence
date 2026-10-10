@@ -2379,6 +2379,416 @@
           }
         }
       ]
+    },
+    {
+      "atUTC": "2026-10-10T18:40:01.639Z",
+      "batchIndex": 2,
+      "indicators": [
+        "owl101",
+        "fund104",
+        "gf-ai",
+        "gf-news"
+      ],
+      "results": [
+        {
+          "ok": true,
+          "indicator": "owl101",
+          "indicatorName": "OWL Style Research v1.01",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_DATA",
+          "recommendationId": "owl101-XAUUSD247-M15-202610101839",
+          "baseline": {
+            "totalSignals": 22,
+            "completed": 21,
+            "strictDenominator": 21,
+            "strictWR": 75.57,
+            "signalWR": 80.95,
+            "winPip": 618.66,
+            "lossPip": -199.95,
+            "netPip": 418.71,
+            "totalR": 7.77,
+            "positive": 17,
+            "negative": 4,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 1,
+            "strictBasis": "PIP"
+          },
+          "diagnostics": {
+            "lossCount": 4,
+            "winCount": 17,
+            "quickStopRate": 25,
+            "targetFallbackRate": 66.7,
+            "wideRiskRate": 4.8,
+            "avgLossRiskATR": 1.956,
+            "avgWinRiskATR": 1.812,
+            "avgLossScore": 86.8,
+            "avgWinScore": 78.4
+          },
+          "decision": {
+            "action": "COLLECT_DATA",
+            "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null,
+          "newsMacroSnapshot": null
+        },
+        {
+          "ok": true,
+          "indicator": "fund104",
+          "indicatorName": "Fund Structure A v1.04",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_DATA",
+          "recommendationId": "fund104-XAUUSD247-M15-202610101839",
+          "baseline": {
+            "totalSignals": 2,
+            "completed": 2,
+            "strictDenominator": 2,
+            "strictWR": 40.15,
+            "signalWR": 50,
+            "winPip": 5.8,
+            "lossPip": -8.64,
+            "netPip": -2.85,
+            "totalR": 0.243,
+            "positive": 1,
+            "negative": 1,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": "PIP"
+          },
+          "diagnostics": {
+            "lossCount": 1,
+            "winCount": 1,
+            "quickStopRate": 100,
+            "targetFallbackRate": 50,
+            "wideRiskRate": 0,
+            "avgLossRiskATR": 1.007,
+            "avgWinRiskATR": 0.664,
+            "avgLossScore": 60,
+            "avgWinScore": 60
+          },
+          "decision": {
+            "action": "COLLECT_DATA",
+            "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null,
+          "newsMacroSnapshot": null
+        },
+        {
+          "ok": true,
+          "indicator": "gf-ai",
+          "indicatorName": "GF-AI Live Analyst v1.60",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_DATA",
+          "recommendationId": "gf-ai-XAUUSD247-M15-202610101839",
+          "baseline": {
+            "totalSignals": 0,
+            "completed": 0,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": null,
+            "lossPip": null,
+            "netPip": null,
+            "totalR": null,
+            "positive": 0,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": null
+          },
+          "diagnostics": {
+            "lossCount": 0,
+            "winCount": 0,
+            "quickStopRate": null,
+            "targetFallbackRate": null,
+            "wideRiskRate": null,
+            "avgLossRiskATR": null,
+            "avgWinRiskATR": null,
+            "avgLossScore": null,
+            "avgWinScore": null
+          },
+          "decision": {
+            "action": "COLLECT_DATA",
+            "reason": "MIN_40_COMPLETED_SIGNALS_REQUIRED",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null,
+          "newsMacroSnapshot": null
+        },
+        {
+          "ok": true,
+          "indicator": "gf-news",
+          "indicatorName": "GF-News Impact Pro",
+          "symbol": "XAUUSD247",
+          "tf": "M15",
+          "state": "COLLECT_FORWARD_DATA",
+          "recommendationId": "gf-news-XAUUSD247-M15-202610101839",
+          "baseline": {
+            "totalSignals": 0,
+            "completed": 0,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": null,
+            "lossPip": null,
+            "netPip": null,
+            "totalR": null,
+            "positive": 0,
+            "negative": 0,
+            "beZero": 0,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": null
+          },
+          "diagnostics": {
+            "lossCount": 0,
+            "winCount": 0,
+            "quickStopRate": null,
+            "targetFallbackRate": null,
+            "wideRiskRate": null,
+            "avgLossRiskATR": null,
+            "avgWinRiskATR": null,
+            "avgLossScore": null,
+            "avgWinScore": null
+          },
+          "decision": {
+            "action": "COLLECT_FORWARD_DATA",
+            "reason": "NEWS_MACRO_HISTORY_IS_FORWARD_ONLY",
+            "sampleReady": false,
+            "autoPromotionApproved": false,
+            "patch": null,
+            "candidatePatch": null,
+            "candidateId": null,
+            "validation": null,
+            "guardrails": {
+              "minCompleted": 40,
+              "minValidation": 10,
+              "minStrictWR": 52,
+              "minStrictWRGainPP": 4,
+              "minNetPipGain": "max(10 pip, 10%)",
+              "maxLossMagnitudeWorseningPct": 5,
+              "promotionCooldownHours": 72
+            }
+          },
+          "rollback": null,
+          "newsMacroSnapshot": {
+            "capturedAtUTC": "2026-10-10T18:39:50.628Z",
+            "macro": {
+              "regime": {
+                "name": "REFLATION",
+                "note": "Growth and inflation are both firm.",
+                "confidence": 81
+              },
+              "gold": {
+                "score": 29,
+                "bias": "PRESSURE",
+                "note": "DERIVED macro context from 4/5 available components; not a trade signal, calibrated probability, or guaranteed direction."
+              },
+              "quality": {
+                "available": 13,
+                "fresh": 13,
+                "total": 16,
+                "official": 11,
+                "derived": 2,
+                "unavailable": [
+                  "PAYEMS",
+                  "UNRATE",
+                  "CPI"
+                ],
+                "stale": [],
+                "errors": [
+                  "source3: BLS_CES0000000001_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
+                  "source4: BLS_LNS14000000_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
+                  "source5: BLS_CUUR0000SA0_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
+                  "CPI fallback unavailable: BLS CPI published headline unavailable"
+                ],
+                "edgeSourceErrors": [
+                  "source3: BLS_CES0000000001_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
+                  "source4: BLS_LNS14000000_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
+                  "source5: BLS_CUUR0000SA0_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
+                  "CPI fallback unavailable: BLS CPI published headline unavailable"
+                ],
+                "notes": [
+                  "CPI direct BLS and release fallback unavailable.",
+                  "CUUR0000SA0: HTTP 520",
+                  "CES0000000001: HTTP 520",
+                  "LNS14000000: HTTP 520",
+                  "Windows-source diagnostics: BLS_BATCH, BLS_CES0000000001, BLS_LNS14000000, BLS_CUUR0000SA0, FRED_CES0000000001, FRED_LNS14000000, FRED_CUUR0000SA0"
+                ],
+                "secondaryMirror": [],
+                "primarySourceHealth": "DEGRADED",
+                "strictPrimaryReady": false
+              },
+              "fetchedAtUTC": "2026-10-10T18:40:00.128Z"
+            },
+            "worldNews": {
+              "updatedAtUTC": "2026-10-10T18:39:50.734Z",
+              "sourceStatus": "PARTIAL",
+              "openingRisk": {
+                "status": "SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED",
+                "labelMS": "POTENSI GAP NAIK SAFE-HAVEN • BELUM CONFIRM",
+                "labelEN": "SAFE-HAVEN UPSIDE GAP RISK • NOT CONFIRMED",
+                "driver": {
+                  "title": "Photos: Thousands march across Europe to demand end to Israel’s war on Gaza",
+                  "publisher": "Al Jazeera English",
+                  "sourceUrl": "https://www.aljazeera.com/gallery/2026/10/10/photos-thousands-march-across-europe-to-demand-end-to-israels-war-on-gaza?traffic_source=rss"
+                },
+                "counterforce": null,
+                "newsAgeWindowHours": 72,
+                "probability": null,
+                "validatedGoldMove": false,
+                "requiresFreshQuote": true,
+                "requiresClosedM15": true,
+                "marketResearchOnly": true,
+                "automaticEntry": false,
+                "limitation": "Source-attributed pre-open risk scenario only. A geopolitical headline is not a confirmed gap or price direction; USD, yields, energy and first CLOSED broker candles can contradict it."
+              },
+              "items": [
+                {
+                  "id": "feed-b5241131",
+                  "publisher": "Al Jazeera English",
+                  "title": "Photos: Thousands march across Europe to demand end to Israel’s war on Gaza",
+                  "publishedAtUTC": "2026-10-10T18:26:13.000Z",
+                  "category": "GEOPOLITICS",
+                  "impact": "HIGH",
+                  "sourceUrl": "https://www.aljazeera.com/gallery/2026/10/10/photos-thousands-march-across-europe-to-demand-end-to-israels-war-on-gaza?traffic_source=rss",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                },
+                {
+                  "id": "feed-b5d46110",
+                  "publisher": "The Guardian",
+                  "title": "Dozens reported injured in Yemeni Houthi attack at Riyadh airport",
+                  "publishedAtUTC": "2026-10-10T15:54:12.000Z",
+                  "category": "GEOPOLITICS",
+                  "impact": "HIGH",
+                  "sourceUrl": "https://www.theguardian.com/world/2026/oct/10/yemen-government-allied-forces-recapture-bab-al-mandab-strait-houthis-taiz",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                },
+                {
+                  "id": "feed-2772ceaf",
+                  "publisher": "BBC News",
+                  "title": "Nobel peace laureate says US sanctions on ICC 'unacceptable'",
+                  "publishedAtUTC": "2026-10-10T15:23:47.000Z",
+                  "category": "GEOPOLITICS",
+                  "impact": "MEDIUM",
+                  "sourceUrl": "https://www.bbc.co.uk/news/articles/cqkgjrpmr47vo?at_medium=RSS&at_campaign=rss",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                },
+                {
+                  "id": "feed-35c42dd1",
+                  "publisher": "Al Jazeera English",
+                  "title": "Has Yemen returned to ‘full-scale war’?",
+                  "publishedAtUTC": "2026-10-10T14:10:24.000Z",
+                  "category": "GEOPOLITICS",
+                  "impact": "HIGH",
+                  "sourceUrl": "https://www.aljazeera.com/news/2026/10/10/has-yemen-returned-to-full-scale-war?traffic_source=rss",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                },
+                {
+                  "id": "feed-f98b5948",
+                  "publisher": "Al Jazeera English",
+                  "title": "High silver prices threaten Lucknow’s famed bridal nagra craft",
+                  "publishedAtUTC": "2026-10-10T13:25:35.000Z",
+                  "category": "MARKET_CONTEXT",
+                  "impact": "LOW",
+                  "sourceUrl": "https://www.aljazeera.com/features/longform/2026/10/10/high-silver-prices-threaten-lucknows-famed-bridal-nagra-craft?traffic_source=rss",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                },
+                {
+                  "id": "feed-6bd4b420",
+                  "publisher": "Al Jazeera English",
+                  "title": "‘Anachronism’: Rubio’s civilisational rhetoric prompts pushback from Iran",
+                  "publishedAtUTC": "2026-10-10T13:09:09.000Z",
+                  "category": "GEOPOLITICS",
+                  "impact": "MEDIUM",
+                  "sourceUrl": "https://www.aljazeera.com/news-analysis/2026/10/10/anachronism-rubios-civilisational-rhetoric-prompts-pushback-from-iran?traffic_source=rss",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                },
+                {
+                  "id": "feed-e3117429",
+                  "publisher": "The Guardian",
+                  "title": "Trump establishes committee to investigate Fed governor Lisa Cook",
+                  "publishedAtUTC": "2026-10-09T18:05:12.000Z",
+                  "category": "MONETARY_POLICY",
+                  "impact": "MEDIUM",
+                  "sourceUrl": "https://www.theguardian.com/business/2026/oct/09/trump-investigate-lisa-cook-fed-governor",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                },
+                {
+                  "id": "feed-8a65ce5a",
+                  "publisher": "The Guardian",
+                  "title": "Oil prices jump 5% on Middle East tensions and US hurricane threat",
+                  "publishedAtUTC": "2026-10-08T11:11:47.000Z",
+                  "category": "ENERGY_SUPPLY",
+                  "impact": "LOW",
+                  "sourceUrl": "https://www.theguardian.com/business/2026/oct/08/oil-prices-rise-middle-east-tensions-us-hurricane-threat",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                },
+                {
+                  "id": "feed-7a644e73",
+                  "publisher": "BBC News",
+                  "title": "How oil-rich Alberta's economy might fare if it broke away from Canada",
+                  "publishedAtUTC": "2026-10-07T23:10:13.000Z",
+                  "category": "ENERGY_SUPPLY",
+                  "impact": "LOW",
+                  "sourceUrl": "https://www.bbc.co.uk/news/articles/cy745jznvxpo?at_medium=RSS&at_campaign=rss",
+                  "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+                }
+              ]
+            },
+            "status": "COMPLETE"
+          }
+        }
+      ]
     }
   ]
 }
