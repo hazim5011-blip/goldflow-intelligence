@@ -2,7 +2,7 @@ const clean=x=>String(x||"").toLowerCase();
 
 export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
   "version": 1,
-  "updatedAtUTC": "2026-10-09T21:13:12.913Z",
+  "updatedAtUTC": "2026-10-10T06:20:34.677Z",
   "mode": "INTERNET_SCOUT_PLUS_REASONING",
   "reasoning": {
     "enabled": true,
@@ -10,16 +10,6 @@ export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
     "model": "gpt-6.1-sol"
   },
   "sources": [
-    {
-      "sourceId": "BLS_LATEST",
-      "sourceKind": "official",
-      "category": "US_MACRO",
-      "title": "Major Economic Indicators Latest Numbers",
-      "url": "https://www.bls.gov/bls/",
-      "published": "Fri, 9 Oct 2026 10:00:29 -0400",
-      "summary": "Consumer Price Index (CPI): +0.4% in Aug 2026 News Release Historical Data Unemployment Rate: 4.2% in Sep 2026 News Release Historical Data Payroll Employment: +29,000(p) in Sep 2026 News Release Historical Data Average Hourly Earnings: +$0.05(p) in Sep 2026 News Release Historical Data Producer Price Index - Final Demand: +0.4%(p) in Aug 2026 News Release Historical Data Employment Cost Index (ECI): +0.9% in 2nd Qtr of 2026 News Release Historical Data Productivity: +1.4% in 2nd Qtr of 2026 News Release Historical Data U.S. Import Price Index: +0.7% in Aug 2026 News Release Historical Data U.S. Export Price Index: +0.6% in Aug 2026 News Release Historical Data p - preliminary",
-      "relevance": 17
-    },
     {
       "sourceId": "FED_ALL",
       "sourceKind": "official",
@@ -125,32 +115,28 @@ export const RECOMMENDED_AI_RESEARCH_STATE=Object.freeze({
     {
       "id": "DGS2",
       "label": "US 2Y Treasury",
-      "date": "2026-10-08",
-      "value": 4.75,
+      "error": "HTTP_520",
       "source": "FRED",
       "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS2"
     },
     {
       "id": "DGS10",
       "label": "US 10Y Treasury",
-      "date": "2026-10-08",
-      "value": 5.22,
+      "error": "HTTP_520",
       "source": "FRED",
       "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
     },
     {
       "id": "DFII10",
       "label": "US 10Y Real Yield",
-      "date": "2026-10-08",
-      "value": 2.87,
+      "error": "HTTP_520",
       "source": "FRED",
       "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFII10"
     },
     {
       "id": "VIXCLS",
       "label": "VIX",
-      "date": "2026-10-08",
-      "value": 15.41,
+      "error": "HTTP_520",
       "source": "FRED",
       "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS"
     }

@@ -1,15 +1,9 @@
 {
-  "version": "RECOMMENDED_AI_INTERNET_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-10T06:20:34.677Z",
-  "heartbeat": "OK",
-  "mode": "INTERNET_SCOUT_PLUS_REASONING",
-  "research": {
-    "ok": true,
-    "version": "RECOMMENDED_AI_INTERNET_RESEARCH_V1",
-    "generatedAtUTC": "2026-10-10T06:20:34.677Z",
-    "mode": "INTERNET_SCOUT_PLUS_REASONING",
-    "evidence": {
-      "collectedAtUTC": "2026-10-10T06:20:18.665Z",
+  "date": "2026-10-10",
+  "cycles": [
+    {
+      "atUTC": "2026-10-10T06:20:34.677Z",
+      "mode": "INTERNET_SCOUT_PLUS_REASONING",
       "feedStatus": [
         {
           "id": "FED_ALL",
@@ -66,7 +60,37 @@
           "url": "https://news.google.com/rss/search?q=market+structure+liquidity+volatility+trading+research&hl=en-US&gl=US&ceid=US:en"
         }
       ],
-      "items": [
+      "macro": [
+        {
+          "id": "DGS2",
+          "label": "US 2Y Treasury",
+          "error": "HTTP_520",
+          "source": "FRED",
+          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS2"
+        },
+        {
+          "id": "DGS10",
+          "label": "US 10Y Treasury",
+          "error": "HTTP_520",
+          "source": "FRED",
+          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
+        },
+        {
+          "id": "DFII10",
+          "label": "US 10Y Real Yield",
+          "error": "HTTP_520",
+          "source": "FRED",
+          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFII10"
+        },
+        {
+          "id": "VIXCLS",
+          "label": "VIX",
+          "error": "HTTP_520",
+          "source": "FRED",
+          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS"
+        }
+      ],
+      "sources": [
         {
           "sourceId": "FED_ALL",
           "sourceKind": "official",
@@ -168,68 +192,32 @@
           "relevance": 6
         }
       ],
-      "macro": [
-        {
-          "id": "DGS2",
-          "label": "US 2Y Treasury",
-          "error": "HTTP_520",
-          "source": "FRED",
-          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS2"
-        },
-        {
-          "id": "DGS10",
-          "label": "US 10Y Treasury",
-          "error": "HTTP_520",
-          "source": "FRED",
-          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
-        },
-        {
-          "id": "DFII10",
-          "label": "US 10Y Real Yield",
-          "error": "HTTP_520",
-          "source": "FRED",
-          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFII10"
-        },
-        {
-          "id": "VIXCLS",
-          "label": "VIX",
-          "error": "HTTP_520",
-          "source": "FRED",
-          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS"
+      "reasoning": {
+        "enabled": true,
+        "status": "ONLINE_OPENAI_WEB_REASONING",
+        "model": "gpt-6.1-sol",
+        "primaryModel": "gpt-6.1-sol",
+        "fallbackModel": "gpt-6-luna",
+        "fallbackUsed": false,
+        "reasoningEffort": "medium",
+        "maxToolCalls": 2,
+        "maxOutputTokens": 1800,
+        "summary": "As of October 10, 2026, no defensible numeric patch is proposed. The October 7 FOMC release is verified, but its economic descriptions reflect September 15–16 information, not current M15 gold conditions. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/monetary20261007a.htm)) The September 30 stress-test announcement concerns bank capital requirements; interpreting its reduced capital-requirement volatility as reduced gold volatility would be an unsupported correlation. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm)) FRED's real-yield page is accessible despite the supplied CSV error, but daily yield observations do not establish a GoldFlow management adjustment. ([fred.stlouisfed.org](https://fred.stlouisfed.org/series/DFII10)) Diagnostics warrant investigation, not optimization: pvt102 has 66.67% signal wins but -1430.35 net pip and -1.919R; pattern132 has -1551.77 net pip and -8.672R. snd107's +41.87 net pip alongside -2.458R requires reconciliation before declaring success. Preserve pvtchart101's KEEP_CURRENT state. The identical 105/103 aggregates should not be treated as independent confirmation.",
+        "hypotheses": [],
+        "responseId": "resp_0d8579538d1b3c13016ac9d923579087d08285ae6cfa18451f",
+        "usage": {
+          "input_tokens": 12906,
+          "input_tokens_details": {
+            "cache_write_tokens": 7902,
+            "cached_tokens": 0
+          },
+          "output_tokens": 682,
+          "output_tokens_details": {
+            "reasoning_tokens": 310
+          },
+          "total_tokens": 13588
         }
-      ],
-      "evidencePolicy": "INTERNET_EVIDENCE_IS_HYPOTHESIS_INPUT_ONLY; VANTAGE_REPLAY_REMAINS_PROMOTION_GATE"
-    },
-    "reasoning": {
-      "enabled": true,
-      "status": "ONLINE_OPENAI_WEB_REASONING",
-      "model": "gpt-6.1-sol",
-      "primaryModel": "gpt-6.1-sol",
-      "fallbackModel": "gpt-6-luna",
-      "fallbackUsed": false,
-      "reasoningEffort": "medium",
-      "maxToolCalls": 2,
-      "maxOutputTokens": 1800,
-      "summary": "As of October 10, 2026, no defensible numeric patch is proposed. The October 7 FOMC release is verified, but its economic descriptions reflect September 15–16 information, not current M15 gold conditions. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/monetary20261007a.htm)) The September 30 stress-test announcement concerns bank capital requirements; interpreting its reduced capital-requirement volatility as reduced gold volatility would be an unsupported correlation. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm)) FRED's real-yield page is accessible despite the supplied CSV error, but daily yield observations do not establish a GoldFlow management adjustment. ([fred.stlouisfed.org](https://fred.stlouisfed.org/series/DFII10)) Diagnostics warrant investigation, not optimization: pvt102 has 66.67% signal wins but -1430.35 net pip and -1.919R; pattern132 has -1551.77 net pip and -8.672R. snd107's +41.87 net pip alongside -2.458R requires reconciliation before declaring success. Preserve pvtchart101's KEEP_CURRENT state. The identical 105/103 aggregates should not be treated as independent confirmation.",
-      "hypotheses": [],
-      "responseId": "resp_0d8579538d1b3c13016ac9d923579087d08285ae6cfa18451f",
-      "usage": {
-        "input_tokens": 12906,
-        "input_tokens_details": {
-          "cache_write_tokens": 7902,
-          "cached_tokens": 0
-        },
-        "output_tokens": 682,
-        "output_tokens_details": {
-          "reasoning_tokens": 310
-        },
-        "total_tokens": 13588
       }
-    },
-    "safety": {
-      "internetCanDirectlyEditProtectedEngine": false,
-      "internetCanDirectlyPromoteProfile": false,
-      "rule": "Internet hypotheses must be converted to bounded profile candidates and pass Vantage shadow/OOS validation before any promotion."
     }
-  }
+  ]
 }
