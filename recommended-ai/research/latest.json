@@ -1,15 +1,15 @@
 {
   "version": "RECOMMENDED_AI_INTERNET_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-10T06:20:34.677Z",
+  "updatedAtUTC": "2026-10-10T14:41:49.239Z",
   "heartbeat": "OK",
   "mode": "INTERNET_SCOUT_PLUS_REASONING",
   "research": {
     "ok": true,
     "version": "RECOMMENDED_AI_INTERNET_RESEARCH_V1",
-    "generatedAtUTC": "2026-10-10T06:20:34.677Z",
+    "generatedAtUTC": "2026-10-10T14:41:49.239Z",
     "mode": "INTERNET_SCOUT_PLUS_REASONING",
     "evidence": {
-      "collectedAtUTC": "2026-10-10T06:20:18.665Z",
+      "collectedAtUTC": "2026-10-10T14:41:33.953Z",
       "feedStatus": [
         {
           "id": "FED_ALL",
@@ -62,7 +62,7 @@
           "category": "TRADING_RESEARCH",
           "ok": false,
           "count": 0,
-          "error": "HTTP_503",
+          "error": "The operation was aborted",
           "url": "https://news.google.com/rss/search?q=market+structure+liquidity+volatility+trading+research&hl=en-US&gl=US&ceid=US:en"
         }
       ],
@@ -210,20 +210,20 @@
       "reasoningEffort": "medium",
       "maxToolCalls": 2,
       "maxOutputTokens": 1800,
-      "summary": "As of October 10, 2026, no defensible numeric patch is proposed. The October 7 FOMC release is verified, but its economic descriptions reflect September 15–16 information, not current M15 gold conditions. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/monetary20261007a.htm)) The September 30 stress-test announcement concerns bank capital requirements; interpreting its reduced capital-requirement volatility as reduced gold volatility would be an unsupported correlation. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm)) FRED's real-yield page is accessible despite the supplied CSV error, but daily yield observations do not establish a GoldFlow management adjustment. ([fred.stlouisfed.org](https://fred.stlouisfed.org/series/DFII10)) Diagnostics warrant investigation, not optimization: pvt102 has 66.67% signal wins but -1430.35 net pip and -1.919R; pattern132 has -1551.77 net pip and -8.672R. snd107's +41.87 net pip alongside -2.458R requires reconciliation before declaring success. Preserve pvtchart101's KEEP_CURRENT state. The identical 105/103 aggregates should not be treated as independent confirmation.",
+      "summary": "As of October 10, 2026, no sufficiently supported numeric patch is proposed. Verified September FOMC minutes provide macro context, not evidence for particular XAUUSD247 M15 management settings. ([federalreserve.gov](https://www.federalreserve.gov/monetarypolicy/fomcminutes20260916.htm)) The September 30 stress-test announcement concerns bank capital requirements; interpreting its reduced volatility as reduced gold-price volatility would be invalid. ([federalreserve.gov](https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm)) FRED's accessible DFII10 page reports 2.87% for October 8, but this observation does not establish a management-parameter relationship. ([fred.stlouisfed.org](https://fred.stlouisfed.org/series/DFII10)) Current parameter values and patch semantics are missing, so an absolute numeric replacement cannot be verified as small or conservative. Based on supplied diagnostics: prioritize investigating pvt102's loss severity and wide-risk exposure, without assuming a lower maxRiskATR improves outcomes; its 66.67% signal win rate accompanies -1430.35 net pips and -1.919 total R. pattern132 also has negative pip and R outcomes without evidence identi",
       "hypotheses": [],
-      "responseId": "resp_0d8579538d1b3c13016ac9d923579087d08285ae6cfa18451f",
+      "responseId": "resp_0ef8718a70782449016aca4e9ee22c87d1a33dc19d0f290ca2",
       "usage": {
-        "input_tokens": 12906,
+        "input_tokens": 16739,
         "input_tokens_details": {
           "cache_write_tokens": 7902,
           "cached_tokens": 0
         },
-        "output_tokens": 682,
+        "output_tokens": 646,
         "output_tokens_details": {
-          "reasoning_tokens": 310
+          "reasoning_tokens": 222
         },
-        "total_tokens": 13588
+        "total_tokens": 17385
       }
     },
     "safety": {
