@@ -1,6 +1,6 @@
 {
   "version": "RECOMMENDED_AI_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-10T13:47:04.277Z",
+  "updatedAtUTC": "2026-10-10T15:58:03.922Z",
   "heartbeat": "OK",
   "primarySymbol": "XAUUSD247",
   "primaryTF": "M15",
@@ -9,14 +9,12 @@
     "strategy": "technical indicator batches rotate; every technical indicator revisited within about 4 hours; GF-News captures news + macro/regime context every hourly cycle"
   },
   "lastBatch": {
-    "batchIndex": 1,
+    "batchIndex": 3,
     "indicators": [
-      "pvtchart101",
-      "pattern132",
-      "snd107",
+      "gf-study",
       "gf-news"
     ],
-    "completed": 4,
+    "completed": 2,
     "failed": 0
   },
   "recommendations": {
@@ -2888,8 +2886,8 @@
     "GF-NEWS|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-news-XAUUSD247-M15-202610101346",
-      "generatedAtUTC": "2026-10-10T13:46:55.933Z",
+      "recommendationId": "gf-news-XAUUSD247-M15-202610101557",
+      "generatedAtUTC": "2026-10-10T15:57:52.228Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-news",
@@ -2897,8 +2895,8 @@
       "profileKey": "gf-news|XAUUSD247",
       "historyMode": "GF_NEWS_FORWARD_ARCHIVE",
       "dataWindow": {
-        "startUTC": "2026-10-08T04:30:00.000Z",
-        "endUTC": "2026-10-10T13:30:00.000Z",
+        "startUTC": "2026-10-08T06:30:00.000Z",
+        "endUTC": "2026-10-10T15:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 229,
@@ -3021,7 +3019,7 @@
       },
       "rollback": null,
       "newsMacroSnapshot": {
-        "capturedAtUTC": "2026-10-10T13:46:57.127Z",
+        "capturedAtUTC": "2026-10-10T15:57:52.496Z",
         "macro": {
           "regime": {
             "name": "REFLATION",
@@ -3059,19 +3057,19 @@
             ],
             "notes": [
               "CPI direct BLS and release fallback unavailable.",
+              "LNS14000000: HTTP 520",
               "CUUR0000SA0: HTTP 520",
               "CES0000000001: HTTP 520",
-              "LNS14000000: HTTP 520",
               "Windows-source diagnostics: BLS_BATCH, BLS_CES0000000001, BLS_LNS14000000, BLS_CUUR0000SA0, FRED_CES0000000001, FRED_LNS14000000, FRED_CUUR0000SA0"
             ],
             "secondaryMirror": [],
             "primarySourceHealth": "DEGRADED",
             "strictPrimaryReady": false
           },
-          "fetchedAtUTC": "2026-10-10T13:46:58.188Z"
+          "fetchedAtUTC": "2026-10-10T15:58:02.404Z"
         },
         "worldNews": {
-          "updatedAtUTC": "2026-10-10T13:46:57.257Z",
+          "updatedAtUTC": "2026-10-10T15:57:52.581Z",
           "sourceStatus": "PARTIAL",
           "openingRisk": {
             "status": "SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED",
@@ -3093,6 +3091,26 @@
             "limitation": "Source-attributed pre-open risk scenario only. A geopolitical headline is not a confirmed gap or price direction; USD, yields, energy and first CLOSED broker candles can contradict it."
           },
           "items": [
+            {
+              "id": "feed-2772ceaf",
+              "publisher": "BBC News",
+              "title": "Nobel peace laureate says US sanctions on ICC 'unacceptable'",
+              "publishedAtUTC": "2026-10-10T15:23:47.000Z",
+              "category": "GEOPOLITICS",
+              "impact": "MEDIUM",
+              "sourceUrl": "https://www.bbc.co.uk/news/articles/cqkgjrpmr47vo?at_medium=RSS&at_campaign=rss",
+              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+            },
+            {
+              "id": "feed-35c42dd1",
+              "publisher": "Al Jazeera English",
+              "title": "Has Yemen returned to ‘full-scale war’?",
+              "publishedAtUTC": "2026-10-10T14:10:24.000Z",
+              "category": "GEOPOLITICS",
+              "impact": "HIGH",
+              "sourceUrl": "https://www.aljazeera.com/news/2026/10/10/has-yemen-returned-to-full-scale-war?traffic_source=rss",
+              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+            },
             {
               "id": "feed-f98b5948",
               "publisher": "Al Jazeera English",
@@ -3131,26 +3149,6 @@
               "category": "GEOPOLITICS",
               "impact": "MEDIUM",
               "sourceUrl": "https://www.aljazeera.com/news/2026/10/10/why-is-us-turning-to-russia-for-diesel-despite-sanctions?traffic_source=rss",
-              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
-            },
-            {
-              "id": "feed-86b0f0c5",
-              "publisher": "Al Jazeera English",
-              "title": "US lifts sanctions on daughter of military-linked Myanmar businessman",
-              "publishedAtUTC": "2026-10-10T07:50:59.000Z",
-              "category": "GEOPOLITICS",
-              "impact": "MEDIUM",
-              "sourceUrl": "https://www.aljazeera.com/news/2026/10/10/us-lifts-sanctions-on-daughter-of-military-linked-myanmar-tycoon?traffic_source=rss",
-              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
-            },
-            {
-              "id": "feed-8a82ce84",
-              "publisher": "BBC News",
-              "title": "US unveils sanctions on ICC in move court condemns as 'assault on rule of law'",
-              "publishedAtUTC": "2026-10-09T18:40:10.000Z",
-              "category": "GEOPOLITICS",
-              "impact": "MEDIUM",
-              "sourceUrl": "https://www.bbc.co.uk/news/articles/cj20vkkx3rdvo?at_medium=RSS&at_campaign=rss",
               "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
             },
             {
@@ -3211,8 +3209,8 @@
     "GF-STUDY|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-study-XAUUSD247-M15-202610100712",
-      "generatedAtUTC": "2026-10-10T07:12:12.117Z",
+      "recommendationId": "gf-study-XAUUSD247-M15-202610101557",
+      "generatedAtUTC": "2026-10-10T15:57:42.421Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-study",
@@ -3220,8 +3218,8 @@
       "profileKey": "gf-study|XAUUSD247",
       "historyMode": "GF_CLOSED_CANDLE_NEXT_OPEN_REPLAY",
       "dataWindow": {
-        "startUTC": "2026-10-07T21:45:00.000Z",
-        "endUTC": "2026-10-10T06:45:00.000Z",
+        "startUTC": "2026-10-08T06:30:00.000Z",
+        "endUTC": "2026-10-10T15:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 229,
@@ -3252,40 +3250,23 @@
       },
       "baseline": {
         "all": {
-          "totalSignals": 5,
-          "completed": 4,
-          "strictDenominator": 4,
-          "strictWR": 41.7,
-          "signalWR": 75,
-          "winPip": 68.38,
+          "totalSignals": 3,
+          "completed": 2,
+          "strictDenominator": 1,
+          "strictWR": 0,
+          "signalWR": 0,
+          "winPip": 0,
           "lossPip": -95.6,
-          "netPip": -27.23,
-          "totalR": 0.442,
-          "positive": 3,
+          "netPip": -95.6,
+          "totalR": -1,
+          "positive": 0,
           "negative": 1,
-          "beZero": 0,
+          "beZero": 1,
           "ambiguous": 1,
           "pending": 0,
           "strictBasis": "PIP"
         },
         "training": {
-          "totalSignals": 3,
-          "completed": 3,
-          "strictDenominator": 3,
-          "strictWR": 100,
-          "signalWR": 100,
-          "winPip": 68.38,
-          "lossPip": 0,
-          "netPip": 68.38,
-          "totalR": 1.442,
-          "positive": 3,
-          "negative": 0,
-          "beZero": 0,
-          "ambiguous": 0,
-          "pending": 0,
-          "strictBasis": "PIP"
-        },
-        "validation": {
           "totalSignals": 2,
           "completed": 1,
           "strictDenominator": 1,
@@ -3301,16 +3282,33 @@
           "ambiguous": 1,
           "pending": 0,
           "strictBasis": "PIP"
+        },
+        "validation": {
+          "totalSignals": 1,
+          "completed": 1,
+          "strictDenominator": 0,
+          "strictWR": null,
+          "signalWR": null,
+          "winPip": 0,
+          "lossPip": 0,
+          "netPip": 0,
+          "totalR": null,
+          "positive": 0,
+          "negative": 0,
+          "beZero": 1,
+          "ambiguous": 0,
+          "pending": 0,
+          "strictBasis": null
         }
       },
       "diagnostics": {
         "lossCount": 1,
-        "winCount": 3,
+        "winCount": 0,
         "quickStopRate": 0,
-        "targetFallbackRate": 100,
-        "wideRiskRate": 25,
+        "targetFallbackRate": 50,
+        "wideRiskRate": 0,
         "avgLossRiskATR": 1.851,
-        "avgWinRiskATR": 1.553,
+        "avgWinRiskATR": null,
         "avgLossScore": null,
         "avgWinScore": null
       },
@@ -3349,25 +3347,8 @@
             "t3FallbackR": 3
           },
           "all": {
-            "totalSignals": 5,
-            "completed": 4,
-            "strictDenominator": 4,
-            "strictWR": 41.7,
-            "signalWR": 75,
-            "winPip": 68.38,
-            "lossPip": -95.6,
-            "netPip": -27.23,
-            "totalR": 0.442,
-            "positive": 3,
-            "negative": 1,
-            "beZero": 0,
-            "ambiguous": 1,
-            "pending": 0,
-            "strictBasis": "PIP"
-          },
-          "validation": {
-            "totalSignals": 2,
-            "completed": 1,
+            "totalSignals": 3,
+            "completed": 2,
             "strictDenominator": 1,
             "strictWR": 0,
             "signalWR": 0,
@@ -3377,10 +3358,27 @@
             "totalR": -1,
             "positive": 0,
             "negative": 1,
-            "beZero": 0,
+            "beZero": 1,
             "ambiguous": 1,
             "pending": 0,
             "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 1,
+            "completed": 1,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": 0,
+            "lossPip": 0,
+            "netPip": 0,
+            "totalR": null,
+            "positive": 0,
+            "negative": 0,
+            "beZero": 1,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": null
           },
           "delta": {
             "strictWRDelta": 0,
@@ -3415,25 +3413,8 @@
             "t3FallbackR": 3
           },
           "all": {
-            "totalSignals": 5,
-            "completed": 4,
-            "strictDenominator": 4,
-            "strictWR": 41.7,
-            "signalWR": 75,
-            "winPip": 68.38,
-            "lossPip": -95.6,
-            "netPip": -27.23,
-            "totalR": 0.442,
-            "positive": 3,
-            "negative": 1,
-            "beZero": 0,
-            "ambiguous": 1,
-            "pending": 0,
-            "strictBasis": "PIP"
-          },
-          "validation": {
-            "totalSignals": 2,
-            "completed": 1,
+            "totalSignals": 3,
+            "completed": 2,
             "strictDenominator": 1,
             "strictWR": 0,
             "signalWR": 0,
@@ -3443,10 +3424,27 @@
             "totalR": -1,
             "positive": 0,
             "negative": 1,
-            "beZero": 0,
+            "beZero": 1,
             "ambiguous": 1,
             "pending": 0,
             "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 1,
+            "completed": 1,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": 0,
+            "lossPip": 0,
+            "netPip": 0,
+            "totalR": null,
+            "positive": 0,
+            "negative": 0,
+            "beZero": 1,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": null
           },
           "delta": {
             "strictWRDelta": 0,
@@ -3482,25 +3480,8 @@
             "t3FallbackR": 2.85
           },
           "all": {
-            "totalSignals": 5,
-            "completed": 4,
-            "strictDenominator": 4,
-            "strictWR": 41.7,
-            "signalWR": 75,
-            "winPip": 68.38,
-            "lossPip": -95.6,
-            "netPip": -27.23,
-            "totalR": 0.442,
-            "positive": 3,
-            "negative": 1,
-            "beZero": 0,
-            "ambiguous": 1,
-            "pending": 0,
-            "strictBasis": "PIP"
-          },
-          "validation": {
-            "totalSignals": 2,
-            "completed": 1,
+            "totalSignals": 3,
+            "completed": 2,
             "strictDenominator": 1,
             "strictWR": 0,
             "signalWR": 0,
@@ -3510,10 +3491,27 @@
             "totalR": -1,
             "positive": 0,
             "negative": 1,
-            "beZero": 0,
+            "beZero": 1,
             "ambiguous": 1,
             "pending": 0,
             "strictBasis": "PIP"
+          },
+          "validation": {
+            "totalSignals": 1,
+            "completed": 1,
+            "strictDenominator": 0,
+            "strictWR": null,
+            "signalWR": null,
+            "winPip": 0,
+            "lossPip": 0,
+            "netPip": 0,
+            "totalR": null,
+            "positive": 0,
+            "negative": 0,
+            "beZero": 1,
+            "ambiguous": 0,
+            "pending": 0,
+            "strictBasis": null
           },
           "delta": {
             "strictWRDelta": 0,
