@@ -1,6 +1,6 @@
 {
   "version": "RECOMMENDED_AI_ARCHIVE_V1",
-  "updatedAtUTC": "2026-10-09T22:56:14.661Z",
+  "updatedAtUTC": "2026-10-10T00:55:55.499Z",
   "heartbeat": "OK",
   "primarySymbol": "XAUUSD247",
   "primaryTF": "M15",
@@ -9,11 +9,11 @@
     "strategy": "technical indicator batches rotate; every technical indicator revisited within about 4 hours; GF-News captures news + macro/regime context every hourly cycle"
   },
   "lastBatch": {
-    "batchIndex": 2,
+    "batchIndex": 0,
     "indicators": [
-      "owl101",
-      "fund104",
-      "gf-ai",
+      "105",
+      "103",
+      "pvt102",
       "gf-news"
     ],
     "completed": 4,
@@ -23,8 +23,8 @@
     "105|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "105-XAUUSD247-M15-202610091616",
-      "generatedAtUTC": "2026-10-09T16:16:35.316Z",
+      "recommendationId": "105-XAUUSD247-M15-202610100055",
+      "generatedAtUTC": "2026-10-10T00:55:24.692Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "105",
@@ -32,8 +32,8 @@
       "profileKey": "105|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-18T14:30:00.000Z",
-        "endUTC": "2026-10-09T16:00:00.000Z",
+        "startUTC": "2026-08-18T23:00:00.000Z",
+        "endUTC": "2026-10-10T00:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -64,7 +64,7 @@
       },
       "baseline": {
         "all": {
-          "totalSignals": 19,
+          "totalSignals": 20,
           "completed": 19,
           "strictDenominator": 19,
           "strictWR": 76.12,
@@ -77,20 +77,20 @@
           "negative": 3,
           "beZero": 0,
           "ambiguous": 0,
-          "pending": 0,
+          "pending": 1,
           "strictBasis": "PIP"
         },
         "training": {
-          "totalSignals": 13,
-          "completed": 13,
-          "strictDenominator": 13,
+          "totalSignals": 14,
+          "completed": 14,
+          "strictDenominator": 14,
           "strictWR": 100,
           "signalWR": 100,
-          "winPip": 434.97,
+          "winPip": 438.16,
           "lossPip": 0,
-          "netPip": 434.97,
-          "totalR": 7.168,
-          "positive": 13,
+          "netPip": 438.16,
+          "totalR": 7.218,
+          "positive": 14,
           "negative": 0,
           "beZero": 0,
           "ambiguous": 0,
@@ -99,19 +99,19 @@
         },
         "validation": {
           "totalSignals": 6,
-          "completed": 6,
-          "strictDenominator": 6,
-          "strictWR": 45.96,
-          "signalWR": 50,
-          "winPip": 158.32,
+          "completed": 5,
+          "strictDenominator": 5,
+          "strictWR": 45.46,
+          "signalWR": 40,
+          "winPip": 155.13,
           "lossPip": -186.14,
-          "netPip": -27.82,
-          "totalR": -0.71,
-          "positive": 3,
+          "netPip": -31.01,
+          "totalR": -0.76,
+          "positive": 2,
           "negative": 3,
           "beZero": 0,
           "ambiguous": 0,
-          "pending": 0,
+          "pending": 1,
           "strictBasis": "PIP"
         }
       },
@@ -123,8 +123,8 @@
         "wideRiskRate": 5.3,
         "avgLossRiskATR": 1.707,
         "avgWinRiskATR": 1.886,
-        "avgLossScore": 84.7,
-        "avgWinScore": 78.7
+        "avgLossScore": 86.4,
+        "avgWinScore": 78.1
       },
       "recommendation": {
         "summary": [
@@ -158,7 +158,7 @@
             "t3FallbackR": 3
           },
           "all": {
-            "totalSignals": 19,
+            "totalSignals": 20,
             "completed": 19,
             "strictDenominator": 19,
             "strictWR": 76.12,
@@ -171,24 +171,24 @@
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 6,
-            "completed": 6,
-            "strictDenominator": 6,
-            "strictWR": 45.96,
-            "signalWR": 50,
-            "winPip": 158.32,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 45.46,
+            "signalWR": 40,
+            "winPip": 155.13,
             "lossPip": -186.14,
-            "netPip": -27.82,
-            "totalR": -0.71,
-            "positive": 3,
+            "netPip": -31.01,
+            "totalR": -0.76,
+            "positive": 2,
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "delta": {
@@ -224,7 +224,7 @@
             "t3FallbackR": 3
           },
           "all": {
-            "totalSignals": 19,
+            "totalSignals": 20,
             "completed": 19,
             "strictDenominator": 19,
             "strictWR": 76.22,
@@ -237,24 +237,24 @@
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 6,
-            "completed": 6,
-            "strictDenominator": 6,
-            "strictWR": 45.96,
-            "signalWR": 50,
-            "winPip": 158.32,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 45.46,
+            "signalWR": 40,
+            "winPip": 155.13,
             "lossPip": -186.14,
-            "netPip": -27.82,
-            "totalR": -0.71,
-            "positive": 3,
+            "netPip": -31.01,
+            "totalR": -0.76,
+            "positive": 2,
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "delta": {
@@ -291,7 +291,7 @@
             "t3FallbackR": 2.85
           },
           "all": {
-            "totalSignals": 19,
+            "totalSignals": 20,
             "completed": 19,
             "strictDenominator": 19,
             "strictWR": 76.12,
@@ -304,24 +304,24 @@
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 6,
-            "completed": 6,
-            "strictDenominator": 6,
-            "strictWR": 45.96,
-            "signalWR": 50,
-            "winPip": 158.32,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 45.46,
+            "signalWR": 40,
+            "winPip": 155.13,
             "lossPip": -186.14,
-            "netPip": -27.82,
-            "totalR": -0.71,
-            "positive": 3,
+            "netPip": -31.01,
+            "totalR": -0.76,
+            "positive": 2,
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "delta": {
@@ -360,8 +360,8 @@
     "103|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "103-XAUUSD247-M15-202610091616",
-      "generatedAtUTC": "2026-10-09T16:16:38.847Z",
+      "recommendationId": "103-XAUUSD247-M15-202610100055",
+      "generatedAtUTC": "2026-10-10T00:55:40.905Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "103",
@@ -369,8 +369,8 @@
       "profileKey": "103|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-18T14:30:00.000Z",
-        "endUTC": "2026-10-09T16:00:00.000Z",
+        "startUTC": "2026-08-18T23:00:00.000Z",
+        "endUTC": "2026-10-10T00:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -401,7 +401,7 @@
       },
       "baseline": {
         "all": {
-          "totalSignals": 19,
+          "totalSignals": 20,
           "completed": 19,
           "strictDenominator": 19,
           "strictWR": 76.12,
@@ -414,20 +414,20 @@
           "negative": 3,
           "beZero": 0,
           "ambiguous": 0,
-          "pending": 0,
+          "pending": 1,
           "strictBasis": "PIP"
         },
         "training": {
-          "totalSignals": 13,
-          "completed": 13,
-          "strictDenominator": 13,
+          "totalSignals": 14,
+          "completed": 14,
+          "strictDenominator": 14,
           "strictWR": 100,
           "signalWR": 100,
-          "winPip": 434.97,
+          "winPip": 438.16,
           "lossPip": 0,
-          "netPip": 434.97,
-          "totalR": 7.168,
-          "positive": 13,
+          "netPip": 438.16,
+          "totalR": 7.218,
+          "positive": 14,
           "negative": 0,
           "beZero": 0,
           "ambiguous": 0,
@@ -436,19 +436,19 @@
         },
         "validation": {
           "totalSignals": 6,
-          "completed": 6,
-          "strictDenominator": 6,
-          "strictWR": 45.96,
-          "signalWR": 50,
-          "winPip": 158.32,
+          "completed": 5,
+          "strictDenominator": 5,
+          "strictWR": 45.46,
+          "signalWR": 40,
+          "winPip": 155.13,
           "lossPip": -186.14,
-          "netPip": -27.82,
-          "totalR": -0.71,
-          "positive": 3,
+          "netPip": -31.01,
+          "totalR": -0.76,
+          "positive": 2,
           "negative": 3,
           "beZero": 0,
           "ambiguous": 0,
-          "pending": 0,
+          "pending": 1,
           "strictBasis": "PIP"
         }
       },
@@ -460,8 +460,8 @@
         "wideRiskRate": 5.3,
         "avgLossRiskATR": 1.707,
         "avgWinRiskATR": 1.886,
-        "avgLossScore": 84.7,
-        "avgWinScore": 78.7
+        "avgLossScore": 86.4,
+        "avgWinScore": 78.1
       },
       "recommendation": {
         "summary": [
@@ -495,7 +495,7 @@
             "t3FallbackR": 3
           },
           "all": {
-            "totalSignals": 19,
+            "totalSignals": 20,
             "completed": 19,
             "strictDenominator": 19,
             "strictWR": 76.12,
@@ -508,24 +508,24 @@
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 6,
-            "completed": 6,
-            "strictDenominator": 6,
-            "strictWR": 45.96,
-            "signalWR": 50,
-            "winPip": 158.32,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 45.46,
+            "signalWR": 40,
+            "winPip": 155.13,
             "lossPip": -186.14,
-            "netPip": -27.82,
-            "totalR": -0.71,
-            "positive": 3,
+            "netPip": -31.01,
+            "totalR": -0.76,
+            "positive": 2,
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "delta": {
@@ -561,7 +561,7 @@
             "t3FallbackR": 3
           },
           "all": {
-            "totalSignals": 19,
+            "totalSignals": 20,
             "completed": 19,
             "strictDenominator": 19,
             "strictWR": 76.22,
@@ -574,24 +574,24 @@
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 6,
-            "completed": 6,
-            "strictDenominator": 6,
-            "strictWR": 45.96,
-            "signalWR": 50,
-            "winPip": 158.32,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 45.46,
+            "signalWR": 40,
+            "winPip": 155.13,
             "lossPip": -186.14,
-            "netPip": -27.82,
-            "totalR": -0.71,
-            "positive": 3,
+            "netPip": -31.01,
+            "totalR": -0.76,
+            "positive": 2,
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "delta": {
@@ -628,7 +628,7 @@
             "t3FallbackR": 2.85
           },
           "all": {
-            "totalSignals": 19,
+            "totalSignals": 20,
             "completed": 19,
             "strictDenominator": 19,
             "strictWR": 76.12,
@@ -641,24 +641,24 @@
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "validation": {
             "totalSignals": 6,
-            "completed": 6,
-            "strictDenominator": 6,
-            "strictWR": 45.96,
-            "signalWR": 50,
-            "winPip": 158.32,
+            "completed": 5,
+            "strictDenominator": 5,
+            "strictWR": 45.46,
+            "signalWR": 40,
+            "winPip": 155.13,
             "lossPip": -186.14,
-            "netPip": -27.82,
-            "totalR": -0.71,
-            "positive": 3,
+            "netPip": -31.01,
+            "totalR": -0.76,
+            "positive": 2,
             "negative": 3,
             "beZero": 0,
             "ambiguous": 0,
-            "pending": 0,
+            "pending": 1,
             "strictBasis": "PIP"
           },
           "delta": {
@@ -697,8 +697,8 @@
     "PVT102|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "pvt102-XAUUSD247-M15-202610091616",
-      "generatedAtUTC": "2026-10-09T16:16:41.386Z",
+      "recommendationId": "pvt102-XAUUSD247-M15-202610100055",
+      "generatedAtUTC": "2026-10-10T00:55:44.278Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "pvt102",
@@ -706,8 +706,8 @@
       "profileKey": "pvt102|XAUUSD247",
       "historyMode": "HISTORICAL_SIM",
       "dataWindow": {
-        "startUTC": "2026-08-18T14:30:00.000Z",
-        "endUTC": "2026-10-09T16:00:00.000Z",
+        "startUTC": "2026-08-18T23:00:00.000Z",
+        "endUTC": "2026-10-10T00:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 4999,
@@ -2551,8 +2551,8 @@
     "GF-NEWS|XAUUSD247|M15": {
       "ok": true,
       "version": "RECOMMENDED_AI_V1",
-      "recommendationId": "gf-news-XAUUSD247-M15-202610092256",
-      "generatedAtUTC": "2026-10-09T22:56:03.241Z",
+      "recommendationId": "gf-news-XAUUSD247-M15-202610100055",
+      "generatedAtUTC": "2026-10-10T00:55:47.636Z",
       "symbol": "XAUUSD247",
       "tf": "M15",
       "indicator": "gf-news",
@@ -2560,8 +2560,8 @@
       "profileKey": "gf-news|XAUUSD247",
       "historyMode": "GF_NEWS_FORWARD_ARCHIVE",
       "dataWindow": {
-        "startUTC": "2026-10-07T13:30:00.000Z",
-        "endUTC": "2026-10-09T22:30:00.000Z",
+        "startUTC": "2026-10-07T15:30:00.000Z",
+        "endUTC": "2026-10-10T00:30:00.000Z",
         "brokerServerUTCOffsetSeconds": 10800,
         "timeBasis": "BROKER_SERVER_EPOCH_NORMALIZED_TO_UTC",
         "availableClosedCandles": 229,
@@ -2684,57 +2684,43 @@
       },
       "rollback": null,
       "newsMacroSnapshot": {
-        "capturedAtUTC": "2026-10-09T22:56:03.581Z",
+        "capturedAtUTC": "2026-10-10T00:55:48.404Z",
         "macro": {
           "regime": {
             "name": "REFLATION",
             "note": "Growth and inflation are both firm.",
-            "confidence": 81
+            "confidence": 100
           },
           "gold": {
-            "score": 29,
+            "score": 31,
             "bias": "PRESSURE",
             "note": "DERIVED macro context from 4/5 available components; not a trade signal, calibrated probability, or guaranteed direction."
           },
           "quality": {
-            "available": 13,
-            "fresh": 13,
+            "available": 16,
+            "fresh": 16,
             "total": 16,
-            "official": 11,
+            "official": 14,
             "derived": 2,
-            "unavailable": [
-              "PAYEMS",
-              "UNRATE",
-              "CPI"
-            ],
+            "unavailable": [],
             "stale": [],
-            "errors": [
-              "source3: BLS_CES0000000001_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
-              "source4: BLS_LNS14000000_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
-              "source5: BLS_CUUR0000SA0_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
-              "CPI fallback unavailable: BLS CPI published headline unavailable"
-            ],
+            "errors": [],
             "edgeSourceErrors": [
               "source3: BLS_CES0000000001_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
               "source4: BLS_LNS14000000_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
-              "source5: BLS_CUUR0000SA0_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED",
-              "CPI fallback unavailable: BLS CPI published headline unavailable"
+              "source5: BLS_CUUR0000SA0_UNAVAILABLE: POST=BLS_STATUS_REQUEST_NOT_PROCESSED; GET=BLS_STATUS_REQUEST_NOT_PROCESSED"
             ],
             "notes": [
-              "CPI direct BLS and release fallback unavailable.",
-              "CUUR0000SA0: HTTP 520",
-              "LNS14000000: HTTP 520",
-              "CES0000000001: HTTP 520",
-              "Windows-source diagnostics: BLS_BATCH, BLS_CES0000000001, BLS_LNS14000000, BLS_CUUR0000SA0, FRED_CES0000000001, FRED_LNS14000000, FRED_CUUR0000SA0"
+              "Cloudflare direct BLS blocked; authenticated local PC recovered official BLS series: CES0000000001, LNS14000000, CUUR0000SA0"
             ],
             "secondaryMirror": [],
-            "primarySourceHealth": "DEGRADED",
-            "strictPrimaryReady": false
+            "primarySourceHealth": "RECOVERED_OFFICIAL_VIA_LOCAL_BRIDGE",
+            "strictPrimaryReady": true
           },
-          "fetchedAtUTC": "2026-10-09T22:56:13.127Z"
+          "fetchedAtUTC": "2026-10-10T00:55:49.723Z"
         },
         "worldNews": {
-          "updatedAtUTC": "2026-10-09T22:56:03.726Z",
+          "updatedAtUTC": "2026-10-10T00:55:48.488Z",
           "sourceStatus": "PARTIAL",
           "openingRisk": {
             "status": "SAFE_HAVEN_UPSIDE_GAP_RISK_UNCONFIRMED",
@@ -2757,13 +2743,23 @@
           },
           "items": [
             {
-              "id": "feed-8ae412f",
+              "id": "feed-5b5d0ce6",
               "publisher": "The Guardian",
-              "title": "Zelenskyy denounces Trump’s decision to lift diesel sanctions on Russia as ‘weak’ – US politics live",
-              "publishedAtUTC": "2026-10-09T22:45:44.000Z",
+              "title": "‘I want to thank President Putin’, Trump says after agreeing to lift sanctions on Russian diesel – US politics live",
+              "publishedAtUTC": "2026-10-10T00:47:09.000Z",
               "category": "GEOPOLITICS",
               "impact": "MEDIUM",
               "sourceUrl": "https://www.theguardian.com/us-news/live/2026/oct/09/pentagon-fort-hood-livestream-firing-squad-execution-reaction-backlash-pete-hegseth-donald-trump-mussolini-latest-news-updates",
+              "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
+            },
+            {
+              "id": "feed-f692f57f",
+              "publisher": "Al Jazeera English",
+              "title": "Iran war live: Kremlin says Trump welcomed Russia’s effort in Iran deal",
+              "publishedAtUTC": "2026-10-10T00:00:00.000Z",
+              "category": "GEOPOLITICS",
+              "impact": "HIGH",
+              "sourceUrl": "https://www.aljazeera.com/news/liveblog/2026/10/10/iran-war-live-kremlin-says-trump-welcomed-russia-effort-in-iran-deal?traffic_source=rss",
               "verification": "PUBLISHER_HEADLINE_VIA_DIRECT_RSS"
             },
             {
